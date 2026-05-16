@@ -1,0 +1,55 @@
+:root {
+  --bg:           #161412;
+  --card-bg:      #1e1a17;
+  --card-border:  #3d3530;
+  --accent:       #cf4820;
+  --accent-hover: #e05a2f;
+  --text-primary: #e8d9b0;
+  --text-secondary: #a09070;
+  --text-muted:   #6b5d4a;
+
+  --color-straw: #d4a017;
+  --color-wood:  #8b5e3c;
+  --color-stone: #8a8a8a;
+  --color-metal: #6b9ab8;
+  --color-hqm:   #4fc1e9;
+
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
