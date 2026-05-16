@@ -11,6 +11,9 @@ jobs:
   build:
     name: Build my project ✨
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,7 +23,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker build
         run: docker build --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
