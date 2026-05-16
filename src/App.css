@@ -594,9 +594,9 @@
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-.preset-btn__icon {
-  font-size: 1.6rem;
-  line-height: 1;
+.preset-btn svg {
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .preset-btn__label {

@@ -1,15 +1,13 @@
 export interface Preset {
   id: string;
   label: string;
-  icon: string;
   quantities: Record<string, number>;
 }
 
 export const presets: Preset[] = [
   {
     id: 'tri-cell',
-    label: 'Треугольная ячейка',
-    icon: '△',
+    label: 'Шкаф без окна',
     quantities: {
       'wall':                3,
       'triangle-foundation': 1,
@@ -18,8 +16,7 @@ export const presets: Preset[] = [
   },
   {
     id: 'tri-cell-window',
-    label: 'Треугольная ячейка с окном',
-    icon: '▲',
+    label: 'Шкаф с окном',
     quantities: {
       'wall':                       2,
       'triangle-foundation':        1,
@@ -30,8 +27,7 @@ export const presets: Preset[] = [
   },
   {
     id: 'sq-cell',
-    label: 'Квадратная секция',
-    icon: '⬜',
+    label: 'Бункер с крышей',
     quantities: {
       'triangle-foundation': 1,
       'square-foundation':   1,
