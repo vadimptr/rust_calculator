@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   rust-calculator:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/vadimptr/rust_calculator/app:latest
     ports:
-      - "3000:80"
+      - "8081:80"
     restart: unless-stopped

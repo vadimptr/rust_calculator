@@ -1,0 +1,52 @@
+name: Actions 😎
+
+on: [push, pull_request]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.actor }}/rust_calculator/app:latest
+  PROJECT_NAME: rust_calculator
+
+jobs:
+  build:
+    name: Build my project ✨
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Docker build
+        run: docker build --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
+
+      - name: Docker push
+        run: docker image push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+  deploy:
+    name: Deploy image ✨
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Docker compose pull and up
+        uses: appleboy/ssh-action@v1.0.2
+        with:
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT }}
+          debug: true
+          script_stop: true
+          script: |
+            export PATH="$PATH:/usr/local/bin"
+            security unlock-keychain -p ${{ secrets.SSH_PASSWORD }}
+            cd ${{ vars.WORK_DIR }}/${{ env.PROJECT_NAME }}
+            echo ${{ secrets.CR_PAT }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            docker-compose pull
+            docker-compose up -d
