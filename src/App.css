@@ -769,6 +769,171 @@
 }
 
 /* =========================================================
+   Raid section
+   ========================================================= */
+
+.raid-section {
+  margin-top: 2rem;
+}
+
+.raid-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.raid-section__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent);
+  padding-left: 0.6rem;
+}
+
+.raid-tier {
+  display: inline-flex;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.raid-tier__btn {
+  padding: 0.4rem 0.8rem;
+  background: var(--card-bg);
+  border: none;
+  border-left: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 0.12s, color 0.12s;
+}
+
+.raid-tier__btn:first-child {
+  border-left: none;
+}
+
+.raid-tier__btn:hover {
+  background: #221a14;
+  color: var(--text-primary);
+}
+
+.raid-tier__btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.raid-tier__btn--active:hover {
+  background: var(--accent-hover);
+  color: #fff;
+}
+
+.raid-section__placeholder {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem 0;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.raid-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+
+.raid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  background: var(--card-bg);
+}
+
+.raid-table__th {
+  padding: 0.55rem 0.7rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: #19150f;
+  border-bottom: 1px solid var(--card-border);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.raid-table__th--name {
+  text-align: left;
+  min-width: 170px;
+  padding-left: 0.85rem;
+}
+
+.raid-table__th--count {
+  text-align: left;
+  min-width: 130px;
+}
+
+.raid-table__row {
+  border-bottom: 1px solid #1e1a14;
+  transition: background 0.1s;
+}
+
+.raid-table__row:last-child {
+  border-bottom: none;
+}
+
+.raid-table__row:hover {
+  background: #221d17;
+}
+
+.raid-table__row--optimal {
+  background: #2a1f14;
+  border-top: 1px solid #4d3820;
+}
+
+.raid-table__row--optimal:hover {
+  background: #32261a;
+}
+
+.raid-table__td {
+  padding: 0.5rem 0.7rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.raid-table__td--name {
+  text-align: left;
+  padding-left: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.raid-table__row--optimal .raid-table__td--name {
+  color: var(--accent);
+}
+
+.raid-table__td--count {
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.raid-table__td--zero {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* =========================================================
    Responsive
    ========================================================= */
 

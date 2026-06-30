@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react';
 import { blocks } from './data/blocks';
-import { Quantities, Resources, BuildingBlock } from './types';
+import { Quantities, Resources, BuildingBlock, Tier, RaidSelection } from './types';
+import { DEFAULT_TIER } from './data/raidData';
+import { calculateRaidCost } from './logic/raidCalculator';
 import BlockTable from './components/BlockTable';
 import Presets from './components/Presets';
 import Summary from './components/Summary';
+import RaidTable from './components/RaidTable';
 
 import './App.css';
 
@@ -39,6 +42,7 @@ const CATEGORY_ORDER: BuildingBlock['category'][] = [
 
 function App() {
   const [quantities, setQuantities] = useState<Quantities>(initialQuantities);
+  const [raidTier, setRaidTier] = useState<Tier>(DEFAULT_TIER);
 
   const setQuantity = (id: string, value: number) => {
     setQuantities(prev => ({ ...prev, [id]: value }));
@@ -46,6 +50,7 @@ function App() {
 
   const resetAll = () => {
     setQuantities(initialQuantities);
+    setRaidTier(DEFAULT_TIER);
   };
 
   const applyPreset = (preset: Record<string, number>) => {
@@ -68,6 +73,13 @@ function App() {
 
     return { totalBuild: build, totalUpkeep: upkeep, hasAny: anyNonZero };
   }, [quantities]);
+
+  const raidRows = useMemo(() => {
+    const selections: RaidSelection[] = blocks
+      .filter(b => (quantities[b.id] ?? 0) > 0)
+      .map(b => ({ tier: raidTier, quantity: quantities[b.id] }));
+    return calculateRaidCost(selections);
+  }, [quantities, raidTier]);
 
   const groupedBlocks = useMemo(() => {
     const map = new Map<BuildingBlock['category'], BuildingBlock[]>();
@@ -101,7 +113,12 @@ function App() {
             onQuantityChange={setQuantity}
           />
 
-
+          <RaidTable
+            rows={raidRows}
+            tier={raidTier}
+            onTierChange={setRaidTier}
+            hasAny={hasAny}
+          />
         </main>
 
         <aside className="app-sidebar">
