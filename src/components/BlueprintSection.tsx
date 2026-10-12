@@ -5,10 +5,9 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { bestRaid, raidAlternatives, raidPolyline } from '../blueprint/raid.ts';
+import { buildSpaceGraph, spacesValue } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { EXPLOSIVES, METHOD_EXPLOSIVES, planSplash, volleyAlternatives } from '../blueprint/splash.ts';
-import type { RaidStep } from '../blueprint/raid.ts';
+import { EXPLOSIVES, METHOD_EXPLOSIVES, bestSimulation } from '../blueprint/splash.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
 import { formatNum } from './ResourceRow';
@@ -108,42 +107,37 @@ const BlueprintSection: React.FC = () => {
 
   const { blueprint, resolved, issues } = source.result;
 
-  // Рейд считается на лету: лучший вариант по ценности открытого на единицу серы
+  // Рейд считается на лету: симуляция по этапам — залп, убрать погибшее, пересчитать доступное, и так до шкафа
   const raid = useMemo(() => {
     if (!blueprint || !resolved) return null;
     const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const allowed = METHOD_EXPLOSIVES[raidMethod];
-    const alternatives = raidAlternatives(
-      resolved, targetCell, raidMethod,
-      ids => planSplash(resolved, ids, allowed),
-      (graph, initially, target) => volleyAlternatives(resolved, graph, initially, target, allowed),
-    );
-    const best = bestRaid(alternatives);
-    if (!best) return null;
-    return { best, targetPos, considered: alternatives.length };
+    const graph = buildSpaceGraph(resolved);
+    const sim = bestSimulation(resolved, graph, targetCell, METHOD_EXPLOSIVES[raidMethod]);
+    if (!sim) return null;
+    return { sim, targetPos, value: spacesValue(graph, sim.openedIds, resolved) };
   }, [blueprint, resolved, raidMethod]);
 
-  const alt = raid?.best ?? null;
-  const activePath = alt?.path ?? null;
+  const sim = raid?.sim ?? null;
 
   const raidView = useMemo<RaidView | null>(() => {
-    if (!raidOn || !raid || !activePath || !resolved) return null;
-    const view: RaidView = { ids: activePath.ids, line: raidPolyline(resolved, activePath, raid.targetPos) };
-    if (!showImpacts || !alt) return view;
-    return { ...view, impacts: alt.shots.map(s => ({ point: s.point, count: s.count })) };
-  }, [raidOn, raid, alt, activePath, resolved, showImpacts]);
+    if (!raidOn || !raid || !sim) return null;
+    const line: [number, number, number][] = [
+      ...sim.stages.map(st => st.shot.point),
+      [raid.targetPos[0], raid.targetPos[1] + 0.8, raid.targetPos[2]],
+    ];
+    const view: RaidView = { ids: sim.broken, line, stages: sim.stages.map(st => ({ ids: st.broken })) };
+    if (!showImpacts) return view;
+    return { ...view, impacts: sim.stages.map(st => ({ point: st.shot.point, count: st.shot.count })) };
+  }, [raidOn, raid, sim, showImpacts]);
 
-  const stepName = (st: RaidStep) => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`;
-  const describeSteps = (steps: RaidStep[]) => (steps.length === 0 ? 'свободный проход' : steps.map(stepName).join(' → '));
-  const describeAlt = (a: { path: { steps: RaidStep[] }; volley?: { count: number; explosive: string; broken: string[] } }) => {
-    if (!a.volley) return describeSteps(a.path.steps);
-    const n = a.volley.broken.length;
-    const head = `Залп в угол/шов: ${a.path.steps.slice(0, n).map(stepName).join(' + ')}`;
-    const rest = a.path.steps.slice(n);
-    return rest.length ? `${head} → ${describeSteps(rest)}` : head;
+  const elementName = (id: string) => {
+    const el = resolved?.elements.find(e => e.id === id);
+    if (el) return `${raidLabel(el.kind)} (${GRADE_LABELS[el.grade] ?? el.grade})`;
+    const d = resolved?.deployables.find(x => x.id === id);
+    return d ? (KIND_LABELS[d.kind] ?? d.kind) : id;
   };
   const describeUnits = (units: Partial<Record<string, number>>) =>
     Object.entries(units).filter(([, n]) => (n ?? 0) > 0)
@@ -247,7 +241,7 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {resolved && raid && (
+          {resolved && raid && sim && (
             <section className="raid-panel">
               <label className="bp__toggle raid-panel__toggle">
                 <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -271,63 +265,36 @@ const BlueprintSection: React.FC = () => {
                   </div>
 
                   <div className="raid-panel__best">
-                    <div className="raid-panel__best-title">{describeAlt(alt!)}</div>
                     <div className="raid-panel__best-line">
-                      <b>{formatNum(alt!.sulfur)}</b> серы{alt!.units && Object.keys(alt!.units).length ? <> · {describeUnits(alt!.units)}</> : null}
+                      <b>{formatNum(sim!.sulfur)}</b> серы · {describeUnits(sim!.units)}
                     </div>
                     <div className="raid-panel__best-line">
-                      открывает {alt!.opened} {alt!.opened === 1 ? 'полость' : alt!.opened < 5 ? 'полости' : 'полостей'} · ценность {alt!.value}
-                      <span className="raid-panel__sub"> · лучший из {raid.considered} вариантов</span>
+                      открывает {sim!.openedIds.length} {sim!.openedIds.length === 1 ? 'полость' : sim!.openedIds.length < 5 ? 'полости' : 'полостей'} · ценность {raid.value} · этапов {sim!.stages.length}
                     </div>
                   </div>
 
-                  {activePath && (
-                    activePath.steps.length === 0 ? (
-                      <p className="raid-panel__note">Внутрь можно попасть без взрывчатки: есть свободный проход.</p>
-                    ) : (
-                      <table className="raid-panel__table">
-                        <thead>
-                          <tr><th>№</th><th>Что ломаем</th><th>Чем</th><th>Сера</th></tr>
-                        </thead>
-                        <tbody>
-                          {activePath.steps.map((st: RaidStep, i: number) => (
-                            <tr key={st.id}>
-                              <td className="raid-panel__n">{i + 1}</td>
-                              <td>
-                                {raidLabel(st.kind)}
-                                {st.grade ? <span className="bp__counts-grade"> · {GRADE_LABELS[st.grade] ?? st.grade}</span> : null}
-                              </td>
-                              <td>{st.breakdown.length ? st.breakdown.map(b => `${EXPLOSIVE_SHORT_LABELS[b.explosive]} ×${b.count}`).join(' + ') : 'инструмент'}</td>
-                              <td className="bp__counts-n">{formatNum(st.sulfur)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr><td colSpan={3}>Итого со сплешем</td><td className="bp__counts-n">{formatNum(alt!.sulfur)}</td></tr>
-                        </tfoot>
-                      </table>
-                    )
-                  )}
+                  <ol className="raid-panel__stages">
+                    {sim!.stages.map((st, i) => (
+                      <li key={i} className="raid-panel__stage">
+                        <div className="raid-panel__stage-head">
+                          <span className="raid-panel__n">{i + 1}</span>
+                          {EXPLOSIVES[st.shot.explosive].label} ×{st.shot.count} · {formatNum(st.sulfur)} серы
+                        </div>
+                        <div className="raid-panel__stage-body">
+                          {st.broken.length
+                            ? <>разрушено: {st.broken.map(elementName).join(', ')}</>
+                            : <>ничего не разрушено, урон накоплен: {Object.entries(st.shot.damage).map(([id, v]) => `${elementName(id)} ${Math.round((v as number) * st.shot.count)}`).join(', ')}</>}
+                          {st.opened.length ? <> · открыто: {st.opened.length}</> : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <label className="bp__toggle">
+                    <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
+                    Показать точки удара
+                  </label>
 
-                  {alt && alt.shots.length > 0 && (
-                    <div className="raid-panel__splash">
-                      <div className="raid-panel__splash-title">Куда стрелять</div>
-                      <ul className="raid-panel__shots">
-                        {alt.shots.map((sh, i) => (
-                          <li key={i}>
-                            {EXPLOSIVES[sh.explosive].label} ×{sh.count} в точку {i + 1}:{' '}
-                            {Object.entries(sh.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v as number)}`).join(', ')}
-                          </li>
-                        ))}
-                      </ul>
-                      <label className="bp__toggle">
-                        <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
-                        Показать точки удара
-                      </label>
-                    </div>
-                  )}
-
-                  {activePath && activePath.steps.length > 0 && (
+                  {sim && sim.stages.length > 0 && (
                     <div className="raid-panel__actions">
                       <button type="button" className="bp__upload-btn" onClick={() => setRaidPlay(n => n + 1)}>Воспроизвести</button>
                       <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>

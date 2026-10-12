@@ -458,7 +458,10 @@ export function bestRaid(alternatives: RaidAlternative[]): RaidAlternative | nul
  * Самый дешёвый по штукам путь до target из любого пространства starts, где элементы из free уже
  * сломаны (проход через них бесплатный и шага не даёт). null — недостижимо.
  */
-export function cheapestFrom(graph: SpaceGraph, starts: Set<string>, free: Set<string>, target: string, method: RaidMethod): RaidPath | null {
+export function cheapestFrom(
+  graph: SpaceGraph, starts: Set<string>, free: Set<string>, target: string, method: RaidMethod,
+  stepSulfur: (step: RaidStep) => number = step => step.sulfur,
+): RaidPath | null {
   if (starts.has(target)) return { steps: [], sulfur: 0, ids: [], cells: [target], points: [graph.nodes.get(target)!.position] };
   const dist = new Map<string, number>();
   const prev = new Map<string, Hop & { from: string }>();
@@ -473,7 +476,7 @@ export function cheapestFrom(graph: SpaceGraph, starts: Set<string>, free: Set<s
       if (e.to === OUTSIDE || done.has(e.to)) continue;
       const raw = blockerStep(e.blocker, method);
       const step = raw && !free.has(raw.id) ? raw : null;
-      const nd = dist.get(cur)! + (step?.sulfur ?? 0);
+      const nd = dist.get(cur)! + (step ? stepSulfur(step) : 0);
       if (nd < (dist.get(e.to) ?? Infinity)) { dist.set(e.to, nd); prev.set(e.to, { from: cur, to: e.to, step, mid: e.mid }); }
     }
   }

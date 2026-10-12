@@ -527,3 +527,116 @@ export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initia
   }
   return out;
 }
+
+/** Этап симуляции: залп в одну точку и всё, что после него погибло. */
+export interface RaidStage {
+  shot: SplashShot;
+  broken: string[];
+  /** Пространства, открывшиеся после этапа. */
+  opened: string[];
+  sulfur: number;
+}
+
+export interface RaidSimulation {
+  stages: RaidStage[];
+  reached: boolean;
+  sulfur: number;
+  units: Partial<Record<Explosive, number>>;
+  /** Все разрушенные элементы в порядке этапов. */
+  broken: string[];
+  openedIds: string[];
+}
+
+export type Strategy = 'value' | 'progress';
+
+/**
+ * Симуляция рейда (SPEC §9.4): на каждом этапе выбирается залп «точка на границе доступной
+ * области, взрывчатка, n единиц» — одна единица или столько, чтобы погиб первый элемент с учётом
+ * накопленного урона. Погибшие убираются все сразу, доступная область пересчитывается, и так до
+ * пространства шкафа. Стратегия value: ценность открытого на серу, затем приближение к шкафу;
+ * progress: приближение к шкафу (снижение остаточной цены с учётом накопленного урона) на серу,
+ * затем ценность. Итог выбирается по ценности открытого на серу среди стратегий.
+ */
+export function simulateRaid(resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 24): RaidSimulation {
+  const targets = allSplashTargets(resolved);
+  const byId = new Map(targets.map(t => [t.id, t]));
+  const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
+  const broken = new Set<string>();
+  const initially = reachableSpaces(graph, new Set());
+  let reachable = initially;
+  const stages: RaidStage[] = [];
+  const units: Partial<Record<Explosive, number>> = {};
+  let sulfur = 0;
+  /** Остаточная цена элемента по штукам с учётом накопленного урона, лучшей из разрешённых взрывчаток. */
+  const itemCost = (id: string, hp: Map<string, number>) => {
+    const t = byId.get(id);
+    if (!t) return 0;
+    const left = hp.get(id) ?? t.hp;
+    if (left <= 1e-6) return 0;
+    return Math.min(...allowed.map(ex => Math.ceil(left / t.hit[ex] - 1e-9) * EXPLOSIVES[ex].sulfur));
+  };
+  const remainingCost = (r: Set<string>, b: Set<string>, hp: Map<string, number>) =>
+    r.has(targetCell) ? 0 : cheapestFrom(graph, r, b, targetCell, 'optimal', step => itemCost(step.id, hp))?.sulfur ?? Infinity;
+  let remaining = remainingCost(reachable, broken, hpLeft);
+
+  while (!reachable.has(targetCell) && stages.length < maxStages) {
+    const occ = liveOccluders(resolved, broken, byId);
+    const front = frontier(graph, reachable).filter(f => !broken.has(f.id));
+    type Cand = { shot: SplashShot; brokenNow: string[]; opened: string[]; sulfur: number; valueGain: number; progress: number };
+    const bestRef: { c: Cand | null } = { c: null };
+    const live = targets.filter(t => !broken.has(t.id));
+    const consider = (shot: SplashShot) => {
+      const hp2 = new Map(hpLeft);
+      for (const [id, dmg] of Object.entries(shot.damage)) hp2.set(id, Math.max(0, (hp2.get(id) ?? 0) - dmg * shot.count));
+      const brokenNow = Object.keys(shot.damage).filter(id => (hp2.get(id) ?? 0) <= 1e-6).sort();
+      const b2 = new Set([...broken, ...brokenNow]);
+      const r2 = brokenNow.length ? reachableSpaces(graph, b2) : reachable;
+      const opened = [...r2].filter(id => !reachable.has(id));
+      const cost = shot.count * EXPLOSIVES[shot.explosive].sulfur;
+      const valueGain = spacesValue(graph, opened, resolved);
+      const rem = remainingCost(r2, b2, hp2);
+      const progress = Number.isFinite(rem) ? remaining - rem : -Infinity;
+      const cand: Cand = { shot, brokenNow, opened, sulfur: cost, valueGain, progress };
+      const key = (x: Cand) => strategy === 'value'
+        ? [x.valueGain / x.sulfur, x.progress / x.sulfur, -x.sulfur, x.brokenNow.length]
+        : [x.progress / x.sulfur, x.valueGain / x.sulfur, -x.sulfur, x.brokenNow.length];
+      const better = (a: Cand, b: Cand) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] > kb[i]; return false; };
+      if (!bestRef.c || better(cand, bestRef.c)) bestRef.c = cand;
+    };
+    for (const f of front) {
+      const owner = byId.get(f.id);
+      if (!owner || broken.has(owner.id)) continue;
+      for (const c of owner.candidates) {
+        const point = visibleImpact(c, f.from, owner, occ);
+        if (!point) continue;
+        for (const ex of allowed) {
+          const damage = damageMap(ex, point, owner, live, occ);
+          let nKill = Infinity;
+          for (const [id, dmg] of Object.entries(damage)) nKill = Math.min(nKill, Math.ceil((hpLeft.get(id) ?? 0) / dmg - 1e-9));
+          if (!Number.isFinite(nKill) || nKill <= 0) continue;
+          consider({ point, explosive: ex, count: nKill, damage });
+          if (nKill > 1) consider({ point, explosive: ex, count: 1, damage });
+        }
+      }
+    }
+    const b = bestRef.c;
+    if (!b || (!Number.isFinite(b.progress) && b.valueGain <= 0)) break;
+    for (const [id, dmg] of Object.entries(b.shot.damage)) hpLeft.set(id, Math.max(0, (hpLeft.get(id) ?? 0) - (dmg as number) * b.shot.count));
+    for (const id of b.brokenNow) broken.add(id);
+    reachable = reachableSpaces(graph, broken);
+    remaining = remainingCost(reachable, broken, hpLeft);
+    units[b.shot.explosive] = (units[b.shot.explosive] ?? 0) + b.shot.count;
+    sulfur += b.sulfur;
+    stages.push({ shot: b.shot, broken: b.brokenNow, opened: b.opened, sulfur: b.sulfur });
+  }
+  const openedIds = [...reachable].filter(id => !initially.has(id));
+  return { stages, reached: reachable.has(targetCell), sulfur, units, broken: stages.flatMap(s => s.broken), openedIds };
+}
+
+/** Лучшая симуляция среди стратегий: ценность открытого на серу, при равенстве дешевле. */
+export function bestSimulation(resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[]): RaidSimulation | null {
+  const runs = (['value', 'progress'] as Strategy[]).map(st => simulateRaid(resolved, graph, targetCell, allowed, st)).filter(r => r.reached);
+  if (runs.length === 0) return null;
+  const score = (r: RaidSimulation) => (r.sulfur <= 0 ? Infinity : spacesValue(graph, r.openedIds, resolved) / r.sulfur);
+  return runs.sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur)[0];
+}

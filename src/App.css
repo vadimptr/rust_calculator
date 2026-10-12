@@ -1438,3 +1438,32 @@
 .raid-panel__best-line b {
   color: var(--text-primary);
 }
+
+.raid-panel__stages {
+  list-style: none;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.raid-panel__stage {
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.raid-panel__stage-head {
+  color: var(--text-primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.raid-panel__stage-body {
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  margin-top: 0.15rem;
+}

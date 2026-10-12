@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { EXPLOSIVES, falloff, planSplash, segmentBlocked, splashTargets, unitDamage, volleyAlternatives } from './splash.ts';
+import { EXPLOSIVES, bestSimulation, falloff, planSplash, segmentBlocked, splashTargets, unitDamage, volleyAlternatives } from './splash.ts';
 import { buildSpaceGraph, bestRaid, raidAlternatives, reachableSpaces } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
@@ -115,4 +115,34 @@ test('unitDamage: explosive ammo reaches only touching blocks', () => {
   const [w] = splashTargets(resolved, ['w1']);
   assert.ok(unitDamage('explosiveAmmo', [w.center[0] + 0.05, w.center[1], w.center[2]], w) > 2);
   assert.equal(unitDamage('explosiveAmmo', [w.center[0] + 1, w.center[1], w.center[2]], w), 0);
+});
+
+test('simulation: 2x1 optimal goes through the two doors in two stages, each door removed when it dies', () => {
+  const { resolved } = load('starter-2x1');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f1', ['rocket', 'c4', 'explosiveAmmo'])!;
+  assert.ok(sim.reached);
+  assert.equal(sim.sulfur, 3150);
+  assert.deepEqual(sim.stages.map(s => s.broken), [['door_outer'], ['door_inner']]);
+});
+
+test('simulation: rockets into the 2x2 roof corner remove three ceilings in one stage', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f1', ['rocket'])!;
+  assert.ok(sim.reached);
+  assert.equal(sim.stages.length, 1);
+  assert.ok(['c1', 'c2', 'c3'].every(id => sim.stages[0].broken.includes(id)));
+  assert.equal(sim.units.rocket, 4);
+  assert.ok(!sim.broken.some(id => ['door_tc', 'door_hall', 'door_jump'].includes(id)));
+});
+
+test('simulation: damage accumulates across stages (C4 then explosive ammo on the same wall)', () => {
+  const { resolved } = load('sealed-triangle-tc');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f1', ['rocket', 'c4', 'explosiveAmmo'])!;
+  assert.ok(sim.reached);
+  assert.ok(sim.sulfur < 4400, `sulfur=${sim.sulfur}`);
+  assert.ok(sim.stages.length >= 2);
+  assert.deepEqual(sim.stages[0].broken, []); // первый C4 ничего не ломает, урон копится
 });

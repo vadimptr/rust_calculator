@@ -9,8 +9,10 @@ export interface RaidView {
   ids: string[];
   /** Точки линии пути. */
   line: [number, number, number][];
-  /** Точки удара ракет со сплешем: где и сколько. */
+  /** Точки удара: где и сколько. */
   impacts?: { point: [number, number, number]; count: number }[];
+  /** Этапы: элементы одного этапа исчезают вместе; номер на элементе — номер этапа. */
+  stages?: { ids: string[] }[];
 }
 
 const HIGHLIGHT = new THREE.MeshStandardMaterial({ color: 0xd23c1e, emissive: 0x6b1407, emissiveIntensity: 0.5, roughness: 0.7, side: THREE.DoubleSide });
@@ -83,8 +85,9 @@ function numberSprite(n: number | string, fill = '#cf4820'): THREE.Sprite {
 export class RaidOverlay {
   private group = new THREE.Group();
   private ids: string[] = [];
+  private stages: string[][] = [];
   private play: { start: number } | null = null;
-  private static STEP_MS = 900;
+  private static STEP_MS = 1300;
 
   constructor(private content: THREE.Group, scene: THREE.Scene) {
     scene.add(this.group);
@@ -95,19 +98,22 @@ export class RaidOverlay {
     this.clear();
     if (!view) return;
     this.ids = view.ids;
+    this.stages = view.stages?.length ? view.stages.map(st => st.ids) : view.ids.map(id => [id]);
     const set = new Set(view.ids);
     for (const child of this.content.children) {
       if (set.has(child.userData.id)) highlightObject(child);
       else dimObject(child);
     }
-    view.ids.forEach((id, i) => {
-      const o = topLevel(this.content, id);
-      if (!o) return;
-      const box = new THREE.Box3().setFromObject(o);
-      const c = box.getCenter(new THREE.Vector3());
-      const s = numberSprite(i + 1);
-      s.position.set(c.x, box.max.y + 0.6, c.z);
-      this.group.add(s);
+    this.stages.forEach((ids, i) => {
+      for (const id of ids) {
+        const o = topLevel(this.content, id);
+        if (!o) continue;
+        const box = new THREE.Box3().setFromObject(o);
+        const c = box.getCenter(new THREE.Vector3());
+        const s = numberSprite(i + 1);
+        s.position.set(c.x, box.max.y + 0.6, c.z);
+        this.group.add(s);
+      }
     });
     if (view.line.length >= 2) {
       const geo = new THREE.BufferGeometry().setFromPoints(view.line.map(p => new THREE.Vector3(...p)));
@@ -144,6 +150,7 @@ export class RaidOverlay {
       if (o instanceof THREE.Sprite) { o.material.map?.dispose(); o.material.dispose(); }
     }
     this.ids = [];
+    this.stages = [];
   }
 
   /** Начать воспроизведение: элементы пути исчезают по очереди. */
@@ -161,20 +168,22 @@ export class RaidOverlay {
     }
   }
 
-  /** Шаг анимации; вызывать каждый кадр. */
+  /** Шаг анимации; вызывать каждый кадр. Элементы одного этапа мигают и исчезают вместе. */
   tick(now: number): void {
     if (!this.play) return;
     const idx = Math.floor((now - this.play.start) / RaidOverlay.STEP_MS);
-    this.ids.forEach((id, i) => {
-      const o = topLevel(this.content, id);
-      if (!o) return;
-      if (i < idx) { o.visible = false; return; }
-      if (i === idx) {
-        const pulse = 0.5 + 0.5 * Math.sin((now / 90) % (Math.PI * 2));
-        o.traverse(n => { if (n instanceof THREE.Mesh) (n.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + pulse * 1.2; });
+    this.stages.forEach((ids, i) => {
+      for (const id of ids) {
+        const o = topLevel(this.content, id);
+        if (!o) continue;
+        if (i < idx) { o.visible = false; continue; }
+        if (i === idx) {
+          const pulse = 0.5 + 0.5 * Math.sin((now / 90) % (Math.PI * 2));
+          o.traverse(n => { if (n instanceof THREE.Mesh) (n.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + pulse * 1.2; });
+        }
       }
     });
-    if (idx >= this.ids.length) this.play = null;
+    if (idx >= this.stages.length) this.play = null;
   }
 
   get playing(): boolean { return this.play !== null; }
