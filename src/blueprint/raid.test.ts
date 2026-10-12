@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { buildSpaceGraph, cheapestRaidPath, cheapestRaidPaths, raidAlternatives, reachableSpaces, stepCost } from './raid.ts';
+import { buildSpaceGraph, cheapestRaidPath, cheapestRaidPaths, raidAlternatives, reachableSpaces, spacesValue, stepCost } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -103,23 +103,26 @@ test('unknown target cell returns null', () => {
   assert.equal(cheapestRaidPath(resolved, 'nope', 'c4'), null);
 });
 
-test('opened spaces: doors path opens the airlock and the TC room, a wall opens only the TC room', () => {
+test('opened spaces: doors open the airlock and the TC room, a wall opens only the TC room', () => {
   const { resolved } = load('starter-2x1');
   const g = buildSpaceGraph(resolved);
   const initially = reachableSpaces(g, new Set());
   assert.ok(initially.has('c1') && initially.has('c2')); // крыша доступна
   assert.ok(!initially.has('f1') && !initially.has('f2'));
+  const opened = (ids: string[]) => [...reachableSpaces(g, new Set(ids))].filter(id => !initially.has(id)).sort();
+  assert.deepEqual(opened(['door_outer', 'door_inner']), ['f1', 'f2']);
+  assert.deepEqual(opened(['w1']), ['f1']);
   const alts = raidAlternatives(resolved, 'f1', 'optimal', () => null);
   const doors = alts.find(a => a.path.ids.join() === 'door_outer,door_inner')!;
   assert.equal(doors.opened, 2);
-  const wall = alts.find(a => a.path.ids.join() === 'w1')!;
-  assert.equal(wall.opened, 1);
+  assert.equal(doors.value, 3.5); // шкаф 3 + аирлок 0.5
 });
 
-test('opened spaces: 2x2 roof door path opens the vestibule, the jump-up cell and the TC room', () => {
+test('opened spaces: 2x2 roof door + inner wall opens the vestibule, the jump-up cell and the TC room', () => {
   const { resolved } = load('house-2x2');
-  const alts = raidAlternatives(resolved, 'f1', 'optimal', () => null);
-  const viaRoof = alts.find(a => a.path.cells.includes('^f4'))!;
-  assert.ok(viaRoof.openedIds.includes('^f4') && viaRoof.openedIds.includes('f4') && viaRoof.openedIds.includes('f1'));
-  assert.equal(viaRoof.opened, 3);
+  const g = buildSpaceGraph(resolved);
+  const initially = reachableSpaces(g, new Set());
+  const opened = [...reachableSpaces(g, new Set(['door_roof', 'w3']))].filter(id => !initially.has(id)).sort();
+  assert.deepEqual(opened, ['^f4', 'f1', 'f4']);
+  assert.equal(spacesValue(g, opened, resolved), 3.5); // шкаф 3, комната без пола 0.25, запрыг 0.25
 });

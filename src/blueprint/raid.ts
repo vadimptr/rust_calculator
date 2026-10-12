@@ -336,6 +336,37 @@ export interface RaidAlternative {
   /** Сколько замкнутых пространств открывается с улицы после разрушения элементов пути. */
   opened: number;
   openedIds: string[];
+  /** Суммарная ценность открытых пространств (§9.3): шкаф дорого, запрыги и тамбуры дёшево. */
+  value: number;
+  /** Залп в одну точку (сплеш-вариант): куда, сколько ракет и что он ломает разом. */
+  volley?: { point: [number, number, number]; count: number; broken: string[] };
+}
+
+/**
+ * Ценность пространства: комната со шкафом — 3, транзитные (запрыг с полом на половинной
+ * высоте, комната без пола, аирлок из двух дверей без другого содержимого) — 0.25, остальные — 1.
+ */
+export function spaceValue(graph: SpaceGraph, node: SpaceNode, resolved: Resolved): number {
+  const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
+  if (tc && tc.parent === node.cell.id && !node.virtual) return 3;
+  if (node.virtual) return 0.25;
+  // запрыг: над ячейкой пол на половинной высоте
+  const hasHalfFloor = resolved.elements.some(e => KINDS[e.kind].category === 'cell' && !Number.isInteger(e.level)
+    && Math.abs(e.position[0] - node.position[0]) < 1.6 && Math.abs(e.position[2] - node.position[2]) < 1.6
+    && e.position[1] > node.position[1] && e.position[1] < node.position[1] + 3);
+  if (hasHalfFloor) return 0.25;
+  // аирлок: ровно две двери на рёбрах и никаких других проходов
+  const edges = graph.adj.get(node.id) ?? [];
+  const doors = edges.filter(e => e.blocker.door).length;
+  const openPasses = edges.filter(e => e.to !== OUTSIDE && blockerStep(e.blocker, 'c4') === null && e.mid[1] <= node.position[1] + 1e-6).length;
+  if (doors >= 2 && openPasses === 0) return 0.5;
+  return 1;
+}
+
+export function spacesValue(graph: SpaceGraph, ids: Iterable<string>, resolved: Resolved): number {
+  let v = 0;
+  for (const id of ids) { const n = graph.nodes.get(id); if (n) v += spaceValue(graph, n, resolved); }
+  return Math.round(v * 100) / 100;
 }
 
 /** Пространства, достижимые с улицы без разрушений, если элементы из broken уже сломаны. */
@@ -367,6 +398,7 @@ export function reachableSpaces(graph: SpaceGraph, broken: Set<string>): Set<str
 export function raidAlternatives(
   resolved: Resolved, targetCell: string, method: RaidMethod,
   planSplash: (ids: string[]) => { rockets: number } | null, k = 8,
+  volleys?: (graph: SpaceGraph, initially: Set<string>, targetCell: string) => RaidAlternative[],
 ): RaidAlternative[] {
   const graph = buildSpaceGraph(resolved);
   const paths = cheapestRaidPaths(resolved, targetCell, method, k, graph);
@@ -378,9 +410,86 @@ export function raidAlternatives(
     if (seen.has(key)) continue;
     seen.add(key);
     const openedIds = [...reachableSpaces(graph, new Set(path.ids))].filter(id => !initially.has(id));
-    const base = { path, opened: openedIds.length, openedIds };
+    const base = { path, opened: openedIds.length, openedIds, value: spacesValue(graph, openedIds, resolved) };
     out.push(method === 'rocket' && path.ids.length > 0 ? { ...base, rockets: planSplash(path.ids)?.rockets } : base);
   }
-  out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || a.path.steps.length - b.path.steps.length);
-  return out;
+  if (method === 'rocket' && volleys) {
+    for (const v of volleys(graph, initially, targetCell)) {
+      const key = [...v.path.ids].sort().join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(v);
+    }
+  }
+  out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || b.value - a.value || a.path.steps.length - b.path.steps.length);
+  // убрать варианты, которые дороже и при этом не ценнее другого
+  const kept = out.filter((a, i) => !out.some((b, j) => j !== i
+    && (b.rockets ?? b.path.sulfur) <= (a.rockets ?? a.path.sulfur) && b.value >= a.value
+    && ((b.rockets ?? b.path.sulfur) < (a.rockets ?? a.path.sulfur) || b.value > a.value || j < i)));
+  return kept.slice(0, 8);
+}
+
+/**
+ * Самый дешёвый по штукам путь до target из любого пространства starts, где элементы из free уже
+ * сломаны (проход через них бесплатный и шага не даёт). null — недостижимо.
+ */
+export function cheapestFrom(graph: SpaceGraph, starts: Set<string>, free: Set<string>, target: string, method: RaidMethod): RaidPath | null {
+  if (starts.has(target)) return { steps: [], sulfur: 0, ids: [], cells: [target], points: [graph.nodes.get(target)!.position] };
+  const dist = new Map<string, number>();
+  const prev = new Map<string, Hop & { from: string }>();
+  for (const s of starts) dist.set(s, 0);
+  const done = new Set<string>();
+  for (;;) {
+    let cur: string | null = null;
+    for (const [id, d] of dist) if (!done.has(id) && (cur === null || d < dist.get(cur)!)) cur = id;
+    if (cur === null || cur === target) break;
+    done.add(cur);
+    for (const e of graph.adj.get(cur) ?? []) {
+      if (e.to === OUTSIDE || done.has(e.to)) continue;
+      const raw = blockerStep(e.blocker, method);
+      const step = raw && !free.has(raw.id) ? raw : null;
+      const nd = dist.get(cur)! + (step?.sulfur ?? 0);
+      if (nd < (dist.get(e.to) ?? Infinity)) { dist.set(e.to, nd); prev.set(e.to, { from: cur, to: e.to, step, mid: e.mid }); }
+    }
+  }
+  if (!dist.has(target)) return null;
+  const hops: Hop[] = [];
+  for (let at = target; !starts.has(at); ) {
+    const p = prev.get(at)!;
+    hops.unshift({ to: p.to, step: p.step, mid: p.mid });
+    at = p.from;
+  }
+  const steps = hops.flatMap(h => (h.step ? [h.step] : []));
+  const nodes = hops.map(h => h.to);
+  return { steps, sulfur: dist.get(target)!, ids: steps.map(s => s.id), cells: nodes, points: nodes.map(id => graph.nodes.get(id)!.position), entry: hops[0]?.mid };
+}
+
+/** Элементы на границе доступной области: что рейдер может атаковать прямо сейчас и с какой стороны. */
+export interface FrontierItem {
+  /** id ломаемого элемента (стена, пол, дверь, вставка). */
+  id: string;
+  /** Точка обзора рейдера: середина доступного пространства (на высоте 1.5 м) или точка на улице. */
+  from: [number, number, number];
+  /** Точка перехода (середина ребра или центр пола). */
+  mid: [number, number, number];
+}
+
+export function frontier(graph: SpaceGraph, reachable: Set<string>): FrontierItem[] {
+  const out = new Map<string, FrontierItem>();
+  const add = (id: string, from: [number, number, number], mid: [number, number, number]) => { if (!out.has(id)) out.set(id, { id, from, mid }); };
+  const eye = (p: [number, number, number]): [number, number, number] => [p[0], p[1] + 1.5, p[2]];
+  for (const [nodeId, list] of graph.adj) {
+    const node = graph.nodes.get(nodeId)!;
+    for (const e of list) {
+      const step = blockerStep(e.blocker, 'c4');
+      if (!step) continue;
+      if (reachable.has(nodeId) && !reachable.has(e.to)) add(step.id, eye(node.position), e.mid);
+      if (e.to === OUTSIDE && !reachable.has(nodeId)) {
+        // с улицы: точка снаружи — продолжение от узла через середину ребра
+        const away: [number, number, number] = [e.mid[0] * 2 - node.position[0], node.position[1], e.mid[2] * 2 - node.position[2]];
+        add(step.id, eye(away), e.mid);
+      }
+    }
+  }
+  return [...out.values()];
 }

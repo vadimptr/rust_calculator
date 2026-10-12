@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { ROCKET, falloff, planRocketSplash, segmentBlocked, splashTargets } from './splash.ts';
+import { ROCKET, falloff, planRocketSplash, segmentBlocked, splashTargets, volleyAlternatives } from './splash.ts';
+import { buildSpaceGraph, raidAlternatives, reachableSpaces } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -78,4 +79,27 @@ test('2x2 roof entry: closed doors and floors block splash, four double doors co
   const plan = planRocketSplash(resolved, ['door_roof', 'door_jump', 'door_hall', 'door_tc']);
   assert.equal(plan.rockets, 8);
   assert.equal(plan.rocketsPerItem, 8);
+});
+
+test('volleys: a roof seam shot breaks several ceilings at once and opens several spaces', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  const volleys = volleyAlternatives(resolved, g, reachableSpaces(g, new Set()), 'f1');
+  const multiCeiling = volleys.filter(v => v.volley!.broken.filter(id => id.startsWith('c')).length >= 2);
+  assert.ok(multiCeiling.length > 0, 'expected a volley breaking two or more ceilings');
+  // ни один залп не ломает двери первого этажа сквозь крышу
+  for (const v of volleys) {
+    const fromRoof = v.volley!.point[1] > 2.9;
+    if (fromRoof) assert.ok(!v.volley!.broken.includes('door_tc') && !v.volley!.broken.includes('door_hall'), `roof volley broke ground doors: ${v.volley!.broken.join(',')}`);
+  }
+});
+
+test('alternatives for rockets are deduped, non-dominated and carry a value', () => {
+  const { resolved } = load('house-2x2');
+  const alts = raidAlternatives(resolved, 'f1', 'rocket', ids => planRocketSplash(resolved, ids), 8,
+    (g, i, t) => volleyAlternatives(resolved, g, i, t));
+  assert.ok(alts.length >= 2 && alts.length <= 8);
+  assert.ok(alts.every(a => a.value >= 3)); // шкаф всегда достигнут
+  assert.ok(alts.some(a => a.volley));
+  for (let i = 1; i < alts.length; i++) assert.ok(alts[i].rockets! >= alts[i - 1].rockets!);
 });

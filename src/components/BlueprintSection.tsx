@@ -7,7 +7,7 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import { raidAlternatives, raidPolyline } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { planRocketSplash } from '../blueprint/splash.ts';
+import { planRocketSplash, volleyAlternatives } from '../blueprint/splash.ts';
 import type { RaidStep } from '../blueprint/raid.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
@@ -119,14 +119,17 @@ const BlueprintSection: React.FC = () => {
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const found = raidAlternatives(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
+    const found = raidAlternatives(
+      resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids), 8,
+      (graph, initially, target) => volleyAlternatives(resolved, graph, initially, target),
+    );
     if (found.length === 0) return null;
     const cost = (a: typeof found[number]) => (a.rockets !== undefined ? a.rockets * 1400 : a.path.sulfur);
     const alternatives = altSort === 'opened'
-      ? [...found].sort((a, b) => b.opened - a.opened || cost(a) - cost(b))
+      ? [...found].sort((a, b) => b.value - a.value || cost(a) - cost(b))
       : found;
-    // лучший по полостям: больше всего открывает, при равенстве дешевле
-    const bestOpened = [...found].sort((a, b) => b.opened - a.opened || cost(a) - cost(b))[0];
+    // лучший по полостям: наибольшая ценность открытого, при равенстве дешевле
+    const bestOpened = [...found].sort((a, b) => b.value - a.value || cost(a) - cost(b))[0];
     return { alternatives, targetPos, bestOpened };
   }, [blueprint, resolved, raidMethod, altSort]);
 
@@ -134,22 +137,31 @@ const BlueprintSection: React.FC = () => {
   const activePath = alt?.path ?? null;
 
   const splash = useMemo(() => {
-    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0) return null;
+    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0 || alt?.volley) return null;
     return planRocketSplash(resolved, activePath.ids);
-  }, [resolved, activePath, raidMethod]);
+  }, [resolved, activePath, raidMethod, alt]);
 
   const raidView = useMemo<RaidView | null>(() => {
     if (!raidOn || !raid || !activePath || !resolved) return null;
     const view: RaidView = { ids: activePath.ids, line: raidPolyline(resolved, activePath, raid.targetPos) };
-    if (!splash || !showImpacts) return view;
+    if (!showImpacts) return view;
+    if (alt?.volley) return { ...view, impacts: [{ point: alt.volley.point, count: alt.volley.count }] };
+    if (!splash) return view;
     return { ...view, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
-  }, [raidOn, raid, activePath, resolved, splash, showImpacts]);
+  }, [raidOn, raid, alt, activePath, resolved, splash, showImpacts]);
 
   const chooseAlt = (i: number) => { setAltIndex(i); setRaidPlay(0); };
   /** Бейдж имеет смысл, только если варианты отличаются числом полостей. */
-  const found = (r: { alternatives: { opened: number }[] }) => new Set(r.alternatives.map(a => a.opened)).size > 1;
-  const describeSteps = (steps: RaidStep[]) =>
-    steps.length === 0 ? 'свободный проход' : steps.map(st => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`).join(' → ');
+  const found = (r: { alternatives: { value: number }[] }) => new Set(r.alternatives.map(a => a.value)).size > 1;
+  const stepName = (st: RaidStep) => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`;
+  const describeSteps = (steps: RaidStep[]) => (steps.length === 0 ? 'свободный проход' : steps.map(stepName).join(' → '));
+  const describeAlt = (a: { path: { steps: RaidStep[] }; volley?: { count: number; broken: string[] } }) => {
+    if (!a.volley) return describeSteps(a.path.steps);
+    const n = a.volley.broken.length;
+    const head = `Залп ×${a.volley.count} в шов: ${a.path.steps.slice(0, n).map(stepName).join(' + ')}`;
+    const rest = a.path.steps.slice(n);
+    return rest.length ? `${head} → ${describeSteps(rest)}` : head;
+  };
 
   const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); setAltIndex(0); };
   const errors = issues.filter(i => i.level === 'error');
@@ -275,7 +287,7 @@ const BlueprintSection: React.FC = () => {
                   <div className="raid-panel__sort">
                     <span>Варианты:</span>
                     <div className="bp__presets" role="group" aria-label="Сортировка вариантов">
-                      {([['cost', 'по цене'], ['opened', 'по полостям']] as const).map(([id, label]) => (
+                      {([['cost', 'по цене'], ['opened', 'по ценности']] as const).map(([id, label]) => (
                         <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${altSort === id ? ' raid-tier__btn--active' : ''}`}
                           onClick={() => { setAltSort(id); setAltIndex(0); setRaidPlay(0); }} aria-pressed={altSort === id}>
                           {label}
@@ -288,11 +300,11 @@ const BlueprintSection: React.FC = () => {
                       <label key={i} className={`raid-panel__alt${a === alt ? ' raid-panel__alt--active' : ''}`}>
                         <input type="radio" name="raid-alt" checked={a === alt} onChange={() => chooseAlt(i)} />
                         <span className="raid-panel__alt-text">
-                          <span className="raid-panel__alt-steps">{describeSteps(a.path.steps)}</span>
+                          <span className="raid-panel__alt-steps">{describeAlt(a)}</span>
                           <span className="raid-panel__alt-cost">
                             {a.rockets !== undefined ? <>{a.rockets} ракет · </> : null}
-                            {formatNum(a.path.sulfur)} серы · открывает {a.opened} {a.opened === 1 ? 'полость' : a.opened < 5 ? 'полости' : 'полостей'}
-                            {a === raid.bestOpened && found(raid) ? <span className="raid-panel__badge">больше всего полостей</span> : null}
+                            {formatNum(a.path.sulfur)} серы · открывает {a.opened} {a.opened === 1 ? 'полость' : a.opened < 5 ? 'полости' : 'полостей'} · ценность {a.value}
+                            {a === raid.bestOpened && found(raid) ? <span className="raid-panel__badge">самый выигрышный</span> : null}
                           </span>
                         </span>
                       </label>

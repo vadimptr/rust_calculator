@@ -3,6 +3,8 @@
  * Модель приближённая, константы в одном месте, подлежат замеру в игре.
  */
 import { KINDS, cellVertices, wallHeight } from './catalog.ts';
+import { cheapestFrom, frontier, reachableSpaces, spacesValue, stepCost } from './raid.ts';
+import type { RaidAlternative, RaidStep, SpaceGraph } from './raid.ts';
 import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 export const ROCKET = {
@@ -201,8 +203,9 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
 }
 
-/** Отступ от краёв преграды: отрезок, скользящий вдоль шва, преградой не считается. */
-const MARGIN = 0.05;
+/** Границы преграды включающие: пересечение ровно по краю плиты тоже блокирует (иначе отрезок
+ * «проскальзывает» внутри шва между плитами). Точки удара сдвигаются от шва в сторону рейдера. */
+const MARGIN = -1e-6;
 
 /** Преграды из геометрии: все стены-типы и ячейки. Проёмы без живой двери не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
@@ -221,7 +224,25 @@ export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Oc
   return out;
 }
 
-const NUDGE = 0.1;
+const NUDGE = 0.12;
+
+/**
+ * Точка удара: кандидат на поверхности, сдвинутый на NUDGE к точке обзора рейдера и, если это
+ * край или угол, ещё на NUDGE наружу вдоль поверхности (от центра элемента): взрыв на шве
+ * задевает соседей, но не «проваливается» внутрь шва.
+ */
+export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
+  const d: Vec3 = [eye[0] - c[0], eye[1] - c[1], eye[2] - c[2]];
+  const len = Math.hypot(...d) || 1;
+  const out: Vec3 = [c[0] + (d[0] / len) * NUDGE, c[1] + (d[1] / len) * NUDGE, c[2] + (d[2] / len) * NUDGE];
+  if (center) {
+    // только горизонтально: сдвиг вниз у нижнего угла стены увёл бы точку под пол
+    const v: Vec3 = [c[0] - center[0], 0, c[2] - center[2]];
+    const vl = Math.hypot(...v);
+    if (vl > 1e-6) { out[0] += (v[0] / vl) * NUDGE; out[2] += (v[2] / vl) * NUDGE; }
+  }
+  return out;
+}
 
 /**
  * Жадный план: пока есть живые цели, стреляем в точку с наибольшим полезным уроном
@@ -237,15 +258,14 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
   const alive = () => targets.some(t => (hpLeft.get(t.id) ?? 0) > 1e-6);
   const isAlive = (t: SplashTarget) => (hpLeft.get(t.id) ?? 0) > 1e-6;
 
-  /** Сторона рейдера у цели i вдоль её нормали: к предыдущей цели, иначе прочь от следующей, иначе +нормаль. */
-  const raiderSide = (i: number): 1 | -1 => {
+  /** Точка обзора рейдера у цели i: предыдущая цель; иначе зеркало следующей относительно плоскости цели; иначе +нормаль. */
+  const raiderEye = (i: number): Vec3 => {
     const t = targets[i];
-    const ref = i > 0 ? targets[i - 1].center : targets[i + 1]?.center;
-    if (!ref) return 1;
-    const local = toLocal(t.origin, t.rotation, ref);
-    const along = t.axis === 'x' ? local[0] : local[1];
-    const towards = i > 0 ? 1 : -1;
-    return (along >= 0 ? 1 : -1) * towards as 1 | -1;
+    if (i > 0) return targets[i - 1].center;
+    const next = targets[i + 1]?.center;
+    const local = next ? toLocal(t.origin, t.rotation, next) : ([1, 1.5, 0] as Vec3);
+    if (t.axis === 'x') local[0] = next ? -local[0] : 2; else local[1] = next ? -local[1] : 2;
+    return toWorld(t.origin, t.rotation, local);
   };
 
   while (alive() && rockets < 500) {
@@ -258,9 +278,9 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
     const candidates: { point: Vec3; owner: SplashTarget }[] = [];
     const seen = new Set<string>();
     targets.slice(0, frontier + 1).forEach((t, i) => {
-      const side = raiderSide(i);
+      const eye = raiderEye(i);
       for (const c of t.candidates) {
-        const point = t.axis === 'x' ? toWorld(c, t.rotation, [side * NUDGE, 0, 0]) : ([c[0], c[1] + side * NUDGE, c[2]] as Vec3);
+        const point = nudgeTowards(c, eye, t.center);
         const key = point.map(v => v.toFixed(2)).join('|');
         if (!seen.has(key)) { seen.add(key); candidates.push({ point, owner: t }); }
       }
@@ -295,3 +315,112 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
   return { shots: [...shots.values()], rockets, sulfur: rockets * ROCKET.sulfur, rocketsPerItem, damageTaken };
 }
 
+
+/** Все ломаемые элементы и объекты чертежа как цели сплеша. */
+export function allSplashTargets(resolved: Resolved): SplashTarget[] {
+  const ids = [
+    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
+    ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
+  ];
+  return splashTargets(resolved, ids);
+}
+
+export interface SplashAlternative {
+  /** Куда и сколько ракет. */
+  shot: SplashShot;
+  /** Какие элементы разрушает этот залп. */
+  broken: string[];
+  rockets: number;
+}
+
+/**
+ * Залпы в одну точку на границе доступной области: для каждой точки и числа ракет n
+ * — какие элементы погибнут (ceil(HP / урон) ≤ n). Возвращает варианты, где гибнет
+ * хотя бы один элемент; одинаковые наборы разрушений не повторяются.
+ */
+export function splashVolleys(
+  resolved: Resolved,
+  front: { id: string; from: Vec3 }[],
+  alreadyBroken: Set<string>,
+  maxRockets = 12,
+): SplashAlternative[] {
+  const targets = allSplashTargets(resolved).filter(t => !alreadyBroken.has(t.id));
+  const byId = new Map(targets.map(t => [t.id, t]));
+  const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !alreadyBroken.has(d.id)).map(d => d.parent));
+  const brokenCarriers = new Set([...alreadyBroken].map(id => byId.get(id)?.carrierId ?? id));
+  const occ = occluders(resolved, liveDoorCarriers).filter(o => !alreadyBroken.has(o.id) && (!brokenCarriers.has(o.id) || liveDoorCarriers.has(o.id)));
+
+  const out: SplashAlternative[] = [];
+  const seen = new Set<string>();
+  for (const f of front) {
+    const owner = byId.get(f.id);
+    if (!owner) continue;
+    for (const c of owner.candidates) {
+      const point = nudgeTowards(c, f.from, owner.center);
+      const damage: Record<string, number> = {};
+      const needed: { id: string; n: number }[] = [];
+      for (const t of targets) {
+        let dmg = rocketDamage(point, t);
+        if (dmg > 0 && t.id !== owner.id && occ.some(o => o.id !== t.carrierId && segmentBlocked(point, t.center, o))) dmg = 0;
+        if (dmg <= 0) continue;
+        damage[t.id] = dmg;
+        needed.push({ id: t.id, n: Math.ceil(t.hp / dmg - 1e-9) });
+      }
+      needed.sort((a, b) => a.n - b.n);
+      for (const n of [...new Set(needed.map(x => x.n))]) {
+        if (n > maxRockets) break;
+        const broken = needed.filter(x => x.n <= n).map(x => x.id).sort();
+        const key = broken.join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ shot: { point, count: n, damage }, broken, rockets: n });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Сплеш-варианты рейда: залп в одну точку на границе доступной области, затем самый дешёвый
+ * по штукам остаток пути до шкафа из открывшихся пространств. Учитываются только варианты,
+ * где залп открывает хотя бы одно новое пространство.
+ */
+export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initially: Set<string>, targetCell: string): RaidAlternative[] {
+  const front = frontier(graph, initially);
+  const volleys = splashVolleys(resolved, front.map(f => ({ id: f.id, from: f.from })), new Set());
+  const out: RaidAlternative[] = [];
+  for (const v of volleys) {
+    const broken = new Set(v.broken);
+    const after = reachableSpaces(graph, broken);
+    const openedByVolley = [...after].filter(id => !initially.has(id));
+    if (openedByVolley.length === 0) continue;
+    const rest = cheapestFrom(graph, after, broken, targetCell, 'rocket');
+    if (!rest) continue;
+    const restRockets = rest.steps.reduce((a, s) => a + s.breakdown.reduce((b, x) => b + x.count, 0), 0);
+    const allBroken = new Set([...broken, ...rest.ids]);
+    const openedIds = [...reachableSpaces(graph, allBroken)].filter(id => !initially.has(id));
+    const volleySteps: RaidStep[] = v.broken.map(id => {
+      const el = resolved.elements.find(e => e.id === id);
+      if (el) return stepCost(el.id, el.kind, el.grade, 'rocket');
+      const d = resolved.deployables.find(x => x.id === id)!;
+      return stepCost(d.id, d.kind, undefined, 'rocket');
+    });
+    const rockets = v.rockets + restRockets;
+    out.push({
+      path: {
+        steps: [...volleySteps, ...rest.steps],
+        sulfur: rockets * ROCKET.sulfur,
+        ids: [...v.broken, ...rest.ids],
+        cells: rest.cells,
+        points: [v.shot.point, ...rest.points],
+        entry: v.shot.point,
+      },
+      rockets,
+      opened: openedIds.length,
+      openedIds,
+      value: spacesValue(graph, openedIds, resolved),
+      volley: { point: v.shot.point, count: v.rockets, broken: v.broken },
+    });
+  }
+  return out;
+}
