@@ -3,356 +3,52 @@
   "formatVersion": "1.0",
   "meta": {
     "name": "Дом 2×2 с запрыгом",
-    "description": "Классический 2×2. Первый этаж: вход в тамбур, из тамбура двери в комнату со шкафом и во вторую комнату, итого три двери. Из комнаты со шкафом открытый проём в комнату с запрыгом: полустена под рамой пола ведёт на второй этаж. Наверху комната над двумя ячейками и дверь на крышу-террасу с низкими стенками.",
+    "description": "Классический 2×2 без выхода на первом этаже. Комната со шкафом закрыта двойной дверью, за ней тамбур с ещё одной двойной дверью, дальше третья ячейка с одиночной дверью в ячейку запрыга. В ячейке запрыга треугольный пол на полустенах делит комнату пополам по высоте: с земли запрыгиваем на него, с него — через раму пола в тамбур 1×1 на втором этаже. Из тамбура одна дверь на крышу. Вход в базу только с крыши.",
     "gameVersion": "2026-09",
-    "tags": [
-      "starter",
-      "2x2",
-      "jump-up",
-      "example"
-    ]
+    "tags": ["2x2", "jump-up", "bunker-entry", "example"]
   },
-  "defaults": {
-    "grade": "stone"
-  },
+  "defaults": { "grade": "stone" },
   "elements": [
-    {
-      "id": "f1",
-      "kind": "square-foundation",
-      "root": true,
-      "label": "Комната со шкафом"
-    },
-    {
-      "id": "f2",
-      "kind": "square-foundation",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      },
-      "label": "Тамбур"
-    },
-    {
-      "id": "f3",
-      "kind": "square-foundation",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
-      "label": "Комната с запрыгом"
-    },
-    {
-      "id": "f4",
-      "kind": "square-foundation",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
-      "label": "Вторая комната"
-    },
-    {
-      "id": "w1",
-      "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:2"
-      }
-    },
-    {
-      "id": "w2",
-      "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:3"
-      }
-    },
-    {
-      "id": "d_tc",
-      "kind": "doorway",
-      "grade": "metal",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0"
-      },
-      "label": "Дверь в комнату со шкафом"
-    },
-    {
-      "id": "p_jump",
-      "kind": "doorway",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1"
-      },
-      "label": "Открытый проём к запрыгу"
-    },
-    {
-      "id": "d_ext",
-      "kind": "doorway",
-      "grade": "metal",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:0"
-      },
-      "label": "Входная дверь"
-    },
-    {
-      "id": "w3",
-      "kind": "wall",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:3"
-      }
-    },
-    {
-      "id": "d_room",
-      "kind": "doorway",
-      "grade": "metal",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:1"
-      },
-      "label": "Дверь во вторую комнату"
-    },
-    {
-      "id": "w4",
-      "kind": "wall",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:2"
-      }
-    },
-    {
-      "id": "w5",
-      "kind": "wall",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:1"
-      }
-    },
-    {
-      "id": "jump",
-      "kind": "half-wall",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:0"
-      },
-      "label": "Полустена запрыга",
-      "notes": "Запрыгиваем на полустену, с неё — в раму пола над этой ячейкой."
-    },
-    {
-      "id": "w6",
-      "kind": "wall",
-      "attach": {
-        "to": "f4",
-        "socket": "edge:0"
-      }
-    },
-    {
-      "id": "w7",
-      "kind": "wall",
-      "attach": {
-        "to": "f4",
-        "socket": "edge:1"
-      }
-    },
-    {
-      "id": "c1",
-      "kind": "square-floor",
-      "attach": {
-        "to": "w2",
-        "socket": "top",
-        "selfSocket": "edge:3"
-      }
-    },
-    {
-      "id": "c2",
-      "kind": "square-floor",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      },
-      "label": "Терраса"
-    },
-    {
-      "id": "c3",
-      "kind": "floor-frame",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
-      "label": "Рама пола — запрыг"
-    },
-    {
-      "id": "c4",
-      "kind": "square-floor",
-      "attach": {
-        "to": "c2",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
-      "label": "Терраса"
-    },
-    {
-      "id": "u1",
-      "kind": "wall",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:2"
-      }
-    },
-    {
-      "id": "u2",
-      "kind": "wall",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:3"
-      }
-    },
-    {
-      "id": "u3",
-      "kind": "wall",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:0"
-      }
-    },
-    {
-      "id": "u4",
-      "kind": "wall",
-      "attach": {
-        "to": "c3",
-        "socket": "edge:2"
-      }
-    },
-    {
-      "id": "u5",
-      "kind": "wall",
-      "attach": {
-        "to": "c3",
-        "socket": "edge:1"
-      }
-    },
-    {
-      "id": "d_roof",
-      "kind": "doorway",
-      "grade": "metal",
-      "attach": {
-        "to": "c3",
-        "socket": "edge:0"
-      },
-      "label": "Выход на крышу"
-    },
-    {
-      "id": "r1",
-      "kind": "square-floor",
-      "attach": {
-        "to": "u2",
-        "socket": "top",
-        "selfSocket": "edge:3"
-      },
-      "label": "Потолок комнаты"
-    },
-    {
-      "id": "r3",
-      "kind": "square-floor",
-      "attach": {
-        "to": "r1",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
-      "label": "Потолок комнаты"
-    },
-    {
-      "id": "l1",
-      "kind": "low-wall",
-      "attach": {
-        "to": "c2",
-        "socket": "edge:0"
-      }
-    },
-    {
-      "id": "l2",
-      "kind": "low-wall",
-      "attach": {
-        "to": "c2",
-        "socket": "edge:3"
-      }
-    },
-    {
-      "id": "l3",
-      "kind": "low-wall",
-      "attach": {
-        "to": "c4",
-        "socket": "edge:0"
-      }
-    },
-    {
-      "id": "l4",
-      "kind": "low-wall",
-      "attach": {
-        "to": "c4",
-        "socket": "edge:1"
-      }
-    }
+    { "id": "f1", "kind": "square-foundation", "root": true, "label": "Комната со шкафом" },
+    { "id": "f2", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:0", "selfSocket": "edge:2" }, "label": "Тамбур" },
+    { "id": "f3", "kind": "square-foundation", "attach": { "to": "f2", "socket": "edge:1", "selfSocket": "edge:3" }, "label": "Третья ячейка" },
+    { "id": "f4", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:1", "selfSocket": "edge:3" }, "label": "Ячейка запрыга" },
+
+    { "id": "w1", "kind": "wall", "attach": { "to": "f1", "socket": "edge:2" } },
+    { "id": "w2", "kind": "wall", "attach": { "to": "f1", "socket": "edge:3" } },
+    { "id": "w3", "kind": "wall", "attach": { "to": "f1", "socket": "edge:1" }, "label": "Стена между шкафом и запрыгом" },
+    { "id": "fr_tc", "kind": "wall-frame", "grade": "metal", "attach": { "to": "f1", "socket": "edge:0" }, "label": "Рама под двойную дверь шкафа" },
+
+    { "id": "w4", "kind": "wall", "attach": { "to": "f2", "socket": "edge:0" } },
+    { "id": "w5", "kind": "wall", "attach": { "to": "f2", "socket": "edge:3" } },
+    { "id": "fr_hall", "kind": "wall-frame", "grade": "metal", "attach": { "to": "f2", "socket": "edge:1" }, "label": "Рама под двойную дверь тамбура" },
+
+    { "id": "w6", "kind": "wall", "attach": { "to": "f3", "socket": "edge:0" } },
+    { "id": "w7", "kind": "wall", "attach": { "to": "f3", "socket": "edge:1" } },
+    { "id": "d_jump", "kind": "doorway", "grade": "metal", "attach": { "to": "f3", "socket": "edge:2" }, "label": "Проём в ячейку запрыга" },
+
+    { "id": "hw1", "kind": "half-wall", "attach": { "to": "f4", "socket": "edge:2" }, "label": "Полустена под пол запрыга" },
+    { "id": "hw2", "kind": "half-wall", "attach": { "to": "hw1", "socket": "top" }, "label": "Полустена сверху — стена до потолка" },
+    { "id": "w8", "kind": "wall", "attach": { "to": "f4", "socket": "edge:1" } },
+    { "id": "m4", "kind": "triangle-floor", "attach": { "to": "hw1", "socket": "top", "selfSocket": "edge:0" }, "label": "Пол запрыга на половинной высоте", "notes": "Треугольник накрывает половину ячейки. С земли запрыгиваем на него, с него — в раму пола над ячейкой." },
+
+    { "id": "c1", "kind": "square-floor", "attach": { "to": "w2", "socket": "top", "selfSocket": "edge:3" }, "label": "Крыша" },
+    { "id": "c2", "kind": "square-floor", "attach": { "to": "c1", "socket": "edge:0", "selfSocket": "edge:2" }, "label": "Крыша" },
+    { "id": "c3", "kind": "square-floor", "attach": { "to": "c2", "socket": "edge:1", "selfSocket": "edge:3" }, "label": "Крыша" },
+    { "id": "c4", "kind": "floor-frame", "attach": { "to": "c1", "socket": "edge:1", "selfSocket": "edge:3" }, "label": "Рама пола над запрыгом" },
+
+    { "id": "u1", "kind": "wall", "attach": { "to": "c4", "socket": "edge:2" } },
+    { "id": "u2", "kind": "wall", "attach": { "to": "c4", "socket": "edge:1" } },
+    { "id": "u3", "kind": "wall", "attach": { "to": "c4", "socket": "edge:3" } },
+    { "id": "d_roof", "kind": "doorway", "grade": "metal", "attach": { "to": "c4", "socket": "edge:0" }, "label": "Выход на крышу" },
+    { "id": "r4", "kind": "square-floor", "attach": { "to": "u1", "socket": "top", "selfSocket": "edge:2" }, "label": "Потолок тамбура" }
   ],
   "deployables": [
-    {
-      "id": "door_ext",
-      "kind": "sheet-metal-door",
-      "attach": {
-        "to": "d_ext",
-        "socket": "opening"
-      },
-      "hinge": "left"
-    },
-    {
-      "id": "door_tc",
-      "kind": "sheet-metal-door",
-      "attach": {
-        "to": "d_tc",
-        "socket": "opening"
-      },
-      "hinge": "right"
-    },
-    {
-      "id": "door_room",
-      "kind": "sheet-metal-door",
-      "attach": {
-        "to": "d_room",
-        "socket": "opening"
-      },
-      "hinge": "left"
-    },
-    {
-      "id": "door_roof",
-      "kind": "sheet-metal-door",
-      "attach": {
-        "to": "d_roof",
-        "socket": "opening"
-      },
-      "hinge": "left"
-    },
-    {
-      "id": "tc1",
-      "kind": "tool-cupboard",
-      "attach": {
-        "to": "f1",
-        "socket": "top"
-      },
-      "offset": [
-        -1.15,
-        -0.875
-      ],
-      "rotation": 0,
-      "notes": "Прижат спинкой и боком к стенам дальнего угла."
-    }
+    { "id": "door_tc", "kind": "sheet-metal-double-door", "attach": { "to": "fr_tc", "socket": "opening" }, "opens": "outward", "notes": "Открывается в тамбур." },
+    { "id": "door_hall", "kind": "sheet-metal-double-door", "attach": { "to": "fr_hall", "socket": "opening" }, "opens": "outward" },
+    { "id": "door_jump", "kind": "sheet-metal-door", "attach": { "to": "d_jump", "socket": "opening" }, "hinge": "left" },
+    { "id": "door_roof", "kind": "sheet-metal-door", "attach": { "to": "d_roof", "socket": "opening" }, "hinge": "left" },
+    { "id": "tc1", "kind": "tool-cupboard", "attach": { "to": "f1", "socket": "top" }, "offset": [-1.15, -0.875], "rotation": 0, "notes": "Прижат спинкой и боком к стенам дальнего угла." }
   ],
-  "raidPath": [
-    "door_ext",
-    "door_tc"
-  ]
+  "raidPath": ["door_roof", "door_jump", "door_hall", "door_tc"]
 }

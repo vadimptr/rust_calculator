@@ -40,14 +40,15 @@ test('2x1 airlock: authored path = two doors; cheapest with C4 ties with a singl
   assert.deepEqual(optimal.cells, ['f2', 'f1']);
 });
 
-test('2x2 with jump-up: explosive ammo goes through the two doors; the open doorway to f3 is free', () => {
-  const { resolved } = load('house-2x2');
-  const p = cheapestRaidPath(resolved, 'f1', 'explosiveAmmo')!;
-  assert.deepEqual(p.ids, ['door_ext', 'door_tc']);
-  assert.deepEqual(p.cells, ['f2', 'f1']);
-  assert.equal(p.sulfur, 2 * 63 * 25);
-  // из f1 в f3 — открытый проём, поэтому до f3 стоит столько же, сколько до f1
-  assert.equal(cheapestRaidPath(resolved, 'f3', 'explosiveAmmo')!.sulfur, 2 * 63 * 25);
+test('2x2 with roof entry: sealed ground floor, cheapest is one stone wall; authored path is four doors', () => {
+  const { bp, resolved } = load('house-2x2');
+  const p = cheapestRaidPath(resolved, 'f1', 'optimal')!;
+  assert.equal(p.steps.length, 1);
+  assert.equal(p.steps[0].kind, 'wall');
+  assert.equal(p.sulfur, 4400);
+  const authored = authoredRaidPath(resolved, bp.raidPath!, 'optimal');
+  assert.deepEqual(authored.ids, ['door_roof', 'door_jump', 'door_hall', 'door_tc']);
+  assert.equal(authored.sulfur, 4 * 63 * 25);
 });
 
 test('sealed triangle: any wall, 2 C4', () => {

@@ -36,9 +36,9 @@ const DOORWAY_H = 2.2;
 const FRAME_W = 2.4;
 const FRAME_H = 2.7;
 /** Окно в window-frame: ширина × высота проёма и высота подоконника (≈, по пропорциям модели). */
-const WINDOW_W = 1.5;
-const WINDOW_H = 1.25;
-const WINDOW_SILL = 1.0;
+const WINDOW_W = 2.2;
+const WINDOW_H = 1.3;
+const WINDOW_SILL = 0.95;
 const DOOR_T = 0.1;
 
 const materialCache = new Map<number, THREE.MeshStandardMaterial>();
