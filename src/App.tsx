@@ -153,7 +153,7 @@ function App() {
       ) : (
         <div className="app-layout">
           <main className="app-main">
-            <Presets onApply={applyPreset} />
+            <Presets quantities={quantities} onApply={applyPreset} />
             <BlockTable
               groupedBlocks={groupedBlocks}
               categoryOrder={CATEGORY_ORDER}

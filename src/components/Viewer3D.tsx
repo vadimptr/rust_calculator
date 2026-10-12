@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { buildDeployable, buildElement } from '../blueprint/meshes.ts';
+import { animateDoors, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
 import type { Resolved } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 
@@ -11,6 +11,8 @@ export type CameraMode = 'orbit' | 'fly';
 interface Viewer3DProps {
   resolved: Resolved | null;
   mode: CameraMode;
+  /** Открыть все двери (поверх собственного open у каждой двери). */
+  doorsOpen: boolean;
 }
 
 interface SceneRefs {
@@ -22,10 +24,20 @@ interface SceneRefs {
   keys: Set<string>;
   clock: THREE.Clock;
   content: THREE.Group;
+  doors: THREE.Object3D[];
   frame: number;
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode }) => {
+/** Цель каждой двери: общий переключатель либо собственное open из документа. */
+function applyDoorsOpen(s: SceneRefs, doorsOpen: boolean) {
+  for (const door of s.doors) {
+    let owner: THREE.Object3D | null = door;
+    while (owner && owner.userData.open === undefined) owner = owner.parent;
+    setDoorOpen(door, doorsOpen || owner?.userData.open === true);
+  }
+}
+
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
 
@@ -94,13 +106,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode }) => {
     document.addEventListener('keyup', onKeyUp);
     fly.addEventListener('unlock', onUnlock);
 
-    const state: SceneRefs = { renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, frame: 0 };
+    const state: SceneRefs = { renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], frame: 0 };
     refs.current = state;
 
     const tick = () => {
       const dt = Math.min(state.clock.getDelta(), 0.1);
       if (fly.isLocked) applyFlight(camera, keys, dt);
       else if (controls.enabled) controls.update();
+      animateDoors(state.doors, dt);
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);
     };
@@ -160,6 +173,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode }) => {
 
     for (const el of resolved.elements) s.content.add(buildElement(el));
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
+    s.doors = collectDoors(s.content);
+    applyDoorsOpen(s, doorsOpen);
 
     const bounds = new THREE.Box3().setFromObject(s.content);
     if (bounds.isEmpty()) return;
@@ -177,6 +192,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode }) => {
     );
     s.controls.update();
   }, [resolved]);
+
+  // Переключатель дверей: только цель анимации, сцена и камера не трогаются
+  useEffect(() => {
+    const s = refs.current;
+    if (s) applyDoorsOpen(s, doorsOpen);
+  }, [doorsOpen]);
 
   return <div className="viewer3d" ref={hostRef} />;
 };

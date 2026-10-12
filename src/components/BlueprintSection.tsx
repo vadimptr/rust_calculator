@@ -74,12 +74,7 @@ const BlueprintSection: React.FC = () => {
     e.target.value = '';
   };
 
-  const { blueprint, issues } = source.result;
-  const resolved = useMemo(() => {
-    const r = source.result.resolved;
-    if (!r || !doorsOpen) return r;
-    return { ...r, deployables: r.deployables.map(d => (d.kind === 'tool-cupboard' ? d : { ...d, open: true })) };
-  }, [source, doorsOpen]);
+  const { blueprint, resolved, issues } = source.result;
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
@@ -141,7 +136,7 @@ const BlueprintSection: React.FC = () => {
 
       <div className="bp__layout">
         <div className="bp__viewer">
-          <Viewer3D resolved={resolved} mode={cameraMode} />
+          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} />
           <div className="bp__hint">
             {cameraMode === 'orbit'
               ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'

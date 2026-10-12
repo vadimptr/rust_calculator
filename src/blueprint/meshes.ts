@@ -174,22 +174,32 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
   }
 }
 
+/** Анимируемая дверь: створка на петле (поворот вокруг Y) или подъёмная (сдвиг по Y). */
+export interface DoorAnim {
+  type: 'leaf' | 'lift';
+  /** Значение rotation.y (leaf) или position.y (lift) в открытом состоянии; закрытое — closed. */
+  open: number;
+  closed: number;
+  target: boolean;
+}
+
+/** Угловая скорость створки, рад/с, и скорость подъёма, м/с. */
+const DOOR_SPEED = 3.2;
+
 /**
  * Дверное полотно на петле. hingeZ — локальная z петли (нормаль проёма = +x, «left» = +z при
  * взгляде снаружи по нормали). Полотно тянется от петли к центру проёма. Открытая дверь
  * повёрнута на 90° вокруг петли: outward — в сторону +x, inward — в сторону −x.
  */
-function doorLeaf(width: number, height: number, hingeZ: number, open: boolean, opens: 'outward' | 'inward', color: number): THREE.Group {
+function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward' | 'inward', color: number): THREE.Group {
   const pivot = new THREE.Group();
   pivot.position.set(0, 0, hingeZ);
   const toCenter = hingeZ > 0 ? -1 : 1;
-  const leaf = withEdges(box(DOOR_T, height, width, 0, height / 2, toCenter * width / 2), color);
-  pivot.add(leaf);
+  pivot.add(withEdges(box(DOOR_T, height, width, 0, height / 2, toCenter * width / 2), color));
   pivot.add(withEdges(box(0.18, height, 0.14, 0, height / 2, 0), 0x1a1a1a));
-  if (open) {
-    const sign = hingeZ > 0 ? -1 : 1;             // полотно вдоль −z → +x при −90°, вдоль +z → +x при +90°
-    pivot.rotation.y = (opens === 'outward' ? sign : -sign) * (Math.PI / 2);
-  }
+  const sign = hingeZ > 0 ? -1 : 1; // полотно вдоль −z → +x при −90°, вдоль +z → +x при +90°
+  const anim: DoorAnim = { type: 'leaf', closed: 0, open: (opens === 'outward' ? sign : -sign) * (Math.PI / 2), target: false };
+  pivot.userData.door = anim;
   return pivot;
 }
 
@@ -197,20 +207,58 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
   const color = DOOR_COLORS[d.kind];
   switch (d.kind) {
-    case 'garage-door':
-      // Гаражная дверь поднимается вверх; открытая — вровень с притолокой
-      g.add(withEdges(box(DOOR_T, FRAME_H, FRAME_W, 0, d.open ? FRAME_H + FRAME_H / 2 - 0.3 : FRAME_H / 2, 0), color));
+    case 'garage-door': {
+      // Гаражная дверь поднимается вверх, открытая — вровень с притолокой
+      const lift = new THREE.Group();
+      lift.add(withEdges(box(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0), color));
+      const anim: DoorAnim = { type: 'lift', closed: 0, open: FRAME_H - 0.3, target: false };
+      lift.userData.door = anim;
+      g.add(lift);
       return g;
+    }
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      g.add(doorLeaf(FRAME_W / 2, FRAME_H, FRAME_W / 2, d.open, d.opens, color));
-      g.add(doorLeaf(FRAME_W / 2, FRAME_H, -FRAME_W / 2, d.open, d.opens, color));
+      g.add(doorLeaf(FRAME_W / 2, FRAME_H, FRAME_W / 2, d.opens, color));
+      g.add(doorLeaf(FRAME_W / 2, FRAME_H, -FRAME_W / 2, d.opens, color));
       return g;
     default:
-      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.open, d.opens, color));
+      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, color));
       return g;
   }
+}
+
+/** Все анимируемые двери в поддереве. */
+export function collectDoors(root: THREE.Object3D): THREE.Object3D[] {
+  const out: THREE.Object3D[] = [];
+  root.traverse(o => { if (o.userData.door) out.push(o); });
+  return out;
+}
+
+/** Задать цель; snap = true ставит дверь в конечное положение сразу. */
+export function setDoorOpen(door: THREE.Object3D, open: boolean, snap = false): void {
+  const a = door.userData.door as DoorAnim;
+  a.target = open;
+  if (snap) {
+    if (a.type === 'leaf') door.rotation.y = open ? a.open : a.closed;
+    else door.position.y = open ? a.open : a.closed;
+  }
+}
+
+/** Шаг анимации; возвращает true, если хоть одна дверь ещё движется. */
+export function animateDoors(doors: THREE.Object3D[], dt: number): boolean {
+  let moving = false;
+  for (const door of doors) {
+    const a = door.userData.door as DoorAnim;
+    const goal = a.target ? a.open : a.closed;
+    const cur = a.type === 'leaf' ? door.rotation.y : door.position.y;
+    if (Math.abs(goal - cur) < 1e-4) continue;
+    const step = DOOR_SPEED * dt;
+    const next = Math.abs(goal - cur) <= step ? goal : cur + Math.sign(goal - cur) * step;
+    if (a.type === 'leaf') door.rotation.y = next; else door.position.y = next;
+    moving = true;
+  }
+  return moving;
 }
 
 function place(group: THREE.Group, position: [number, number, number], rotation: number): THREE.Group {
@@ -228,10 +276,15 @@ export function buildElement(el: ResolvedElement): THREE.Object3D {
 }
 
 export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
-  const g = d.kind === 'tool-cupboard'
-    ? (() => { const t = new THREE.Group(); t.add(withEdges(box(0.5, 1.2, 1.0, 0, 0.6, 0), DOOR_COLORS[d.kind])); return t; })()
-    : buildDoor(d);
-  g.userData = { id: d.id, kind: d.kind };
+  let g: THREE.Group;
+  if (d.kind === 'tool-cupboard') {
+    g = new THREE.Group();
+    g.add(withEdges(box(0.5, 1.2, 1.0, 0, 0.6, 0), DOOR_COLORS[d.kind]));
+  } else {
+    g = buildDoor(d);
+    for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);
+  }
+  g.userData = { ...g.userData, id: d.id, kind: d.kind, open: d.open };
   return place(g, d.position, d.rotation);
 }
 

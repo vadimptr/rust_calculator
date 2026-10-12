@@ -568,45 +568,7 @@
    ========================================================= */
 
 .presets {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.preset-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.6rem 0.9rem;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-  min-width: 90px;
-}
-
-.preset-btn:hover {
-  border-color: var(--accent);
-  background: #221a14;
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.preset-btn svg {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.preset-btn__label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.3;
+  margin-bottom: 1.25rem;
 }
 
 /* =========================================================
