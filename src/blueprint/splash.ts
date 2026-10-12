@@ -17,6 +17,8 @@ export interface ExplosiveSpec {
   block: Record<Grade, number>;
   /** Урон по дверям по виду и по вставкам в окна. */
   door: Record<DeployableKind, number>;
+  /** Бьёт ли по области: ракета и разрывной — да, C4 и сачель — только по блоку, на который поставлены. */
+  area: boolean;
   /** Полный урон в этом радиусе (до ближайшей точки элемента), дальше линейное падение до maxRadius. */
   fullRadius: number;
   maxRadius: number;
@@ -38,25 +40,25 @@ export const EXPLOSIVES: Record<Explosive, ExplosiveSpec> = {
     label: 'Ракета',
     block: { twig: 10, wood: 137.7, stone: 137.7, metal: 137.7, armored: 137.7 },
     door: doorTable(210, 210, 210, 210, 137.7, 137.7),
-    fullRadius: 1.0, maxRadius: 3.8, sulfur: 1400,
+    area: true, fullRadius: 1.0, maxRadius: 3.8, sulfur: 1400,
   },
   c4: {
     label: 'C4',
     block: { twig: 10, wood: 275, stone: 275, metal: 275, armored: 275 },
     door: doorTable(350, 350, 350, 350, 275, 275),
-    fullRadius: 0.5, maxRadius: 1.5, sulfur: 2200,
+    area: false, fullRadius: 0, maxRadius: 0, sulfur: 2200,
   },
   explosiveAmmo: {
     label: 'Разрывной патрон',
     block: { twig: 10, wood: 5.11, stone: 2.703, metal: 2.5, armored: 2.504 },
     door: doorTable(11.12, 3.97, 4, 4, 2.5, 2.5),
-    fullRadius: 0.1, maxRadius: 0.5, sulfur: 25,
+    area: true, fullRadius: 0.1, maxRadius: 0.5, sulfur: 25,
   },
   satchel: {
     label: 'Сачель',
     block: { twig: 10, wood: 83.4, stone: 50, metal: 43.5, armored: 43.5 },
     door: doorTable(100, 62.5, 66.7, 66.7, 40, 43.5),
-    fullRadius: 0.5, maxRadius: 2.0, sulfur: 480,
+    area: false, fullRadius: 0, maxRadius: 0, sulfur: 480,
   },
 };
 
@@ -339,6 +341,11 @@ export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
 /** Урон единицы ex в точке p по всем целям с учётом преград; owner — цель, на поверхности которой точка. */
 function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[]): Record<string, number> {
   const damage: Record<string, number> = {};
+  if (!EXPLOSIVES[ex].area) {
+    // контактная взрывчатка: только блок, на который поставлена
+    if (targets.includes(owner)) damage[owner.id] = owner.hit[ex];
+    return damage;
+  }
   for (const t of targets) {
     let dmg = unitDamage(ex, p, t);
     if (dmg > 0 && t.id !== owner.id) {

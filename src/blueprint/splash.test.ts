@@ -96,8 +96,15 @@ test('best raid for 2x2 (optimal): a corner volley opening every space, cheaper 
   const best = bestRaid(alts)!;
   assert.ok(best.volley, 'expected a volley');
   assert.equal(best.opened, 5);
-  assert.ok(best.sulfur <= 4400, `sulfur=${best.sulfur}`);
+  assert.ok(best.volley!.explosive !== 'c4', 'C4 has no splash, so a C4 volley cannot open everything');
   assert.ok(alts.every(a => a.value >= 3));
+});
+
+test('C4 is a contact explosive: a corner shot damages only the block it is placed on', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  const volleys = volleyAlternatives(resolved, g, reachableSpaces(g, new Set()), 'f1', ['c4']);
+  assert.ok(volleys.every(v => v.volley!.broken.length === 1));
 });
 
 test('unitDamage: explosive ammo reaches only touching blocks', () => {
