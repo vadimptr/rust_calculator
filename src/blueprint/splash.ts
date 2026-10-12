@@ -561,6 +561,9 @@ export function simulateRaid(
       const progress = Number.isFinite(rem) ? remaining - rem : -Infinity;
       const cand: Cand = { shot, brokenNow, opened, sulfur: cost, valueGain, progress };
       onCandidate?.(stages.length, cand);
+      // этап должен либо приближать к шкафу, либо открывать полноценную комнату (ценность ≥ 1):
+      // дешёвые двери транзитных ячеек ради половины очка ценности — лишние
+      if (!(progress > 1e-6 || valueGain >= 1)) return;
       // Число разрушаемых конструкций — всегда второй критерий после главного отношения стратегии:
       // на каждом этапе ищем точку, которая ломает больше. Затем удар ниже: с земли удобнее, чем с крыши.
       const key = (x: Cand) => strategy === 'value'
