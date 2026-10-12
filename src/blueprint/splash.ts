@@ -5,8 +5,8 @@
  */
 import { KINDS, cellVertices, wallHeight } from './catalog.ts';
 import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
-import { OUTSIDE, cheapestFrom, frontier, reachableSpaces, spacesValue, stepCost } from './raid.ts';
-import type { RaidAlternative, RaidStep, SpaceGraph } from './raid.ts';
+import { OUTSIDE, cheapestFrom, frontier, reachableSpaces, spacesValue } from './raid.ts';
+import type { SpaceGraph } from './raid.ts';
 import type { ExplosiveType } from '../types/index.ts';
 
 export type Explosive = ExplosiveType;
@@ -110,22 +110,14 @@ export interface SplashShot {
   damage: Record<string, number>;
 }
 
-export interface SplashPlan {
-  /** false — какая-то цель осталась целой: до неё с места рейдера не достать. */
-  complete: boolean;
-  shots: SplashShot[];
-  /** Единиц каждой взрывчатки. */
-  units: Partial<Record<Explosive, number>>;
-  sulfur: number;
-  /** Сера «по штукам» лучшей одиночной взрывчаткой на каждый элемент. */
-  sulfurPerItem: number;
-  damageTaken: Record<string, number>;
-}
-
 const DEG = Math.PI / 180;
 /** Стены и двери чуть короче плит по высоте: их верх и низ не лежат на плоскости пола,
  * поэтому взрыв на крыше до стены под плитой не достаёт. */
 const WALL_GAP = 0.05;
+/** Плиты не выступают за стены: кромка на FLOOR_INSET внутрь от плоскости стены, а расчётная
+ * поверхность — в середине толщины плиты, так что снаружи кромку закрывает стена. */
+const FLOOR_INSET = 0.05;
+const FLOOR_MID = 0.1;
 
 function toWorld(origin: Vec3, rotation: number, local: Vec3): Vec3 {
   const a = rotation * DEG;
@@ -185,12 +177,15 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
   }
   if (info.category === 'cell') {
     const r = info.shape === 'square' ? 1.5 : 0.866;
+    const k = 1 - FLOOR_INSET / r;
+    const poly = cellVertices(info.shape!).map(([x, z]) => [x * k, z * k] as [number, number]);
     // центр, середины рёбер и вершины: удар в угол, где сходятся несколько плит, задевает их все
-    const local: Vec3[] = [[0, 0, 0], [r, 0, 0], [-r, 0, 0], [0, 0, r], [0, 0, -r],
-      ...cellVertices(info.shape!).map(([x, z]) => [x, 0, z] as Vec3)];
+    const local: Vec3[] = [[0, 0, 0], [r * k, 0, 0], [-r * k, 0, 0], [0, 0, r * k], [0, 0, -r * k],
+      ...poly.map(([x, z]) => [x, 0, z] as Vec3)];
+    const origin: Vec3 = [el.position[0], el.position[1] - FLOOR_MID, el.position[2]];
     return {
-      id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
-      surface: { kind: 'poly', polygon: cellVertices(info.shape!) },
+      id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin, rotation: el.rotation, axis: 'y', center: el.position,
+      surface: { kind: 'poly', polygon: poly },
       candidates: local.map(p => toWorld(el.position, el.rotation, p)),
     };
   }
@@ -306,7 +301,8 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
     if (endExempt && t > 1 - END_EPS) return false;
     const y = la[1] + (lb[1] - la[1]) * t;
     const z = la[2] + (lb[2] - la[2]) * t;
-    return y >= MARGIN && y <= (o.height ?? 3) - MARGIN && Math.abs(z) <= 1.5 - MARGIN;
+    // стена-преграда тоже на WALL_GAP короче сверху и снизу: её низ не закрывает плиты, на которых она стоит
+    return y >= WALL_GAP && y <= (o.height ?? 3) - WALL_GAP && Math.abs(z) <= 1.5 - MARGIN;
   }
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
@@ -374,7 +370,9 @@ function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashT
     let dmg = unitDamage(ex, p, t);
     if (dmg > 0 && t.id !== owner.id) {
       const q = nearestPoint(p, t);
-      if (occ.some(o => o.id !== t.carrierId && segmentBlocked(p, q, o))) dmg = 0;
+      // плиты одной плоскости друг друга не закрывают: взрыв над ними достаёт все плиты угла
+      const coplanarSlab = (o: Occluder) => o.kind === 'cell' && t.axis === 'y' && Math.abs(o.origin[1] - (t.origin[1] + FLOOR_MID)) < 1e-6;
+      if (occ.some(o => o.id !== t.carrierId && !coplanarSlab(o) && segmentBlocked(p, q, o))) dmg = 0;
     }
     if (dmg > 0) damage[t.id] = dmg;
   }
@@ -385,156 +383,6 @@ function liveOccluders(resolved: Resolved, broken: Set<string>, byId: Map<string
   const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !broken.has(d.id)).map(d => d.parent));
   const brokenCarriers = new Set([...broken].map(id => byId.get(id)?.carrierId ?? id));
   return occluders(resolved, liveDoorCarriers).filter(o => !broken.has(o.id) && (!brokenCarriers.has(o.id) || liveDoorCarriers.has(o.id)));
-}
-
-/** Сера «по штукам»: каждый элемент лучшей одиночной взрывчаткой из разрешённых. */
-export function perItemSulfur(targets: SplashTarget[], allowed: Explosive[]): number {
-  return targets.reduce((acc, t) => acc + Math.min(...allowed.map(ex => Math.ceil(t.hp / t.hit[ex] - 1e-9) * EXPLOSIVES[ex].sulfur)), 0);
-}
-
-/**
- * План по пути: цели — элементы пути по порядку. Пока есть живые цели, выбираем пару
- * (точка на фронте, взрывчатка) с наибольшим полезным уроном на единицу серы; одинаковые
- * пары объединяются. Правило фронта: стрелять можно только по первой живой цели и целям до неё.
- */
-export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive[], eyes?: Record<string, Vec3>): SplashPlan {
-  const targets = splashTargets(resolved, ids);
-  const byId = new Map(allSplashTargets(resolved).map(t => [t.id, t]));
-  const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
-  const isAlive = (t: SplashTarget) => (hpLeft.get(t.id) ?? 0) > 1e-6;
-  const shots = new Map<string, SplashShot>();
-  const units: Partial<Record<Explosive, number>> = {};
-  let sulfur = 0;
-
-  const raiderEye = (i: number): Vec3 => {
-    const t = targets[i];
-    if (eyes?.[t.id]) return eyes[t.id];
-    if (i > 0) return targets[i - 1].center;
-    const next = targets[i + 1]?.center;
-    const local = next ? toLocal(t.origin, t.rotation, next) : ([1, 1.5, 0] as Vec3);
-    if (t.axis === 'x') local[0] = next ? -local[0] : 2; else local[1] = next ? -local[1] : 2;
-    return toWorld(t.origin, t.rotation, local);
-  };
-
-  let guard = 0;
-  while (targets.some(isAlive) && guard++ < 5000) {
-    const broken = new Set(targets.filter(t => !isAlive(t)).map(t => t.id));
-    const occ = liveOccluders(resolved, broken, byId);
-    const frontierIdx = targets.findIndex(isAlive);
-    type Best = { point: Vec3; ex: Explosive; score: number; damage: Record<string, number> };
-    let b: Best | null = null;
-    for (let i = 0; i <= frontierIdx; i++) {
-      const owner = targets[i];
-      const eye = raiderEye(i);
-      for (const c of owner.candidates) {
-        const point = visibleImpact(c, eye, owner, occ);
-        if (!point) continue;
-        for (const ex of allowed) {
-          const damage = damageMap(ex, point, owner, targets, occ);
-          let useful = 0;
-          for (const t of targets) useful += Math.min(hpLeft.get(t.id) ?? 0, damage[t.id] ?? 0);
-          const score = useful / EXPLOSIVES[ex].sulfur;
-          if (!b || score > b.score + 1e-12) b = { point, ex, score, damage };
-        }
-      }
-    }
-    if (!b || b.score <= 1e-12) break;
-    for (const t of targets) hpLeft.set(t.id, Math.max(0, (hpLeft.get(t.id) ?? 0) - (b.damage[t.id] ?? 0)));
-    const key = `${b.ex}|${b.point.map((v: number) => v.toFixed(2)).join('|')}`;
-    const shot = shots.get(key) ?? { point: b.point, explosive: b.ex, count: 0, damage: b.damage };
-    shot.count++;
-    shots.set(key, shot);
-    units[b.ex] = (units[b.ex] ?? 0) + 1;
-    sulfur += EXPLOSIVES[b.ex].sulfur;
-  }
-  const damageTaken: Record<string, number> = {};
-  for (const t of targets) damageTaken[t.id] = Math.round((t.hp - (hpLeft.get(t.id) ?? 0)) * 10) / 10;
-  const complete = !targets.some(isAlive);
-  return { complete, shots: [...shots.values()], units, sulfur: complete ? sulfur : Infinity, sulfurPerItem: perItemSulfur(targets, allowed), damageTaken };
-}
-
-export interface Volley {
-  shot: SplashShot;
-  broken: string[];
-  sulfur: number;
-}
-
-/**
- * Залпы одной взрывчаткой в одну точку на границе доступной области: для точки, взрывчатки и
- * числа единиц n — какие элементы погибнут (ceil(HP / урон) ≤ n). Одинаковые наборы не повторяются.
- */
-export function splashVolleys(resolved: Resolved, front: { id: string; from: Vec3 }[], allowed: Explosive[], maxUnits = 12): Volley[] {
-  const targets = allSplashTargets(resolved);
-  const byId = new Map(targets.map(t => [t.id, t]));
-  const occ = liveOccluders(resolved, new Set(), byId);
-  const out: Volley[] = [];
-  const seen = new Set<string>();
-  for (const f of front) {
-    const owner = byId.get(f.id);
-    if (!owner) continue;
-    for (const c of owner.candidates) {
-      const point = visibleImpact(c, f.from, owner, occ);
-      if (!point) continue;
-      for (const ex of allowed) {
-        const damage = damageMap(ex, point, owner, targets, occ);
-        const needed = Object.entries(damage).map(([id, dmg]) => ({ id, n: Math.ceil(byId.get(id)!.hp / dmg - 1e-9) })).sort((a, b) => a.n - b.n);
-        const limit = ex === 'explosiveAmmo' ? maxUnits * 70 : maxUnits;
-        for (const n of [...new Set(needed.map(x => x.n))]) {
-          if (n > limit) break;
-          const broken = needed.filter(x => x.n <= n).map(x => x.id).sort();
-          const key = `${ex}|${broken.join('|')}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          out.push({ shot: { point, explosive: ex, count: n, damage }, broken, sulfur: n * EXPLOSIVES[ex].sulfur });
-        }
-      }
-    }
-  }
-  return out;
-}
-
-/**
- * Сплеш-варианты рейда: залп на границе доступной области плюс самый дешёвый остаток пути до
- * шкафа из открывшихся пространств. Только залпы, открывающие хотя бы одно новое пространство.
- */
-export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initially: Set<string>, targetCell: string, allowed: Explosive[]): RaidAlternative[] {
-  const front = frontier(graph, initially);
-  const volleys = splashVolleys(resolved, front.map(f => ({ id: f.id, from: f.from })), allowed);
-  const out: RaidAlternative[] = [];
-  for (const v of volleys) {
-    const broken = new Set(v.broken);
-    const after = reachableSpaces(graph, broken);
-    if (![...after].some(id => !initially.has(id))) continue;
-    const rest = cheapestFrom(graph, new Set([...after, OUTSIDE]), broken, targetCell, 'optimal');
-    if (!rest) continue;
-    const restPlan = rest.ids.length ? planSplash(resolved, rest.ids, allowed, rest.eyes) : null;
-    if (restPlan && !restPlan.complete) continue;
-    const allBroken = new Set([...broken, ...rest.ids]);
-    const openedIds = [...reachableSpaces(graph, allBroken)].filter(id => !initially.has(id));
-    const volleySteps: RaidStep[] = v.broken.map(id => {
-      const el = resolved.elements.find(e => e.id === id);
-      if (el) return stepCost(el.id, el.kind, el.grade, 'optimal');
-      const d = resolved.deployables.find(x => x.id === id)!;
-      return stepCost(d.id, d.kind, undefined, 'optimal');
-    });
-    const sulfur = v.sulfur + (restPlan?.sulfur ?? 0);
-    const units: Partial<Record<Explosive, number>> = { ...(restPlan?.units ?? {}) };
-    units[v.shot.explosive] = (units[v.shot.explosive] ?? 0) + v.shot.count;
-    out.push({
-      path: {
-        steps: [...volleySteps, ...rest.steps], sulfur, ids: [...v.broken, ...rest.ids], cells: rest.cells,
-        points: [v.shot.point, ...rest.points], entry: v.shot.point,
-      },
-      sulfur,
-      units,
-      shots: [v.shot, ...(restPlan?.shots ?? [])],
-      opened: openedIds.length,
-      openedIds,
-      value: spacesValue(graph, openedIds, resolved),
-      volley: { point: v.shot.point, count: v.shot.count, explosive: v.shot.explosive, broken: v.broken },
-    });
-  }
-  return out;
 }
 
 /** Этап симуляции: залп в одну точку и всё, что после него погибло. */

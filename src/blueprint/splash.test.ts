@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { EXPLOSIVES, bestSimulation, falloff, planSplash, segmentBlocked, splashTargets, unitDamage, volleyAlternatives } from './splash.ts';
-import { buildSpaceGraph, bestRaid, raidAlternatives, reachableSpaces } from './raid.ts';
+import { EXPLOSIVES, bestSimulation, falloff, segmentBlocked, simulateRaid, splashTargets, unitDamage } from './splash.ts';
+import { buildSpaceGraph } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -31,38 +31,6 @@ test('unit counts reproduce the raid table: stone wall and sheet metal door', ()
   assert.deepEqual([needD('rocket'), needD('c4'), needD('explosiveAmmo'), needD('satchel')], [2, 1, 63, 4]);
 });
 
-test('single stone wall, rockets only: 4 rockets; optimal mixes C4 and explosive ammo and is cheaper than 2 C4', () => {
-  const { resolved } = load('sealed-triangle-tc');
-  const rockets = planSplash(resolved, ['w1'], ['rocket']);
-  assert.equal(rockets.units.rocket, 4);
-  assert.equal(rockets.sulfur, 5600);
-  const optimal = planSplash(resolved, ['w1'], ['rocket', 'c4', 'explosiveAmmo']);
-  assert.ok(optimal.sulfur < 4400, `sulfur=${optimal.sulfur}`);
-  assert.ok(optimal.damageTaken.w1 >= 500);
-});
-
-test('two adjacent stone walls sharing a corner: full damage to both, 4 rockets instead of 8', () => {
-  const bp: Blueprint = {
-    formatVersion: '1.0', meta: { name: 'x' }, defaults: { grade: 'stone' },
-    elements: [
-      { id: 'f1', kind: 'square-foundation', root: true },
-      { id: 'a', kind: 'wall', attach: { to: 'f1', socket: 'edge:0' } },
-      { id: 'b', kind: 'wall', attach: { to: 'f1', socket: 'edge:1' } },
-    ],
-  };
-  const { resolved } = resolveBlueprint(bp);
-  const plan = planSplash(resolved, ['a', 'b'], ['rocket']);
-  assert.equal(plan.sulfurPerItem, 8 * 1400);
-  assert.equal(plan.units.rocket, 4);
-  assert.ok(plan.damageTaken.a >= 500 && plan.damageTaken.b >= 500);
-});
-
-test('airlock doors: a closed door blocks splash, so two doors cost 2 + 2 rockets', () => {
-  const { resolved } = load('starter-2x1');
-  const plan = planSplash(resolved, ['door_outer', 'door_inner'], ['rocket']);
-  assert.equal(plan.units.rocket, 4);
-});
-
 test('segmentBlocked: wall plane and floor polygon, end of the segment is not blocked', () => {
   const wall = { id: 'w', kind: 'wall' as const, origin: [0, 0, 0] as [number, number, number], rotation: 0, height: 3 };
   assert.equal(segmentBlocked([-1, 1.5, 0], [1, 1.5, 0], wall), true);
@@ -77,37 +45,14 @@ test('segmentBlocked: wall plane and floor polygon, end of the segment is not bl
   assert.equal(segmentBlocked([3, 4, 0], [3, 2, 0], floor), false);
 });
 
-test('roof corner volley: full damage to every adjoining roof block, 4 rockets open three ceilings', () => {
+test('C4 is a contact explosive: a stage with C4 breaks at most the block it is placed on', () => {
   const { resolved } = load('house-2x2');
   const g = buildSpaceGraph(resolved);
-  const volleys = volleyAlternatives(resolved, g, reachableSpaces(g, new Set()), 'f1', ['rocket']);
-  const corner = volleys.find(v => ['c1', 'c2', 'c3'].every(id => v.volley!.broken.includes(id)) && v.volley!.count === 4);
-  assert.ok(corner, 'expected a 4-rocket corner volley breaking c1, c2 and c3');
-  for (const v of volleys) {
-    if (v.volley!.point[1] > 2.9) {
-      const ground = ['door_tc', 'door_hall', 'door_jump'].filter(id => v.volley!.broken.includes(id));
-      assert.deepEqual(ground, [], `roof volley broke ground doors: ${v.volley!.broken.join(',')}`);
-    }
+  for (const st of ['value', 'progress'] as const) {
+    const sim = simulateRaid(resolved, g, 'f1', ['c4'], st);
+    assert.ok(sim.reached);
+    for (const stage of sim.stages) assert.ok(stage.broken.length <= 1, stage.broken.join(','));
   }
-});
-
-test('best raid for 2x2 (optimal): a corner volley opening every space, cheaper than a single wall by per-item cost', () => {
-  const { resolved } = load('house-2x2');
-  const allowed = ['rocket', 'c4', 'explosiveAmmo'] as const;
-  const alts = raidAlternatives(resolved, 'f1', 'optimal', ids => planSplash(resolved, ids, [...allowed]),
-    (g, i, t) => volleyAlternatives(resolved, g, i, t, [...allowed]));
-  const best = bestRaid(alts)!;
-  assert.ok(best.volley, 'expected a volley');
-  assert.equal(best.opened, 5);
-  assert.ok(best.volley!.explosive !== 'c4', 'C4 has no splash, so a C4 volley cannot open everything');
-  assert.ok(alts.every(a => a.value >= 3));
-});
-
-test('C4 is a contact explosive: a corner shot damages only the block it is placed on', () => {
-  const { resolved } = load('house-2x2');
-  const g = buildSpaceGraph(resolved);
-  const volleys = volleyAlternatives(resolved, g, reachableSpaces(g, new Set()), 'f1', ['c4']);
-  assert.ok(volleys.every(v => v.volley!.broken.length === 1));
 });
 
 test('unitDamage: explosive ammo reaches only touching blocks', () => {
@@ -158,4 +103,42 @@ test('simulation: damage accumulates across stages (C4 then explosive ammo on th
   assert.deepEqual(sim.stages[0].broken, []); // первый C4 ничего не ломает, урон копится
   assert.ok(sim.broken.every(id => id.startsWith('w')), `expected a wall, got ${sim.broken.join(',')}`); // с земли, не через крышу
   assert.ok(sim.stages.every(st => st.shot.point[1] < 3));
+});
+
+
+test('two adjacent stone walls sharing a corner: a corner shot deals full damage to both', () => {
+  const bp: Blueprint = {
+    formatVersion: '1.0', meta: { name: 'x' }, defaults: { grade: 'stone' },
+    elements: [
+      { id: 'f1', kind: 'square-foundation', root: true },
+      { id: 'a', kind: 'wall', attach: { to: 'f1', socket: 'edge:0' } },
+      { id: 'b', kind: 'wall', attach: { to: 'f1', socket: 'edge:1' } },
+    ],
+  };
+  const { resolved } = resolveBlueprint(bp);
+  const [a, b] = splashTargets(resolved, ['a', 'b']);
+  const corner: [number, number, number] = [1.6, 1.5, 1.6];
+  assert.equal(unitDamage('rocket', corner, a), EXPLOSIVES.rocket.block.stone);
+  assert.equal(unitDamage('rocket', corner, b), EXPLOSIVES.rocket.block.stone);
+});
+
+test('simulation, rockets only: 2x1 costs 4 rockets; a seam shot takes both in-line walls, a closed door never splashes the next one', () => {
+  const { resolved } = load('starter-2x1');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f1', ['rocket'])!;
+  assert.ok(sim.reached);
+  assert.equal(sim.units.rocket, 4);
+  for (const stage of sim.stages) {
+    const doors = stage.broken.filter(id => id.startsWith('door_'));
+    assert.ok(doors.length <= 1, `two doors in one stage: ${stage.broken.join(',')}`);
+  }
+});
+
+test('ceiling edge cannot be hit from outside: a ground-level stage never breaks the roof slab', () => {
+  const { resolved } = load('sealed-triangle-tc');
+  const g = buildSpaceGraph(resolved);
+  for (const st of ['value', 'progress'] as const) {
+    const sim = simulateRaid(resolved, g, 'f1', ['rocket', 'c4', 'explosiveAmmo'], st);
+    for (const stage of sim.stages) if (stage.shot.point[1] < 2.9) assert.ok(!stage.broken.includes('c1'), stage.broken.join(','));
+  }
 });

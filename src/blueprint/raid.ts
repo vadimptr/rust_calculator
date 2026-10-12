@@ -343,23 +343,6 @@ export function chooseRaidPath(
   return { path: best, candidates: paths.length };
 }
 
-export interface RaidAlternative {
-  path: RaidPath;
-  /** Сера с учётом сплеша и смешения взрывчатки. */
-  sulfur: number;
-  /** Единиц каждой взрывчатки. */
-  units: Partial<Record<ExplosiveType, number>>;
-  /** Куда и чем стрелять. */
-  shots: { point: [number, number, number]; explosive: ExplosiveType; count: number; damage: Record<string, number> }[];
-  /** Сколько замкнутых пространств открывается с улицы после разрушения элементов варианта. */
-  opened: number;
-  openedIds: string[];
-  /** Суммарная ценность открытых пространств (§9.3): шкаф дорого, запрыги и тамбуры дёшево. */
-  value: number;
-  /** Залп в одну точку (сплеш-вариант): куда, чем, сколько и что он ломает разом. */
-  volley?: { point: [number, number, number]; count: number; explosive: ExplosiveType; broken: string[] };
-}
-
 /**
  * Ценность пространства: комната со шкафом — 3, транзитные (запрыг с полом на половинной
  * высоте, комната без пола, аирлок из двух дверей без другого содержимого) — 0.25, остальные — 1.
@@ -407,51 +390,6 @@ export function reachableSpaces(graph: SpaceGraph, broken: Set<string>): Set<str
     }
   }
   return seen;
-}
-
-export interface PlanLike { sulfur: number; units: Partial<Record<ExplosiveType, number>>; shots: RaidAlternative['shots']; complete?: boolean }
-
-/**
- * Варианты рейда: несколько лучших путей по штукам (каждый пересчитан планировщиком сплеша) и
- * залпы; без повторов по набору разрушений. Сортировка по сере.
- */
-export function raidAlternatives(
-  resolved: Resolved, targetCell: string, method: RaidMethod,
-  planSplash: (ids: string[], eyes?: Record<string, [number, number, number]>) => PlanLike,
-  volleys: (graph: SpaceGraph, initially: Set<string>, targetCell: string) => RaidAlternative[],
-  k = 8,
-): RaidAlternative[] {
-  const graph = buildSpaceGraph(resolved);
-  const paths = cheapestRaidPaths(resolved, targetCell, method, k, graph);
-  const initially = reachableSpaces(graph, new Set());
-  // один набор разрушений — один вариант: самый дешёвый по сере
-  const byKey = new Map<string, RaidAlternative>();
-  const offer = (a: RaidAlternative) => {
-    const key = [...a.path.ids].sort().join('|');
-    const prev = byKey.get(key);
-    if (!prev || a.sulfur < prev.sulfur) byKey.set(key, a);
-  };
-  for (const path of paths) {
-    const openedIds = [...reachableSpaces(graph, new Set(path.ids))].filter(id => !initially.has(id));
-    const plan = path.ids.length ? planSplash(path.ids, path.eyes) : { sulfur: 0, units: {}, shots: [], complete: true };
-    if (plan.complete === false) continue; // до какой-то цели с места рейдера не достать
-    offer({ path: { ...path, sulfur: plan.sulfur }, sulfur: plan.sulfur, units: plan.units, shots: plan.shots, opened: openedIds.length, openedIds, value: spacesValue(graph, openedIds, resolved) });
-  }
-  for (const v of volleys(graph, initially, targetCell)) offer(v);
-  const out = [...byKey.values()];
-  out.sort((a, b) => a.sulfur - b.sulfur || b.value - a.value || a.path.steps.length - b.path.steps.length);
-  return out;
-}
-
-/**
- * Один оптимальный вариант: наибольшая ценность открытого на единицу серы; при равенстве —
- * дешевле. Бесплатные варианты (свободный проход) выигрывают всегда.
- */
-export function bestRaid(alternatives: RaidAlternative[]): RaidAlternative | null {
-  if (alternatives.length === 0) return null;
-  const score = (a: RaidAlternative) => (a.sulfur <= 0 ? Infinity : a.value / a.sulfur);
-  // при равной цене и ценности — залп, который попутно ломает больше
-  return [...alternatives].sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || b.value - a.value || b.path.ids.length - a.path.ids.length)[0];
 }
 
 /**
