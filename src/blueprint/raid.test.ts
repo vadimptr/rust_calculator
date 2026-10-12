@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { buildSpaceGraph, cheapestRaidPath, cheapestRaidPaths, stepCost } from './raid.ts';
+import { buildSpaceGraph, cheapestRaidPath, cheapestRaidPaths, raidAlternatives, reachableSpaces, stepCost } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -101,4 +101,25 @@ test('triangle with glass: cheapest optimal path breaks the glass (cheaper than 
 test('unknown target cell returns null', () => {
   const { resolved } = load('house-2x2');
   assert.equal(cheapestRaidPath(resolved, 'nope', 'c4'), null);
+});
+
+test('opened spaces: doors path opens the airlock and the TC room, a wall opens only the TC room', () => {
+  const { resolved } = load('starter-2x1');
+  const g = buildSpaceGraph(resolved);
+  const initially = reachableSpaces(g, new Set());
+  assert.ok(initially.has('c1') && initially.has('c2')); // крыша доступна
+  assert.ok(!initially.has('f1') && !initially.has('f2'));
+  const alts = raidAlternatives(resolved, 'f1', 'optimal', () => null);
+  const doors = alts.find(a => a.path.ids.join() === 'door_outer,door_inner')!;
+  assert.equal(doors.opened, 2);
+  const wall = alts.find(a => a.path.ids.join() === 'w1')!;
+  assert.equal(wall.opened, 1);
+});
+
+test('opened spaces: 2x2 roof door path opens the vestibule, the jump-up cell and the TC room', () => {
+  const { resolved } = load('house-2x2');
+  const alts = raidAlternatives(resolved, 'f1', 'optimal', () => null);
+  const viaRoof = alts.find(a => a.path.cells.includes('^f4'))!;
+  assert.ok(viaRoof.openedIds.includes('^f4') && viaRoof.openedIds.includes('f4') && viaRoof.openedIds.includes('f1'));
+  assert.equal(viaRoof.opened, 3);
 });

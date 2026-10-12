@@ -90,6 +90,7 @@ const BlueprintSection: React.FC = () => {
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
   const [altIndex, setAltIndex] = useState(0);
+  const [altSort, setAltSort] = useState<'cost' | 'opened'>('cost');
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -118,10 +119,16 @@ const BlueprintSection: React.FC = () => {
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const alternatives = raidAlternatives(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
-    if (alternatives.length === 0) return null;
-    return { alternatives, targetPos };
-  }, [blueprint, resolved, raidMethod]);
+    const found = raidAlternatives(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
+    if (found.length === 0) return null;
+    const cost = (a: typeof found[number]) => (a.rockets !== undefined ? a.rockets * 1400 : a.path.sulfur);
+    const alternatives = altSort === 'opened'
+      ? [...found].sort((a, b) => b.opened - a.opened || cost(a) - cost(b))
+      : found;
+    // лучший по полостям: больше всего открывает, при равенстве дешевле
+    const bestOpened = [...found].sort((a, b) => b.opened - a.opened || cost(a) - cost(b))[0];
+    return { alternatives, targetPos, bestOpened };
+  }, [blueprint, resolved, raidMethod, altSort]);
 
   const alt = raid ? raid.alternatives[Math.min(altIndex, raid.alternatives.length - 1)] : null;
   const activePath = alt?.path ?? null;
@@ -139,6 +146,8 @@ const BlueprintSection: React.FC = () => {
   }, [raidOn, raid, activePath, resolved, splash, showImpacts]);
 
   const chooseAlt = (i: number) => { setAltIndex(i); setRaidPlay(0); };
+  /** Бейдж имеет смысл, только если варианты отличаются числом полостей. */
+  const found = (r: { alternatives: { opened: number }[] }) => new Set(r.alternatives.map(a => a.opened)).size > 1;
   const describeSteps = (steps: RaidStep[]) =>
     steps.length === 0 ? 'свободный проход' : steps.map(st => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`).join(' → ');
 
@@ -263,6 +272,17 @@ const BlueprintSection: React.FC = () => {
                     ))}
                   </div>
 
+                  <div className="raid-panel__sort">
+                    <span>Варианты:</span>
+                    <div className="bp__presets" role="group" aria-label="Сортировка вариантов">
+                      {([['cost', 'по цене'], ['opened', 'по полостям']] as const).map(([id, label]) => (
+                        <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${altSort === id ? ' raid-tier__btn--active' : ''}`}
+                          onClick={() => { setAltSort(id); setAltIndex(0); setRaidPlay(0); }} aria-pressed={altSort === id}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="raid-panel__alts" role="radiogroup" aria-label="Варианты пути">
                     {raid.alternatives.map((a, i) => (
                       <label key={i} className={`raid-panel__alt${a === alt ? ' raid-panel__alt--active' : ''}`}>
@@ -271,7 +291,8 @@ const BlueprintSection: React.FC = () => {
                           <span className="raid-panel__alt-steps">{describeSteps(a.path.steps)}</span>
                           <span className="raid-panel__alt-cost">
                             {a.rockets !== undefined ? <>{a.rockets} ракет · </> : null}
-                            {formatNum(a.path.sulfur)} серы
+                            {formatNum(a.path.sulfur)} серы · открывает {a.opened} {a.opened === 1 ? 'полость' : a.opened < 5 ? 'полости' : 'полостей'}
+                            {a === raid.bestOpened && found(raid) ? <span className="raid-panel__badge">больше всего полостей</span> : null}
                           </span>
                         </span>
                       </label>

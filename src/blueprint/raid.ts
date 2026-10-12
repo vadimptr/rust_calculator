@@ -247,8 +247,8 @@ function dijkstra(
 }
 
 /** Несколько самых дешёвых по штукам путей (алгоритм Йена). */
-export function cheapestRaidPaths(resolved: Resolved, targetCell: string, method: RaidMethod, k = 6): RaidPath[] {
-  const graph = buildSpaceGraph(resolved);
+export function cheapestRaidPaths(resolved: Resolved, targetCell: string, method: RaidMethod, k = 6, prebuilt?: SpaceGraph): RaidPath[] {
+  const graph = prebuilt ?? buildSpaceGraph(resolved);
   if (!graph.nodes.has(targetCell)) return [];
   const toRaidPath = (r: PathResult): RaidPath => {
     const steps = r.hops.flatMap(h => (h.step ? [h.step] : []));
@@ -333,6 +333,31 @@ export interface RaidAlternative {
   path: RaidPath;
   /** Ракет со сплешем (только для метода rocket). */
   rockets?: number;
+  /** Сколько замкнутых пространств открывается с улицы после разрушения элементов пути. */
+  opened: number;
+  openedIds: string[];
+}
+
+/** Пространства, достижимые с улицы без разрушений, если элементы из broken уже сломаны. */
+export function reachableSpaces(graph: SpaceGraph, broken: Set<string>): Set<string> {
+  const entries: AdjEdge[] = [];
+  for (const [id, list] of graph.adj) for (const e of list) if (e.to === OUTSIDE) entries.push({ to: id, blocker: e.blocker, mid: e.mid });
+  const passable = (b: EdgeBlocker) => {
+    const step = blockerStep(b, 'c4');
+    return step === null || broken.has(step.id);
+  };
+  const seen = new Set<string>();
+  const queue: string[] = [];
+  for (const e of entries) if (passable(e.blocker) && !seen.has(e.to)) { seen.add(e.to); queue.push(e.to); }
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const e of graph.adj.get(cur) ?? []) {
+      if (e.to === OUTSIDE || seen.has(e.to) || !passable(e.blocker)) continue;
+      seen.add(e.to);
+      queue.push(e.to);
+    }
+  }
+  return seen;
 }
 
 /**
@@ -343,14 +368,18 @@ export function raidAlternatives(
   resolved: Resolved, targetCell: string, method: RaidMethod,
   planSplash: (ids: string[]) => { rockets: number } | null, k = 8,
 ): RaidAlternative[] {
-  const paths = cheapestRaidPaths(resolved, targetCell, method, k);
+  const graph = buildSpaceGraph(resolved);
+  const paths = cheapestRaidPaths(resolved, targetCell, method, k, graph);
+  const initially = reachableSpaces(graph, new Set());
   const seen = new Set<string>();
   const out: RaidAlternative[] = [];
   for (const path of paths) {
     const key = [...path.ids].sort().join('|');
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(method === 'rocket' && path.ids.length > 0 ? { path, rockets: planSplash(path.ids)?.rockets } : { path });
+    const openedIds = [...reachableSpaces(graph, new Set(path.ids))].filter(id => !initially.has(id));
+    const base = { path, opened: openedIds.length, openedIds };
+    out.push(method === 'rocket' && path.ids.length > 0 ? { ...base, rockets: planSplash(path.ids)?.rockets } : base);
   }
   out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || a.path.steps.length - b.path.steps.length);
   return out;

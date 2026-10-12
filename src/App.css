@@ -1392,3 +1392,25 @@
   color: var(--text-secondary);
   font-size: 0.72rem;
 }
+
+.raid-panel__sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+.raid-panel__badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(79, 193, 233, 0.15);
+  border: 1px solid rgba(79, 193, 233, 0.5);
+  color: #9fd3e6;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
