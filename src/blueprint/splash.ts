@@ -111,8 +111,9 @@ export interface SplashShot {
 }
 
 const DEG = Math.PI / 180;
-/** Стены и двери чуть короче плит по высоте: их верх и низ не лежат на плоскости пола,
- * поэтому взрыв на крыше до стены под плитой не достаёт. */
+/** Стены и двери как цели на WALL_GAP короче по высоте и по ширине: их рёбра и торцы не
+ * лежат на плоскостях соседних плит и стен, поэтому взрыв снаружи не достаёт до стены под
+ * плитой и до проёма за угловой колонной. */
 const WALL_GAP = 0.05;
 /** Плиты не выступают за стены: кромка на FLOOR_INSET внутрь от плоскости стены, а расчётная
  * поверхность — в середине толщины плиты, так что снаружи кромку закрывает стена. */
@@ -170,9 +171,10 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     const h = wallHeight(el.kind);
     return {
       id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
-      surface: { kind: 'rect', w: 3, h: h - 2 * WALL_GAP, y0: WALL_GAP },
+      // стена-цель на WALL_GAP короче и по ширине: её торец не выходит на угловую колонну
+      surface: { kind: 'rect', w: 3 - 2 * WALL_GAP, h: h - 2 * WALL_GAP, y0: WALL_GAP },
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
-      candidates: rectPoints(3, h - 2 * WALL_GAP, WALL_GAP).map(p => toWorld(el.position, el.rotation, p)),
+      candidates: rectPoints(3 - 2 * WALL_GAP, h - 2 * WALL_GAP, WALL_GAP).map(p => toWorld(el.position, el.rotation, p)),
     };
   }
   if (info.category === 'cell') {

@@ -142,3 +142,12 @@ test('ceiling edge cannot be hit from outside: a ground-level stage never breaks
     for (const stage of sim.stages) if (stage.shot.point[1] < 2.9) assert.ok(!stage.broken.includes('c1'), stage.broken.join(','));
   }
 });
+
+test('bunker: an outside corner shot never breaks the doorway hidden behind the corridor wall', () => {
+  const { resolved } = load('bunker-30-rockets');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f0', ['rocket'])!;
+  assert.ok(sim.reached);
+  assert.equal(sim.units.rocket, 30);
+  assert.ok(!sim.stages[0].broken.includes('d1'), sim.stages[0].broken.join(','));
+});
