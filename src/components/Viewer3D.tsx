@@ -5,6 +5,8 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { animateDoors, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
 import type { Resolved } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
+import { RaidOverlay } from '../blueprint/raidOverlay.ts';
+import type { RaidView } from '../blueprint/raidOverlay.ts';
 
 export type CameraMode = 'orbit' | 'fly';
 
@@ -13,6 +15,10 @@ interface Viewer3DProps {
   mode: CameraMode;
   /** Открыть все двери (поверх собственного open у каждой двери). */
   doorsOpen: boolean;
+  /** Подсветка пути рейда; null — выключена. */
+  raid: RaidView | null;
+  /** Счётчик запусков воспроизведения рейда: изменение на >0 запускает, 0 — сбрасывает. */
+  raidPlay: number;
 }
 
 interface SceneRefs {
@@ -25,6 +31,7 @@ interface SceneRefs {
   clock: THREE.Clock;
   content: THREE.Group;
   doors: THREE.Object3D[];
+  raid: RaidOverlay;
   frame: number;
 }
 
@@ -37,7 +44,7 @@ function applyDoorsOpen(s: SceneRefs, doorsOpen: boolean) {
   }
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, raidPlay }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
 
@@ -106,7 +113,10 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
     document.addEventListener('keyup', onKeyUp);
     fly.addEventListener('unlock', onUnlock);
 
-    const state: SceneRefs = { renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], frame: 0 };
+    const state: SceneRefs = {
+      renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [],
+      raid: new RaidOverlay(content, scene), frame: 0,
+    };
     refs.current = state;
 
     const tick = () => {
@@ -114,6 +124,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
       if (fly.isLocked) applyFlight(camera, keys, dt);
       else if (controls.enabled) controls.update();
       animateDoors(state.doors, dt);
+      state.raid.tick(performance.now());
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);
     };
@@ -168,6 +179,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
   useEffect(() => {
     const s = refs.current;
     if (!s) return;
+    s.raid.clear();
     s.content.clear();
     if (!resolved) return;
 
@@ -175,6 +187,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s, doorsOpen);
+    s.raid.apply(raid);
 
     const bounds = new THREE.Box3().setFromObject(s.content);
     if (bounds.isEmpty()) return;
@@ -192,6 +205,19 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen }) => {
     );
     s.controls.update();
   }, [resolved]);
+
+  // Подсветка рейда: материалы и оверлей, без перестройки сцены и камеры
+  useEffect(() => {
+    const s = refs.current;
+    if (s) s.raid.apply(raid);
+  }, [raid]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    if (raidPlay > 0) s.raid.start(performance.now());
+    else s.raid.stop();
+  }, [raidPlay]);
 
   // Переключатель дверей: только цель анимации, сцена и камера не трогаются
   useEffect(() => {

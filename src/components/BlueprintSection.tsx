@@ -5,6 +5,22 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
+import { authoredRaidPath, cheapestRaidPath, raidPolyline } from '../blueprint/raid.ts';
+import type { RaidPath } from '../blueprint/raid.ts';
+import type { RaidView } from '../blueprint/raidOverlay.ts';
+import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
+import type { RaidMethod } from '../types';
+import { formatNum } from './ResourceRow';
+
+const RAID_METHODS: { id: RaidMethod; label: string }[] = [
+  { id: 'optimal', label: 'Оптимально' },
+  { id: 'c4', label: 'C4' },
+  { id: 'rocket', label: 'Ракеты' },
+  { id: 'satchel', label: 'Сачели' },
+  { id: 'explosiveAmmo', label: 'Ammo' },
+];
+
+type PathChoice = 'cheapest' | 'authored';
 
 const KIND_LABELS: Record<string, string> = {
   'square-foundation': 'Фундамент',
@@ -59,6 +75,10 @@ const BlueprintSection: React.FC = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [doorsOpen, setDoorsOpen] = useState(() => new URLSearchParams(window.location.search).get('doors') === 'open');
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
+  const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
+  const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
+  const [pathChoice, setPathChoice] = useState<PathChoice>('cheapest');
+  const [raidPlay, setRaidPlay] = useState(0);
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -75,6 +95,26 @@ const BlueprintSection: React.FC = () => {
   };
 
   const { blueprint, resolved, issues } = source.result;
+
+  // Пути рейда: авторский (raidPath) и самый дешёвый до ячейки шкафа
+  const raidPaths = useMemo(() => {
+    if (!blueprint || !resolved) return null;
+    const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
+    const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
+    if (!targetCell) return null;
+    const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
+    const cheapest = cheapestRaidPath(resolved, targetCell, raidMethod);
+    const authored = blueprint.raidPath?.length ? authoredRaidPath(resolved, blueprint.raidPath, raidMethod) : null;
+    const view = (p: RaidPath | null): RaidView | null => (p ? { ids: p.ids, line: raidPolyline(resolved, p, targetPos) } : null);
+    return { cheapest, authored, cheapestView: view(cheapest), authoredView: view(authored) };
+  }, [blueprint, resolved, raidMethod]);
+
+  const activePath = raidPaths ? (pathChoice === 'authored' && raidPaths.authored ? raidPaths.authored : raidPaths.cheapest) : null;
+  const raidView = raidOn && raidPaths
+    ? (pathChoice === 'authored' && raidPaths.authoredView ? raidPaths.authoredView : raidPaths.cheapestView)
+    : null;
+
+  const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
@@ -136,7 +176,7 @@ const BlueprintSection: React.FC = () => {
 
       <div className="bp__layout">
         <div className="bp__viewer">
-          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} />
+          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} />
           <div className="bp__hint">
             {cameraMode === 'orbit'
               ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
@@ -171,6 +211,94 @@ const BlueprintSection: React.FC = () => {
                 ))}
               </ul>
             </div>
+          )}
+
+          {resolved && raidPaths && (
+            <section className="raid-panel">
+              <label className="bp__toggle raid-panel__toggle">
+                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                Показать рейд
+              </label>
+
+              {raidOn && (
+                <>
+                  <div className="bp__presets raid-panel__methods" role="group" aria-label="Чем рейдим">
+                    {RAID_METHODS.map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={`raid-tier__btn raid-tier__btn--sm${m.id === raidMethod ? ' raid-tier__btn--active' : ''}`}
+                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); }}
+                        aria-pressed={m.id === raidMethod}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="raid-panel__choice" role="radiogroup" aria-label="Путь">
+                    <label className="bp__toggle">
+                      <input type="radio" name="raid-path" checked={pathChoice === 'cheapest'} onChange={() => { setPathChoice('cheapest'); setRaidPlay(0); }} />
+                      Самый дешёвый{raidPaths.cheapest ? <> · <b>{formatNum(raidPaths.cheapest.sulfur)}</b> серы</> : null}
+                    </label>
+                    {raidPaths.authored && (
+                      <label className="bp__toggle">
+                        <input type="radio" name="raid-path" checked={pathChoice === 'authored'} onChange={() => { setPathChoice('authored'); setRaidPlay(0); }} />
+                        Из чертежа · <b>{formatNum(raidPaths.authored.sulfur)}</b> серы
+                      </label>
+                    )}
+                  </div>
+
+                  {raidPaths.cheapest && raidPaths.authored && raidPaths.cheapest.sulfur < raidPaths.authored.sulfur && (
+                    <p className="raid-panel__note">
+                      Есть путь дешевле авторского на {formatNum(raidPaths.authored.sulfur - raidPaths.cheapest.sulfur)} серы.
+                    </p>
+                  )}
+                  {raidPaths.cheapest && raidPaths.authored && raidPaths.cheapest.sulfur === raidPaths.authored.sulfur
+                    && raidPaths.cheapest.ids.join() !== raidPaths.authored.ids.join() && (
+                    <p className="raid-panel__note">
+                      Путь через стены стоит столько же, сколько через двери: аирлок не удорожает рейд.
+                    </p>
+                  )}
+
+                  {activePath && (
+                    activePath.steps.length === 0 ? (
+                      <p className="raid-panel__note">Внутрь можно попасть без взрывчатки: есть свободный проход.</p>
+                    ) : (
+                      <table className="raid-panel__table">
+                        <thead>
+                          <tr><th>№</th><th>Что ломаем</th><th>Чем</th><th>Сера</th></tr>
+                        </thead>
+                        <tbody>
+                          {activePath.steps.map((st, i) => (
+                            <tr key={st.id}>
+                              <td className="raid-panel__n">{i + 1}</td>
+                              <td>
+                                {KIND_LABELS[st.kind] ?? st.kind}
+                                {st.grade ? <span className="bp__counts-grade"> · {GRADE_LABELS[st.grade] ?? st.grade}</span> : null}
+                              </td>
+                              <td>{st.breakdown.length ? st.breakdown.map(b => `${EXPLOSIVE_SHORT_LABELS[b.explosive]} ×${b.count}`).join(' + ') : 'инструмент'}</td>
+                              <td className="bp__counts-n">{formatNum(st.sulfur)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr><td colSpan={3}>Итого</td><td className="bp__counts-n">{formatNum(activePath.sulfur)}</td></tr>
+                        </tfoot>
+                      </table>
+                    )
+                  )}
+
+                  {activePath && activePath.steps.length > 0 && (
+                    <div className="raid-panel__actions">
+                      <button type="button" className="bp__upload-btn" onClick={() => setRaidPlay(n => n + 1)}>Воспроизвести</button>
+                      <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
+                    </div>
+                  )}
+                  <p className="raid-panel__hint">Путь ищется по одному уровню; мягкая сторона стен и рейд через крышу не учитываются.</p>
+                </>
+              )}
+            </section>
           )}
 
           {resolved && (

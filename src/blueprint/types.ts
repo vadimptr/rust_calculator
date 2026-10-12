@@ -99,6 +99,8 @@ export interface ResolvedElement extends Transform {
 export interface ResolvedDeployable extends Transform {
   id: string;
   kind: DeployableKind;
+  /** id элемента, к которому объект прикреплён. */
+  parent: string;
   hinge: 'left' | 'right';
   opens: 'outward' | 'inward';
   open: boolean;

@@ -1195,3 +1195,108 @@
   font-size: 0.9rem;
   padding: 2rem 0;
 }
+
+/* =========================================================
+   Raid panel (3D)
+   ========================================================= */
+
+.raid-panel {
+  border-top: 1px solid var(--card-border);
+  padding-top: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.raid-panel__toggle {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.raid-panel__methods {
+  margin: 0.7rem 0 0.6rem;
+}
+
+.raid-tier__btn--sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.66rem;
+}
+
+.raid-panel__choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.raid-panel__choice b {
+  color: var(--text-primary);
+}
+
+.raid-panel__note {
+  font-size: 0.8rem;
+  color: #e6c76a;
+  margin: 0.4rem 0;
+}
+
+.raid-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+}
+
+.raid-panel__table th {
+  text-align: left;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.raid-panel__table td {
+  padding: 0.3rem 0.2rem 0.3rem 0;
+  border-bottom: 1px solid var(--card-border);
+  vertical-align: top;
+}
+
+.raid-panel__table tfoot td {
+  font-weight: 700;
+  border-bottom: none;
+}
+
+.raid-panel__table td:nth-child(3),
+.raid-panel__table td:nth-child(4) {
+  white-space: nowrap;
+}
+
+.raid-panel__n {
+  width: 1.6rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.raid-panel__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+
+.raid-panel__actions .raid-tier__btn {
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.raid-panel__actions .raid-tier__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.raid-panel__hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
