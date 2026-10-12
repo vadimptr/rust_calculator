@@ -1023,16 +1023,6 @@
   color: #fff;
 }
 
-.raid-note {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.raid-note + .raid-section {
-  margin-top: 0;
-}
-
 /* =========================================================
    Blueprint 3D section
    ========================================================= */

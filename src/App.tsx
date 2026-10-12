@@ -42,11 +42,10 @@ const CATEGORY_ORDER: BuildingBlock['category'][] = [
   'foundation', 'floor', 'wall', 'opening', 'window', 'stairs', 'roof',
 ];
 
-type Section = 'build' | 'raid' | 'view';
+type Section = 'build' | 'view';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'build', label: 'Строительство' },
-  { id: 'raid', label: 'Рейд' },
   { id: 'view', label: '3D-просмотр' },
 ];
 
@@ -154,30 +153,19 @@ function App() {
       ) : (
         <div className="app-layout">
           <main className="app-main">
-            {section === 'build' && (
-              <>
-                <Presets onApply={applyPreset} />
-                <BlockTable
-                  groupedBlocks={groupedBlocks}
-                  categoryOrder={CATEGORY_ORDER}
-                  quantities={quantities}
-                  onQuantityChange={setQuantity}
-                />
-              </>
-            )}
-            {section === 'raid' && (
-              <>
-                <p className="raid-note">
-                  Рейд считается по блокам, выбранным в разделе «Строительство».
-                </p>
-                <RaidTable
-                  rows={raidRows}
-                  tier={raidTier}
-                  onTierChange={setRaidTier}
-                  hasAny={hasAny}
-                />
-              </>
-            )}
+            <Presets onApply={applyPreset} />
+            <BlockTable
+              groupedBlocks={groupedBlocks}
+              categoryOrder={CATEGORY_ORDER}
+              quantities={quantities}
+              onQuantityChange={setQuantity}
+            />
+            <RaidTable
+              rows={raidRows}
+              tier={raidTier}
+              onTierChange={setRaidTier}
+              hasAny={hasAny}
+            />
           </main>
 
           <aside className="app-sidebar">
