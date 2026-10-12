@@ -115,7 +115,9 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
   }
   if (info.category === 'cell') {
     const r = info.shape === 'square' ? 1.5 : 0.866;
-    const local: Vec3[] = [[0, 0, 0], [r, 0, 0], [-r, 0, 0], [0, 0, r], [0, 0, -r]];
+    // центр, середины рёбер и вершины: удар в угол, где сходятся несколько плит, задевает их все
+    const local: Vec3[] = [[0, 0, 0], [r, 0, 0], [-r, 0, 0], [0, 0, r], [0, 0, -r],
+      ...cellVertices(info.shape!).map(([x, z]) => [x, 0, z] as Vec3)];
     return {
       id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
       candidates: local.map(p => toWorld(el.position, el.rotation, p)),
