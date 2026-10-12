@@ -35,6 +35,10 @@ const DOORWAY_H = 2.2;
 /** Проём в wall-frame: под гаражную и двойные двери. */
 const FRAME_W = 2.4;
 const FRAME_H = 2.7;
+/** Окно в window-frame: ширина × высота проёма и высота подоконника (≈, по пропорциям модели). */
+const WINDOW_W = 1.5;
+const WINDOW_H = 1.25;
+const WINDOW_SILL = 1.0;
 const DOOR_T = 0.1;
 
 const materialCache = new Map<number, THREE.MeshStandardMaterial>();
@@ -89,13 +93,16 @@ function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
         box(WALL_T, lintel, DOORWAY_W, 0, h - lintel / 2, 0),
       ];
     }
-    case 'window-frame':
+    case 'window-frame': {
+      const side = (3 - WINDOW_W) / 2;
+      const top = h - (WINDOW_SILL + WINDOW_H);
       return [
-        box(WALL_T, 1.0, 3, 0, 0.5, 0),
-        box(WALL_T, 1.0, 3, 0, 2.5, 0),
-        box(WALL_T, 1.0, 1.0, 0, 1.5, -1.0),
-        box(WALL_T, 1.0, 1.0, 0, 1.5, 1.0),
+        box(WALL_T, WINDOW_SILL, 3, 0, WINDOW_SILL / 2, 0),
+        box(WALL_T, top, 3, 0, h - top / 2, 0),
+        box(WALL_T, WINDOW_H, side, 0, WINDOW_SILL + WINDOW_H / 2, -(WINDOW_W / 2 + side / 2)),
+        box(WALL_T, WINDOW_H, side, 0, WINDOW_SILL + WINDOW_H / 2, WINDOW_W / 2 + side / 2),
       ];
+    }
     case 'wall-frame': {
       const side = (3 - FRAME_W) / 2;
       const lintel = h - FRAME_H;
