@@ -1,0 +1,774 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "1.0",
+  "meta": {
+    "name": "Бункер на 30 ракет",
+    "description": "Бронированное ядро со шкафом без дверей, вокруг бронированная сота 3×3, над всей сотой второй этаж с бронированными стенами и крышей, все потолки бронированные. Любой путь к шкафу проходит через два бронированных слоя: 15 + 15 ракет, снизу, сбоку и сверху. Вход в соту — коридор из трёх ячеек с четырьмя бронированными дверями: 4 × 5 ракет до соты плюс 15 до ядра.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "bunker",
+      "armored",
+      "honeycomb",
+      "example"
+    ]
+  },
+  "defaults": {
+    "grade": "armored"
+  },
+  "elements": [
+    {
+      "id": "f0",
+      "kind": "square-foundation",
+      "root": true,
+      "label": "Ядро со шкафом"
+    },
+    {
+      "id": "fe",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Сота восток"
+    },
+    {
+      "id": "fn",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      },
+      "label": "Сота север"
+    },
+    {
+      "id": "fw",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      },
+      "label": "Сота запад"
+    },
+    {
+      "id": "fs",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      },
+      "label": "Сота юг"
+    },
+    {
+      "id": "fne",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "fe",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      }
+    },
+    {
+      "id": "fse",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "fe",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "fnw",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "fw",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      }
+    },
+    {
+      "id": "fsw",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "fw",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "cw0",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:0"
+      },
+      "label": "Стена ядра"
+    },
+    {
+      "id": "cw1",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:1"
+      },
+      "label": "Стена ядра"
+    },
+    {
+      "id": "cw2",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:2"
+      },
+      "label": "Стена ядра"
+    },
+    {
+      "id": "cw3",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "f0",
+        "socket": "edge:3"
+      },
+      "label": "Стена ядра"
+    },
+    {
+      "id": "ow0",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fne",
+        "socket": "edge:0"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow1",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fne",
+        "socket": "edge:1"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow2",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fn",
+        "socket": "edge:1"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow3",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fnw",
+        "socket": "edge:1"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow4",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fnw",
+        "socket": "edge:2"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow5",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fw",
+        "socket": "edge:2"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow6",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fsw",
+        "socket": "edge:2"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow7",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fsw",
+        "socket": "edge:3"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow8",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fs",
+        "socket": "edge:3"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow9",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fse",
+        "socket": "edge:3"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "ow10",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "fse",
+        "socket": "edge:0"
+      },
+      "label": "Внешняя стена соты"
+    },
+    {
+      "id": "d1",
+      "kind": "doorway",
+      "grade": "armored",
+      "attach": {
+        "to": "fe",
+        "socket": "edge:0"
+      },
+      "label": "Дверь в соту"
+    },
+    {
+      "id": "k1",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "fe",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Коридор 1"
+    },
+    {
+      "id": "k2",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "k1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Коридор 2"
+    },
+    {
+      "id": "k3",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "k2",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Коридор 3"
+    },
+    {
+      "id": "d2",
+      "kind": "doorway",
+      "grade": "armored",
+      "attach": {
+        "to": "k1",
+        "socket": "edge:0"
+      },
+      "label": "Дверь коридора"
+    },
+    {
+      "id": "d3",
+      "kind": "doorway",
+      "grade": "armored",
+      "attach": {
+        "to": "k2",
+        "socket": "edge:0"
+      },
+      "label": "Дверь коридора"
+    },
+    {
+      "id": "d4",
+      "kind": "doorway",
+      "grade": "armored",
+      "attach": {
+        "to": "k3",
+        "socket": "edge:0"
+      },
+      "label": "Входная дверь"
+    },
+    {
+      "id": "kw0",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k1",
+        "socket": "edge:1"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "kw1",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k1",
+        "socket": "edge:3"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "kw2",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k2",
+        "socket": "edge:1"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "kw3",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k2",
+        "socket": "edge:3"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "kw4",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k3",
+        "socket": "edge:1"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "kw5",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "k3",
+        "socket": "edge:3"
+      },
+      "label": "Стена коридора"
+    },
+    {
+      "id": "c0",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "cw0",
+        "socket": "top",
+        "selfSocket": "edge:0"
+      },
+      "label": "Потолок ядра"
+    },
+    {
+      "id": "ce",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "c0",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    },
+    {
+      "id": "cn",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "c0",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      }
+    },
+    {
+      "id": "cwf",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "c0",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      }
+    },
+    {
+      "id": "cs",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "c0",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "cne",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "ce",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      }
+    },
+    {
+      "id": "cse",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "ce",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "cnw",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "cwf",
+        "socket": "edge:1",
+        "selfSocket": "edge:3"
+      }
+    },
+    {
+      "id": "csw",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "cwf",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "ck1",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "ce",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    },
+    {
+      "id": "ck2",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "ck1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    },
+    {
+      "id": "ck3",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "ck2",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    },
+    {
+      "id": "uw0",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "ce",
+        "socket": "edge:0"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw1",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cne",
+        "socket": "edge:0"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw2",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cne",
+        "socket": "edge:1"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw3",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cn",
+        "socket": "edge:1"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw4",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cnw",
+        "socket": "edge:1"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw5",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cnw",
+        "socket": "edge:2"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw6",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cwf",
+        "socket": "edge:2"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw7",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "csw",
+        "socket": "edge:2"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw8",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "csw",
+        "socket": "edge:3"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw9",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cs",
+        "socket": "edge:3"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw10",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cse",
+        "socket": "edge:3"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "uw11",
+      "kind": "wall",
+      "grade": "armored",
+      "attach": {
+        "to": "cse",
+        "socket": "edge:0"
+      },
+      "label": "Стена верхнего этажа"
+    },
+    {
+      "id": "rne",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "uw1",
+        "socket": "top",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "re",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "rne",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "rn",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "rne",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "r0",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "re",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша над ядром"
+    },
+    {
+      "id": "rse",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "re",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "rnw",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "rn",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "rw",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "r0",
+        "socket": "edge:2",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "rs",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "r0",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      },
+      "label": "Крыша"
+    },
+    {
+      "id": "rsw",
+      "kind": "square-floor",
+      "grade": "armored",
+      "attach": {
+        "to": "rw",
+        "socket": "edge:3",
+        "selfSocket": "edge:1"
+      },
+      "label": "Крыша"
+    }
+  ],
+  "deployables": [
+    {
+      "id": "door1",
+      "kind": "armored-door",
+      "attach": {
+        "to": "d1",
+        "socket": "opening"
+      },
+      "hinge": "left"
+    },
+    {
+      "id": "door2",
+      "kind": "armored-door",
+      "attach": {
+        "to": "d2",
+        "socket": "opening"
+      },
+      "hinge": "left"
+    },
+    {
+      "id": "door3",
+      "kind": "armored-door",
+      "attach": {
+        "to": "d3",
+        "socket": "opening"
+      },
+      "hinge": "left"
+    },
+    {
+      "id": "door4",
+      "kind": "armored-door",
+      "attach": {
+        "to": "d4",
+        "socket": "opening"
+      },
+      "hinge": "left"
+    },
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f0",
+        "socket": "top"
+      },
+      "offset": [
+        -1.075,
+        -0.825
+      ],
+      "rotation": 0,
+      "notes": "Прижат спинкой и боком к стенам дальнего угла."
+    }
+  ]
+}
