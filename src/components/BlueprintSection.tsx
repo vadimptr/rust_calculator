@@ -95,13 +95,6 @@ function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): un
   return doc;
 }
 
-/** В рейде пол ломают сверху, поэтому называем его потолком. */
-const RAID_KIND_LABELS: Record<string, string> = {
-  'square-floor': 'Потолок',
-  'triangle-floor': 'Треугольный потолок',
-};
-const raidLabel = (kind: string) => RAID_KIND_LABELS[kind] ?? KIND_LABELS[kind] ?? kind;
-
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };

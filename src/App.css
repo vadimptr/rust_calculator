@@ -1091,7 +1091,7 @@
 }
 
 .bp__panel {
-  width: 340px;
+  width: 440px;
   flex-shrink: 0;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
