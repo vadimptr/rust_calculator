@@ -260,7 +260,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
     }
     const t = placeDeployable(placed.get(parent.id)!, d);
     resolved.deployables.push({
-      id: d.id, kind: d.kind, hinge: d.hinge ?? 'left',
+      id: d.id, kind: d.kind, hinge: d.hinge ?? 'left', opens: d.opens ?? 'outward', open: d.open === true,
       position: t.position.map(round3) as [number, number, number],
       rotation: round3(norm360(t.rotation)), level: t.level,
     } satisfies ResolvedDeployable);

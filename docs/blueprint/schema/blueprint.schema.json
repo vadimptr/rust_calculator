@@ -320,6 +320,20 @@
         },
         "notes": {
           "type": "string"
+        },
+        "opens": {
+          "type": "string",
+          "enum": [
+            "outward",
+            "inward"
+          ],
+          "default": "outward",
+          "description": "Куда распахивается дверь: outward — по нормали проёма (наружу), inward — против нормали. Только для дверей."
+        },
+        "open": {
+          "type": "boolean",
+          "default": false,
+          "description": "Дверь показана открытой (для просмотра и проверки перекрытия). Только для дверей."
         }
       },
       "allOf": [
@@ -341,7 +355,9 @@
                   }
                 }
               },
-              "hinge": false
+              "hinge": false,
+              "opens": false,
+              "open": false
             }
           },
           "else": {

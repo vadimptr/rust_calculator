@@ -29,6 +29,13 @@ const DOOR_COLORS: Record<DeployableKind, number> = {
 const EDGE_COLOR = 0x0e0c0a;
 const WALL_T = 0.25;
 const FOUNDATION_D = 0.6;
+/** Проём в doorway: ширина × высота; дверь заполняет его целиком. */
+const DOORWAY_W = 1.0;
+const DOORWAY_H = 2.2;
+/** Проём в wall-frame: под гаражную и двойные двери. */
+const FRAME_W = 2.4;
+const FRAME_H = 2.7;
+const DOOR_T = 0.1;
 
 const materialCache = new Map<number, THREE.MeshStandardMaterial>();
 function material(color: number): THREE.MeshStandardMaterial {
@@ -73,12 +80,15 @@ function cellSlab(shape: Shape, depth: number, inset = 0): THREE.BufferGeometry 
 function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   const h = wallHeight(kind);
   switch (kind) {
-    case 'doorway':
+    case 'doorway': {
+      const side = (3 - DOORWAY_W) / 2;
+      const lintel = h - DOORWAY_H;
       return [
-        box(WALL_T, h, 1.0, 0, h / 2, -1.0),
-        box(WALL_T, h, 1.0, 0, h / 2, 1.0),
-        box(WALL_T, 0.8, 1.0, 0, h - 0.4, 0),
+        box(WALL_T, h, side, 0, h / 2, -(DOORWAY_W / 2 + side / 2)),
+        box(WALL_T, h, side, 0, h / 2, DOORWAY_W / 2 + side / 2),
+        box(WALL_T, lintel, DOORWAY_W, 0, h - lintel / 2, 0),
       ];
+    }
     case 'window-frame':
       return [
         box(WALL_T, 1.0, 3, 0, 0.5, 0),
@@ -86,12 +96,15 @@ function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
         box(WALL_T, 1.0, 1.0, 0, 1.5, -1.0),
         box(WALL_T, 1.0, 1.0, 0, 1.5, 1.0),
       ];
-    case 'wall-frame':
+    case 'wall-frame': {
+      const side = (3 - FRAME_W) / 2;
+      const lintel = h - FRAME_H;
       return [
-        box(WALL_T, h, 0.3, 0, h / 2, -1.35),
-        box(WALL_T, h, 0.3, 0, h / 2, 1.35),
-        box(WALL_T, 0.3, 3, 0, h - 0.15, 0),
+        box(WALL_T, h, side, 0, h / 2, -(FRAME_W / 2 + side / 2)),
+        box(WALL_T, h, side, 0, h / 2, FRAME_W / 2 + side / 2),
+        box(WALL_T, lintel, FRAME_W, 0, h - lintel / 2, 0),
       ];
+    }
     default:
       return [box(WALL_T, h, 3, 0, h / 2, 0)];
   }
@@ -161,21 +174,42 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
   }
 }
 
-function deployableParts(d: ResolvedDeployable): THREE.BufferGeometry[] {
+/**
+ * Дверное полотно на петле. hingeZ — локальная z петли (нормаль проёма = +x, «left» = +z при
+ * взгляде снаружи по нормали). Полотно тянется от петли к центру проёма. Открытая дверь
+ * повёрнута на 90° вокруг петли: outward — в сторону +x, inward — в сторону −x.
+ */
+function doorLeaf(width: number, height: number, hingeZ: number, open: boolean, opens: 'outward' | 'inward', color: number): THREE.Group {
+  const pivot = new THREE.Group();
+  pivot.position.set(0, 0, hingeZ);
+  const toCenter = hingeZ > 0 ? -1 : 1;
+  const leaf = withEdges(box(DOOR_T, height, width, 0, height / 2, toCenter * width / 2), color);
+  pivot.add(leaf);
+  pivot.add(withEdges(box(0.18, height, 0.14, 0, height / 2, 0), 0x1a1a1a));
+  if (open) {
+    const sign = hingeZ > 0 ? -1 : 1;             // полотно вдоль −z → +x при −90°, вдоль +z → +x при +90°
+    pivot.rotation.y = (opens === 'outward' ? sign : -sign) * (Math.PI / 2);
+  }
+  return pivot;
+}
+
+function buildDoor(d: ResolvedDeployable): THREE.Group {
+  const g = new THREE.Group();
+  const color = DOOR_COLORS[d.kind];
   switch (d.kind) {
-    case 'tool-cupboard':
-      return [box(0.5, 1.2, 1.0, 0, 0.6, 0)];
     case 'garage-door':
-      return [box(0.1, 2.6, 2.4, 0, 1.3, 0)];
+      // Гаражная дверь поднимается вверх; открытая — вровень с притолокой
+      g.add(withEdges(box(DOOR_T, FRAME_H, FRAME_W, 0, d.open ? FRAME_H + FRAME_H / 2 - 0.3 : FRAME_H / 2, 0), color));
+      return g;
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      return [box(0.1, 2.6, 1.15, 0, 1.3, -0.625), box(0.1, 2.6, 1.15, 0, 1.3, 0.625)];
-    default: {
-      // Петля: hinge «left» — слева, если смотреть снаружи по нормали (+x), то есть со стороны +z
-      const hz = d.hinge === 'left' ? 0.5 : -0.5;
-      return [box(0.1, 2.0, 0.96, 0, 1.0, 0), box(0.18, 2.0, 0.14, 0, 1.0, hz)];
-    }
+      g.add(doorLeaf(FRAME_W / 2, FRAME_H, FRAME_W / 2, d.open, d.opens, color));
+      g.add(doorLeaf(FRAME_W / 2, FRAME_H, -FRAME_W / 2, d.open, d.opens, color));
+      return g;
+    default:
+      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.open, d.opens, color));
+      return g;
   }
 }
 
@@ -194,8 +228,9 @@ export function buildElement(el: ResolvedElement): THREE.Object3D {
 }
 
 export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
-  const g = new THREE.Group();
-  for (const part of deployableParts(d)) g.add(withEdges(part, DOOR_COLORS[d.kind]));
+  const g = d.kind === 'tool-cupboard'
+    ? (() => { const t = new THREE.Group(); t.add(withEdges(box(0.5, 1.2, 1.0, 0, 0.6, 0), DOOR_COLORS[d.kind])); return t; })()
+    : buildDoor(d);
   g.userData = { id: d.id, kind: d.kind };
   return place(g, d.position, d.rotation);
 }

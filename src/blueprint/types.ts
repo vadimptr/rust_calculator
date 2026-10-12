@@ -59,6 +59,8 @@ export interface Deployable {
   offset?: [number, number];
   rotation?: number;
   hinge?: 'left' | 'right';
+  opens?: 'outward' | 'inward';
+  open?: boolean;
   label?: string;
   notes?: string;
 }
@@ -98,6 +100,8 @@ export interface ResolvedDeployable extends Transform {
   id: string;
   kind: DeployableKind;
   hinge: 'left' | 'right';
+  opens: 'outward' | 'inward';
+  open: boolean;
 }
 
 export interface Resolved {

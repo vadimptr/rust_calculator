@@ -1071,6 +1071,20 @@
   color: #fff;
 }
 
+.bp__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.bp__toggle input {
+  accent-color: var(--accent);
+}
+
 .bp__spec-link {
   font-size: 0.8rem;
   color: var(--text-secondary);

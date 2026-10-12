@@ -56,6 +56,7 @@ const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const fileRef = useRef<HTMLInputElement>(null);
+  const [doorsOpen, setDoorsOpen] = useState(() => new URLSearchParams(window.location.search).get('doors') === 'open');
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -71,7 +72,12 @@ const BlueprintSection: React.FC = () => {
     e.target.value = '';
   };
 
-  const { blueprint, resolved, issues } = source.result;
+  const { blueprint, issues } = source.result;
+  const resolved = useMemo(() => {
+    const r = source.result.resolved;
+    if (!r || !doorsOpen) return r;
+    return { ...r, deployables: r.deployables.map(d => (d.kind === 'tool-cupboard' ? d : { ...d, open: true })) };
+  }, [source, doorsOpen]);
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
@@ -105,6 +111,10 @@ const BlueprintSection: React.FC = () => {
         </div>
         <div className="bp__upload">
           <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
+          <label className="bp__toggle">
+            <input type="checkbox" checked={doorsOpen} onChange={e => setDoorsOpen(e.target.checked)} />
+            Открыть двери
+          </label>
           <button type="button" className="bp__upload-btn" onClick={() => fileRef.current?.click()}>
             Загрузить JSON
           </button>
