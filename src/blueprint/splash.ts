@@ -224,7 +224,7 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
 }
 
 /** Сетка точек на поверхности цели (мир): центр, рёбра, углы и промежуточные точки. */
-export function surfacePoints(t: SplashTarget, steps = 4): Vec3[] {
+export function surfacePoints(t: SplashTarget, steps = 3): Vec3[] {
   const out: Vec3[] = [];
   if (t.surface.kind === 'rect') {
     const { w, h, y0 } = t.surface;
@@ -366,7 +366,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
 /** Запас плиты для лучей вниз (закрывает швы) и допуск кромки для лучей вверх. */
 const SEAM = 0.05;
 const GRAZE = 0.02;
-const GRAZE_BOTTOM = 0.005;
+const GRAZE_BOTTOM = -1e-6; // низ стены включительно: пологий луч снаружи не проскальзывает под стеной второго этажа
 
 /** Преграды из геометрии: стены-типы и ячейки. Проёмы без живой двери и низкие стены не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
@@ -434,19 +434,16 @@ function sideOf(t: SplashTarget, p: Vec3): number {
  * Так удар в угловую колонну задевает все открытые конструкции, сходящиеся в ней, но не скрытые за
  * стеной проёмы и не потолки, к которым рейдер стоит снизу.
  */
-function damageMap(
-  ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[],
+/** Досягаемость из точки p: расстояние до каждой цели, до которой взрыв доходит (один раз на точку). */
+function reachMap(
+  p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[], maxRadius: number,
   contact?: { raw: Vec3; exposure: Map<string, Vec3> },
-): Record<string, number> {
-  const damage: Record<string, number> = {};
-  if (!EXPLOSIVES[ex].area) {
-    // контактная взрывчатка: только блок, на который поставлена
-    if (targets.includes(owner)) damage[owner.id] = owner.hit[ex];
-    return damage;
-  }
+): Map<string, number> {
+  const reach = new Map<string, number>();
   for (const t of targets) {
-    let dmg = unitDamage(ex, p, t);
-    if (dmg > 0 && t.id !== owner.id) {
+    const d = distanceTo(p, t);
+    if (d >= maxRadius) continue;
+    if (t.id !== owner.id) {
       const q = nearestPoint(p, t);
       // плиты одной плоскости друг друга не закрывают: взрыв над ними достаёт все плиты угла
       const coplanarSlab = (o: Occluder) => o.kind === 'cell' && t.axis === 'y' && Math.abs(o.origin[1] - (t.origin[1] + FLOOR_MID)) < 1e-6;
@@ -455,10 +452,30 @@ function damageMap(
         const eye = contact?.exposure.get(t.id);
         const touching = contact && eye && dist(contact.raw, nearestPoint(contact.raw, t)) <= CONTACT
           && sideOf(t, p) !== 0 && sideOf(t, p) === sideOf(t, eye);
-        if (!touching) dmg = 0;
+        if (!touching) continue;
       }
     }
-    if (dmg > 0) damage[t.id] = dmg;
+    reach.set(t.id, d);
+  }
+  return reach;
+}
+
+function damageMap(
+  ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[],
+  contact?: { raw: Vec3; exposure: Map<string, Vec3> }, reach?: Map<string, number>,
+): Record<string, number> {
+  const damage: Record<string, number> = {};
+  if (!EXPLOSIVES[ex].area) {
+    // контактная взрывчатка: только блок, на который поставлена
+    if (targets.includes(owner)) damage[owner.id] = owner.hit[ex];
+    return damage;
+  }
+  const byId = new Map(targets.map(t => [t.id, t]));
+  const r = reach ?? reachMap(p, owner, targets, occ, EXPLOSIVES[ex].maxRadius, contact);
+  for (const [id, d] of r) {
+    const t = byId.get(id)!;
+    const dmg = t.hit[ex] * falloff(ex, d);
+    if (dmg > 0) damage[id] = dmg;
   }
   return damage;
 }
@@ -559,7 +576,8 @@ export function simulateRaid(
     // задетых элементов.
     type Pre = { shot: SplashShot; owner: SplashTarget; eye: Vec3; pre: number[] };
     const pres: Pre[] = [];
-    // дешёвый ключ: ценность открываемого (BFS по графу, дёшево) и полезный урон на серу
+    // дешёвый ключ: ценность открываемого (BFS по графу, с кэшем по набору разрушений) и полезный урон на серу
+    const gainCache = new Map<string, number>();
     const preKey = (shot: SplashShot): number[] => {
       let useful = 0, touched = 0;
       const dead: string[] = [];
@@ -571,8 +589,13 @@ export function simulateRaid(
       const cost = shot.count * EXPLOSIVES[shot.explosive].sulfur;
       let gain = 0;
       if (dead.length) {
-        const r2 = reachableSpaces(graph, new Set([...broken, ...dead]));
-        gain = spacesValue(graph, [...r2].filter(id => !reachable.has(id)), resolved);
+        const key = dead.sort().join('|');
+        if (gainCache.has(key)) gain = gainCache.get(key)!;
+        else {
+          const r2 = reachableSpaces(graph, new Set([...broken, ...dead]));
+          gain = spacesValue(graph, [...r2].filter(id => !reachable.has(id)), resolved);
+          gainCache.set(key, gain);
+        }
       }
       return strategy === 'value' ? [gain / cost, useful / cost, touched] : [useful / cost, gain / cost, touched];
     };
@@ -585,8 +608,10 @@ export function simulateRaid(
       const point = visibleImpact(c, eye, owner, occ);
       if (!point) return [];
       const shots: SplashShot[] = [];
+      const maxR = Math.max(...allowed.map(ex => EXPLOSIVES[ex].maxRadius));
+      const reach = allowed.some(ex => EXPLOSIVES[ex].area) ? reachMap(point, owner, live, occ, maxR, { raw: c, exposure }) : undefined;
       for (const ex of allowed) {
-        const damage = damageMap(ex, point, owner, live, occ, { raw: c, exposure });
+        const damage = damageMap(ex, point, owner, live, occ, { raw: c, exposure }, reach);
         // варианты залпа: одна единица и каждый порог, на котором гибнет очередной задетый элемент
         const needs = Object.entries(damage).map(([id, dmg]) => Math.ceil((hpLeft.get(id) ?? 0) / dmg - 1e-9)).filter(n => n > 0);
         if (needs.length === 0) continue;

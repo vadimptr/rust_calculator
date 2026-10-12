@@ -1,13 +1,14 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
 import type { CameraMode } from './Viewer3D';
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { buildSpaceGraph, spacesValue } from '../blueprint/raid.ts';
+
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { EXPLOSIVES, METHOD_EXPLOSIVES, bestSimulation } from '../blueprint/splash.ts';
+import type { RaidSimulation } from '../blueprint/splash.ts';
+import type { RaidRequest, RaidResponse } from '../blueprint/raidWorker.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
 import { formatNum } from './ResourceRow';
@@ -61,31 +62,21 @@ const GRADE_CHOICES: { id: GradeChoice; label: string; img: string }[] = [
   { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
   { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
 ];
-const DOOR_CHOICES: { id: DoorChoice; label: string; color: string; wide?: boolean }[] = [
-  { id: 'wooden', label: 'Деревянные двери', color: '#b98a5a' },
-  { id: 'metal', label: 'Металлические двери', color: '#a85a2e' },
-  { id: 'armored', label: 'Двери из МВК', color: '#5a5e66' },
-  { id: 'garage', label: 'Гаражные двери (в рамах)', color: '#a85a2e', wide: true },
+const DOOR_CHOICES: { id: DoorChoice; label: string; img: string; wide?: boolean }[] = [
+  { id: 'wooden', label: 'Деревянные двери', img: '/icons/wood.png' },
+  { id: 'metal', label: 'Металлические двери', img: '/icons/metal.refined.png' },
+  { id: 'armored', label: 'Двери из МВК', img: '/icons/metal.fragments.png' },
+  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/metal.refined.png', wide: true },
 ];
 const SINGLE_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
 const FRAME_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
 
-/** Иконка двери: одиночная створка или широкая гаражная с ламелями. */
-const DoorIcon: React.FC<{ color: string; wide?: boolean }> = ({ color, wide }) => (
-  <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-    {wide ? (
-      <>
-        <rect x="2" y="5" width="22" height="17" rx="1.5" fill={color} stroke="#1a1410" strokeWidth="1" />
-        <line x1="2" y1="10" x2="24" y2="10" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
-        <line x1="2" y1="14" x2="24" y2="14" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
-        <line x1="2" y1="18" x2="24" y2="18" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
-      </>
-    ) : (
-      <>
-        <rect x="7" y="3" width="12" height="20" rx="1.5" fill={color} stroke="#1a1410" strokeWidth="1" />
-        <circle cx="16" cy="13.5" r="1.3" fill="#1a1410" />
-      </>
-    )}
+/** Значок-уточнение на иконке материала двери: створка или широкая гаражная. */
+const DoorBadge: React.FC<{ wide?: boolean }> = ({ wide }) => (
+  <svg className="bp__icon-badge" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+    {wide
+      ? <><rect x="1" y="2.5" width="10" height="7" rx="1" fill="#e8d9b0" /><line x1="1" y1="5" x2="11" y2="5" stroke="#1a1410" strokeWidth="1" /><line x1="1" y1="7" x2="11" y2="7" stroke="#1a1410" strokeWidth="1" /></>
+      : <><rect x="3.5" y="1" width="5" height="10" rx="1" fill="#e8d9b0" /><circle cx="7.3" cy="6" r="0.8" fill="#1a1410" /></>}
   </svg>
 );
 const SINGLE_DOOR_KINDS = ['wooden-door', 'sheet-metal-door', 'armored-door'];
@@ -168,18 +159,28 @@ const BlueprintSection: React.FC = () => {
 
   const { blueprint, resolved, issues } = result;
 
-  // Рейд считается на лету: симуляция по этапам — залп, убрать погибшее, пересчитать доступное, и так до шкафа
-  const raid = useMemo(() => {
-    if (!blueprint || !resolved) return null;
-    const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
-    const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
-    if (!targetCell) return null;
-    const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const graph = buildSpaceGraph(resolved);
-    const sim = bestSimulation(resolved, graph, targetCell, METHOD_EXPLOSIVES[raidMethod]);
-    if (!sim) return null;
-    return { sim, targetPos, value: spacesValue(graph, sim.openedIds, resolved) };
-  }, [blueprint, resolved, raidMethod]);
+  // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
+  const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
+  const [raidBusy, setRaidBusy] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
+  const requestId = useRef(0);
+  useEffect(() => {
+    const w = new Worker(new URL('../blueprint/raidWorker.ts', import.meta.url), { type: 'module' });
+    workerRef.current = w;
+    w.onmessage = (e: MessageEvent<RaidResponse>) => {
+      if (e.data.id !== requestId.current) return;
+      setRaidBusy(false);
+      setRaid(e.data.sim && e.data.targetPos ? { sim: e.data.sim, targetPos: e.data.targetPos, value: e.data.value } : null);
+    };
+    return () => { w.terminate(); workerRef.current = null; };
+  }, []);
+  useEffect(() => {
+    if (!raidOn || !blueprint || !resolved || !workerRef.current) { setRaid(null); return; }
+    const id = ++requestId.current;
+    setRaidBusy(true);
+    const req: RaidRequest = { id, blueprint, method: raidMethod };
+    workerRef.current.postMessage(req);
+  }, [raidOn, blueprint, resolved, raidMethod]);
 
   const sim = raid?.sim ?? null;
 
@@ -194,12 +195,6 @@ const BlueprintSection: React.FC = () => {
     return { ...view, impacts: sim.stages.map(st => ({ point: st.shot.point, count: st.shot.count })) };
   }, [raidOn, raid, sim, showImpacts]);
 
-  const elementName = (id: string) => {
-    const el = resolved?.elements.find(e => e.id === id);
-    if (el) return `${raidLabel(el.kind)} (${GRADE_LABELS[el.grade] ?? el.grade})`;
-    const d = resolved?.deployables.find(x => x.id === id);
-    return d ? (KIND_LABELS[d.kind] ?? d.kind) : id;
-  };
   const describeUnits = (units: Partial<Record<string, number>>) =>
     Object.entries(units).filter(([, n]) => (n ?? 0) > 0)
       .map(([ex, n]) => `${EXPLOSIVE_SHORT_LABELS[ex as keyof typeof EXPLOSIVE_SHORT_LABELS] ?? ex} ×${n}`).join(' + ');
@@ -271,7 +266,7 @@ const BlueprintSection: React.FC = () => {
             {DOOR_CHOICES.map(c => (
               <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
                 onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice} aria-label={c.label}>
-                <DoorIcon color={c.color} wide={c.wide} />
+                <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
               </button>
             ))}
           </div>
@@ -322,7 +317,24 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {resolved && raid && sim && (
+          {resolved && raidBusy && (
+            <section className="raid-panel">
+              <label className="bp__toggle raid-panel__toggle">
+                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                Показать рейд
+              </label>
+              <p className="raid-panel__hint">Считаю рейд…</p>
+            </section>
+          )}
+          {resolved && !raidBusy && !raid && (
+            <section className="raid-panel">
+              <label className="bp__toggle raid-panel__toggle">
+                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                Показать рейд
+              </label>
+            </section>
+          )}
+          {resolved && !raidBusy && raid && sim && (
             <section className="raid-panel">
               <label className="bp__toggle raid-panel__toggle">
                 <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -354,22 +366,6 @@ const BlueprintSection: React.FC = () => {
                     </div>
                   </div>
 
-                  <ol className="raid-panel__stages">
-                    {sim!.stages.map((st, i) => (
-                      <li key={i} className="raid-panel__stage">
-                        <div className="raid-panel__stage-head">
-                          <span className="raid-panel__n">{i + 1}</span>
-                          {EXPLOSIVES[st.shot.explosive].label} ×{st.shot.count} · {formatNum(st.sulfur)} серы
-                        </div>
-                        <div className="raid-panel__stage-body">
-                          {st.broken.length
-                            ? <>разрушено: {st.broken.map(elementName).join(', ')}</>
-                            : <>ничего не разрушено, урон накоплен: {Object.entries(st.shot.damage).map(([id, v]) => `${elementName(id)} ${Math.round((v as number) * st.shot.count)}`).join(', ')}</>}
-                          {st.opened.length ? <> · открыто: {st.opened.length}</> : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
                   <label className="bp__toggle">
                     <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
                     Показать точки удара
