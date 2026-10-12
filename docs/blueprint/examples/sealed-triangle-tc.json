@@ -5,36 +5,154 @@
     "name": "Sealed Triangle TC",
     "description": "Шкаф, закатанный в каменный треугольник: треугольный фундамент, три стены, треугольный пол сверху.",
     "gameVersion": "2026-09",
-    "tags": ["tc", "example"]
+    "tags": [
+      "tc",
+      "example"
+    ]
   },
-  "defaults": { "grade": "stone" },
+  "defaults": {
+    "grade": "stone"
+  },
   "elements": [
-    { "id": "f1", "kind": "triangle-foundation", "anchor": { "position": [0, 0, 0], "rotation": 0 } },
-    { "id": "w1", "kind": "wall", "attach": { "to": "f1", "socket": "edge:0" } },
-    { "id": "w2", "kind": "wall", "attach": { "to": "f1", "socket": "edge:1" } },
-    { "id": "w3", "kind": "wall", "attach": { "to": "f1", "socket": "edge:2" } },
-    { "id": "c1", "kind": "triangle-floor", "attach": { "to": "w1", "socket": "top", "selfSocket": "edge:0" } }
+    {
+      "id": "f1",
+      "kind": "triangle-foundation",
+      "root": true
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0"
+      }
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:2"
+      }
+    },
+    {
+      "id": "c1",
+      "kind": "triangle-floor",
+      "attach": {
+        "to": "w1",
+        "socket": "top",
+        "selfSocket": "edge:0"
+      }
+    }
   ],
   "deployables": [
-    { "id": "tc1", "kind": "tool-cupboard", "attach": { "to": "f1", "socket": "top" }, "offset": [0, 0], "rotation": 0 }
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [
+        0,
+        0
+      ],
+      "rotation": 0
+    }
   ],
-  "raidPath": ["w1"],
+  "raidPath": [
+    "w1"
+  ],
   "resolved": {
     "generator": "example-by-hand@1.0",
     "sourceHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "elements": {
-      "f1": { "position": [0, 0, 0], "rotation": 0, "level": 0 },
-      "w1": { "position": [0.866, 0, 0], "rotation": 0, "level": 0 },
-      "w2": { "position": [-0.433, 0, 0.75], "rotation": 120, "level": 0 },
-      "w3": { "position": [-0.433, 0, -0.75], "rotation": 240, "level": 0 },
-      "c1": { "position": [0, 3, 0], "rotation": 0, "level": 1 }
+      "f1": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": 0,
+        "level": 0
+      },
+      "w1": {
+        "position": [
+          0.866,
+          0,
+          0
+        ],
+        "rotation": 0,
+        "level": 0
+      },
+      "w2": {
+        "position": [
+          -0.433,
+          0,
+          0.75
+        ],
+        "rotation": 120,
+        "level": 0
+      },
+      "w3": {
+        "position": [
+          -0.433,
+          0,
+          -0.75
+        ],
+        "rotation": 240,
+        "level": 0
+      },
+      "c1": {
+        "position": [
+          0,
+          3,
+          0
+        ],
+        "rotation": 0,
+        "level": 1
+      }
     },
     "deployables": {
-      "tc1": { "position": [0, 0, 0], "rotation": 0, "level": 0 }
+      "tc1": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": 0,
+        "level": 0
+      }
     },
     "adjacency": [
-      { "a": { "id": "c1", "socket": "edge:1" }, "b": { "id": "w2", "socket": "top" } },
-      { "a": { "id": "c1", "socket": "edge:2" }, "b": { "id": "w3", "socket": "top" } }
+      {
+        "a": {
+          "id": "c1",
+          "socket": "edge:1"
+        },
+        "b": {
+          "id": "w2",
+          "socket": "top"
+        }
+      },
+      {
+        "a": {
+          "id": "c1",
+          "socket": "edge:2"
+        },
+        "b": {
+          "id": "w3",
+          "socket": "top"
+        }
+      }
     ]
   }
 }
