@@ -136,8 +136,11 @@ function cellSlab(shape: Shape, depth: number, inset = 0): THREE.BufferGeometry 
   return geo;
 }
 
+/** Стены в сцене чуть ниже низа плиты над ними: верх стены не входит в плиту, и нет z-файтинга. */
+const WALL_TOP_GAP = FLOOR_T + 0.01;
+
 function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
-  const h = wallHeight(kind);
+  const h = wallHeight(kind) - WALL_TOP_GAP;
   switch (kind) {
     case 'doorway': {
       const side = (3 - DOORWAY_W) / 2;
