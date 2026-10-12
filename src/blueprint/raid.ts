@@ -435,7 +435,8 @@ export function raidAlternatives(
 export function bestRaid(alternatives: RaidAlternative[]): RaidAlternative | null {
   if (alternatives.length === 0) return null;
   const score = (a: RaidAlternative) => (a.sulfur <= 0 ? Infinity : a.value / a.sulfur);
-  return [...alternatives].sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || b.value - a.value)[0];
+  // при равной цене и ценности — залп, который попутно ломает больше
+  return [...alternatives].sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || b.value - a.value || b.path.ids.length - a.path.ids.length)[0];
 }
 
 /**
