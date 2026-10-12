@@ -189,7 +189,6 @@ const BlueprintSection: React.FC = () => {
 
         <aside className="bp__panel">
           <div className="bp__panel-title">{blueprint?.meta.name ?? source.label}</div>
-          {blueprint?.meta.description && <p className="bp__desc">{blueprint.meta.description}</p>}
           <div className="bp__meta">
             Источник: {source.label}
             {blueprint?.meta.gameVersion && <> · игра {blueprint.meta.gameVersion}</>}
