@@ -223,6 +223,45 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
   return out;
 }
 
+/** Сетка точек на поверхности цели (мир): центр, рёбра, углы и промежуточные точки. */
+export function surfacePoints(t: SplashTarget, steps = 4): Vec3[] {
+  const out: Vec3[] = [];
+  if (t.surface.kind === 'rect') {
+    const { w, h, y0 } = t.surface;
+    for (let i = 0; i <= steps; i++) for (let j = 0; j <= steps; j++) {
+      out.push(toWorld(t.origin, t.rotation, [0, y0 + (h * i) / steps, -w / 2 + (w * j) / steps]));
+    }
+    return out;
+  }
+  const poly = t.surface.polygon;
+  const n = poly.length;
+  out.push(toWorld(t.origin, t.rotation, [0, 0, 0]));
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[(i + 1) % n];
+    for (let k = 0; k < steps; k++) {
+      const f = k / steps;
+      const x = a[0] + (b[0] - a[0]) * f, z = a[1] + (b[1] - a[1]) * f;
+      out.push(toWorld(t.origin, t.rotation, [x, 0, z]));
+      out.push(toWorld(t.origin, t.rotation, [x * 0.5, 0, z * 0.5]));
+    }
+  }
+  return out;
+}
+
+/** Сдвиг точки вдоль поверхности цели (в её локальных осях) на (du, dv). */
+export function moveOnSurface(t: SplashTarget, p: Vec3, du: number, dv: number): Vec3 {
+  const l = toLocal(t.origin, t.rotation, p);
+  // точка проецируется обратно на поверхность: нормальная составляющая обнуляется
+  if (t.surface.kind === 'rect') {
+    const { w, h, y0 } = t.surface;
+    return toWorld(t.origin, t.rotation, [0, clamp(l[1] + dv, y0, y0 + h), clamp(l[2] + du, -w / 2, w / 2)]);
+  }
+  const poly = t.surface.polygon;
+  const nx = l[0] + du, nz = l[2] + dv;
+  // не выходим за полигон: при выходе остаёмся на месте
+  return insidePolygon(nx, nz, poly) ? toWorld(t.origin, t.rotation, [nx, 0, nz]) : toWorld(t.origin, t.rotation, [l[0], 0, l[2]]);
+}
+
 /** Все ломаемые элементы и объекты чертежа как цели сплеша. */
 export function allSplashTargets(resolved: Resolved): SplashTarget[] {
   const ids = [
@@ -248,8 +287,10 @@ export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
     const { w, h, y0 } = t.surface;
     return toWorld(t.origin, t.rotation, [0, clamp(l[1], y0, y0 + h), clamp(l[2], -w / 2, w / 2)]);
   }
+  // у плиты — грань, обращённая к взрыву: верх, если взрыв над срединной плоскостью, иначе низ
+  const face = l[1] >= 0 ? FLOOR_MID : -FLOOR_MID;
   const poly = t.surface.polygon;
-  if (insidePolygon(l[0], l[2], poly)) return toWorld(t.origin, t.rotation, [l[0], 0, l[2]]);
+  if (insidePolygon(l[0], l[2], poly)) return toWorld(t.origin, t.rotation, [l[0], face, l[2]]);
   let best: [number, number] = poly[0];
   let bestD = Infinity;
   for (let i = 0; i < poly.length; i++) {
@@ -261,7 +302,7 @@ export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
     const d = Math.hypot(l[0] - q[0], l[2] - q[1]);
     if (d < bestD) { bestD = d; best = q; }
   }
-  return toWorld(t.origin, t.rotation, [best[0], 0, best[1]]);
+  return toWorld(t.origin, t.rotation, [best[0], face, best[1]]);
 }
 
 /** Расстояние от взрыва до ближайшей точки цели: удар в угол плиты даёт по ней полный урон. */
@@ -302,8 +343,9 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
     if (endExempt && t > 1 - END_EPS) return false;
     const y = la[1] + (lb[1] - la[1]) * t;
     const z = la[2] + (lb[2] - la[2]) * t;
-    // стена-преграда тоже на WALL_GAP короче сверху и снизу: её низ не закрывает плиты, на которых она стоит
-    return y >= WALL_GAP && y <= (o.height ?? 3) - WALL_GAP && Math.abs(z) <= 1.5 - MARGIN;
+    // стена-преграда: низ с допуском GRAZE (стена, стоящая на крыше, не закрывает плиты вокруг своего
+    // низа), верх — полный, чтобы снаружи вдоль стены не достать до кромки потолка
+    return y >= GRAZE && y <= (o.height ?? 3) - GRAZE && Math.abs(z) <= 1.5 - MARGIN;
   }
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
@@ -361,7 +403,10 @@ export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
  * он за преградой — точки нет.
  */
 function visibleImpact(c: Vec3, eye: Vec3, owner: SplashTarget, occ: Occluder[]): Vec3 | null {
-  const clear = (p: Vec3) => !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o));
+  // точка должна быть с той же стороны элемента, что и рейдер
+  const side = (p: Vec3) => { const l = toLocal(owner.origin, owner.rotation, p); return Math.sign(owner.axis === 'x' ? l[0] : l[1]); };
+  const eyeSide = side(eye);
+  const clear = (p: Vec3) => (eyeSide === 0 || side(p) === eyeSide) && !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o));
   const full = nudgeTowards(c, eye, owner.center);
   if (clear(full)) return full;
   const plain = nudgeTowards(c, eye);
@@ -425,7 +470,7 @@ export type Strategy = 'value' | 'progress';
  * затем ценность. Итог выбирается по ценности открытого на серу среди стратегий.
  */
 export function simulateRaid(
-  resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 24,
+  resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 80,
   onCandidate?: (stage: number, c: { shot: SplashShot; sulfur: number; valueGain: number; progress: number; brokenNow: string[] }) => void,
 ): RaidSimulation {
   const targets = allSplashTargets(resolved);
@@ -475,19 +520,89 @@ export function simulateRaid(
       const better = (a: Cand, b: Cand) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] > kb[i]; return false; };
       if (!bestRef.c || better(cand, bestRef.c)) bestRef.c = cand;
     };
+    // Кандидаты: сетка точек на поверхности каждого элемента фронта. Дорогая оценка (остаточная цена
+    // через Дейкстру) делается только для лучших по дешёвому ключу: полезный урон на серу и число
+    // задетых элементов.
+    type Pre = { shot: SplashShot; owner: SplashTarget; eye: Vec3; pre: number[] };
+    const pres: Pre[] = [];
+    // дешёвый ключ: ценность открываемого (BFS по графу, дёшево) и полезный урон на серу
+    const preKey = (shot: SplashShot): number[] => {
+      let useful = 0, touched = 0;
+      const dead: string[] = [];
+      for (const [id, dmg] of Object.entries(shot.damage)) {
+        useful += Math.min(hpLeft.get(id) ?? 0, dmg * shot.count);
+        touched++;
+        if ((hpLeft.get(id) ?? 0) - dmg * shot.count <= 1e-6) dead.push(id);
+      }
+      const cost = shot.count * EXPLOSIVES[shot.explosive].sulfur;
+      let gain = 0;
+      if (dead.length) {
+        const r2 = reachableSpaces(graph, new Set([...broken, ...dead]));
+        gain = spacesValue(graph, [...r2].filter(id => !reachable.has(id)), resolved);
+      }
+      return strategy === 'value' ? [gain / cost, useful / cost, touched] : [useful / cost, gain / cost, touched];
+    };
+    const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return b[i] - a[i]; return 0; };
+    const makeShots = (owner: SplashTarget, c0: Vec3, eye: Vec3): SplashShot[] => {
+      // у плиты расчётная поверхность — середина толщины; точка удара лежит на грани, обращённой к рейдеру
+      const c: Vec3 = owner.axis === 'y'
+        ? [c0[0], owner.origin[1] + (eye[1] >= owner.origin[1] ? FLOOR_MID : -FLOOR_MID), c0[2]]
+        : c0;
+      const point = visibleImpact(c, eye, owner, occ);
+      if (!point) return [];
+      const shots: SplashShot[] = [];
+      for (const ex of allowed) {
+        const damage = damageMap(ex, point, owner, live, occ);
+        // варианты залпа: одна единица и каждый порог, на котором гибнет очередной задетый элемент
+        const needs = Object.entries(damage).map(([id, dmg]) => Math.ceil((hpLeft.get(id) ?? 0) / dmg - 1e-9)).filter(n => n > 0);
+        if (needs.length === 0) continue;
+        const cap = ex === 'explosiveAmmo' ? 2000 : 40;
+        const counts = new Set([1, ...needs.filter(n => n <= cap)]);
+        for (const n of counts) shots.push({ point, explosive: ex, count: n, damage });
+      }
+      return shots;
+    };
     for (const f of front) {
       const owner = byId.get(f.id);
       if (!owner || broken.has(owner.id)) continue;
-      for (const c of owner.candidates) {
-        const point = visibleImpact(c, f.from, owner, occ);
-        if (!point) continue;
-        for (const ex of allowed) {
-          const damage = damageMap(ex, point, owner, live, occ);
-          let nKill = Infinity;
-          for (const [id, dmg] of Object.entries(damage)) nKill = Math.min(nKill, Math.ceil((hpLeft.get(id) ?? 0) / dmg - 1e-9));
-          if (!Number.isFinite(nKill) || nKill <= 0) continue;
-          consider({ point, explosive: ex, count: nKill, damage });
-          if (nKill > 1) consider({ point, explosive: ex, count: 1, damage });
+      const seenPts = new Set<string>();
+      for (const c of [...owner.candidates, ...surfacePoints(owner)]) {
+        const k = c.map(v => v.toFixed(2)).join('|');
+        if (seenPts.has(k)) continue;
+        seenPts.add(k);
+        for (const shot of makeShots(owner, c, f.from)) pres.push({ shot, owner, eye: f.from, pre: preKey(shot) });
+      }
+    }
+    // отбор по группам «взрывчатка × класс залпа», чтобы дорогую оценку получили все классы
+    pres.sort((a, b) => cmp(a.pre, b.pre));
+    const PER_GROUP = 16;
+    const taken = new Map<string, number>();
+    for (const pr of pres) {
+      const cls = pr.shot.count === 1 ? 'one' : 'n';
+      const key = `${pr.shot.explosive}|${cls}`;
+      const n = taken.get(key) ?? 0;
+      if (n >= PER_GROUP) continue;
+      taken.set(key, n + 1);
+      consider(pr.shot);
+    }
+    // Локальное дожимание лучшей точки: сдвиги вдоль поверхности, пока ключ улучшается
+    if (bestRef.c) {
+      const start = pres.find(pr => pr.shot === bestRef.c!.shot) ?? pres[0];
+      if (start) {
+        let cur = bestRef.c.shot.point;
+        for (const step of [0.2, 0.07]) {
+          let improved = true;
+          let guardMoves = 0;
+          while (improved && guardMoves++ < 8) {
+            improved = false;
+            for (const [du, dv] of [[step, 0], [-step, 0], [0, step], [0, -step], [step, step], [-step, -step], [step, -step], [-step, step]]) {
+              const moved = moveOnSurface(start.owner, cur, du, dv);
+              const before: Cand | null = bestRef.c;
+              const ex = before?.shot.explosive;
+              for (const shot of makeShots(start.owner, moved, start.eye)) if (shot.explosive === ex) consider(shot);
+              if (bestRef.c !== before) { cur = bestRef.c!.shot.point; improved = true; }
+            }
+          }
         }
       }
     }
@@ -499,7 +614,16 @@ export function simulateRaid(
     remaining = remainingCost(reachable, broken, hpLeft);
     units[b.shot.explosive] = (units[b.shot.explosive] ?? 0) + b.shot.count;
     sulfur += b.sulfur;
-    stages.push({ shot: b.shot, broken: b.brokenNow, opened: b.opened, sulfur: b.sulfur });
+    const last = stages[stages.length - 1];
+    const samePoint = last && last.shot.explosive === b.shot.explosive && last.broken.length === 0
+      && last.shot.point.every((v, i) => Math.abs(v - b.shot.point[i]) < 1e-6);
+    if (samePoint) {
+      // продолжаем стрелять в ту же точку: один этап
+      last.shot = { ...last.shot, count: last.shot.count + b.shot.count };
+      last.broken = b.brokenNow; last.opened = b.opened; last.sulfur += b.sulfur;
+    } else {
+      stages.push({ shot: b.shot, broken: b.brokenNow, opened: b.opened, sulfur: b.sulfur });
+    }
   }
   const openedIds = [...reachable].filter(id => !initially.has(id));
   return { stages, reached: reachable.has(targetCell), sulfur, units, broken: stages.flatMap(s => s.broken), openedIds };
