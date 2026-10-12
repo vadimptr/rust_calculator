@@ -225,9 +225,8 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
 
 /** Все ломаемые элементы и объекты чертежа как цели сплеша. */
 export function allSplashTargets(resolved: Resolved): SplashTarget[] {
-  // фундаменты не цель рейда: под ними ничего нет
   const ids = [
-    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || (KINDS[e.kind].category === 'cell' && !KINDS[e.kind].isFoundation)).map(e => e.id),
+    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
     ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
   ];
   return splashTargets(resolved, ids);
@@ -312,8 +311,17 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
   if (endExempt && t > 1 - END_EPS) return false;
   const x = la[0] + (lb[0] - la[0]) * t;
   const z = la[2] + (lb[2] - la[2]) * t;
-  return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
+  // Вниз сквозь плоскость плиты (с крыши внутрь) плита закрывает с запасом SEAM — швы между плитами
+  // закрыты; вверх (из-под уровня крыши к стене над ней) плита не цепляет луч своей кромкой.
+  const grow = la[1] > lb[1] ? SEAM : -GRAZE;
+  const r = Math.hypot(o.polygon![0][0], o.polygon![0][1]) || 1;
+  const k = 1 + grow / (r * 0.7071);
+  return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * k, pz * k] as [number, number]));
 }
+
+/** Запас плиты для лучей вниз (закрывает швы) и допуск кромки для лучей вверх. */
+const SEAM = 0.05;
+const GRAZE = 0.02;
 
 /** Преграды из геометрии: стены-типы и ячейки. Проёмы без живой двери и низкие стены не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
