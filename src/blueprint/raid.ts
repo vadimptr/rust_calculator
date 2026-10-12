@@ -422,8 +422,10 @@ export function raidAlternatives(
     }
   }
   out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || b.value - a.value || a.path.steps.length - b.path.steps.length);
-  // убрать варианты, которые дороже и при этом не ценнее другого
-  const kept = out.filter((a, i) => !out.some((b, j) => j !== i
+  // убрать варианты, которые дороже и при этом не ценнее другого; самый дешёвый путь по штукам
+  // остаётся всегда — как база для сравнения
+  const baseline = out.find(a => !a.volley);
+  const kept = out.filter((a, i) => a === baseline || !out.some((b, j) => j !== i
     && (b.rockets ?? b.path.sulfur) <= (a.rockets ?? a.path.sulfur) && b.value >= a.value
     && ((b.rockets ?? b.path.sulfur) < (a.rockets ?? a.path.sulfur) || b.value > a.value || j < i)));
   return kept.slice(0, 8);

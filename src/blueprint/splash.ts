@@ -12,7 +12,7 @@ export const ROCKET = {
   blockDamage: 137.7,
   /** Урон по двери и вставке в окно: двери ломаются быстрее (1 ракета на деревянную, 2 на металлическую). */
   doorDamage: 210,
-  /** Полный урон в этом радиусе от центра взрыва до центра элемента. */
+  /** Полный урон в этом радиусе от центра взрыва до ближайшей точки элемента. */
   fullRadius: 1.0,
   /** Дальше этого радиуса урона нет; между радиусами — линейное падение. */
   maxRadius: 3.8,
@@ -44,6 +44,8 @@ export interface SplashTarget {
   axis: 'x' | 'y';
   /** Центр элемента в мире. */
   center: Vec3;
+  /** Поверхность в локальной системе носителя: вертикальный прямоугольник (стена, дверь) или полигон пола. */
+  surface: { kind: 'rect'; w: number; h: number; y0: number } | { kind: 'poly'; polygon: [number, number][] };
   /** Урон от прямого попадания. */
   hitDamage: number;
   /** Точки-кандидаты для удара (на поверхности элемента: центр, края, углы). */
@@ -109,6 +111,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     const h = wallHeight(el.kind);
     return {
       id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
+      surface: { kind: 'rect', w: 3, h, y0: 0 },
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
       candidates: rectPoints(3, h).map(p => toWorld(el.position, el.rotation, p)),
     };
@@ -120,6 +123,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
       ...cellVertices(info.shape!).map(([x, z]) => [x, 0, z] as Vec3)];
     return {
       id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
+      surface: { kind: 'poly', polygon: cellVertices(info.shape!) },
       candidates: local.map(p => toWorld(el.position, el.rotation, p)),
     };
   }
@@ -137,6 +141,7 @@ function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarg
   const w = d.kind.includes('double') || d.kind === 'garage-door' ? 2.7 : isWindow ? 2.2 : 1.3;
   return {
     id: d.id, kind: d.kind, hp, hitDamage: ROCKET.doorDamage, carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
+    surface: { kind: 'rect', w, h: Math.min(hh, h), y0 },
     center: [d.position[0], d.position[1] + y0 + Math.min(hh, h) / 2, d.position[2]],
     candidates: rectPoints(w, hh, y0).map(p => toWorld(d.position, d.rotation, p)),
   };
@@ -154,9 +159,40 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
   return out;
 }
 
+function clamp(v: number, lo: number, hi: number): number { return Math.min(hi, Math.max(lo, v)); }
+
+
+/** Ближайшая к p точка поверхности цели (в мире). */
+export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
+  const l = toLocal(t.origin, t.rotation, p);
+  if (t.surface.kind === 'rect') {
+    const { w, h, y0 } = t.surface;
+    return toWorld(t.origin, t.rotation, [0, clamp(l[1], y0, y0 + h), clamp(l[2], -w / 2, w / 2)]);
+  }
+  const poly = t.surface.polygon;
+  if (insidePolygon(l[0], l[2], poly)) return toWorld(t.origin, t.rotation, [l[0], 0, l[2]]);
+  let best: [number, number] = poly[0];
+  let bestD = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const len2 = dx * dx + dz * dz || 1;
+    const tt = clamp(((l[0] - a[0]) * dx + (l[2] - a[1]) * dz) / len2, 0, 1);
+    const q: [number, number] = [a[0] + dx * tt, a[1] + dz * tt];
+    const d = Math.hypot(l[0] - q[0], l[2] - q[1]);
+    if (d < bestD) { bestD = d; best = q; }
+  }
+  return toWorld(t.origin, t.rotation, [best[0], 0, best[1]]);
+}
+
+/** Расстояние от взрыва до ближайшей точки цели: удар в угол плиты даёт по ней полный урон. */
+export function distanceTo(p: Vec3, t: SplashTarget): number {
+  return dist(p, nearestPoint(p, t));
+}
+
 /** Урон одной ракеты в точке p по цели t. */
 export function rocketDamage(p: Vec3, t: SplashTarget): number {
-  return t.hitDamage * falloff(dist(p, t.center));
+  return t.hitDamage * falloff(distanceTo(p, t));
 }
 
 /** Преграда для сплеша: вертикальный прямоугольник стены-типа или горизонтальный полигон ячейки. */
@@ -185,7 +221,10 @@ function insidePolygon(x: number, z: number, poly: [number, number][]): boolean 
   return inside;
 }
 
-/** Пересекает ли отрезок a→b преграду (включая концы). */
+/** Конец отрезка — поверхность самой цели; пересечение в самом конце соседней преградой не считается. */
+const END_EPS = 1e-3;
+
+/** Пересекает ли отрезок a→b преграду (начало включительно, самый конец — нет). */
 export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   const la = toLocal(o.origin, o.rotation, a);
   const lb = toLocal(o.origin, o.rotation, b);
@@ -193,6 +232,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
     if ((la[0] > 1e-6 && lb[0] > 1e-6) || (la[0] < -1e-6 && lb[0] < -1e-6)) return false; // по одну сторону плоскости
     if (Math.abs(lb[0] - la[0]) < 1e-9) return false; // в плоскости стены — не преграда
     const t = la[0] / (la[0] - lb[0]);
+    if (t > 1 - END_EPS) return false;
     const y = la[1] + (lb[1] - la[1]) * t;
     const z = la[2] + (lb[2] - la[2]) * t;
     return y >= MARGIN && y <= (o.height ?? 3) - MARGIN && Math.abs(z) <= 1.5 - MARGIN;
@@ -200,6 +240,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
   const t = la[1] / (la[1] - lb[1]);
+  if (t > 1 - END_EPS) return false;
   const x = la[0] + (lb[0] - la[0]) * t;
   const z = la[2] + (lb[2] - la[2]) * t;
   return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
@@ -295,7 +336,8 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
       for (const t of targets) {
         let dmg = rocketDamage(p, t);
         if (dmg > 0 && t.id !== owner.id) {
-          const blocked = occ.some(o => o.id !== t.carrierId && segmentBlocked(p, t.center, o));
+          const q = nearestPoint(p, t);
+          const blocked = occ.some(o => o.id !== t.carrierId && segmentBlocked(p, q, o));
           if (blocked) dmg = 0;
         }
         damage[t.id] = dmg;
@@ -363,7 +405,10 @@ export function splashVolleys(
       const needed: { id: string; n: number }[] = [];
       for (const t of targets) {
         let dmg = rocketDamage(point, t);
-        if (dmg > 0 && t.id !== owner.id && occ.some(o => o.id !== t.carrierId && segmentBlocked(point, t.center, o))) dmg = 0;
+        if (dmg > 0 && t.id !== owner.id) {
+          const q = nearestPoint(point, t);
+          if (occ.some(o => o.id !== t.carrierId && segmentBlocked(point, q, o))) dmg = 0;
+        }
         if (dmg <= 0) continue;
         damage[t.id] = dmg;
         needed.push({ id: t.id, n: Math.ceil(t.hp / dmg - 1e-9) });

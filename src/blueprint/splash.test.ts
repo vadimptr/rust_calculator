@@ -40,7 +40,7 @@ test('two adjacent stone walls sharing a corner: splash needs fewer rockets than
   const { resolved } = resolveBlueprint(bp);
   const plan = planRocketSplash(resolved, ['a', 'b']);
   assert.equal(plan.rocketsPerItem, 8);
-  assert.ok(plan.rockets < 8, `rockets=${plan.rockets}`);
+  assert.equal(plan.rockets, 4, `rockets=${plan.rockets}`); // угол: обе стены получают полный урон
   assert.ok(plan.damageTaken.a >= 500 && plan.damageTaken.b >= 500);
   assert.ok(plan.shots.some(s => s.count > 1));
 });
@@ -74,11 +74,20 @@ test('segmentBlocked: wall plane and floor polygon', () => {
   assert.equal(segmentBlocked([3, 4, 0], [3, 2, 0], floor), false);     // мимо плиты
 });
 
-test('2x2 roof entry: closed doors and floors block splash, four double doors cost 8 rockets', () => {
+test('2x2 roof entry: floors block splash downwards; door frames sharing a column splash each other', () => {
   const { resolved } = load('house-2x2');
   const plan = planRocketSplash(resolved, ['door_roof', 'door_jump', 'door_hall', 'door_tc']);
-  assert.equal(plan.rockets, 8);
   assert.equal(plan.rocketsPerItem, 8);
+  assert.ok(plan.rockets >= 6 && plan.rockets <= 8, `rockets=${plan.rockets}`);
+});
+
+test('roof corner volley: full damage to every adjoining roof block, 4 rockets open three ceilings', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  const volleys = volleyAlternatives(resolved, g, reachableSpaces(g, new Set()), 'f1');
+  const corner = volleys.find(v => ['c1', 'c2', 'c3'].every(id => v.volley!.broken.includes(id)) && v.volley!.count === 4);
+  assert.ok(corner, 'expected a 4-rocket corner volley breaking c1, c2 and c3');
+  assert.ok(!corner!.volley!.broken.includes('door_tc'));
 });
 
 test('volleys: a roof seam shot breaks several ceilings at once and opens several spaces', () => {
@@ -98,7 +107,8 @@ test('alternatives for rockets are deduped, non-dominated and carry a value', ()
   const { resolved } = load('house-2x2');
   const alts = raidAlternatives(resolved, 'f1', 'rocket', ids => planRocketSplash(resolved, ids), 8,
     (g, i, t) => volleyAlternatives(resolved, g, i, t));
-  assert.ok(alts.length >= 2 && alts.length <= 8);
+  assert.ok(alts.length >= 1 && alts.length <= 8);
+  assert.ok(alts.some(a => !a.volley)); // базовый путь по штукам всегда в списке
   assert.ok(alts.every(a => a.value >= 3)); // шкаф всегда достигнут
   assert.ok(alts.some(a => a.volley));
   for (let i = 1; i < alts.length; i++) assert.ok(alts[i].rockets! >= alts[i - 1].rockets!);
