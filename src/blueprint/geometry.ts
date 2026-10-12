@@ -3,8 +3,8 @@
  * Попутно проверяет структурные правила V01–V05 и V11; без них геометрия не считается.
  */
 import {
-  KINDS, SINGLE_DOORS, FRAME_DOORS, apothem, canAttach, defaultSelfSocket, edgeAngle,
-  edgeIndex, socketsOf, wallHeight,
+  KINDS, apothem, canAttach, defaultSelfSocket, edgeAngle,
+  edgeIndex, openingAccepts, socketsOf, wallHeight,
 } from './catalog.ts';
 import type {
   Blueprint, Deployable, Element, Grade, Issue, Resolved, ResolvedDeployable, ResolvedElement,
@@ -252,10 +252,11 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
         issues.push(err('V04', d.id, `Дверь ставится только в opening проёма, а не в ${parent.kind}.${d.attach.socket}`));
         continue;
       }
-      const ok = info.opening === 'single' ? SINGLE_DOORS.includes(d.kind) : FRAME_DOORS.includes(d.kind);
-      if (!ok) { issues.push(err('V11', d.id, `${d.kind} не подходит к ${parent.kind}`)); continue; }
+      if (!openingAccepts(info.opening).includes(d.kind)) {
+        issues.push(err('V11', d.id, `${d.kind} не подходит к ${parent.kind}`)); continue;
+      }
       const prev = openings.get(parent.id);
-      if (prev) { issues.push(err('V11', d.id, `В проёме «${parent.id}» уже стоит дверь «${prev}»`)); continue; }
+      if (prev) { issues.push(err('V11', d.id, `В проёме «${parent.id}» уже стоит «${prev}»`)); continue; }
       openings.set(parent.id, d.id);
     }
     const t = placeDeployable(placed.get(parent.id)!, d);

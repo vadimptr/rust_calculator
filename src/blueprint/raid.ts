@@ -9,7 +9,7 @@ import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedEleme
 
 export const OUTSIDE = '__outside__';
 
-/** Рейд дверей (обновление 2026-09). optimal — минимум серы. */
+/** Рейд дверей и вставок в окна (обновление 2026-09). optimal — минимум серы. */
 export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard'>, RaidCostRule> = {
   'wooden-door':             { blockId: 'wooden-door', blockName: 'Деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
   'wooden-double-door':      { blockId: 'wooden-double-door', blockName: 'Двойная деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
@@ -18,6 +18,9 @@ export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard'>, R
   'garage-door':             { blockId: 'garage-door', blockName: 'Гаражная дверь', satchel: 9, rocket: 3, c4: 2, explosiveAmmo: 150, optimal: { explosiveAmmo: 150 } },
   'armored-door':            { blockId: 'armored-door', blockName: 'Бронированная дверь', satchel: 15, rocket: 5, c4: 3, explosiveAmmo: 250, optimal: { explosiveAmmo: 250 } },
   'armored-double-door':     { blockId: 'armored-double-door', blockName: 'Двойная бронированная дверь', satchel: 15, rocket: 5, c4: 3, explosiveAmmo: 250, optimal: { explosiveAmmo: 250 } },
+  'strengthened-glass-window': { blockId: 'strengthened-glass-window', blockName: 'Укреплённое стекло', satchel: 9, rocket: 3, c4: 2, explosiveAmmo: 140, optimal: { explosiveAmmo: 140 } },
+  'reinforced-glass-window':   { blockId: 'reinforced-glass-window', blockName: 'Усиленное стекло', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
+  'metal-window-bars':         { blockId: 'metal-window-bars', blockName: 'Металлическая решётка', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
 };
 
 /** Ветки ломаются инструментом: взрывчатки 0. */

@@ -47,6 +47,9 @@ const KIND_LABELS: Record<string, string> = {
   'wooden-double-door': 'Двойная деревянная дверь',
   'sheet-metal-double-door': 'Двойная металлическая дверь',
   'armored-double-door': 'Двойная бронированная дверь',
+  'strengthened-glass-window': 'Укреплённое стекло',
+  'reinforced-glass-window': 'Усиленное стекло',
+  'metal-window-bars': 'Металлическая решётка',
 };
 
 const GRADE_LABELS: Record<string, string> = {

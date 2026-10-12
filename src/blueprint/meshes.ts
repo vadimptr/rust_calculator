@@ -3,7 +3,7 @@
  * Локальный +x стены — её внешняя нормаль; ячейка центрирована в начале координат.
  */
 import * as THREE from 'three';
-import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
 import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 
@@ -24,7 +24,37 @@ const DOOR_COLORS: Record<DeployableKind, number> = {
   'wooden-double-door': 0x9b6a3a,
   'sheet-metal-double-door': 0x6e7f8e,
   'armored-double-door': 0x2f333a,
+  'strengthened-glass-window': 0x9fd3e6,
+  'reinforced-glass-window': 0x7fb6cc,
+  'metal-window-bars': 0x3a3f45,
 };
+
+const GLASS = new THREE.MeshStandardMaterial({ color: 0x9fd3e6, transparent: true, opacity: 0.35, roughness: 0.15, metalness: 0.1, side: THREE.DoubleSide });
+const GLASS_REINFORCED = new THREE.MeshStandardMaterial({ color: 0x7fb6cc, transparent: true, opacity: 0.5, roughness: 0.2, metalness: 0.2, side: THREE.DoubleSide });
+
+/** Вставка в оконный проём: стекло с рамкой или решётка. */
+function buildWindowInsert(d: ResolvedDeployable): THREE.Group {
+  const g = new THREE.Group();
+  const y = WINDOW_SILL + WINDOW_H / 2;
+  if (d.kind === 'metal-window-bars') {
+    const color = DOOR_COLORS[d.kind];
+    const n = 5;
+    for (let i = 0; i < n; i++) {
+      const z = -WINDOW_W / 2 + (WINDOW_W / (n + 1)) * (i + 1);
+      g.add(withEdges(box(0.08, WINDOW_H, 0.08, 0, y, z), color));
+    }
+    g.add(withEdges(box(0.08, 0.08, WINDOW_W, 0, y, 0), color));
+    return g;
+  }
+  const pane = new THREE.Mesh(box(0.04, WINDOW_H - 0.1, WINDOW_W - 0.1, 0, y, 0), d.kind === 'reinforced-glass-window' ? GLASS_REINFORCED : GLASS);
+  g.add(pane);
+  const frame = 0x4a4f55;
+  g.add(withEdges(box(0.07, 0.06, WINDOW_W, 0, WINDOW_SILL + 0.03, 0), frame));
+  g.add(withEdges(box(0.07, 0.06, WINDOW_W, 0, WINDOW_SILL + WINDOW_H - 0.03, 0), frame));
+  g.add(withEdges(box(0.07, WINDOW_H, 0.06, 0, y, -WINDOW_W / 2 + 0.03), frame));
+  g.add(withEdges(box(0.07, WINDOW_H, 0.06, 0, y, WINDOW_W / 2 - 0.03), frame));
+  return g;
+}
 
 const EDGE_COLOR = 0x0e0c0a;
 const WALL_T = 0.25;
@@ -289,6 +319,8 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
     // Шкаф: 1.0 м вдоль стены, 0.45 м в глубину, 1.5 м высотой; спинка — локальный −x
     g.add(withEdges(box(0.45, 1.5, 1.0, 0, 0.75, 0), DOOR_COLORS[d.kind]));
     g.add(withEdges(box(0.04, 1.3, 0.84, 0.23, 0.78, 0), 0x5b3716));
+  } else if (WINDOW_INSERTS.includes(d.kind)) {
+    g = buildWindowInsert(d);
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);

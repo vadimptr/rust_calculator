@@ -148,4 +148,17 @@ test('deployable errors: door in wrong opening, second door, tc on wall', () => 
     { id: 'b', kind: 'wooden-door', attach: { to: 'd1', socket: 'opening' } },
   ]).includes('V11'));
   assert.ok(codes([{ id: 't', kind: 'tool-cupboard', attach: { to: 'd1', socket: 'top' } }]).includes('V04'));
+  assert.ok(codes([{ id: 'g', kind: 'strengthened-glass-window', attach: { to: 'd1', socket: 'opening' } }]).includes('V11'));
+});
+
+test('window insert fits a window frame only', () => {
+  const bp: Blueprint = { formatVersion: '1.0', meta: { name: 'x' }, elements: [
+    { id: 'f1', kind: 'square-foundation', root: true },
+    { id: 'win', kind: 'window-frame', attach: { to: 'f1', socket: 'edge:0' } },
+  ], deployables: [{ id: 'g', kind: 'metal-window-bars', attach: { to: 'win', socket: 'opening' } }] };
+  const { resolved, issues } = resolveBlueprint(bp);
+  assert.deepEqual(issues.filter(i => i.level === 'error'), []);
+  assert.equal(resolved.deployables[0].parent, 'win');
+  const bad = resolveBlueprint({ ...bp, deployables: [{ id: 'd', kind: 'wooden-door', attach: { to: 'win', socket: 'opening' } }] });
+  assert.ok(bad.issues.some(i => i.code === 'V11'));
 });

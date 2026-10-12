@@ -164,7 +164,7 @@
 | `triangle-floor-frame` | треугольник | `edge:0..2`, `top` | то же |
 | `wall`, `half-wall`, `low-wall` | ребро | `bottom`, `top` | `bottom` ставится на ребро ячейки или на `top` другой стены; `top` принимает рёбра полов и крыш и `bottom` стен |
 | `doorway` | ребро | `bottom`, `top`, `opening` | как стена; `opening` принимает одинарную дверь |
-| `window-frame` | ребро | `bottom`, `top`, `opening` | как стена; `opening` зарезервирован для v1.1 (окна) |
+| `window-frame` | ребро | `bottom`, `top`, `opening` | как стена; `opening` принимает вставку в окно: стекло или решётку |
 | `wall-frame` | ребро | `bottom`, `top`, `opening` | как стена; `opening` принимает гаражную и двойные двери |
 | `stairs-l-shape`, `u-shaped-stairs` | ячейка | `bottom` | ставится на `top` квадратной ячейки |
 | `roof` | квадрат | `edge:0` (низкое), `edge:1`, `edge:3` (боковые), `edge:2` (высокое) | `edge:0` ставится на `top` стены или на ребро ячейки; боковые принимают соседние крыши |
@@ -188,6 +188,7 @@
 | крыша `edge:1/3` | | | | | | ✔ | | |
 | `doorway.opening` | | | | | | | | одинарная |
 | `wall-frame.opening` | | | | | | | | гаражная, двойная |
+| `window-frame.opening` | | | | | | | | стекло, решётка |
 
 «Стена-тип» — `wall`, `half-wall`, `low-wall`, `doorway`, `window-frame`,
 `wall-frame`. Одинарные двери: `wooden-door`, `sheet-metal-door`,
@@ -346,6 +347,7 @@ y_T   = y_P
 | `tool-cupboard` | `top` фундамента или пола | `offset` [x, z] от центра ячейки, `rotation` |
 | `wooden-door`, `sheet-metal-door`, `armored-door` | `opening` элемента `doorway` | `hinge`, `opens`, `open` |
 | `garage-door`, `wooden-double-door`, `sheet-metal-double-door`, `armored-double-door` | `opening` элемента `wall-frame` | `opens`, `open` (`hinge` игнорируется: у двойной двери петли с обеих сторон, гаражная поднимается) |
+| `strengthened-glass-window`, `reinforced-glass-window`, `metal-window-bars` | `opening` элемента `window-frame` | нет (`hinge`, `opens`, `open` игнорируются) |
 
 Поля дверей:
 
@@ -471,6 +473,9 @@ upkeep = Σ по элементам  blocks[kind].upkeepCost[resource(grade)]   
 | `wooden-double-door` | 350 wood | 200 |
 | `sheet-metal-double-door` | 200 metal fragments | 250 |
 | `armored-double-door` | 30 HQM + 5 gears | 1000 |
+| `strengthened-glass-window` | 50 metal fragments | 350 |
+| `reinforced-glass-window` | 4 HQM | 500 |
+| `metal-window-bars` | 25 metal fragments | 500 |
 
 Ресурс `gears` в текущем `Resources` отсутствует; при реализации
 стоимость объектов хранится отдельной таблицей с собственным типом, а
@@ -484,7 +489,7 @@ explosiveAmmo / optimal для wood, stone, metal, armored. `twig`
 взрывчаткой не считается (ломается инструментом) — для него все значения
 `0`.
 
-Двери считаются по отдельной таблице (обновление 2026-09):
+Двери и вставки в окна считаются по отдельной таблице (обновление 2026-09):
 
 | `kind` | satchel | rocket | c4 | explosiveAmmo | optimal |
 |---|---|---|---|---|---|
@@ -492,6 +497,8 @@ explosiveAmmo / optimal для wood, stone, metal, armored. `twig`
 | `sheet-metal-door`, `sheet-metal-double-door` | 4 | 2 | 1 | 63 | explosiveAmmo 63 |
 | `garage-door` | 9 | 3 | 2 | 150 | explosiveAmmo 150 |
 | `armored-door`, `armored-double-door` | 15 | 5 | 3 | 250 | explosiveAmmo 250 |
+| `strengthened-glass-window` | 9 | 3 | 2 | 140 | explosiveAmmo 140 |
+| `reinforced-glass-window`, `metal-window-bars` | 12 | 4 | 2 | 200 | c4 2 |
 
 `optimal` здесь — минимум серы при крафт-костах из `EXPLOSIVE_COSTS`
 (explosive ammo 25, satchel 480, rocket 1400, c4 2200 серы): для всех
@@ -508,9 +515,9 @@ raid(path) = Σ по id из raidPath  rule(kind, grade)[method]
 ячейки шкафа. Ячейки одного уровня образуют граф: ребро между соседними
 ячейками (или между ячейкой и «улицей», если у ребра нет соседа) весит
 столько серы, сколько стоит сломать то, что на нём стоит выбранным
-методом. Стена, половинная стена и проём с дверью стоят по правилам
-выше; проём и рама без двери, пустая оконная рама и низкая стена
-проходимы бесплатно. Дейкстра по этому графу даёт путь и список
+методом. Стена, половинная стена, проём с дверью и окно со вставкой
+стоят по правилам выше; проём и рама без двери, пустая оконная рама и
+низкая стена проходимы бесплатно. Дейкстра по этому графу даёт путь и список
 ломаемых элементов. Ограничения v1.0: путь ищется в пределах одного
 уровня (без рейда через крышу и полы), мягкая сторона стен не
 учитывается.
@@ -564,9 +571,10 @@ raid(path) = Σ по id из raidPath  rule(kind, grade)[method]
 
 ### 10.4 Шкаф в треугольнике с окном (`examples/triangle-tc-window.json`)
 
-Треугольный фундамент, две стены и `window-frame`, шкаф в дальнем углу
-фронтом к окну. Вставки в окна (решётка, стекло) в v1.0 не описываются,
-поэтому валидатор рейда считает пустую раму проходимой — см. §9.3.
+Треугольный фундамент, две стены и `window-frame` с укреплённым
+стеклом (`strengthened-glass-window` в `opening`), шкаф в дальнем углу
+фронтом к окну. Самый дешёвый рейд идёт через стекло: 140 explosive
+ammo дешевле двух C4 в стену.
 
 Все четыре примера предзагружены в разделе «3D-просмотр» приложения;
 туда же можно загрузить любой документ этого формата. Переключатель
@@ -608,8 +616,8 @@ node -e '
 
 ## 13. Что сознательно не вошло в v1.0
 
-- Печи, ящики, турели, ловушки, окна в `window-frame`, внешние стены,
-  электрика. Для них зарезервирован массив `deployables` с новыми `kind`.
+- Печи, ящики, турели, ловушки, ставни и амбразуры в `window-frame`,
+  внешние стены, электрика. Для них зарезервирован массив `deployables` с новыми `kind`.
 - Ступени, рамп, половинный пол, спиральные лестницы — зарезервированные
   `kind`, см. §5.
 - Точная модель стабильности игры (проценты), см. `V10`.

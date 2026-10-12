@@ -80,6 +80,14 @@ test('open doorway and low wall are free; window frame without insert is passabl
   assert.deepEqual(p.cells, ['f2', 'f1']);
 });
 
+test('triangle with glass: cheapest optimal path breaks the glass (cheaper than a stone wall)', () => {
+  const { resolved } = load('triangle-tc-window');
+  const p = cheapestRaidPath(resolved, 'f1', 'optimal')!;
+  assert.deepEqual(p.ids, ['glass']);
+  assert.equal(p.sulfur, 140 * 25);
+  assert.equal(cheapestRaidPath(resolved, 'f1', 'c4')!.sulfur, 4400);
+});
+
 test('unknown target cell returns null', () => {
   const { resolved } = load('house-2x2');
   assert.equal(cheapestRaidPath(resolved, 'nope', 'c4'), null);

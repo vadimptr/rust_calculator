@@ -30,7 +30,10 @@ export type DeployableKind =
   | 'garage-door'
   | 'wooden-double-door'
   | 'sheet-metal-double-door'
-  | 'armored-double-door';
+  | 'armored-double-door'
+  | 'strengthened-glass-window'
+  | 'reinforced-glass-window'
+  | 'metal-window-bars';
 
 export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening';
 

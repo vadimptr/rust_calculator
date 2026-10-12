@@ -22,7 +22,7 @@ export interface KindInfo {
   height?: number;        // для wallType
   isFoundation?: boolean;
   isFrame?: boolean;      // рамы пола: top не принимает объекты
-  opening?: 'single' | 'frame';
+  opening?: 'single' | 'frame' | 'window';
 }
 
 export const KINDS: Record<ElementKind, KindInfo> = {
@@ -36,7 +36,7 @@ export const KINDS: Record<ElementKind, KindInfo> = {
   'half-wall':            { category: 'wallType', height: HALF_WALL_H },
   'low-wall':             { category: 'wallType', height: LOW_WALL_H },
   'doorway':              { category: 'wallType', height: WALL_H, opening: 'single' },
-  'window-frame':         { category: 'wallType', height: WALL_H },
+  'window-frame':         { category: 'wallType', height: WALL_H, opening: 'window' },
   'wall-frame':           { category: 'wallType', height: WALL_H, opening: 'frame' },
   'stairs-l-shape':       { category: 'stairs' },
   'u-shaped-stairs':      { category: 'stairs' },
@@ -48,6 +48,14 @@ export const SINGLE_DOORS: DeployableKind[] = ['wooden-door', 'sheet-metal-door'
 export const FRAME_DOORS: DeployableKind[] = [
   'garage-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door',
 ];
+export const WINDOW_INSERTS: DeployableKind[] = [
+  'strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars',
+];
+
+/** Что принимает opening данного типа проёма. */
+export function openingAccepts(opening: 'single' | 'frame' | 'window'): DeployableKind[] {
+  return opening === 'single' ? SINGLE_DOORS : opening === 'frame' ? FRAME_DOORS : WINDOW_INSERTS;
+}
 
 export function edgeCount(shape: Shape): number {
   return shape === 'square' ? 4 : 3;

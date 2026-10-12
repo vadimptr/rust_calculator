@@ -102,7 +102,10 @@
         "garage-door",
         "wooden-double-door",
         "sheet-metal-double-door",
-        "armored-double-door"
+        "armored-double-door",
+        "strengthened-glass-window",
+        "reinforced-glass-window",
+        "metal-window-bars"
       ]
     },
     "Socket": {
