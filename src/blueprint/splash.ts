@@ -52,7 +52,7 @@ export const EXPLOSIVES: Record<Explosive, ExplosiveSpec> = {
     label: 'Разрывной патрон',
     block: { twig: 10, wood: 5.11, stone: 2.703, metal: 2.5, armored: 2.504 },
     door: doorTable(11.12, 3.97, 4, 4, 2.5, 2.5),
-    area: true, fullRadius: 0.1, maxRadius: 0.5, sulfur: 25,
+    area: true, fullRadius: 0.3, maxRadius: 0.6, sulfur: 25,
   },
   satchel: {
     label: 'Сачель',

@@ -117,6 +117,15 @@ test('unitDamage: explosive ammo reaches only touching blocks', () => {
   assert.equal(unitDamage('explosiveAmmo', [w.center[0] + 1, w.center[1], w.center[2]], w), 0);
 });
 
+test('simulation: explosive ammo into the 2x2 roof corner removes three ceilings and the vestibule wall together', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f1', ['explosiveAmmo'])!;
+  assert.equal(sim.stages.length, 1);
+  assert.ok(['c1', 'c2', 'c3', 'u3'].every(id => sim.stages[0].broken.includes(id)), sim.stages[0].broken.join(','));
+  assert.equal(sim.units.explosiveAmmo, 185);
+});
+
 test('simulation: 2x1 optimal goes through the two doors in two stages, each door removed when it dies', () => {
   const { resolved } = load('starter-2x1');
   const g = buildSpaceGraph(resolved);
