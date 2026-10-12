@@ -119,7 +119,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved }) => {
     const size = bounds.getSize(new THREE.Vector3()).length();
     s.controls.target.copy(center);
     const dist = Math.max(8, size * 1.1);
-    s.camera.position.set(center.x - dist * 0.75, center.y + dist * 0.6, center.z + dist * 0.75);
+    // Камера смотрит со стороны первой двери (3/4-ракурс), иначе — с фиксированного угла
+    const door = resolved.deployables.find(d => d.kind !== 'tool-cupboard');
+    const az = ((door ? door.rotation + 35 : 135) * Math.PI) / 180;
+    s.camera.position.set(
+      center.x + dist * 0.8 * Math.cos(az),
+      center.y + dist * 0.6,
+      center.z + dist * 0.8 * Math.sin(az),
+    );
     s.controls.update();
   }, [resolved]);
 
