@@ -62,9 +62,11 @@ const FOUNDATION_D = 0.6;
 /** Проём в doorway: ширина × высота; дверь заполняет его целиком. */
 const DOORWAY_W = 1.3;
 const DOORWAY_H = 2.2;
-/** Проём в wall-frame: под гаражную и двойные двери. */
-const FRAME_W = 2.4;
-const FRAME_H = 2.7;
+/** Проём в wall-frame: тонкая рамка, проём почти во всю стену; гаражная дверь заполняет его целиком. */
+const FRAME_W = 2.7;
+const FRAME_H = 2.85;
+/** Двойная дверь: створки ниже проёма, сверху неподвижная часть. */
+const DOUBLE_LEAF_H = 2.3;
 /** Окно в window-frame: ширина × высота проёма и высота подоконника (≈, по пропорциям модели). */
 const WINDOW_W = 2.2;
 const WINDOW_H = 1.3;
@@ -260,8 +262,10 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      g.add(doorLeaf(FRAME_W / 2, FRAME_H, FRAME_W / 2, d.opens, color));
-      g.add(doorLeaf(FRAME_W / 2, FRAME_H, -FRAME_W / 2, d.opens, color));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, color));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, color));
+      // неподвижная верхняя часть над створками
+      g.add(withEdges(box(DOOR_T, FRAME_H - DOUBLE_LEAF_H, FRAME_W, 0, DOUBLE_LEAF_H + (FRAME_H - DOUBLE_LEAF_H) / 2, 0), color));
       return g;
     default:
       g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, color));

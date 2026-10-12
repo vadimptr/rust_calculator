@@ -8,6 +8,7 @@ import { KINDS } from '../blueprint/catalog.ts';
 import { authoredRaidPath, cheapestRaidPath, raidPolyline } from '../blueprint/raid.ts';
 import type { RaidPath } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
+import { planRocketSplash } from '../blueprint/splash.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
 import { formatNum } from './ResourceRow';
@@ -82,6 +83,7 @@ const BlueprintSection: React.FC = () => {
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [pathChoice, setPathChoice] = useState<PathChoice>('cheapest');
   const [raidPlay, setRaidPlay] = useState(0);
+  const [showImpacts, setShowImpacts] = useState(true);
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -113,9 +115,20 @@ const BlueprintSection: React.FC = () => {
   }, [blueprint, resolved, raidMethod]);
 
   const activePath = raidPaths ? (pathChoice === 'authored' && raidPaths.authored ? raidPaths.authored : raidPaths.cheapest) : null;
-  const raidView = raidOn && raidPaths
-    ? (pathChoice === 'authored' && raidPaths.authoredView ? raidPaths.authoredView : raidPaths.cheapestView)
-    : null;
+
+  // Сплеш ракет по элементам активного пути
+  const splash = useMemo(() => {
+    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0) return null;
+    return planRocketSplash(resolved, activePath.ids);
+  }, [resolved, activePath, raidMethod]);
+
+  const raidView = useMemo<RaidView | null>(() => {
+    if (!raidOn || !raidPaths) return null;
+    const base = pathChoice === 'authored' && raidPaths.authoredView ? raidPaths.authoredView : raidPaths.cheapestView;
+    if (!base) return null;
+    if (!splash || !showImpacts) return base;
+    return { ...base, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
+  }, [raidOn, raidPaths, pathChoice, splash, showImpacts]);
 
   const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
   const errors = issues.filter(i => i.level === 'error');
@@ -291,13 +304,37 @@ const BlueprintSection: React.FC = () => {
                     )
                   )}
 
+                  {splash && (
+                    <div className="raid-panel__splash">
+                      <div className="raid-panel__splash-title">Сплеш ракет</div>
+                      <p className="raid-panel__splash-line">
+                        <b>{splash.rockets}</b> ракет вместо {splash.rocketsPerItem} по штукам
+                        {splash.rockets < splash.rocketsPerItem
+                          ? <> · экономия <b>{formatNum((splash.rocketsPerItem - splash.rockets) * 1400)}</b> серы</>
+                          : <> · сплеш не помогает</>}
+                      </p>
+                      <ul className="raid-panel__shots">
+                        {splash.shots.map((s, i) => (
+                          <li key={i}>
+                            ×{s.count} в точку {i + 1}:{' '}
+                            {Object.entries(s.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v)}`).join(', ')}
+                          </li>
+                        ))}
+                      </ul>
+                      <label className="bp__toggle">
+                        <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
+                        Показать точки удара
+                      </label>
+                    </div>
+                  )}
+
                   {activePath && activePath.steps.length > 0 && (
                     <div className="raid-panel__actions">
                       <button type="button" className="bp__upload-btn" onClick={() => setRaidPlay(n => n + 1)}>Воспроизвести</button>
                       <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
                     </div>
                   )}
-                  <p className="raid-panel__hint">Путь ищется по одному уровню; мягкая сторона стен и рейд через крышу не учитываются.</p>
+                  <p className="raid-panel__hint">Путь ищется по одному уровню; мягкая сторона стен и рейд через крышу не учитываются. Сплеш считается только для ракет, радиусы приблизительные.</p>
                 </>
               )}
             </section>

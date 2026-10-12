@@ -1302,3 +1302,36 @@
   font-size: 0.72rem;
   color: var(--text-muted);
 }
+
+.raid-panel__splash {
+  border: 1px solid rgba(255, 176, 32, 0.4);
+  background: rgba(255, 176, 32, 0.07);
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+}
+
+.raid-panel__splash-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  color: #e6b84a;
+  margin-bottom: 0.25rem;
+}
+
+.raid-panel__splash-line b {
+  color: var(--text-primary);
+}
+
+.raid-panel__shots {
+  list-style: none;
+  margin: 0.35rem 0 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.raid-panel__shots li + li {
+  margin-top: 0.2rem;
+}

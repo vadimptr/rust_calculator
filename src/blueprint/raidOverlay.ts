@@ -9,6 +9,8 @@ export interface RaidView {
   ids: string[];
   /** Точки линии пути. */
   line: [number, number, number][];
+  /** Точки удара ракет со сплешем: где и сколько. */
+  impacts?: { point: [number, number, number]; count: number }[];
 }
 
 const HIGHLIGHT = new THREE.MeshStandardMaterial({ color: 0xd23c1e, emissive: 0x6b1407, emissiveIntensity: 0.5, roughness: 0.7, side: THREE.DoubleSide });
@@ -54,12 +56,12 @@ function restoreObject(o: THREE.Object3D) {
   o.visible = true;
 }
 
-function numberSprite(n: number): THREE.Sprite {
+function numberSprite(n: number | string, fill = '#cf4820'): THREE.Sprite {
   const size = 128;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#cf4820';
+  ctx.fillStyle = fill;
   ctx.beginPath();
   ctx.arc(size / 2, size / 2, size / 2 - 6, 0, Math.PI * 2);
   ctx.fill();
@@ -67,7 +69,7 @@ function numberSprite(n: number): THREE.Sprite {
   ctx.strokeStyle = '#fff1d6';
   ctx.stroke();
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 64px system-ui, sans-serif';
+  ctx.font = `bold ${String(n).length > 2 ? 44 : 64}px system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(n), size / 2, size / 2 + 4);
@@ -118,6 +120,19 @@ export class RaidOverlay {
       marker.position.set(...end);
       marker.renderOrder = 10;
       this.group.add(marker);
+    }
+    for (const imp of view.impacts ?? []) {
+      const blast = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0xffb020, transparent: true, opacity: 0.9, depthTest: false }),
+      );
+      blast.position.set(...imp.point);
+      blast.renderOrder = 11;
+      this.group.add(blast);
+      const label = numberSprite(`×${imp.count}`, '#b8860b');
+      label.scale.set(0.5, 0.5, 1);
+      label.position.set(imp.point[0], imp.point[1] + 0.45, imp.point[2]);
+      this.group.add(label);
     }
   }
 
