@@ -2,8 +2,8 @@
   "$schema": "../schema/blueprint.schema.json",
   "formatVersion": "1.0",
   "meta": {
-    "name": "Starter 2x1",
-    "description": "Два квадратных фундамента, стены по периметру, дверной проём с металлической дверью, перекрытие и шкаф в дальней ячейке.",
+    "name": "Дом 2×1",
+    "description": "Два квадратных фундамента, стены по периметру, дверной проём с металлической дверью, перекрытие и шкаф в корневой ячейке.",
     "gameVersion": "2026-09",
     "tags": [
       "starter",
@@ -110,14 +110,14 @@
       "id": "tc1",
       "kind": "tool-cupboard",
       "attach": {
-        "to": "f2",
+        "to": "f1",
         "socket": "top"
       },
       "offset": [
-        0.8,
-        0.8
+        -0.8,
+        -0.8
       ],
-      "rotation": 225
+      "rotation": 45
     }
   ],
   "raidPath": [

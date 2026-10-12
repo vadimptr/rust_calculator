@@ -1,0 +1,36 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "1.0",
+  "meta": {
+    "name": "Дом 2x2",
+    "description": "Четыре квадратных фундамента, стены по периметру, металлическая дверь, перекрытие и шкаф в дальнем углу.",
+    "gameVersion": "2026-09",
+    "tags": ["starter", "example"]
+  },
+  "defaults": { "grade": "stone" },
+  "elements": [
+    { "id": "f1", "kind": "square-foundation", "root": true },
+    { "id": "f2", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:0", "selfSocket": "edge:2" } },
+    { "id": "f3", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:1", "selfSocket": "edge:3" } },
+    { "id": "f4", "kind": "square-foundation", "attach": { "to": "f2", "socket": "edge:1", "selfSocket": "edge:3" } },
+
+    { "id": "w1", "kind": "wall", "attach": { "to": "f1", "socket": "edge:3" } },
+    { "id": "w2", "kind": "wall", "attach": { "to": "f1", "socket": "edge:2" } },
+    { "id": "w3", "kind": "wall", "attach": { "to": "f2", "socket": "edge:3" } },
+    { "id": "w4", "kind": "wall", "attach": { "to": "f2", "socket": "edge:0" } },
+    { "id": "w5", "kind": "wall", "attach": { "to": "f4", "socket": "edge:0" } },
+    { "id": "w6", "kind": "wall", "attach": { "to": "f4", "socket": "edge:1" } },
+    { "id": "w7", "kind": "wall", "attach": { "to": "f3", "socket": "edge:1" } },
+    { "id": "d1", "kind": "doorway", "grade": "metal", "attach": { "to": "f3", "socket": "edge:2" } },
+
+    { "id": "c1", "kind": "square-floor", "attach": { "to": "w1", "socket": "top", "selfSocket": "edge:3" } },
+    { "id": "c2", "kind": "square-floor", "attach": { "to": "c1", "socket": "edge:0", "selfSocket": "edge:2" } },
+    { "id": "c3", "kind": "square-floor", "attach": { "to": "c1", "socket": "edge:1", "selfSocket": "edge:3" } },
+    { "id": "c4", "kind": "square-floor", "attach": { "to": "c2", "socket": "edge:1", "selfSocket": "edge:3" } }
+  ],
+  "deployables": [
+    { "id": "door1", "kind": "sheet-metal-door", "attach": { "to": "d1", "socket": "opening" }, "hinge": "left" },
+    { "id": "tc1", "kind": "tool-cupboard", "attach": { "to": "f1", "socket": "top" }, "offset": [-0.9, -0.9], "rotation": 45 }
+  ],
+  "raidPath": ["door1"]
+}

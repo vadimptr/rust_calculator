@@ -2,7 +2,7 @@
   "$schema": "../schema/blueprint.schema.json",
   "formatVersion": "1.0",
   "meta": {
-    "name": "Sealed Triangle TC",
+    "name": "Шкаф в треугольном бункере",
     "description": "Шкаф, закатанный в каменный треугольник: треугольный фундамент, три стены, треугольный пол сверху.",
     "gameVersion": "2026-09",
     "tags": [

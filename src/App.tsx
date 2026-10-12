@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { blocks } from './data/blocks';
 import { Quantities, Resources, BuildingBlock, Tier, RaidSelection } from './types';
 import { DEFAULT_TIER } from './data/raidData';
@@ -7,6 +7,8 @@ import BlockTable from './components/BlockTable';
 import Presets from './components/Presets';
 import Summary from './components/Summary';
 import RaidTable from './components/RaidTable';
+
+const BlueprintSection = lazy(() => import('./components/BlueprintSection'));
 
 import './App.css';
 
@@ -40,9 +42,34 @@ const CATEGORY_ORDER: BuildingBlock['category'][] = [
   'foundation', 'floor', 'wall', 'opening', 'window', 'stairs', 'roof',
 ];
 
+type Section = 'build' | 'raid' | 'view';
+
+const SECTIONS: { id: Section; label: string }[] = [
+  { id: 'build', label: 'Строительство' },
+  { id: 'raid', label: 'Рейд' },
+  { id: 'view', label: '3D-просмотр' },
+];
+
+function sectionFromHash(): Section {
+  const h = window.location.hash.replace('#', '');
+  return SECTIONS.some(s => s.id === h) ? (h as Section) : 'build';
+}
+
 function App() {
   const [quantities, setQuantities] = useState<Quantities>(initialQuantities);
   const [raidTier, setRaidTier] = useState<Tier>(DEFAULT_TIER);
+  const [section, setSection] = useState<Section>(sectionFromHash);
+
+  useEffect(() => {
+    const onHash = () => setSection(sectionFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const selectSection = (s: Section) => {
+    setSection(s);
+    window.history.replaceState(null, '', s === 'build' ? window.location.pathname : `#${s}`);
+  };
 
   const setQuantity = (id: string, value: number) => {
     setQuantities(prev => ({ ...prev, [id]: value }));
@@ -98,40 +125,73 @@ function App() {
             {' '}Калькулятор постройки
           </h1>
           <p className="app-header__subtitle">
-            Расчёт стоимости постройки и содержания базы
+            Расчёт стоимости постройки, содержания и рейда базы
           </p>
+          <nav className="tabs" aria-label="Разделы">
+            {SECTIONS.map(s => (
+              <button
+                key={s.id}
+                type="button"
+                className={`tabs__btn${s.id === section ? ' tabs__btn--active' : ''}`}
+                onClick={() => selectSection(s.id)}
+                aria-pressed={s.id === section}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
         </div>
       </header>
 
-      <div className="app-layout">
-        <main className="app-main">
-          <Presets onApply={applyPreset} />
-          <BlockTable
-            groupedBlocks={groupedBlocks}
-            categoryOrder={CATEGORY_ORDER}
-            quantities={quantities}
-            onQuantityChange={setQuantity}
-          />
+      {section === 'view' ? (
+        <div className="app-layout app-layout--wide">
+          <main className="app-main">
+            <Suspense fallback={<div className="bp__loading">Загрузка 3D…</div>}>
+              <BlueprintSection />
+            </Suspense>
+          </main>
+        </div>
+      ) : (
+        <div className="app-layout">
+          <main className="app-main">
+            {section === 'build' && (
+              <>
+                <Presets onApply={applyPreset} />
+                <BlockTable
+                  groupedBlocks={groupedBlocks}
+                  categoryOrder={CATEGORY_ORDER}
+                  quantities={quantities}
+                  onQuantityChange={setQuantity}
+                />
+              </>
+            )}
+            {section === 'raid' && (
+              <>
+                <p className="raid-note">
+                  Рейд считается по блокам, выбранным в разделе «Строительство».
+                </p>
+                <RaidTable
+                  rows={raidRows}
+                  tier={raidTier}
+                  onTierChange={setRaidTier}
+                  hasAny={hasAny}
+                />
+              </>
+            )}
+          </main>
 
-          <RaidTable
-            rows={raidRows}
-            tier={raidTier}
-            onTierChange={setRaidTier}
-            hasAny={hasAny}
-          />
-        </main>
-
-        <aside className="app-sidebar">
-          <div className="app-sidebar__sticky">
-            <Summary
-              totalBuild={totalBuild}
-              totalUpkeep={totalUpkeep}
-              hasAny={hasAny}
-              onReset={resetAll}
-            />
-          </div>
-        </aside>
-      </div>
+          <aside className="app-sidebar">
+            <div className="app-sidebar__sticky">
+              <Summary
+                totalBuild={totalBuild}
+                totalUpkeep={totalUpkeep}
+                hasAny={hasAny}
+                onReset={resetAll}
+              />
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
