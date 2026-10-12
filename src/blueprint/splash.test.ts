@@ -147,4 +147,6 @@ test('simulation: damage accumulates across stages (C4 then explosive ammo on th
   assert.ok(sim.sulfur < 4400, `sulfur=${sim.sulfur}`);
   assert.ok(sim.stages.length >= 2);
   assert.deepEqual(sim.stages[0].broken, []); // первый C4 ничего не ломает, урон копится
+  assert.ok(sim.broken.every(id => id.startsWith('w')), `expected a wall, got ${sim.broken.join(',')}`); // с земли, не через крышу
+  assert.ok(sim.stages.every(st => st.shot.point[1] < 3));
 });

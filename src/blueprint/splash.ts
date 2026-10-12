@@ -605,9 +605,10 @@ export function simulateRaid(resolved: Resolved, graph: SpaceGraph, targetCell: 
       const rem = remainingCost(r2, b2, hp2);
       const progress = Number.isFinite(rem) ? remaining - rem : -Infinity;
       const cand: Cand = { shot, brokenNow, opened, sulfur: cost, valueGain, progress };
+      // при равной выгоде — удар ниже: с земли удобнее, чем с крыши
       const key = (x: Cand) => strategy === 'value'
-        ? [x.valueGain / x.sulfur, x.progress / x.sulfur, -x.sulfur, x.brokenNow.length]
-        : [x.progress / x.sulfur, x.valueGain / x.sulfur, -x.sulfur, x.brokenNow.length];
+        ? [x.valueGain / x.sulfur, x.progress / x.sulfur, -x.sulfur, -x.shot.point[1], x.brokenNow.length]
+        : [x.progress / x.sulfur, x.valueGain / x.sulfur, -x.sulfur, -x.shot.point[1], x.brokenNow.length];
       const better = (a: Cand, b: Cand) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] > kb[i]; return false; };
       if (!bestRef.c || better(cand, bestRef.c)) bestRef.c = cand;
     };
@@ -646,5 +647,6 @@ export function bestSimulation(resolved: Resolved, graph: SpaceGraph, targetCell
   const runs = (['value', 'progress'] as Strategy[]).map(st => simulateRaid(resolved, graph, targetCell, allowed, st)).filter(r => r.reached);
   if (runs.length === 0) return null;
   const score = (r: RaidSimulation) => (r.sulfur <= 0 ? Infinity : spacesValue(graph, r.openedIds, resolved) / r.sulfur);
-  return runs.sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur)[0];
+  const height = (r: RaidSimulation) => Math.max(0, ...r.stages.map(st => st.shot.point[1]));
+  return runs.sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || height(a) - height(b))[0];
 }
