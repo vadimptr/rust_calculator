@@ -35,9 +35,11 @@ export interface SplashTarget {
   hp: number;
   /** Элемент-носитель: для стены — она сама, для двери и вставки — её проём. */
   carrierId: string;
-  /** Положение и поворот носителя (нормаль = локальный +x). */
+  /** Положение и поворот носителя. */
   origin: Vec3;
   rotation: number;
+  /** Ось нормали носителя: x у стен и дверей, y у полов. */
+  axis: 'x' | 'y';
   /** Центр элемента в мире. */
   center: Vec3;
   /** Урон от прямого попадания. */
@@ -104,7 +106,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
   if (info.category === 'wallType') {
     const h = wallHeight(el.kind);
     return {
-      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation,
+      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
       candidates: rectPoints(3, h).map(p => toWorld(el.position, el.rotation, p)),
     };
@@ -113,7 +115,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     const r = info.shape === 'square' ? 1.5 : 0.866;
     const local: Vec3[] = [[0, 0, 0], [r, 0, 0], [-r, 0, 0], [0, 0, r], [0, 0, -r]];
     return {
-      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, center: el.position,
+      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
       candidates: local.map(p => toWorld(el.position, el.rotation, p)),
     };
   }
@@ -130,7 +132,7 @@ function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarg
   const hh = isWindow ? 1.3 : d.kind.includes('double') || d.kind === 'garage-door' ? 2.6 : 2.2;
   const w = d.kind.includes('double') || d.kind === 'garage-door' ? 2.7 : isWindow ? 2.2 : 1.3;
   return {
-    id: d.id, kind: d.kind, hp, hitDamage: ROCKET.doorDamage, carrierId: d.parent, origin: d.position, rotation: d.rotation,
+    id: d.id, kind: d.kind, hp, hitDamage: ROCKET.doorDamage, carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
     center: [d.position[0], d.position[1] + y0 + Math.min(hh, h) / 2, d.position[2]],
     candidates: rectPoints(w, hh, y0).map(p => toWorld(d.position, d.rotation, p)),
   };
@@ -189,15 +191,18 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
     const t = la[0] / (la[0] - lb[0]);
     const y = la[1] + (lb[1] - la[1]) * t;
     const z = la[2] + (lb[2] - la[2]) * t;
-    return y >= -1e-6 && y <= (o.height ?? 3) + 1e-6 && Math.abs(z) <= 1.5 + 1e-6;
+    return y >= MARGIN && y <= (o.height ?? 3) - MARGIN && Math.abs(z) <= 1.5 - MARGIN;
   }
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
   const t = la[1] / (la[1] - lb[1]);
   const x = la[0] + (lb[0] - la[0]) * t;
   const z = la[2] + (lb[2] - la[2]) * t;
-  return insidePolygon(x, z, o.polygon!);
+  return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
 }
+
+/** Отступ от краёв преграды: отрезок, скользящий вдоль шва, преградой не считается. */
+const MARGIN = 0.05;
 
 /** Преграды из геометрии: все стены-типы и ячейки. Проёмы без живой двери не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
@@ -232,14 +237,15 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
   const alive = () => targets.some(t => (hpLeft.get(t.id) ?? 0) > 1e-6);
   const isAlive = (t: SplashTarget) => (hpLeft.get(t.id) ?? 0) > 1e-6;
 
-  /** Сторона рейдера у цели i: к предыдущей цели, иначе прочь от следующей, иначе +нормаль. */
+  /** Сторона рейдера у цели i вдоль её нормали: к предыдущей цели, иначе прочь от следующей, иначе +нормаль. */
   const raiderSide = (i: number): 1 | -1 => {
     const t = targets[i];
     const ref = i > 0 ? targets[i - 1].center : targets[i + 1]?.center;
     if (!ref) return 1;
     const local = toLocal(t.origin, t.rotation, ref);
+    const along = t.axis === 'x' ? local[0] : local[1];
     const towards = i > 0 ? 1 : -1;
-    return (local[0] >= 0 ? 1 : -1) * towards as 1 | -1;
+    return (along >= 0 ? 1 : -1) * towards as 1 | -1;
   };
 
   while (alive() && rockets < 500) {
@@ -247,14 +253,14 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
     // Преграды: целые элементы, кроме уже разрушенных целей (и их проёмов)
     const destroyedCarriers = new Set(targets.filter(t => !isAlive(t)).map(t => t.carrierId));
     const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !targets.some(t => t.id === d.id && !isAlive(t))).map(d => d.parent));
-    const occ = occluders(resolved, liveDoorCarriers).filter(o => !destroyedCarriers.has(o.id));
+    const occ = occluders(resolved, liveDoorCarriers).filter(o => !destroyedCarriers.has(o.id) || liveDoorCarriers.has(o.id));
 
     const candidates: { point: Vec3; owner: SplashTarget }[] = [];
     const seen = new Set<string>();
     targets.slice(0, frontier + 1).forEach((t, i) => {
       const side = raiderSide(i);
       for (const c of t.candidates) {
-        const point = toWorld(c, t.rotation, [side * NUDGE, 0, 0]);
+        const point = t.axis === 'x' ? toWorld(c, t.rotation, [side * NUDGE, 0, 0]) : ([c[0], c[1] + side * NUDGE, c[2]] as Vec3);
         const key = point.map(v => v.toFixed(2)).join('|');
         if (!seen.has(key)) { seen.add(key); candidates.push({ point, owner: t }); }
       }
@@ -267,7 +273,7 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
       for (const t of targets) {
         let dmg = rocketDamage(p, t);
         if (dmg > 0 && t.id !== owner.id) {
-          const blocked = occ.some(o => o.id !== owner.carrierId && o.id !== t.carrierId && segmentBlocked(p, t.center, o));
+          const blocked = occ.some(o => o.id !== t.carrierId && segmentBlocked(p, t.center, o));
           if (blocked) dmg = 0;
         }
         damage[t.id] = dmg;
@@ -288,3 +294,4 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
   const rocketsPerItem = targets.reduce((a, t) => a + Math.ceil(t.hp / t.hitDamage), 0);
   return { shots: [...shots.values()], rockets, sulfur: rockets * ROCKET.sulfur, rocketsPerItem, damageTaken };
 }
+

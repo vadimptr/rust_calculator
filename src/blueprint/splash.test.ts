@@ -44,13 +44,13 @@ test('two adjacent stone walls sharing a corner: splash needs fewer rockets than
   assert.ok(plan.shots.some(s => s.count > 1));
 });
 
-test('door targets use door damage: sheet metal door dies in 2 rockets', () => {
-  const { bp, resolved } = load('starter-2x1');
+test('airlock doors: a closed door blocks splash, so two doors cost 2 + 2 rockets', () => {
+  const { resolved } = load('starter-2x1');
   const [outer] = splashTargets(resolved, ['door_outer']);
   assert.equal(outer.hp, 250);
   assert.equal(outer.hitDamage, ROCKET.doorDamage);
-  const plan = planRocketSplash(resolved, bp.raidPath!);
-  assert.ok(plan.rockets <= plan.rocketsPerItem);
+  const plan = planRocketSplash(resolved, ['door_outer', 'door_inner']);
+  assert.equal(plan.rockets, 4);
   assert.equal(plan.rocketsPerItem, 4);
 });
 
@@ -73,10 +73,9 @@ test('segmentBlocked: wall plane and floor polygon', () => {
   assert.equal(segmentBlocked([3, 4, 0], [3, 2, 0], floor), false);     // мимо плиты
 });
 
-test('2x2 roof entry: floors block splash to the ground-floor doors', () => {
-  const { bp, resolved } = load('house-2x2');
-  const plan = planRocketSplash(resolved, bp.raidPath!);
-  // 4 металлические двойные двери по 2 ракеты: сплеш с крыши вниз не проходит через пол
-  assert.ok(plan.rockets >= 6, `rockets=${plan.rockets}`);
+test('2x2 roof entry: closed doors and floors block splash, four double doors cost 8 rockets', () => {
+  const { resolved } = load('house-2x2');
+  const plan = planRocketSplash(resolved, ['door_roof', 'door_jump', 'door_hall', 'door_tc']);
+  assert.equal(plan.rockets, 8);
   assert.equal(plan.rocketsPerItem, 8);
 });

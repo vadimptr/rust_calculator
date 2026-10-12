@@ -1335,3 +1335,17 @@
 .raid-panel__shots li + li {
   margin-top: 0.2rem;
 }
+
+.raid-panel__total {
+  font-size: 0.82rem;
+  margin: 0.2rem 0 0.5rem;
+}
+
+.raid-panel__total b {
+  color: var(--text-primary);
+}
+
+.raid-panel__sub {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

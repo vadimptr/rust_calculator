@@ -4,7 +4,7 @@
  */
 import { EXPLOSIVE_COSTS, RAID_RULES } from '../data/raidData.ts';
 import type { ExplosiveType, RaidCostRule, RaidMethod } from '../types/index.ts';
-import { KINDS, apothem, edgeAngle, edgeCount } from './catalog.ts';
+import { KINDS, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 export const OUTSIDE = '__outside__';
@@ -43,9 +43,11 @@ export interface RaidPath {
   sulfur: number;
   /** Ломаемые элементы в порядке прохода. */
   ids: string[];
-  /** Ячейки пути от входа до шкафа (для линии в 3D), без OUTSIDE. */
+  /** Узлы пути от входа до шкафа, без OUTSIDE (виртуальные — с префиксом ^). */
   cells: string[];
-  /** Середина ребра, через которое заходим с улицы (если известна). */
+  /** Центры пространств пути (для линии в 3D). */
+  points: [number, number, number][];
+  /** Точка, через которую заходим с улицы. */
   entry?: [number, number, number];
 }
 
@@ -76,16 +78,20 @@ export function stepCost(id: string, kind: string, grade: Grade | undefined, met
   return { id, kind, grade, breakdown, sulfur: sulfurOf(breakdown), free: false };
 }
 
-/** Что стоит на ребре ячейки и что это стоит сломать. */
+/** Что стоит на ребре и что это стоит сломать. */
 interface EdgeBlocker {
-  element: ResolvedElement | null;   // стена-тип
-  door: ResolvedDeployable | null;   // дверь в проёме
+  /** Стена-тип на ребре или пол при вертикальном переходе. */
+  element: ResolvedElement | null;
+  door: ResolvedDeployable | null;
 }
 
-/** Проходимо ли ребро без разрушения и что ломать иначе. Возвращает null, если ломать нечего. */
+/** Что ломать, чтобы пройти; null — проход свободен. */
 function blockerStep(b: EdgeBlocker, method: RaidMethod): RaidStep | null {
   if (!b.element) return null;
   const info = KINDS[b.element.kind];
+  if (info.category === 'cell') {
+    return info.isFrame ? null : stepCost(b.element.id, b.element.kind, b.element.grade, method);
+  }
   if (info.opening || b.element.kind === 'window-frame') {
     return b.door ? stepCost(b.door.id, b.door.kind, undefined, method) : null;
   }
@@ -95,140 +101,230 @@ function blockerStep(b: EdgeBlocker, method: RaidMethod): RaidStep | null {
 
 /** Ключ точки с округлением до 1 см; «+ 0» убирает −0 после cos/sin. */
 const r2 = (v: number) => (Math.round(v * 100) / 100 + 0).toFixed(2);
-const key = (x: number, y: number, z: number) => `${r2(x)}|${r2(y)}|${r2(z)}`;
+const key2 = (x: number, z: number) => `${r2(x)}|${r2(z)}`;
+const key3 = (x: number, y: number, z: number) => `${r2(x)}|${r2(y)}|${r2(z)}`;
 
-interface CellEdge {
+/** Пространство над ячейкой целого уровня или виртуальная комната без пола над ней. */
+export interface SpaceNode {
+  id: string;
+  /** Ячейка-основание; у виртуального пространства — ячейка под ним. */
   cell: ResolvedElement;
-  k: number;
+  virtual: boolean;
+  position: [number, number, number];
+  level: number;
+}
+
+export interface AdjEdge {
+  to: string;
+  blocker: EdgeBlocker;
+  /** Точка перехода: середина ребра или центр пола. */
   mid: [number, number, number];
 }
 
-interface AdjEdge { to: string; blocker: EdgeBlocker; mid: [number, number, number] }
+export interface SpaceGraph {
+  nodes: Map<string, SpaceNode>;
+  adj: Map<string, AdjEdge[]>;
+}
 
-/** Граф ячеек одного уровня: ребро → соседняя ячейка или OUTSIDE, с тем, что это ребро перегораживает. */
-export function buildCellGraph(resolved: Resolved) {
-  const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell');
-  const wallsAt = new Map<string, ResolvedElement>();
-  for (const e of resolved.elements) {
-    if (KINDS[e.kind].category === 'wallType') wallsAt.set(key(...e.position), e);
-  }
+function edgeMids(shape: 'square' | 'triangle', pos: [number, number, number], rotation: number): [number, number, number][] {
+  const a = apothem(shape);
+  return Array.from({ length: edgeCount(shape) }, (_, k) => {
+    const ang = ((rotation + edgeAngle(shape, k)) * Math.PI) / 180;
+    return [pos[0] + a * Math.cos(ang), pos[1], pos[2] + a * Math.sin(ang)];
+  });
+}
+
+/** Граф пространств (SPEC §9.3). */
+export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
+  const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell' && Number.isInteger(e.level));
+  const walls = resolved.elements.filter(e => KINDS[e.kind].category === 'wallType');
   const doorsIn = new Map<string, ResolvedDeployable>();
   for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard') doorsIn.set(d.parent, d);
 
-  const edgesOf = (c: ResolvedElement): CellEdge[] => {
-    const shape = KINDS[c.kind].shape!;
-    const a = apothem(shape);
-    return Array.from({ length: edgeCount(shape) }, (_, k) => {
-      const ang = ((c.rotation + edgeAngle(shape, k)) * Math.PI) / 180;
-      return { cell: c, k, mid: [c.position[0] + a * Math.cos(ang), c.position[1], c.position[2] + a * Math.sin(ang)] };
-    });
-  };
-  const cellAt = new Map<string, ResolvedElement[]>();
+  /** Стена-тип на вертикали (x, z), перекрывающая высоту y. */
+  const wallsAtXZ = new Map<string, ResolvedElement[]>();
+  for (const w of walls) {
+    const k = key2(w.position[0], w.position[2]);
+    wallsAtXZ.set(k, [...(wallsAtXZ.get(k) ?? []), w]);
+  }
+  const wallAt = (mid: [number, number, number]): ResolvedElement | null =>
+    (wallsAtXZ.get(key2(mid[0], mid[2])) ?? []).find(w => mid[1] >= w.position[1] - 1e-6 && mid[1] < w.position[1] + wallHeight(w.kind) - 1e-6) ?? null;
+
+  const nodes = new Map<string, SpaceNode>();
+  const cellAtPos = new Map<string, ResolvedElement>();
   for (const c of cells) {
-    for (const e of edgesOf(c)) {
-      const kk = key(...e.mid);
-      cellAt.set(kk, [...(cellAt.get(kk) ?? []), c]);
-    }
+    nodes.set(c.id, { id: c.id, cell: c, virtual: false, position: c.position, level: c.level });
+    cellAtPos.set(key3(...c.position), c);
+  }
+  // Виртуальные пространства: над ячейкой нет пола, но на её стенах стоят стены следующего уровня
+  for (const c of cells) {
+    const above: [number, number, number] = [c.position[0], c.position[1] + 3, c.position[2]];
+    if (cellAtPos.has(key3(...above))) continue;
+    const shape = KINDS[c.kind].shape!;
+    const hasWalls = edgeMids(shape, above, c.rotation).some(m => wallAt(m));
+    if (hasWalls) nodes.set(`^${c.id}`, { id: `^${c.id}`, cell: c, virtual: true, position: above, level: c.level + 1 });
   }
 
-  /** Соседи: к кому, чем перегорожено, через какую точку */
-  const adj = new Map<string, AdjEdge[]>();
-  for (const c of cells) {
-    const list: AdjEdge[] = [];
-    for (const e of edgesOf(c)) {
-      const kk = key(...e.mid);
-      const wall = wallsAt.get(kk) ?? null;
-      const blocker: EdgeBlocker = { element: wall, door: wall ? doorsIn.get(wall.id) ?? null : null };
-      const neighbour = (cellAt.get(kk) ?? []).find(n => n.id !== c.id);
-      list.push({ to: neighbour ? neighbour.id : OUTSIDE, blocker, mid: e.mid });
-    }
-    adj.set(c.id, list);
+  /** Узлы по середине ребра (для поиска соседа) */
+  const nodesAtMid = new Map<string, SpaceNode[]>();
+  const midsOf = (n: SpaceNode) => edgeMids(KINDS[n.cell.kind].shape!, n.position, n.cell.rotation);
+  for (const n of nodes.values()) for (const m of midsOf(n)) {
+    const k = key3(...m);
+    nodesAtMid.set(k, [...(nodesAtMid.get(k) ?? []), n]);
   }
-  return { cells, adj };
+  const nodeAtPos = new Map<string, SpaceNode>();
+  for (const n of nodes.values()) nodeAtPos.set(key3(...n.position), n);
+
+  const adj = new Map<string, AdjEdge[]>();
+  for (const n of nodes.values()) {
+    const list: AdjEdge[] = [];
+    for (const m of midsOf(n)) {
+      const wall = wallAt(m);
+      const blocker: EdgeBlocker = { element: wall, door: wall ? doorsIn.get(wall.id) ?? null : null };
+      const neighbour = (nodesAtMid.get(key3(...m)) ?? []).find(x => x.id !== n.id);
+      list.push({ to: neighbour ? neighbour.id : OUTSIDE, blocker, mid: m });
+    }
+    // Вверх: через пол пространства над нами, бесплатно в виртуальную комнату, на улицу — если ничего нет
+    const abovePos: [number, number, number] = [n.position[0], n.position[1] + 3, n.position[2]];
+    const above = nodeAtPos.get(key3(...abovePos));
+    if (above) {
+      list.push({ to: above.id, blocker: { element: above.virtual ? null : above.cell, door: null }, mid: abovePos });
+    } else {
+      list.push({ to: OUTSIDE, blocker: { element: null, door: null }, mid: abovePos });
+    }
+    adj.set(n.id, list);
+  }
+  // Вниз: симметрично вертикальным рёбрам
+  for (const [from, list] of [...adj.entries()]) {
+    for (const e of list) {
+      if (e.to === OUTSIDE || e.mid[1] <= nodes.get(from)!.position[1] + 1e-6) continue;
+      const back = adj.get(e.to)!;
+      if (!back.some(b => b.to === from)) back.push({ to: from, blocker: e.blocker, mid: e.mid });
+    }
+  }
+  return { nodes, adj };
 }
 
-/** Самый дешёвый путь снаружи до ячейки targetCell (Дейкстра по сере). */
-export function cheapestRaidPath(resolved: Resolved, targetCell: string, method: RaidMethod): RaidPath | null {
-  const { cells, adj } = buildCellGraph(resolved);
-  if (!cells.some(c => c.id === targetCell)) return null;
+interface Hop { to: string; step: RaidStep | null; mid: [number, number, number] }
 
-  // Обратные рёбра от OUTSIDE: заходим в любую ячейку с «уличным» ребром
+interface PathResult {
+  hops: Hop[];
+  sulfur: number;
+}
+
+/** Дейкстра от start до target с исключёнными узлами и рёбрами (для алгоритма Йена). */
+function dijkstra(
+  graph: SpaceGraph, target: string, method: RaidMethod,
+  bannedNodes: Set<string>, bannedEdges: Set<string>, start = OUTSIDE,
+): PathResult | null {
   const entries: AdjEdge[] = [];
-  for (const [id, list] of adj) for (const e of list) if (e.to === OUTSIDE) entries.push({ to: id, blocker: e.blocker, mid: e.mid });
-  adj.set(OUTSIDE, entries);
+  for (const [id, list] of graph.adj) for (const e of list) if (e.to === OUTSIDE) entries.push({ to: id, blocker: e.blocker, mid: e.mid });
+  const edgesOf = (id: string) => (id === OUTSIDE ? entries : graph.adj.get(id) ?? []);
 
-  const dist = new Map<string, number>([[OUTSIDE, 0]]);
-  const prev = new Map<string, { from: string; step: RaidStep | null; mid: [number, number, number] }>();
+  const dist = new Map<string, number>([[start, 0]]);
+  const prev = new Map<string, Hop & { from: string }>();
   const done = new Set<string>();
-  while (true) {
+  for (;;) {
     let cur: string | null = null;
     for (const [id, d] of dist) if (!done.has(id) && (cur === null || d < dist.get(cur)!)) cur = id;
-    if (cur === null || cur === targetCell) break;
+    if (cur === null || cur === target) break;
     done.add(cur);
-    for (const e of adj.get(cur) ?? []) {
-      if (e.to === OUTSIDE || done.has(e.to)) continue;
+    for (const e of edgesOf(cur)) {
+      if (e.to === OUTSIDE || done.has(e.to) || bannedNodes.has(e.to) || bannedEdges.has(`${cur}>${e.to}`)) continue;
       const step = blockerStep(e.blocker, method);
       const nd = dist.get(cur)! + (step?.sulfur ?? 0);
-      if (nd < (dist.get(e.to) ?? Infinity)) {
-        dist.set(e.to, nd);
-        prev.set(e.to, { from: cur, step, mid: e.mid });
-      }
+      if (nd < (dist.get(e.to) ?? Infinity)) { dist.set(e.to, nd); prev.set(e.to, { from: cur, to: e.to, step, mid: e.mid }); }
     }
   }
-  if (!dist.has(targetCell)) return null;
-
-  const steps: RaidStep[] = [];
-  const cellsOnPath: string[] = [];
-  let entry: [number, number, number] | undefined;
-  for (let at = targetCell; at !== OUTSIDE; ) {
+  if (!dist.has(target)) return null;
+  const hops: Hop[] = [];
+  for (let at = target; at !== start; ) {
     const p = prev.get(at)!;
-    cellsOnPath.unshift(at);
-    if (p.step) steps.unshift(p.step);
-    if (p.from === OUTSIDE) entry = p.mid;
+    hops.unshift({ to: p.to, step: p.step, mid: p.mid });
     at = p.from;
   }
-  return { steps, sulfur: steps.reduce((a, s) => a + s.sulfur, 0), ids: steps.map(s => s.id), cells: cellsOnPath, entry };
+  return { hops, sulfur: dist.get(target)! };
+}
+
+/** Несколько самых дешёвых по штукам путей (алгоритм Йена). */
+export function cheapestRaidPaths(resolved: Resolved, targetCell: string, method: RaidMethod, k = 6): RaidPath[] {
+  const graph = buildSpaceGraph(resolved);
+  if (!graph.nodes.has(targetCell)) return [];
+  const toRaidPath = (r: PathResult): RaidPath => {
+    const steps = r.hops.flatMap(h => (h.step ? [h.step] : []));
+    const nodes = r.hops.map(h => h.to);
+    return {
+      steps, sulfur: r.sulfur, ids: steps.map(s => s.id), cells: nodes,
+      points: nodes.map(id => graph.nodes.get(id)!.position), entry: r.hops[0]?.mid,
+    };
+  };
+  const first = dijkstra(graph, targetCell, method, new Set(), new Set());
+  if (!first) return [];
+  const A: PathResult[] = [first];
+  const B: PathResult[] = [];
+  const sig = (r: PathResult) => r.hops.map(h => h.to).join('>');
+  for (let i = 1; i < k; i++) {
+    const last = A[i - 1];
+    const full = [OUTSIDE, ...last.hops.map(h => h.to)];
+    for (let j = 0; j < full.length - 1; j++) {
+      const spur = full[j];
+      const rootKey = full.slice(0, j + 1).join('>');
+      const bannedEdges = new Set<string>();
+      for (const p of A) {
+        const pf = [OUTSIDE, ...p.hops.map(h => h.to)];
+        if (pf.slice(0, j + 1).join('>') === rootKey && pf.length > j + 1) bannedEdges.add(`${pf[j]}>${pf[j + 1]}`);
+      }
+      const bannedNodes = new Set(full.slice(0, j).filter(n => n !== OUTSIDE));
+      const spurPath = dijkstra(graph, targetCell, method, bannedNodes, bannedEdges, spur);
+      if (!spurPath) continue;
+      const rootHops = last.hops.slice(0, j);
+      const total: PathResult = {
+        hops: [...rootHops, ...spurPath.hops],
+        sulfur: rootHops.reduce((a, h) => a + (h.step?.sulfur ?? 0), 0) + spurPath.sulfur,
+      };
+      if (!A.some(p => sig(p) === sig(total)) && !B.some(p => sig(p) === sig(total))) B.push(total);
+    }
+    if (B.length === 0) break;
+    B.sort((a, b) => a.sulfur - b.sulfur || a.hops.length - b.hops.length);
+    A.push(B.shift()!);
+  }
+  return A.map(toRaidPath);
+}
+
+/** Самый дешёвый путь по штукам. */
+export function cheapestRaidPath(resolved: Resolved, targetCell: string, method: RaidMethod): RaidPath | null {
+  return cheapestRaidPaths(resolved, targetCell, method, 1)[0] ?? null;
 }
 
 const LINE_Y = 1.3;
 
-/** Точки линии пути для 3D: с улицы, через ячейки или ломаемые элементы, к шкафу. */
-export function raidPolyline(resolved: Resolved, path: RaidPath, target: [number, number, number]): [number, number, number][] {
-  const pos = (id: string): [number, number, number] | null => {
-    const el = resolved.elements.find(e => e.id === id);
-    if (el) return el.position;
-    const d = resolved.deployables.find(x => x.id === id);
-    return d ? d.position : null;
-  };
+/** Точки линии пути для 3D: с улицы, через пространства пути, к шкафу. */
+export function raidPolyline(_resolved: Resolved, path: RaidPath, target: [number, number, number]): [number, number, number][] {
   const pts: [number, number, number][] = [];
-  if (path.cells.length > 0) {
-    const first = pos(path.cells[0])!;
-    if (path.entry) {
-      const [ex, , ez] = path.entry;
-      pts.push([first[0] + (ex - first[0]) * 2.4, first[1] + LINE_Y, first[2] + (ez - first[2]) * 2.4]);
-    }
-    for (const c of path.cells) { const p = pos(c)!; pts.push([p[0], p[1] + LINE_Y, p[2]]); }
-  } else if (path.ids.length > 0) {
-    const first = resolved.elements.find(e => e.id === path.ids[0])
-      ?? resolved.elements.find(e => e.id === resolved.deployables.find(d => d.id === path.ids[0])?.parent);
-    if (first) {
-      const a = (first.rotation * Math.PI) / 180;
-      pts.push([first.position[0] + 2.2 * Math.cos(a), first.position[1] + LINE_Y, first.position[2] + 2.2 * Math.sin(a)]);
-    }
-    for (const id of path.ids) { const p = pos(id); if (p) pts.push([p[0], p[1] + LINE_Y, p[2]]); }
+  if (path.points.length > 0 && path.entry) {
+    const first = path.points[0];
+    const [ex, ey, ez] = path.entry;
+    const dy = ey - first[1];
+    pts.push([first[0] + (ex - first[0]) * 2.4, first[1] + LINE_Y + (dy > 1 ? 1.2 : 0), first[2] + (ez - first[2]) * 2.4]);
   }
+  for (const p of path.points) pts.push([p[0], p[1] + LINE_Y, p[2]]);
   pts.push([target[0], target[1] + 0.8, target[2]]);
   return pts;
 }
 
-/** Стоимость заданного пути (raidPath из чертежа). */
-export function authoredRaidPath(resolved: Resolved, ids: string[], method: RaidMethod): RaidPath {
-  const steps: RaidStep[] = [];
-  for (const id of ids) {
-    const el = resolved.elements.find(e => e.id === id);
-    if (el) { steps.push(stepCost(el.id, el.kind, el.grade, method)); continue; }
-    const d = resolved.deployables.find(x => x.id === id);
-    if (d && d.kind !== 'tool-cupboard') steps.push(stepCost(d.id, d.kind, undefined, method));
+/** Выбор пути: для ракет — с наименьшим числом ракет со сплешем среди k лучших по штукам; иначе первый. */
+export function chooseRaidPath(
+  resolved: Resolved, targetCell: string, method: RaidMethod,
+  planSplash: (ids: string[]) => { rockets: number } | null,
+): { path: RaidPath; candidates: number } | null {
+  const paths = cheapestRaidPaths(resolved, targetCell, method, method === 'rocket' ? 8 : 1);
+  if (paths.length === 0) return null;
+  if (method !== 'rocket') return { path: paths[0], candidates: paths.length };
+  let best = paths[0];
+  let bestRockets = planSplash(best.ids)?.rockets ?? Infinity;
+  for (const p of paths.slice(1)) {
+    const r = planSplash(p.ids)?.rockets ?? Infinity;
+    if (r < bestRockets || (r === bestRockets && p.sulfur < best.sulfur)) { best = p; bestRockets = r; }
   }
-  return { steps, sulfur: steps.reduce((a, s) => a + s.sulfur, 0), ids: steps.map(s => s.id), cells: [] };
+  return { path: best, candidates: paths.length };
 }

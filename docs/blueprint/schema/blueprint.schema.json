@@ -44,14 +44,6 @@
         "$ref": "#/$defs/Deployable"
       }
     },
-    "raidPath": {
-      "description": "Упорядоченный список id элементов и объектов, которые рейдер разрушает по пути к цели.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/Id"
-      },
-      "uniqueItems": true
-    },
     "resolved": {
       "$ref": "#/$defs/Resolved"
     }

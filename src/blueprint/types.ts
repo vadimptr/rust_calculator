@@ -82,7 +82,6 @@ export interface Blueprint {
   defaults?: { grade?: Grade };
   elements: Element[];
   deployables?: Deployable[];
-  raidPath?: string[];
   resolved?: unknown;
 }
 

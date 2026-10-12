@@ -304,11 +304,5 @@
       "rotation": 0,
       "notes": "Прижат спинкой и боком к стенам дальнего угла."
     }
-  ],
-  "raidPath": [
-    "door_roof",
-    "door_jump",
-    "door_hall",
-    "door_tc"
   ]
 }

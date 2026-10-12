@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { authoredRaidPath, cheapestRaidPath, stepCost } from './raid.ts';
+import { buildSpaceGraph, cheapestRaidPath, cheapestRaidPaths, stepCost } from './raid.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -24,31 +24,33 @@ test('stepCost: stone wall, sheet metal door, twig', () => {
   assert.equal(twig.free, false);
 });
 
-test('2x1 airlock: authored path = two doors; cheapest with C4 ties with a single stone wall', () => {
-  const { bp, resolved } = load('starter-2x1');
-  const authored = authoredRaidPath(resolved, bp.raidPath!, 'c4');
-  assert.deepEqual(authored.ids, ['door_outer', 'door_inner']);
-  assert.equal(authored.sulfur, 4400); // 2 × 1 C4
-
+test('2x1 airlock: cheapest with C4 ties between a wall, the ceiling and the two doors; optimal goes through the doors', () => {
+  const { resolved } = load('starter-2x1');
   const cheapest = cheapestRaidPath(resolved, 'f1', 'c4')!;
-  assert.equal(cheapest.sulfur, 4400); // стена в ячейку шкафа: 2 C4 — столько же
+  assert.equal(cheapest.sulfur, 4400);
   assert.equal(cheapest.cells.at(-1), 'f1');
 
   const optimal = cheapestRaidPath(resolved, 'f1', 'optimal')!;
-  assert.deepEqual(optimal.ids, ['door_outer', 'door_inner']); // 2 × 1575 < 4400
+  assert.deepEqual(optimal.ids, ['door_outer', 'door_inner']);
   assert.equal(optimal.sulfur, 3150);
   assert.deepEqual(optimal.cells, ['f2', 'f1']);
+
+  // среди нескольких путей есть заход через потолок c1
+  const paths = cheapestRaidPaths(resolved, 'f1', 'optimal', 6);
+  assert.ok(paths.some(p => p.ids.length === 1 && p.ids[0] === 'c1' && p.cells.includes('c1')));
 });
 
-test('2x2 with roof entry: sealed ground floor, cheapest is one stone wall; authored path is four doors', () => {
-  const { bp, resolved } = load('house-2x2');
-  const p = cheapestRaidPath(resolved, 'f1', 'optimal')!;
-  assert.equal(p.steps.length, 1);
-  assert.equal(p.steps[0].kind, 'wall');
-  assert.equal(p.sulfur, 4400);
-  const authored = authoredRaidPath(resolved, bp.raidPath!, 'optimal');
-  assert.deepEqual(authored.ids, ['door_roof', 'door_jump', 'door_hall', 'door_tc']);
-  assert.equal(authored.sulfur, 4 * 63 * 25);
+test('2x2 with roof entry: space graph has a virtual room over the jump-up cell reached through the roof door', () => {
+  const { resolved } = load('house-2x2');
+  const g = buildSpaceGraph(resolved);
+  assert.ok(g.nodes.has('^f4'));
+  const paths = cheapestRaidPaths(resolved, 'f1', 'optimal', 8);
+  const viaRoof = paths.find(p => p.cells.includes('^f4'));
+  assert.ok(viaRoof, 'path through the vestibule expected');
+  assert.ok(viaRoof!.ids.includes('door_roof'));
+  const cheapest = cheapestRaidPath(resolved, 'f1', 'optimal')!;
+  assert.equal(cheapest.sulfur, 4400); // стена или потолок в ячейку шкафа
+  assert.equal(cheapest.steps.length, 1);
 });
 
 test('sealed triangle: any wall, 2 C4', () => {
@@ -77,7 +79,15 @@ test('open doorway and low wall are free; window frame without insert is passabl
   const p = cheapestRaidPath(resolved, 'f1', 'c4')!;
   assert.equal(p.sulfur, 0);
   assert.deepEqual(p.ids, []);
-  assert.deepEqual(p.cells, ['f2', 'f1']);
+  assert.equal(p.cells.at(-1), 'f1'); // без потолка ячейка открыта сверху — заход бесплатный
+  // c потолком над обеими ячейками путь идёт через низкую стену и открытый проём
+  const roofed: Blueprint = { ...bp, elements: [...bp.elements,
+    { id: 'c1', kind: 'square-floor', attach: { to: 'w1', socket: 'top', selfSocket: 'edge:1' } },
+    { id: 'c2', kind: 'square-floor', attach: { to: 'c1', socket: 'edge:0', selfSocket: 'edge:2' } },
+  ] };
+  const q = cheapestRaidPath(resolveBlueprint(roofed).resolved, 'f1', 'c4')!;
+  assert.equal(q.sulfur, 0);
+  assert.deepEqual(q.cells, ['f2', 'f1']);
 });
 
 test('triangle with glass: cheapest optimal path breaks the glass (cheaper than a stone wall)', () => {

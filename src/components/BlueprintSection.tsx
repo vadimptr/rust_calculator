@@ -5,10 +5,10 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { authoredRaidPath, cheapestRaidPath, raidPolyline } from '../blueprint/raid.ts';
-import type { RaidPath } from '../blueprint/raid.ts';
+import { chooseRaidPath, raidPolyline } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { planRocketSplash } from '../blueprint/splash.ts';
+import type { RaidStep } from '../blueprint/raid.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
 import { formatNum } from './ResourceRow';
@@ -21,7 +21,6 @@ const RAID_METHODS: { id: RaidMethod; label: string }[] = [
   { id: 'explosiveAmmo', label: 'Ammo' },
 ];
 
-type PathChoice = 'cheapest' | 'authored';
 
 const KIND_LABELS: Record<string, string> = {
   'square-foundation': 'Фундамент',
@@ -81,7 +80,6 @@ const BlueprintSection: React.FC = () => {
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
-  const [pathChoice, setPathChoice] = useState<PathChoice>('cheapest');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
 
@@ -101,34 +99,28 @@ const BlueprintSection: React.FC = () => {
 
   const { blueprint, resolved, issues } = source.result;
 
-  // Пути рейда: авторский (raidPath) и самый дешёвый до ячейки шкафа
-  const raidPaths = useMemo(() => {
+  // Путь рейда считается на лету: самый дешёвый до пространства шкафа; для ракет — лучший по сплешу
+  const raid = useMemo(() => {
     if (!blueprint || !resolved) return null;
     const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const cheapest = cheapestRaidPath(resolved, targetCell, raidMethod);
-    const authored = blueprint.raidPath?.length ? authoredRaidPath(resolved, blueprint.raidPath, raidMethod) : null;
-    const view = (p: RaidPath | null): RaidView | null => (p ? { ids: p.ids, line: raidPolyline(resolved, p, targetPos) } : null);
-    return { cheapest, authored, cheapestView: view(cheapest), authoredView: view(authored) };
+    const chosen = chooseRaidPath(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
+    if (!chosen) return null;
+    const splash = raidMethod === 'rocket' && chosen.path.ids.length > 0 ? planRocketSplash(resolved, chosen.path.ids) : null;
+    const view: RaidView = { ids: chosen.path.ids, line: raidPolyline(resolved, chosen.path, targetPos) };
+    return { path: chosen.path, candidates: chosen.candidates, splash, view };
   }, [blueprint, resolved, raidMethod]);
 
-  const activePath = raidPaths ? (pathChoice === 'authored' && raidPaths.authored ? raidPaths.authored : raidPaths.cheapest) : null;
-
-  // Сплеш ракет по элементам активного пути
-  const splash = useMemo(() => {
-    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0) return null;
-    return planRocketSplash(resolved, activePath.ids);
-  }, [resolved, activePath, raidMethod]);
+  const activePath = raid?.path ?? null;
+  const splash = raid?.splash ?? null;
 
   const raidView = useMemo<RaidView | null>(() => {
-    if (!raidOn || !raidPaths) return null;
-    const base = pathChoice === 'authored' && raidPaths.authoredView ? raidPaths.authoredView : raidPaths.cheapestView;
-    if (!base) return null;
-    if (!splash || !showImpacts) return base;
-    return { ...base, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
-  }, [raidOn, raidPaths, pathChoice, splash, showImpacts]);
+    if (!raidOn || !raid) return null;
+    if (!splash || !showImpacts) return raid.view;
+    return { ...raid.view, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
+  }, [raidOn, raid, splash, showImpacts]);
 
   const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
   const errors = issues.filter(i => i.level === 'error');
@@ -228,7 +220,7 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {resolved && raidPaths && (
+          {resolved && raid && (
             <section className="raid-panel">
               <label className="bp__toggle raid-panel__toggle">
                 <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -251,30 +243,12 @@ const BlueprintSection: React.FC = () => {
                     ))}
                   </div>
 
-                  <div className="raid-panel__choice" role="radiogroup" aria-label="Путь">
-                    <label className="bp__toggle">
-                      <input type="radio" name="raid-path" checked={pathChoice === 'cheapest'} onChange={() => { setPathChoice('cheapest'); setRaidPlay(0); }} />
-                      Самый дешёвый{raidPaths.cheapest ? <> · <b>{formatNum(raidPaths.cheapest.sulfur)}</b> серы</> : null}
-                    </label>
-                    {raidPaths.authored && (
-                      <label className="bp__toggle">
-                        <input type="radio" name="raid-path" checked={pathChoice === 'authored'} onChange={() => { setPathChoice('authored'); setRaidPlay(0); }} />
-                        Из чертежа · <b>{formatNum(raidPaths.authored.sulfur)}</b> серы
-                      </label>
+                  <p className="raid-panel__total">
+                    Самый дешёвый путь · <b>{formatNum(activePath?.sulfur ?? 0)}</b> серы
+                    {raidMethod === 'rocket' && raid.candidates > 1 && (
+                      <span className="raid-panel__sub"> · выбран по сплешу из {raid.candidates} путей</span>
                     )}
-                  </div>
-
-                  {raidPaths.cheapest && raidPaths.authored && raidPaths.cheapest.sulfur < raidPaths.authored.sulfur && (
-                    <p className="raid-panel__note">
-                      Есть путь дешевле авторского на {formatNum(raidPaths.authored.sulfur - raidPaths.cheapest.sulfur)} серы.
-                    </p>
-                  )}
-                  {raidPaths.cheapest && raidPaths.authored && raidPaths.cheapest.sulfur === raidPaths.authored.sulfur
-                    && raidPaths.cheapest.ids.join() !== raidPaths.authored.ids.join() && (
-                    <p className="raid-panel__note">
-                      Путь через стены стоит столько же, сколько через двери: аирлок не удорожает рейд.
-                    </p>
-                  )}
+                  </p>
 
                   {activePath && (
                     activePath.steps.length === 0 ? (
@@ -285,7 +259,7 @@ const BlueprintSection: React.FC = () => {
                           <tr><th>№</th><th>Что ломаем</th><th>Чем</th><th>Сера</th></tr>
                         </thead>
                         <tbody>
-                          {activePath.steps.map((st, i) => (
+                          {activePath.steps.map((st: RaidStep, i: number) => (
                             <tr key={st.id}>
                               <td className="raid-panel__n">{i + 1}</td>
                               <td>
@@ -317,7 +291,7 @@ const BlueprintSection: React.FC = () => {
                         {splash.shots.map((s, i) => (
                           <li key={i}>
                             ×{s.count} в точку {i + 1}:{' '}
-                            {Object.entries(s.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v)}`).join(', ')}
+                            {Object.entries(s.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v as number)}`).join(', ')}
                           </li>
                         ))}
                       </ul>

@@ -146,9 +146,5 @@
       "rotation": 0,
       "notes": "Прижат спинкой и боком к стенам дальнего угла."
     }
-  ],
-  "raidPath": [
-    "door_outer",
-    "door_inner"
   ]
 }
