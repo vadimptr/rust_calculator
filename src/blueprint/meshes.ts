@@ -172,8 +172,9 @@ function deployableParts(d: ResolvedDeployable): THREE.BufferGeometry[] {
     case 'armored-double-door':
       return [box(0.1, 2.6, 1.15, 0, 1.3, -0.625), box(0.1, 2.6, 1.15, 0, 1.3, 0.625)];
     default: {
-      const z = d.hinge === 'right' ? 0.02 : -0.02;
-      return [box(0.1, 2.0, 0.96, 0, 1.0, z)];
+      // Петля: hinge «left» — слева, если смотреть снаружи по нормали (+x), то есть со стороны +z
+      const hz = d.hinge === 'left' ? 0.5 : -0.5;
+      return [box(0.1, 2.0, 0.96, 0, 1.0, 0), box(0.18, 2.0, 0.14, 0, 1.0, hz)];
     }
   }
 }

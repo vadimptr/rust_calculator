@@ -3,31 +3,150 @@
   "formatVersion": "1.0",
   "meta": {
     "name": "Дом 2×1 с аирлоком",
-    "description": "Два квадратных фундамента: корневая ячейка со шкафом и аирлок. Внешняя дверь ведёт в аирлок, внутренняя — из аирлока к шкафу. Обе двери металлические.",
+    "description": "Два квадратных фундамента: корневая ячейка со шкафом и тамбур-аирлок. Внутренний проём на общей стене и внешний проём на боковой стене тамбура сходятся в одном углу, петли обеих дверей — в этом углу: открытая внутренняя дверь перекрывает вход в тамбур, поэтому снаружи никто не зайдёт, пока дверь у шкафа открыта.",
     "gameVersion": "2026-09",
-    "tags": ["starter", "airlock", "example"]
+    "tags": [
+      "starter",
+      "airlock",
+      "example"
+    ]
   },
-  "defaults": { "grade": "stone" },
+  "defaults": {
+    "grade": "stone"
+  },
   "elements": [
-    { "id": "f1", "kind": "square-foundation", "root": true, "label": "Ячейка со шкафом" },
-    { "id": "f2", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:0", "selfSocket": "edge:2" }, "label": "Аирлок" },
-
-    { "id": "w1", "kind": "wall", "attach": { "to": "f1", "socket": "edge:1" } },
-    { "id": "w2", "kind": "wall", "attach": { "to": "f1", "socket": "edge:2" } },
-    { "id": "w3", "kind": "wall", "attach": { "to": "f1", "socket": "edge:3" } },
-    { "id": "d_inner", "kind": "doorway", "grade": "metal", "attach": { "to": "f1", "socket": "edge:0" }, "label": "Внутренний проём" },
-
-    { "id": "w4", "kind": "wall", "attach": { "to": "f2", "socket": "edge:1" } },
-    { "id": "w5", "kind": "wall", "attach": { "to": "f2", "socket": "edge:3" } },
-    { "id": "d_outer", "kind": "doorway", "grade": "metal", "attach": { "to": "f2", "socket": "edge:0" }, "label": "Внешний проём" },
-
-    { "id": "c1", "kind": "square-floor", "attach": { "to": "w1", "socket": "top", "selfSocket": "edge:1" } },
-    { "id": "c2", "kind": "square-floor", "attach": { "to": "c1", "socket": "edge:0", "selfSocket": "edge:2" } }
+    {
+      "id": "f1",
+      "kind": "square-foundation",
+      "root": true,
+      "label": "Ячейка со шкафом"
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Аирлок"
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:2"
+      }
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:3"
+      }
+    },
+    {
+      "id": "d_inner",
+      "kind": "doorway",
+      "grade": "metal",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0"
+      },
+      "label": "Внутренний проём",
+      "notes": "Петля в углу, общем с внешним проёмом: открытая дверь ложится поперёк входа."
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:0"
+      }
+    },
+    {
+      "id": "w5",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:3"
+      }
+    },
+    {
+      "id": "d_outer",
+      "kind": "doorway",
+      "grade": "metal",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:1"
+      },
+      "label": "Внешний проём (боковая стена тамбура)"
+    },
+    {
+      "id": "c1",
+      "kind": "square-floor",
+      "attach": {
+        "to": "w1",
+        "socket": "top",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "c2",
+      "kind": "square-floor",
+      "attach": {
+        "to": "c1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    }
   ],
   "deployables": [
-    { "id": "door_outer", "kind": "sheet-metal-door", "attach": { "to": "d_outer", "socket": "opening" }, "hinge": "left" },
-    { "id": "door_inner", "kind": "sheet-metal-door", "attach": { "to": "d_inner", "socket": "opening" }, "hinge": "right" },
-    { "id": "tc1", "kind": "tool-cupboard", "attach": { "to": "f1", "socket": "top" }, "offset": [-0.8, -0.8], "rotation": 45 }
+    {
+      "id": "door_outer",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "d_outer",
+        "socket": "opening"
+      },
+      "hinge": "left"
+    },
+    {
+      "id": "door_inner",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "d_inner",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "notes": "Открывается в тамбур и перекрывает внешний проём."
+    },
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [
+        -0.8,
+        -0.8
+      ],
+      "rotation": 45
+    }
   ],
-  "raidPath": ["door_outer", "door_inner"]
+  "raidPath": [
+    "door_outer",
+    "door_inner"
+  ]
 }
