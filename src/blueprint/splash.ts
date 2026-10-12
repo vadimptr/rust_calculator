@@ -513,7 +513,7 @@ export type Strategy = 'value' | 'progress' | 'destruction';
  * накопленного урона. Погибшие убираются все сразу, доступная область пересчитывается, и так до
  * пространства шкафа. Стратегия value: ценность открытого на серу, затем приближение к шкафу;
  * progress: приближение к шкафу (снижение остаточной цены с учётом накопленного урона) на серу,
- * затем ценность. Итог выбирается по ценности открытого на серу среди стратегий.
+ * затем ценность. Итог среди стратегий — самый дешёвый по сере.
  */
 export function simulateRaid(
   resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 80,
@@ -579,8 +579,10 @@ export function simulateRaid(
     // задетых элементов.
     type Pre = { shot: SplashShot; owner: SplashTarget; eye: Vec3; pre: number[] };
     const pres: Pre[] = [];
-    // дешёвый ключ: ценность открываемого (BFS по графу, с кэшем по набору разрушений) и полезный урон на серу
-    const gainCache = new Map<string, number>();
+    // дешёвый ключ: ценность открываемого и приближение к шкафу (по набору погибших, с кэшем по этому
+    // набору — наборов намного меньше, чем точек) и полезный урон на серу. Без приближения в ключе
+    // одна ракета в деревянную дверь проигрывала бы отбор залпам в угол стен с большим уроном.
+    const deadCache = new Map<string, { gain: number; progress: number }>();
     const preKey = (shot: SplashShot): number[] => {
       let useful = 0, touched = 0;
       const dead: string[] = [];
@@ -590,17 +592,24 @@ export function simulateRaid(
         if ((hpLeft.get(id) ?? 0) - dmg * shot.count <= 1e-6) dead.push(id);
       }
       const cost = shot.count * EXPLOSIVES[shot.explosive].sulfur;
-      let gain = 0;
+      let gain = 0, progress = 0;
       if (dead.length) {
         const key = dead.sort().join('|');
-        if (gainCache.has(key)) gain = gainCache.get(key)!;
-        else {
-          const r2 = reachableSpaces(graph, new Set([...broken, ...dead]));
-          gain = spacesValue(graph, [...r2].filter(id => !reachable.has(id)), resolved);
-          gainCache.set(key, gain);
+        let est = deadCache.get(key);
+        if (!est) {
+          const b2 = new Set([...broken, ...dead]);
+          const r2 = reachableSpaces(graph, b2);
+          const rem = remainingCost(r2, b2, hpLeft);
+          est = { gain: spacesValue(graph, [...r2].filter(id => !reachable.has(id)), resolved), progress: Number.isFinite(rem) ? remaining - rem : 0 };
+          deadCache.set(key, est);
         }
+        gain = est.gain; progress = est.progress;
       }
-      return strategy === 'value' ? [gain / cost, useful / cost, touched] : [useful / cost, gain / cost, touched];
+      return strategy === 'value'
+        ? [gain / cost, dead.length, progress / cost, useful / cost, touched]
+        : strategy === 'progress'
+          ? [progress / cost, dead.length, gain / cost, useful / cost, touched]
+          : [dead.length / cost, progress / cost, gain / cost, useful / cost, touched];
     };
     const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return b[i] - a[i]; return 0; };
     const makeShots = (owner: SplashTarget, c0: Vec3, eye: Vec3): SplashShot[] => {
@@ -691,12 +700,15 @@ export function simulateRaid(
   return { stages, reached: reachable.has(targetCell), sulfur, units, broken: stages.flatMap(s => s.broken), openedIds };
 }
 
-/** Лучшая симуляция среди стратегий: ценность открытого на серу, при равенстве дешевле. */
+/**
+ * Лучшая симуляция среди стратегий: самая дешёвая по сере до шкафа. При равной цене — та, что
+ * открывает больше ценности, затем ломает больше, затем бьёт ниже. Ценность не перевешивает цену:
+ * план дороже на серу ради лишних комнат — это уже не рейд до шкафа.
+ */
 export function bestSimulation(resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[]): RaidSimulation | null {
   const runs = (['value', 'progress', 'destruction'] as Strategy[]).map(st => simulateRaid(resolved, graph, targetCell, allowed, st)).filter(r => r.reached);
   if (runs.length === 0) return null;
-  const score = (r: RaidSimulation) => (r.sulfur <= 0 ? Infinity : spacesValue(graph, r.openedIds, resolved) / r.sulfur);
+  const value = (r: RaidSimulation) => spacesValue(graph, r.openedIds, resolved);
   const height = (r: RaidSimulation) => Math.max(0, ...r.stages.map(st => st.shot.point[1]));
-  // при равной выгоде — прогон, который ломает больше, затем тот, где удары ниже
-  return runs.sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || b.broken.length - a.broken.length || height(a) - height(b))[0];
+  return runs.sort((a, b) => a.sulfur - b.sulfur || value(b) - value(a) || b.broken.length - a.broken.length || height(a) - height(b))[0];
 }

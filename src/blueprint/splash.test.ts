@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
 import { EXPLOSIVES, bestSimulation, falloff, segmentBlocked, simulateRaid, splashTargets, unitDamage } from './splash.ts';
 import { buildSpaceGraph } from './raid.ts';
-import type { Blueprint } from './types.ts';
+import type { Blueprint, Grade } from './types.ts';
 
 function load(name: string) {
   const bp = JSON.parse(readFileSync(new URL(`../../docs/blueprint/examples/${name}.json`, import.meta.url), 'utf8')) as Blueprint;
@@ -160,4 +160,33 @@ test('bunker: an outside corner shot never breaks the doorway hidden behind the 
   assert.ok(sim.reached);
   assert.equal(sim.units.rocket, 30);
   assert.ok(!sim.stages[0].broken.includes('d1'), sim.stages[0].broken.join(','));
+});
+
+/** Переопределение материалов, как в просмотре: все элементы одной прочности, все двери одного типа. */
+function override(bp: Blueprint, grade: Grade, door: 'wooden-door') {
+  const doc = JSON.parse(JSON.stringify(bp)) as Blueprint;
+  doc.defaults = { ...(doc.defaults ?? {}), grade };
+  for (const el of doc.elements) if (el.grade) el.grade = grade;
+  for (const d of doc.deployables ?? []) if (/^(wooden|sheet-metal|armored)-door$/.test(d.kind)) d.kind = door;
+  return resolveBlueprint(doc).resolved;
+}
+
+test('bunker, metal walls and wooden doors: the raid goes through the four corridor doors, not the walls', () => {
+  const resolved = override(load('bunker-30-rockets').bp, 'metal', 'wooden-door');
+  const g = buildSpaceGraph(resolved);
+  const optimal = bestSimulation(resolved, g, 'f0', ['rocket', 'c4', 'explosiveAmmo'])!;
+  assert.equal(optimal.sulfur, 10600);
+  assert.deepEqual(optimal.stages.slice(0, 4).map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1']]);
+  // ракетами тоже: одна ракета в дверь не должна проигрывать отбор залпам в угол стен
+  const rockets = bestSimulation(resolved, g, 'f0', ['rocket'])!;
+  assert.equal(rockets.sulfur, 16800);
+  assert.deepEqual(rockets.stages.slice(0, 4).map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1']]);
+});
+
+test('bunker, armored walls and wooden doors: the cheapest plan wins even if a dearer one opens more rooms', () => {
+  const resolved = override(load('bunker-30-rockets').bp, 'armored', 'wooden-door');
+  const g = buildSpaceGraph(resolved);
+  const sim = bestSimulation(resolved, g, 'f0', ['rocket', 'c4', 'explosiveAmmo'])!;
+  assert.equal(sim.sulfur, 19400);
+  assert.deepEqual(sim.stages.map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1'], ['cw0']]);
 });
