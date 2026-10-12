@@ -5,7 +5,7 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { chooseRaidPath, raidPolyline } from '../blueprint/raid.ts';
+import { raidAlternatives, raidPolyline } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { planRocketSplash } from '../blueprint/splash.ts';
 import type { RaidStep } from '../blueprint/raid.ts';
@@ -52,6 +52,13 @@ const KIND_LABELS: Record<string, string> = {
   'metal-window-bars': 'Металлическая решётка',
 };
 
+/** В рейде пол ломают сверху, поэтому называем его потолком. */
+const RAID_KIND_LABELS: Record<string, string> = {
+  'square-floor': 'Потолок',
+  'triangle-floor': 'Треугольный потолок',
+};
+const raidLabel = (kind: string) => RAID_KIND_LABELS[kind] ?? KIND_LABELS[kind] ?? kind;
+
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
@@ -82,10 +89,13 @@ const BlueprintSection: React.FC = () => {
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
+  const [altIndex, setAltIndex] = useState(0);
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
     setSource(fromPreset(id));
+    setAltIndex(0);
+    setRaidPlay(0);
   };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,35 +104,45 @@ const BlueprintSection: React.FC = () => {
     const text = await file.text();
     setActivePreset(null);
     setSource({ label: file.name, result: parseBlueprint(text) });
+    setAltIndex(0);
+    setRaidPlay(0);
     e.target.value = '';
   };
 
   const { blueprint, resolved, issues } = source.result;
 
-  // Путь рейда считается на лету: самый дешёвый до пространства шкафа; для ракет — лучший по сплешу
+  // Варианты рейда считаются на лету: несколько лучших путей до пространства шкафа
   const raid = useMemo(() => {
     if (!blueprint || !resolved) return null;
     const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const chosen = chooseRaidPath(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
-    if (!chosen) return null;
-    const splash = raidMethod === 'rocket' && chosen.path.ids.length > 0 ? planRocketSplash(resolved, chosen.path.ids) : null;
-    const view: RaidView = { ids: chosen.path.ids, line: raidPolyline(resolved, chosen.path, targetPos) };
-    return { path: chosen.path, candidates: chosen.candidates, splash, view };
+    const alternatives = raidAlternatives(resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids));
+    if (alternatives.length === 0) return null;
+    return { alternatives, targetPos };
   }, [blueprint, resolved, raidMethod]);
 
-  const activePath = raid?.path ?? null;
-  const splash = raid?.splash ?? null;
+  const alt = raid ? raid.alternatives[Math.min(altIndex, raid.alternatives.length - 1)] : null;
+  const activePath = alt?.path ?? null;
+
+  const splash = useMemo(() => {
+    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0) return null;
+    return planRocketSplash(resolved, activePath.ids);
+  }, [resolved, activePath, raidMethod]);
 
   const raidView = useMemo<RaidView | null>(() => {
-    if (!raidOn || !raid) return null;
-    if (!splash || !showImpacts) return raid.view;
-    return { ...raid.view, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
-  }, [raidOn, raid, splash, showImpacts]);
+    if (!raidOn || !raid || !activePath || !resolved) return null;
+    const view: RaidView = { ids: activePath.ids, line: raidPolyline(resolved, activePath, raid.targetPos) };
+    if (!splash || !showImpacts) return view;
+    return { ...view, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
+  }, [raidOn, raid, activePath, resolved, splash, showImpacts]);
 
-  const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
+  const chooseAlt = (i: number) => { setAltIndex(i); setRaidPlay(0); };
+  const describeSteps = (steps: RaidStep[]) =>
+    steps.length === 0 ? 'свободный проход' : steps.map(st => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`).join(' → ');
+
+  const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); setAltIndex(0); };
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
@@ -235,7 +255,7 @@ const BlueprintSection: React.FC = () => {
                         key={m.id}
                         type="button"
                         className={`raid-tier__btn raid-tier__btn--sm${m.id === raidMethod ? ' raid-tier__btn--active' : ''}`}
-                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); }}
+                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); setAltIndex(0); }}
                         aria-pressed={m.id === raidMethod}
                       >
                         {m.label}
@@ -243,12 +263,20 @@ const BlueprintSection: React.FC = () => {
                     ))}
                   </div>
 
-                  <p className="raid-panel__total">
-                    Самый дешёвый путь · <b>{formatNum(activePath?.sulfur ?? 0)}</b> серы
-                    {raidMethod === 'rocket' && raid.candidates > 1 && (
-                      <span className="raid-panel__sub"> · выбран по сплешу из {raid.candidates} путей</span>
-                    )}
-                  </p>
+                  <div className="raid-panel__alts" role="radiogroup" aria-label="Варианты пути">
+                    {raid.alternatives.map((a, i) => (
+                      <label key={i} className={`raid-panel__alt${a === alt ? ' raid-panel__alt--active' : ''}`}>
+                        <input type="radio" name="raid-alt" checked={a === alt} onChange={() => chooseAlt(i)} />
+                        <span className="raid-panel__alt-text">
+                          <span className="raid-panel__alt-steps">{describeSteps(a.path.steps)}</span>
+                          <span className="raid-panel__alt-cost">
+                            {a.rockets !== undefined ? <>{a.rockets} ракет · </> : null}
+                            {formatNum(a.path.sulfur)} серы
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
 
                   {activePath && (
                     activePath.steps.length === 0 ? (
@@ -263,7 +291,7 @@ const BlueprintSection: React.FC = () => {
                             <tr key={st.id}>
                               <td className="raid-panel__n">{i + 1}</td>
                               <td>
-                                {KIND_LABELS[st.kind] ?? st.kind}
+                                {raidLabel(st.kind)}
                                 {st.grade ? <span className="bp__counts-grade"> · {GRADE_LABELS[st.grade] ?? st.grade}</span> : null}
                               </td>
                               <td>{st.breakdown.length ? st.breakdown.map(b => `${EXPLOSIVE_SHORT_LABELS[b.explosive]} ×${b.count}`).join(' + ') : 'инструмент'}</td>

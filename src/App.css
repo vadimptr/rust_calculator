@@ -1349,3 +1349,46 @@
   color: var(--text-muted);
   font-size: 0.75rem;
 }
+
+.raid-panel__alts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.4rem 0 0.6rem;
+}
+
+.raid-panel__alt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.raid-panel__alt input {
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+
+.raid-panel__alt--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.08);
+}
+
+.raid-panel__alt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.raid-panel__alt-steps {
+  color: var(--text-primary);
+}
+
+.raid-panel__alt-cost {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}

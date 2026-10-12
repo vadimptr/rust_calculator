@@ -328,3 +328,30 @@ export function chooseRaidPath(
   }
   return { path: best, candidates: paths.length };
 }
+
+export interface RaidAlternative {
+  path: RaidPath;
+  /** Ракет со сплешем (только для метода rocket). */
+  rockets?: number;
+}
+
+/**
+ * Варианты рейда: несколько лучших путей, без повторов по набору ломаемых элементов,
+ * отсортированные по ракетам со сплешем (для ракет) или по сере.
+ */
+export function raidAlternatives(
+  resolved: Resolved, targetCell: string, method: RaidMethod,
+  planSplash: (ids: string[]) => { rockets: number } | null, k = 8,
+): RaidAlternative[] {
+  const paths = cheapestRaidPaths(resolved, targetCell, method, k);
+  const seen = new Set<string>();
+  const out: RaidAlternative[] = [];
+  for (const path of paths) {
+    const key = [...path.ids].sort().join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(method === 'rocket' && path.ids.length > 0 ? { path, rockets: planSplash(path.ids)?.rockets } : { path });
+  }
+  out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || a.path.steps.length - b.path.steps.length);
+  return out;
+}
