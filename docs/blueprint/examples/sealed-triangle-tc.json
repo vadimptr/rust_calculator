@@ -62,10 +62,11 @@
         "socket": "top"
       },
       "offset": [
-        0,
-        0
+        -0.258,
+        0.447
       ],
-      "rotation": 0
+      "rotation": 300,
+      "notes": "Спинкой к стене w2, фронтом к центру."
     }
   ],
   "raidPath": [
@@ -124,11 +125,11 @@
     "deployables": {
       "tc1": {
         "position": [
+          -0.258,
           0,
-          0,
-          0
+          0.447
         ],
-        "rotation": 0,
+        "rotation": 300,
         "level": 0
       }
     },

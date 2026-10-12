@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { animateDoors, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
+import { KINDS } from '../blueprint/catalog.ts';
 import type { Resolved } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -195,9 +196,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     const size = bounds.getSize(new THREE.Vector3()).length();
     s.controls.target.copy(center);
     const dist = Math.max(8, size * 1.1);
-    // Камера смотрит со стороны первой двери (3/4-ракурс), иначе — с фиксированного угла
+    // Камера смотрит со стороны первой двери, иначе первого проёма или окна (3/4-ракурс), иначе — с фиксированного угла
     const door = resolved.deployables.find(d => d.kind !== 'tool-cupboard');
-    const az = ((door ? door.rotation + 35 : 135) * Math.PI) / 180;
+    const opening = resolved.elements.find(e => KINDS[e.kind].opening || e.kind === 'window-frame');
+    const facing = door?.rotation ?? opening?.rotation;
+    const az = ((facing !== undefined ? facing + 35 : 135) * Math.PI) / 180;
     s.camera.position.set(
       center.x + dist * 0.8 * Math.cos(az),
       center.y + dist * 0.6,

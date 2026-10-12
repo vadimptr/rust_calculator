@@ -279,7 +279,9 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   let g: THREE.Group;
   if (d.kind === 'tool-cupboard') {
     g = new THREE.Group();
-    g.add(withEdges(box(0.5, 1.2, 1.0, 0, 0.6, 0), DOOR_COLORS[d.kind]));
+    // Шкаф: 1.0 м вдоль стены, 0.45 м в глубину, 1.5 м высотой; спинка — локальный −x
+    g.add(withEdges(box(0.45, 1.5, 1.0, 0, 0.75, 0), DOOR_COLORS[d.kind]));
+    g.add(withEdges(box(0.04, 1.3, 0.84, 0.23, 0.78, 0), 0x5b3716));
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);

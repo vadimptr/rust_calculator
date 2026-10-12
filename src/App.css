@@ -1055,7 +1055,9 @@
 .bp__layout {
   display: flex;
   gap: 1.5rem;
-  align-items: stretch;
+  /* Панель растёт отдельно от сцены: высота сцены не зависит от содержимого панели,
+     иначе ресайз холста выглядит как скачок камеры. */
+  align-items: flex-start;
 }
 
 .bp__viewer {
@@ -1066,7 +1068,7 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   overflow: hidden;
-  min-height: 560px;
+  height: clamp(420px, 72vh, 720px);
 }
 
 .viewer3d {
@@ -1186,7 +1188,7 @@
     width: 100%;
   }
   .bp__viewer {
-    min-height: 420px;
+    height: 420px;
   }
 }
 
