@@ -5,7 +5,7 @@
  */
 import { KINDS, cellVertices, wallHeight } from './catalog.ts';
 import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
-import { cheapestFrom, frontier, reachableSpaces, spacesValue, stepCost } from './raid.ts';
+import { OUTSIDE, cheapestFrom, frontier, reachableSpaces, spacesValue, stepCost } from './raid.ts';
 import type { RaidAlternative, RaidStep, SpaceGraph } from './raid.ts';
 import type { ExplosiveType } from '../types/index.ts';
 
@@ -504,7 +504,7 @@ export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initia
     const broken = new Set(v.broken);
     const after = reachableSpaces(graph, broken);
     if (![...after].some(id => !initially.has(id))) continue;
-    const rest = cheapestFrom(graph, after, broken, targetCell, 'optimal');
+    const rest = cheapestFrom(graph, new Set([...after, OUTSIDE]), broken, targetCell, 'optimal');
     if (!rest) continue;
     const restPlan = rest.ids.length ? planSplash(resolved, rest.ids, allowed, rest.eyes) : null;
     if (restPlan && !restPlan.complete) continue;
@@ -565,7 +565,10 @@ export type Strategy = 'value' | 'progress';
  * progress: приближение к шкафу (снижение остаточной цены с учётом накопленного урона) на серу,
  * затем ценность. Итог выбирается по ценности открытого на серу среди стратегий.
  */
-export function simulateRaid(resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 24): RaidSimulation {
+export function simulateRaid(
+  resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 24,
+  onCandidate?: (stage: number, c: { shot: SplashShot; sulfur: number; valueGain: number; progress: number; brokenNow: string[] }) => void,
+): RaidSimulation {
   const targets = allSplashTargets(resolved);
   const byId = new Map(targets.map(t => [t.id, t]));
   const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
@@ -584,7 +587,7 @@ export function simulateRaid(resolved: Resolved, graph: SpaceGraph, targetCell: 
     return Math.min(...allowed.map(ex => Math.ceil(left / t.hit[ex] - 1e-9) * EXPLOSIVES[ex].sulfur));
   };
   const remainingCost = (r: Set<string>, b: Set<string>, hp: Map<string, number>) =>
-    r.has(targetCell) ? 0 : cheapestFrom(graph, r, b, targetCell, 'optimal', step => itemCost(step.id, hp))?.sulfur ?? Infinity;
+    r.has(targetCell) ? 0 : cheapestFrom(graph, new Set([...r, OUTSIDE]), b, targetCell, 'optimal', step => itemCost(step.id, hp))?.sulfur ?? Infinity;
   let remaining = remainingCost(reachable, broken, hpLeft);
 
   while (!reachable.has(targetCell) && stages.length < maxStages) {
@@ -605,6 +608,7 @@ export function simulateRaid(resolved: Resolved, graph: SpaceGraph, targetCell: 
       const rem = remainingCost(r2, b2, hp2);
       const progress = Number.isFinite(rem) ? remaining - rem : -Infinity;
       const cand: Cand = { shot, brokenNow, opened, sulfur: cost, valueGain, progress };
+      onCandidate?.(stages.length, cand);
       // при равной выгоде — удар ниже: с земли удобнее, чем с крыши
       const key = (x: Cand) => strategy === 'value'
         ? [x.valueGain / x.sulfur, x.progress / x.sulfur, -x.sulfur, -x.shot.point[1], x.brokenNow.length]

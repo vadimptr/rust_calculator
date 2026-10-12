@@ -463,6 +463,10 @@ export function cheapestFrom(
   stepSulfur: (step: RaidStep) => number = step => step.sulfur,
 ): RaidPath | null {
   if (starts.has(target)) return { steps: [], sulfur: 0, ids: [], cells: [target], points: [graph.nodes.get(target)!.position] };
+  // с улицы можно зайти через любое уличное ребро
+  const entries: AdjEdge[] = [];
+  for (const [id, list] of graph.adj) for (const e of list) if (e.to === OUTSIDE) entries.push({ to: id, blocker: e.blocker, mid: e.mid });
+  const edgesOf = (id: string) => (id === OUTSIDE ? entries : graph.adj.get(id) ?? []);
   const dist = new Map<string, number>();
   const prev = new Map<string, Hop & { from: string }>();
   for (const s of starts) dist.set(s, 0);
@@ -472,7 +476,7 @@ export function cheapestFrom(
     for (const [id, d] of dist) if (!done.has(id) && (cur === null || d < dist.get(cur)!)) cur = id;
     if (cur === null || cur === target) break;
     done.add(cur);
-    for (const e of graph.adj.get(cur) ?? []) {
+    for (const e of edgesOf(cur)) {
       if (e.to === OUTSIDE || done.has(e.to)) continue;
       const raw = blockerStep(e.blocker, method);
       const step = raw && !free.has(raw.id) ? raw : null;
@@ -489,7 +493,19 @@ export function cheapestFrom(
   }
   const steps = hops.flatMap(h => (h.step ? [h.step] : []));
   const nodes = hops.map(h => h.to);
-  return { steps, sulfur: dist.get(target)!, ids: steps.map(s => s.id), cells: nodes, points: nodes.map(id => graph.nodes.get(id)!.position), entry: hops[0]?.mid };
+  const eyes: Record<string, [number, number, number]> = {};
+  let from: string = hops.length ? [...starts].find(s => s !== OUTSIDE && (graph.adj.get(s) ?? []).some(e => e.to === hops[0].to)) ?? OUTSIDE : OUTSIDE;
+  for (const h of hops) {
+    if (h.step) {
+      const toPos = graph.nodes.get(h.to)!.position;
+      const fromPos = from === OUTSIDE || !graph.nodes.has(from)
+        ? ([h.mid[0] * 2 - toPos[0], toPos[1], h.mid[2] * 2 - toPos[2]] as [number, number, number])
+        : graph.nodes.get(from)!.position;
+      eyes[h.step.id] = [fromPos[0], fromPos[1] + 1.5, fromPos[2]];
+    }
+    from = h.to;
+  }
+  return { steps, sulfur: dist.get(target)!, ids: steps.map(s => s.id), cells: nodes, points: nodes.map(id => graph.nodes.get(id)!.position), entry: hops[0]?.mid, eyes };
 }
 
 /** Элементы на границе доступной области: что рейдер может атаковать прямо сейчас и с какой стороны. */
