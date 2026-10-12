@@ -208,6 +208,10 @@
         "attach": {
           "$ref": "#/$defs/Attach"
         },
+        "bunker": {
+          "type": "boolean",
+          "description": "Крыша-затвор роф-бункера: в игре держится на дешёвой опоре, которую хозяин ломает, чтобы войти. Переключатель «Открыть двери» в просмотре её убирает. Только для roof и roof-triangle."
+        },
         "label": {
           "type": "string"
         },
@@ -253,6 +257,24 @@
           "else": {
             "properties": {
               "root": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "roof",
+                  "roof-triangle"
+                ]
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "bunker": false
             }
           }
         }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { EXPLOSIVES, bestSimulation, falloff, segmentBlocked, simulateRaid, splashTargets, unitDamage } from './splash.ts';
+import { EXPLOSIVES, allSplashTargets, bestSimulation, falloff, segmentBlocked, simulateRaid, splashTargets, unitDamage } from './splash.ts';
 import { buildSpaceGraph } from './raid.ts';
 import type { Blueprint, Grade } from './types.ts';
 
@@ -187,6 +187,26 @@ test('bunker, armored walls and wooden doors: the cheapest plan wins even if a d
   const resolved = override(load('bunker-30-rockets').bp, 'armored', 'wooden-door');
   const g = buildSpaceGraph(resolved);
   const sim = bestSimulation(resolved, g, 'f0', ['rocket', 'c4', 'explosiveAmmo'])!;
-  assert.equal(sim.sulfur, 19400);
-  assert.deepEqual(sim.stages.map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1'], ['cw0']]);
+  // четыре двери по 18 разрывных, затем ракета и 7 C4 в стену куба (дешевле 8 C4 на 800 серы)
+  assert.equal(sim.sulfur, 18600);
+  assert.deepEqual(sim.stages.map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1'], [], ['cw0']]);
+});
+
+test('roof bunker: the roof is a splash target from above and from the vestibule; optimal goes through a wall of the TC cell', () => {
+  const { resolved } = load('roof-bunker');
+  const g = buildSpaceGraph(resolved);
+  const roof = allSplashTargets(resolved).find(t => t.id === 'rb')!;
+  assert.ok(roof.pitch && roof.pitch < 0, 'roof target is pitched');
+  // низкое ребро у открытого ребра треугольника (x ≈ 0.87, y ≈ 0), высокое над дверью (x ≈ 3.87, y ≈ 3)
+  const xs = roof.candidates.map(c => c[0]);
+  assert.ok(Math.min(...xs) < 1 && Math.max(...xs) > 3.7, xs.join(','));
+  const ys = roof.candidates.map(c => c[1]);
+  assert.ok(Math.min(...ys) < 0.3 && Math.max(...ys) > 2.9, ys.join(','));
+  // только C4: два заряда в крышу-затвор — столько же, сколько в стену
+  const c4 = bestSimulation(resolved, g, 'f1', ['c4'])!;
+  assert.ok(c4.reached);
+  assert.equal(c4.sulfur, 4400);
+  const optimal = bestSimulation(resolved, g, 'f1', ['rocket', 'c4', 'explosiveAmmo'])!;
+  assert.ok(optimal.reached);
+  assert.equal(optimal.sulfur, 4300);
 });

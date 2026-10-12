@@ -52,6 +52,8 @@ export interface Element {
   grade?: Grade;
   root?: true;
   attach?: Attach;
+  /** Крыша-затвор роф-бункера: хозяин убирает её, ломая опору. Только для крыш. */
+  bunker?: boolean;
   label?: string;
   notes?: string;
 }
@@ -100,6 +102,7 @@ export interface ResolvedElement extends Transform {
   id: string;
   kind: ElementKind;
   grade: Grade;
+  bunker?: boolean;
 }
 
 export interface ResolvedDeployable extends Transform {

@@ -140,6 +140,12 @@ function edgeMids(shape: 'square' | 'triangle', pos: [number, number, number], r
 export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
   const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell' && Number.isInteger(e.level));
   const walls = resolved.elements.filter(e => KINDS[e.kind].category === 'wallType');
+  // Крыша лежит над позицией соседней ячейки своего уровня: закрывает это пространство сверху,
+  // а её низкое ребро перекрывает ребро, к которому она примыкает (затвор роф-бункера)
+  const roofs = resolved.elements.filter(e => KINDS[e.kind].category === 'roof');
+  const roofOver = new Map(roofs.map(r => [key3(...r.position), r]));
+  const roofLowAt = new Map<string, ResolvedElement>();
+  for (const r of roofs) roofLowAt.set(key3(...edgeMids(KINDS[r.kind].shape!, r.position, r.rotation)[0]), r);
   const doorsIn = new Map<string, ResolvedDeployable>();
   for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard' && d.kind !== 'drop-box') doorsIn.set(d.parent, d);
 
@@ -181,7 +187,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
   for (const n of nodes.values()) {
     const list: AdjEdge[] = [];
     for (const m of midsOf(n)) {
-      const wall = wallAt(m);
+      const wall = wallAt(m) ?? roofLowAt.get(key3(...m)) ?? null;
       const blocker: EdgeBlocker = { element: wall, door: wall ? doorsIn.get(wall.id) ?? null : null };
       const neighbour = (nodesAtMid.get(key3(...m)) ?? []).find(x => x.id !== n.id);
       list.push({ to: neighbour ? neighbour.id : OUTSIDE, blocker, mid: m });
@@ -192,7 +198,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
     if (above) {
       list.push({ to: above.id, blocker: { element: above.virtual ? null : above.cell, door: null }, mid: abovePos });
     } else {
-      list.push({ to: OUTSIDE, blocker: { element: null, door: null }, mid: abovePos });
+      list.push({ to: OUTSIDE, blocker: { element: roofOver.get(key3(...n.position)) ?? null, door: null }, mid: abovePos });
     }
     adj.set(n.id, list);
   }
@@ -467,8 +473,11 @@ export function frontier(graph: SpaceGraph, reachable: Set<string>): FrontierIte
       if (!step) continue;
       if (reachable.has(nodeId) && !reachable.has(e.to)) add(step.id, eye(node.position), e.mid);
       if (e.to === OUTSIDE && !reachable.has(nodeId)) {
-        // с улицы: точка снаружи — продолжение от узла через середину ребра
-        const away: [number, number, number] = [e.mid[0] * 2 - node.position[0], node.position[1], e.mid[2] * 2 - node.position[2]];
+        // с улицы: точка снаружи — продолжение от узла через середину ребра; над крышей — сверху
+        const vertical = e.mid[1] > node.position[1] + 1e-6;
+        const away: [number, number, number] = vertical
+          ? [e.mid[0], e.mid[1], e.mid[2]]
+          : [e.mid[0] * 2 - node.position[0], node.position[1], e.mid[2] * 2 - node.position[2]];
         add(step.id, eye(away), e.mid);
       }
     }

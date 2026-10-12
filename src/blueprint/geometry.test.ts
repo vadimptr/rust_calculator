@@ -184,3 +184,25 @@ test('drop-box: placed on a wall face with along/height offset, direction kept; 
   const bad2 = resolveBlueprint({ ...bp, deployables: [{ id: 'b', kind: 'drop-box', attach: { to: 'lw', socket: 'face' }, direction: 'in' }] });
   assert.ok(bad2.issues.some(i => i.code === 'V04'));
 });
+
+test('roof on a cell edge shares the edge with the neighbour cell and keeps the bunker flag', () => {
+  const bp: Blueprint = {
+    formatVersion: '1.0', meta: { name: 't' }, defaults: { grade: 'stone' },
+    elements: [
+      { id: 'f1', kind: 'triangle-foundation', root: true },
+      { id: 'rb', kind: 'roof', bunker: true, attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } },
+      { id: 'f2', kind: 'square-foundation', attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } },
+      { id: 'w', kind: 'wall', attach: { to: 'f1', socket: 'edge:0' } },
+    ],
+  };
+  const { resolved, issues } = resolveBlueprint(bp);
+  assert.deepEqual(issues.filter(i => i.level === 'error'), []);
+  const rb = resolved.elements.find(e => e.id === 'rb')!;
+  const f2 = resolved.elements.find(e => e.id === 'f2')!;
+  near(rb.position, f2.position);
+  assert.equal(rb.bunker, true);
+  assert.equal(resolved.elements.find(e => e.id === 'f2')!.bunker, undefined);
+  // вторая крыша на том же ребре — V05
+  const dup: Blueprint = { ...bp, elements: [...bp.elements, { id: 'rb2', kind: 'roof-triangle', attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } }] };
+  assert.ok(resolveBlueprint(dup).issues.some(i => i.code === 'V05'));
+});

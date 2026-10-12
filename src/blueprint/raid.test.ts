@@ -123,3 +123,19 @@ test('opened spaces: 2x2 roof door + inner wall opens the vestibule, the jump-up
   assert.deepEqual(opened, ['^f4', 'f1', 'f4']);
   assert.equal(spacesValue(g, opened, resolved), 3.5); // шкаф 3, комната без пола 0.25, запрыг 0.25
 });
+
+test('roof bunker: the roof seals the vestibule from above and its low edge seals the TC cell edge', () => {
+  const { resolved } = load('roof-bunker');
+  const g = buildSpaceGraph(resolved);
+  const edges = g.adj.get('f2')!;
+  const up = edges.find(e => e.mid[1] > 1)!;
+  assert.equal(up.blocker.element?.id, 'rb');
+  const toTc = edges.find(e => e.to === 'f1')!;
+  assert.equal(toTc.blocker.element?.id, 'rb');
+  assert.deepEqual([...reachableSpaces(g, new Set())].sort(), ['c1']);
+  assert.deepEqual([...reachableSpaces(g, new Set(['d1']))].sort(), ['c1', 'f2']);
+  assert.deepEqual([...reachableSpaces(g, new Set(['rb']))].sort(), ['c1', 'f1', 'f2']);
+  // крыша — ступень пути как стена своего материала
+  const path = cheapestRaidPath(resolved, 'f1', 'c4')!;
+  assert.equal(path.sulfur, 4400);
+});

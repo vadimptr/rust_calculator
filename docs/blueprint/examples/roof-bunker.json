@@ -1,0 +1,124 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "1.0",
+  "meta": {
+    "name": "Роф-бункер на треугольнике",
+    "description": "Шкаф в каменном треугольнике без двери: вход перекрыт плитой крыши, поставленной низким ребром на открытое ребро треугольника. Крыша лежит над квадратным тамбуром с дверью; под ней у самого треугольника проход закрыт. В игре крышу держит дешёвая опора, которую хозяин ломает изнутри, крыша падает, вход открыт; потом опора и крыша ставятся заново.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "tc",
+      "bunker",
+      "example"
+    ]
+  },
+  "defaults": {
+    "grade": "stone"
+  },
+  "elements": [
+    {
+      "id": "f1",
+      "kind": "triangle-foundation",
+      "root": true,
+      "label": "Ячейка шкафа"
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:2"
+      }
+    },
+    {
+      "id": "c1",
+      "kind": "triangle-floor",
+      "attach": {
+        "to": "w1",
+        "socket": "top",
+        "selfSocket": "edge:0"
+      },
+      "label": "Потолок над шкафом"
+    },
+    {
+      "id": "rb",
+      "kind": "roof",
+      "bunker": true,
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0",
+        "selfSocket": "edge:0"
+      },
+      "label": "Крыша-затвор",
+      "notes": "Низкое ребро на открытом ребре треугольника: проход в ячейку шкафа закрыт. Хозяин открывает бункер, уронив крышу."
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0",
+        "selfSocket": "edge:0"
+      },
+      "label": "Тамбур под крышей"
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:3"
+      }
+    },
+    {
+      "id": "dw",
+      "kind": "doorway",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:2"
+      },
+      "label": "Вход в тамбур"
+    }
+  ],
+  "deployables": [
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [
+        -0.22,
+        0.382
+      ],
+      "rotation": 300,
+      "notes": "Спинкой к стене w1, фронтом к центру."
+    },
+    {
+      "id": "d1",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "dw",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "outward"
+    }
+  ]
+}

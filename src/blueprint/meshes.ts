@@ -321,7 +321,17 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 export function buildElement(el: ResolvedElement): THREE.Object3D {
   const g = new THREE.Group();
   const color = GRADE_COLORS[el.grade];
-  for (const part of elementParts(el)) g.add(withEdges(part, color));
+  const parts = elementParts(el).map(part => withEdges(part, color));
+  if (el.bunker) {
+    // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору
+    const drop = new THREE.Group();
+    for (const p of parts) drop.add(p);
+    const anim: DoorAnim = { type: 'lift', closed: 0, open: -(ROOF_RISE + FLOOR_T + 1), target: false };
+    drop.userData.door = anim;
+    g.add(drop);
+  } else {
+    for (const p of parts) g.add(p);
+  }
   g.userData = { id: el.id, kind: el.kind };
   return place(g, el.position, el.rotation);
 }

@@ -34,7 +34,8 @@ function slotKey(parent: Element, socket: Socket, child: Element, flip: boolean)
   const p = KINDS[parent.kind];
   const c = KINDS[child.kind];
   if (p.category === 'cell' && edgeIndex(socket) !== null) {
-    return `${parent.id}/${socket}/${c.category === 'wallType' ? 'wall' : 'neighbor'}`;
+    // сосед-ячейка, крыша над соседней позицией и стена-тип — три разных слота одного ребра
+    return `${parent.id}/${socket}/${c.category === 'wallType' ? 'wall' : c.category === 'roof' ? 'roof' : 'neighbor'}`;
   }
   if (p.category === 'wallType' && socket === 'top') {
     if (c.category === 'wallType') return `${parent.id}/top/wall`;
@@ -236,7 +237,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   for (const e of elements) {
     const p = placed.get(e.id)!;
     resolved.elements.push({
-      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade,
+      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}),
       position: p.position.map(round3) as [number, number, number],
       rotation: round3(p.rotation), level: p.level,
     } satisfies ResolvedElement);

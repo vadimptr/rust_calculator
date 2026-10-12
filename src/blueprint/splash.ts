@@ -3,7 +3,7 @@
  * расстоянию до ближайшей точки элемента. Ракеты, C4, разрывные патроны и сачели — у каждой свои
  * урон, радиусы и цена в сере. Модель приближённая, константы в одном месте, подлежат замеру.
  */
-import { KINDS, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, cellVertices, wallHeight } from './catalog.ts';
 import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 import { OUTSIDE, cheapestFrom, frontier, reachableSpaces, spacesValue } from './raid.ts';
 import type { SpaceGraph } from './raid.ts';
@@ -93,8 +93,10 @@ export interface SplashTarget {
   carrierId: string;
   origin: Vec3;
   rotation: number;
-  /** Ось нормали носителя: x у стен и дверей, y у полов. */
+  /** Ось нормали носителя: x у стен и дверей, y у полов и крыш. */
   axis: 'x' | 'y';
+  /** Наклон локальной системы вокруг z (крыша): x — вниз по скату к низкому ребру, y — наружная нормаль. */
+  pitch?: number;
   center: Vec3;
   /** Поверхность в локальной системе носителя. */
   surface: { kind: 'rect'; w: number; h: number; y0: number } | { kind: 'poly'; polygon: [number, number][] };
@@ -120,16 +122,29 @@ const WALL_GAP = 0.05;
 const FLOOR_INSET = 0.05;
 const FLOOR_MID = 0.1;
 
-function toWorld(origin: Vec3, rotation: number, local: Vec3): Vec3 {
-  const a = rotation * DEG;
-  const [lx, ly, lz] = local;
-  return [origin[0] + lx * Math.cos(a) - lz * Math.sin(a), origin[1] + ly, origin[2] + lx * Math.sin(a) + lz * Math.cos(a)];
+/** Локальная система цели или преграды: начало, поворот в плане и, у крыши, наклон вокруг локальной z. */
+export interface Frame { origin: Vec3; rotation: number; pitch?: number }
+
+function toWorld(f: Frame, local: Vec3): Vec3 {
+  const a = f.rotation * DEG;
+  let [lx, ly, lz] = local;
+  if (f.pitch) {
+    const b = f.pitch * DEG;
+    [lx, ly] = [lx * Math.cos(b) - ly * Math.sin(b), lx * Math.sin(b) + ly * Math.cos(b)];
+  }
+  return [f.origin[0] + lx * Math.cos(a) - lz * Math.sin(a), f.origin[1] + ly, f.origin[2] + lx * Math.sin(a) + lz * Math.cos(a)];
 }
 
-function toLocal(origin: Vec3, rotation: number, p: Vec3): Vec3 {
-  const a = -rotation * DEG;
-  const dx = p[0] - origin[0], dy = p[1] - origin[1], dz = p[2] - origin[2];
-  return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
+function toLocal(f: Frame, p: Vec3): Vec3 {
+  const a = -f.rotation * DEG;
+  const dx = p[0] - f.origin[0], dy = p[1] - f.origin[1], dz = p[2] - f.origin[2];
+  let lx = dx * Math.cos(a) - dz * Math.sin(a), ly = dy;
+  const lz = dx * Math.sin(a) + dz * Math.cos(a);
+  if (f.pitch) {
+    const b = -f.pitch * DEG;
+    [lx, ly] = [lx * Math.cos(b) - ly * Math.sin(b), lx * Math.sin(b) + ly * Math.cos(b)];
+  }
+  return [lx, ly, lz];
 }
 
 function dist(a: Vec3, b: Vec3): number {
@@ -174,7 +189,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
       // стена-цель на WALL_GAP короче и по ширине: её торец не выходит на угловую колонну
       surface: { kind: 'rect', w: 3 - 2 * WALL_GAP, h: h - 2 * WALL_GAP, y0: WALL_GAP },
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
-      candidates: rectPoints(3 - 2 * WALL_GAP, h - 2 * WALL_GAP, WALL_GAP).map(p => toWorld(el.position, el.rotation, p)),
+      candidates: rectPoints(3 - 2 * WALL_GAP, h - 2 * WALL_GAP, WALL_GAP).map(p => toWorld({ origin: el.position, rotation: el.rotation }, p)),
     };
   }
   if (info.category === 'cell') {
@@ -188,10 +203,44 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     return {
       id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin, rotation: el.rotation, axis: 'y', center: el.position,
       surface: { kind: 'poly', polygon: poly },
-      candidates: local.map(p => toWorld(el.position, el.rotation, p)),
+      candidates: local.map(p => toWorld({ origin: el.position, rotation: el.rotation }, p)),
     };
   }
+  if (info.category === 'roof') return roofTarget(el);
   return null;
+}
+
+/**
+ * Система крыши как наклонной плиты: начало — середина ската на середине толщины, x — вниз по
+ * скату к низкому ребру, y — наружная нормаль; полигон ската в (x, z), низкое ребро при x = +L/2.
+ */
+function roofFrame(el: ResolvedElement): Frame & { polygon: [number, number][]; length: number } {
+  const square = KINDS[el.kind].shape === 'square';
+  const run = square ? 3 : TRI_CIRCUM * 1.5;
+  const length = Math.hypot(run, ROOF_RISE);
+  const pitch = -Math.atan2(ROOF_RISE, run) / DEG;
+  const midX = square ? 0 : -TRI_CIRCUM / 4;
+  const origin = toWorld({ origin: el.position, rotation: el.rotation }, [midX, ROOF_RISE / 2 + FLOOR_T / 2, 0]);
+  const k = 1 - FLOOR_INSET / 1.5;
+  const h = (length / 2) * k, w = 1.5 * k;
+  const polygon: [number, number][] = square ? [[h, -w], [h, w], [-h, w], [-h, -w]] : [[h, -w], [h, w], [-h, 0]];
+  return { origin, rotation: el.rotation, pitch, polygon, length };
+}
+
+function roofTarget(el: ResolvedElement): SplashTarget {
+  const f = roofFrame(el);
+  const poly = f.polygon;
+  const local: Vec3[] = [[0, 0, 0], ...poly.map(([x, z]) => [x, 0, z] as Vec3)];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    local.push([(a[0] + b[0]) / 2, 0, (a[1] + b[1]) / 2]);
+  }
+  return {
+    id: el.id, kind: el.kind, hp: BLOCK_HP[el.grade], hit: hitByGrade(el.grade), carrierId: el.id,
+    origin: f.origin, rotation: f.rotation, pitch: f.pitch, axis: 'y', center: f.origin,
+    surface: { kind: 'poly', polygon: poly },
+    candidates: local.map(p => toWorld(f, p)),
+  };
 }
 
 function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarget | null {
@@ -208,7 +257,7 @@ function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarg
     id: d.id, kind: d.kind, hp, hit: hitByDoor(d.kind), carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
     surface: { kind: 'rect', w, h: dh, y0: y0 + WALL_GAP },
     center: [d.position[0], d.position[1] + y0 + Math.min(hh, h) / 2, d.position[2]],
-    candidates: rectPoints(w, dh, y0 + WALL_GAP).map(p => toWorld(d.position, d.rotation, p)),
+    candidates: rectPoints(w, dh, y0 + WALL_GAP).map(p => toWorld({ origin: d.position, rotation: d.rotation }, p)),
   };
 }
 
@@ -229,20 +278,20 @@ export function surfacePoints(t: SplashTarget, steps = 3): Vec3[] {
   if (t.surface.kind === 'rect') {
     const { w, h, y0 } = t.surface;
     for (let i = 0; i <= steps; i++) for (let j = 0; j <= steps; j++) {
-      out.push(toWorld(t.origin, t.rotation, [0, y0 + (h * i) / steps, -w / 2 + (w * j) / steps]));
+      out.push(toWorld(t, [0, y0 + (h * i) / steps, -w / 2 + (w * j) / steps]));
     }
     return out;
   }
   const poly = t.surface.polygon;
   const n = poly.length;
-  out.push(toWorld(t.origin, t.rotation, [0, 0, 0]));
+  out.push(toWorld(t, [0, 0, 0]));
   for (let i = 0; i < n; i++) {
     const a = poly[i], b = poly[(i + 1) % n];
     for (let k = 0; k < steps; k++) {
       const f = k / steps;
       const x = a[0] + (b[0] - a[0]) * f, z = a[1] + (b[1] - a[1]) * f;
-      out.push(toWorld(t.origin, t.rotation, [x, 0, z]));
-      out.push(toWorld(t.origin, t.rotation, [x * 0.5, 0, z * 0.5]));
+      out.push(toWorld(t, [x, 0, z]));
+      out.push(toWorld(t, [x * 0.5, 0, z * 0.5]));
     }
   }
   return out;
@@ -250,22 +299,22 @@ export function surfacePoints(t: SplashTarget, steps = 3): Vec3[] {
 
 /** Сдвиг точки вдоль поверхности цели (в её локальных осях) на (du, dv). */
 export function moveOnSurface(t: SplashTarget, p: Vec3, du: number, dv: number): Vec3 {
-  const l = toLocal(t.origin, t.rotation, p);
+  const l = toLocal(t, p);
   // точка проецируется обратно на поверхность: нормальная составляющая обнуляется
   if (t.surface.kind === 'rect') {
     const { w, h, y0 } = t.surface;
-    return toWorld(t.origin, t.rotation, [0, clamp(l[1] + dv, y0, y0 + h), clamp(l[2] + du, -w / 2, w / 2)]);
+    return toWorld(t, [0, clamp(l[1] + dv, y0, y0 + h), clamp(l[2] + du, -w / 2, w / 2)]);
   }
   const poly = t.surface.polygon;
   const nx = l[0] + du, nz = l[2] + dv;
   // не выходим за полигон: при выходе остаёмся на месте
-  return insidePolygon(nx, nz, poly) ? toWorld(t.origin, t.rotation, [nx, 0, nz]) : toWorld(t.origin, t.rotation, [l[0], 0, l[2]]);
+  return insidePolygon(nx, nz, poly) ? toWorld(t, [nx, 0, nz]) : toWorld(t, [l[0], 0, l[2]]);
 }
 
 /** Все ломаемые элементы и объекты чертежа как цели сплеша. */
 export function allSplashTargets(resolved: Resolved): SplashTarget[] {
   const ids = [
-    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
+    ...resolved.elements.filter(e => ['wallType', 'cell', 'roof'].includes(KINDS[e.kind].category)).map(e => e.id),
     ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && d.kind !== 'drop-box').map(d => d.id),
   ];
   return splashTargets(resolved, ids);
@@ -282,15 +331,15 @@ function insidePolygon(x: number, z: number, poly: [number, number][]): boolean 
 
 /** Ближайшая к p точка поверхности цели (в мире). */
 export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
-  const l = toLocal(t.origin, t.rotation, p);
+  const l = toLocal(t, p);
   if (t.surface.kind === 'rect') {
     const { w, h, y0 } = t.surface;
-    return toWorld(t.origin, t.rotation, [0, clamp(l[1], y0, y0 + h), clamp(l[2], -w / 2, w / 2)]);
+    return toWorld(t, [0, clamp(l[1], y0, y0 + h), clamp(l[2], -w / 2, w / 2)]);
   }
   // у плиты — грань, обращённая к взрыву: верх, если взрыв над срединной плоскостью, иначе низ
   const face = l[1] >= 0 ? FLOOR_MID : -FLOOR_MID;
   const poly = t.surface.polygon;
-  if (insidePolygon(l[0], l[2], poly)) return toWorld(t.origin, t.rotation, [l[0], face, l[2]]);
+  if (insidePolygon(l[0], l[2], poly)) return toWorld(t, [l[0], face, l[2]]);
   let best: [number, number] = poly[0];
   let bestD = Infinity;
   for (let i = 0; i < poly.length; i++) {
@@ -302,7 +351,7 @@ export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
     const d = Math.hypot(l[0] - q[0], l[2] - q[1]);
     if (d < bestD) { bestD = d; best = q; }
   }
-  return toWorld(t.origin, t.rotation, [best[0], face, best[1]]);
+  return toWorld(t, [best[0], face, best[1]]);
 }
 
 /** Расстояние от взрыва до ближайшей точки цели: удар в угол плиты даёт по ней полный урон. */
@@ -316,11 +365,10 @@ export function unitDamage(ex: Explosive, p: Vec3, t: SplashTarget): number {
 }
 
 /** Преграда для сплеша: вертикальный прямоугольник стены-типа или горизонтальный полигон ячейки. */
-export interface Occluder {
+export interface Occluder extends Frame {
   id: string;
+  /** cell — плита или крыша (полигон в своей системе, у крыши наклонной). */
   kind: 'wall' | 'cell';
-  origin: Vec3;
-  rotation: number;
   height?: number;
   polygon?: [number, number][];
 }
@@ -334,8 +382,8 @@ const MARGIN = -1e-6;
 const END_EPS = 1e-3;
 
 export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true): boolean {
-  const la = toLocal(o.origin, o.rotation, a);
-  const lb = toLocal(o.origin, o.rotation, b);
+  const la = toLocal(o, a);
+  const lb = toLocal(o, b);
   if (o.kind === 'wall') {
     if ((la[0] > 1e-6 && lb[0] > 1e-6) || (la[0] < -1e-6 && lb[0] < -1e-6)) return false;
     if (Math.abs(lb[0] - la[0]) < 1e-9) return false;
@@ -380,6 +428,11 @@ export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Oc
     } else if (info.category === 'cell') {
       if (info.isFrame) continue;
       out.push({ id: el.id, kind: 'cell', origin: el.position, rotation: el.rotation, polygon: cellVertices(info.shape!) });
+    } else if (info.category === 'roof') {
+      const f = roofFrame(el);
+      // преграда — сам скат без усадки, как у плит
+      const k = 1 / (1 - FLOOR_INSET / 1.5);
+      out.push({ id: el.id, kind: 'cell', origin: f.origin, rotation: f.rotation, pitch: f.pitch, polygon: f.polygon.map(([x, z]) => [x * k, z * k] as [number, number]) });
     }
   }
   return out;
@@ -407,7 +460,7 @@ export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
  */
 function visibleImpact(c: Vec3, eye: Vec3, owner: SplashTarget, occ: Occluder[]): Vec3 | null {
   // точка должна быть с той же стороны элемента, что и рейдер
-  const side = (p: Vec3) => { const l = toLocal(owner.origin, owner.rotation, p); return Math.sign(owner.axis === 'x' ? l[0] : l[1]); };
+  const side = (p: Vec3) => { const l = toLocal(owner, p); return Math.sign(owner.axis === 'x' ? l[0] : l[1]); };
   const eyeSide = side(eye);
   // для видимости конец отрезка не исключается: точка за самой стеной невидима
   const clear = (p: Vec3) => (eyeSide === 0 || side(p) === eyeSide) && !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o, false));
@@ -422,7 +475,7 @@ const CONTACT = 0.15;
 
 /** Сторона точки относительно плоскости цели: +1 по нормали (x) или сверху (y), −1 иначе. */
 function sideOf(t: SplashTarget, p: Vec3): number {
-  const l = toLocal(t.origin, t.rotation, p);
+  const l = toLocal(t, p);
   return Math.sign(t.axis === 'x' ? l[0] : l[1]);
 }
 
@@ -446,7 +499,7 @@ function reachMap(
     if (t.id !== owner.id) {
       const q = nearestPoint(p, t);
       // плиты одной плоскости друг друга не закрывают: взрыв над ними достаёт все плиты угла
-      const coplanarSlab = (o: Occluder) => o.kind === 'cell' && t.axis === 'y' && Math.abs(o.origin[1] - (t.origin[1] + FLOOR_MID)) < 1e-6;
+      const coplanarSlab = (o: Occluder) => o.kind === 'cell' && t.axis === 'y' && !o.pitch && !t.pitch && Math.abs(o.origin[1] - (t.origin[1] + FLOOR_MID)) < 1e-6;
       const blocked = occ.some(o => o.id !== t.carrierId && !coplanarSlab(o) && segmentBlocked(p, q, o));
       if (blocked) {
         const eye = contact?.exposure.get(t.id);
@@ -539,6 +592,8 @@ export function simulateRaid(
   };
   const remainingCost = (r: Set<string>, b: Set<string>, hp: Map<string, number>) =>
     r.has(targetCell) ? 0 : cheapestFrom(graph, new Set([...r, OUTSIDE]), b, targetCell, 'optimal', step => itemCost(step.id, hp))?.sulfur ?? Infinity;
+  /** Цена серы за единицу прочности цели лучшей из разрешённых взрывчаток. */
+  const rateOf = (id: string) => { const t = byId.get(id); return t ? Math.min(...allowed.map(ex => EXPLOSIVES[ex].sulfur / t.hit[ex])) : 0; };
   let remaining = remainingCost(reachable, broken, hpLeft);
 
   while (!reachable.has(targetCell) && stages.length < maxStages) {
@@ -579,16 +634,21 @@ export function simulateRaid(
     // задетых элементов.
     type Pre = { shot: SplashShot; owner: SplashTarget; eye: Vec3; pre: number[] };
     const pres: Pre[] = [];
-    // дешёвый ключ: ценность открываемого и приближение к шкафу (по набору погибших, с кэшем по этому
-    // набору — наборов намного меньше, чем точек) и полезный урон на серу. Без приближения в ключе
-    // одна ракета в деревянную дверь проигрывала бы отбор залпам в угол стен с большим уроном.
+    // Дешёвый ключ: ценность открываемого и приближение к шкафу — по набору погибших (с кэшем по
+    // этому набору: наборов намного меньше, чем точек), а для залпов без погибших — полезный урон по
+    // элементу, на который поставлен залп, в пересчёте на серу. Без приближения в ключе одна ракета
+    // в деревянную дверь проигрывала бы отбор залпам в угол стен с большим, но бесполезным уроном,
+    // а первый C4 в стену (ничего не ломает) — дешёвым дверям транзитных ячеек. Урон по соседям
+    // в кредит не идёт: иначе залп в угол четырёх стен снова вытеснял бы дверь.
     const deadCache = new Map<string, { gain: number; progress: number }>();
-    const preKey = (shot: SplashShot): number[] => {
-      let useful = 0, touched = 0;
+    const preKey = (shot: SplashShot, ownerId: string): number[] => {
+      let useful = 0, touched = 0, credit = 0;
       const dead: string[] = [];
       for (const [id, dmg] of Object.entries(shot.damage)) {
-        useful += Math.min(hpLeft.get(id) ?? 0, dmg * shot.count);
+        const u = Math.min(hpLeft.get(id) ?? 0, dmg * shot.count);
+        useful += u;
         touched++;
+        if (id === ownerId) credit = u * rateOf(id);
         if ((hpLeft.get(id) ?? 0) - dmg * shot.count <= 1e-6) dead.push(id);
       }
       const cost = shot.count * EXPLOSIVES[shot.explosive].sulfur;
@@ -605,18 +665,22 @@ export function simulateRaid(
         }
         gain = est.gain; progress = est.progress;
       }
+      // при равенстве — точка ниже, как и в полном ключе: с земли удобнее, чем с крыши
+      const est = Math.max(progress, credit);
       return strategy === 'value'
-        ? [gain / cost, dead.length, progress / cost, useful / cost, touched]
+        ? [gain / cost, est / cost, dead.length, useful / cost, touched, -shot.point[1]]
         : strategy === 'progress'
-          ? [progress / cost, dead.length, gain / cost, useful / cost, touched]
-          : [dead.length / cost, progress / cost, gain / cost, useful / cost, touched];
+          ? [est / cost, gain / cost, dead.length, useful / cost, touched, -shot.point[1]]
+          : [dead.length / cost, est / cost, gain / cost, useful / cost, touched, -shot.point[1]];
     };
     const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return b[i] - a[i]; return 0; };
     const makeShots = (owner: SplashTarget, c0: Vec3, eye: Vec3): SplashShot[] => {
       // у плиты расчётная поверхность — середина толщины; точка удара лежит на грани, обращённой к рейдеру
-      const c: Vec3 = owner.axis === 'y'
-        ? [c0[0], owner.origin[1] + (eye[1] >= owner.origin[1] ? FLOOR_MID : -FLOOR_MID), c0[2]]
-        : c0;
+      let c: Vec3 = c0;
+      if (owner.axis === 'y') {
+        const l = toLocal(owner, c0);
+        c = toWorld(owner, [l[0], toLocal(owner, eye)[1] >= 0 ? FLOOR_MID : -FLOOR_MID, l[2]]);
+      }
       const point = visibleImpact(c, eye, owner, occ);
       if (!point) return [];
       const shots: SplashShot[] = [];
@@ -641,19 +705,24 @@ export function simulateRaid(
         const k = c.map(v => v.toFixed(2)).join('|');
         if (seenPts.has(k)) continue;
         seenPts.add(k);
-        for (const shot of makeShots(owner, c, f.from)) { const pre = preKey(shot); onPre?.(stages.length, shot, pre, owner.id); pres.push({ shot, owner, eye: f.from, pre }); }
+        for (const shot of makeShots(owner, c, f.from)) { const pre = preKey(shot, owner.id); onPre?.(stages.length, shot, pre, owner.id); pres.push({ shot, owner, eye: f.from, pre }); }
       }
     }
-    // отбор по группам «взрывчатка × класс залпа», чтобы дорогую оценку получили все классы
+    // Отбор по группам «взрывчатка × класс залпа», чтобы дорогую оценку получили все классы, плюс
+    // лучшая точка каждого элемента границы в каждой группе: дешёвый ключ не знает, какой элемент
+    // лежит на пути к шкафу, а так ни одна стена и дверь не остаётся без оценки.
     pres.sort((a, b) => cmp(a.pre, b.pre));
     const PER_GROUP = 16;
     const taken = new Map<string, number>();
+    const ownerTaken = new Set<string>();
     for (const pr of pres) {
       const cls = pr.shot.count === 1 ? 'one' : 'n';
       const key = `${pr.shot.explosive}|${cls}`;
+      const ownerKey = `${pr.owner.id}|${key}`;
       const n = taken.get(key) ?? 0;
-      if (n >= PER_GROUP) continue;
-      taken.set(key, n + 1);
+      if (n >= PER_GROUP && ownerTaken.has(ownerKey)) continue;
+      if (n < PER_GROUP) taken.set(key, n + 1);
+      ownerTaken.add(ownerKey);
       consider(pr.shot);
     }
     // Локальное дожимание лучшей точки: сдвиги вдоль поверхности, пока ключ улучшается
