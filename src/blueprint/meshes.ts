@@ -70,6 +70,10 @@ const WINDOW_W = 2.2;
 const WINDOW_H = 1.3;
 const WINDOW_SILL = 0.95;
 const DOOR_T = 0.1;
+/** Шкаф: ширина вдоль стены, глубина, высота (≈ по пропорциям модели). */
+export const TC_W = 1.1;
+export const TC_D = 0.6;
+export const TC_H = 1.9;
 
 const materialCache = new Map<number, THREE.MeshStandardMaterial>();
 function material(color: number): THREE.MeshStandardMaterial {
@@ -316,9 +320,10 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   let g: THREE.Group;
   if (d.kind === 'tool-cupboard') {
     g = new THREE.Group();
-    // Шкаф: 1.0 м вдоль стены, 0.45 м в глубину, 1.5 м высотой; спинка — локальный −x
-    g.add(withEdges(box(0.45, 1.5, 1.0, 0, 0.75, 0), DOOR_COLORS[d.kind]));
-    g.add(withEdges(box(0.04, 1.3, 0.84, 0.23, 0.78, 0), 0x5b3716));
+    // Шкаф: TC_W вдоль стены, TC_D в глубину, TC_H высотой; спинка — локальный −x
+    g.add(withEdges(box(TC_D, TC_H, TC_W, 0, TC_H / 2, 0), DOOR_COLORS[d.kind]));
+    g.add(withEdges(box(0.04, TC_H - 0.3, TC_W - 0.2, TC_D / 2 + 0.01, TC_H / 2 + 0.05, 0), 0x5b3716));
+    g.add(withEdges(box(0.05, 0.08, TC_W - 0.2, TC_D / 2 + 0.03, TC_H * 0.55, 0), 0x3a2410));
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
   } else {
