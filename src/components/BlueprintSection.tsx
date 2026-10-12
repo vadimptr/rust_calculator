@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
+import type { CameraMode } from './Viewer3D';
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
@@ -57,6 +58,7 @@ const BlueprintSection: React.FC = () => {
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const fileRef = useRef<HTMLInputElement>(null);
   const [doorsOpen, setDoorsOpen] = useState(() => new URLSearchParams(window.location.search).get('doors') === 'open');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -111,6 +113,19 @@ const BlueprintSection: React.FC = () => {
         </div>
         <div className="bp__upload">
           <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
+          <div className="bp__presets" role="group" aria-label="Камера">
+            {([['orbit', 'Орбита'], ['fly', 'Полёт']] as [CameraMode, string][]).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={`raid-tier__btn${id === cameraMode ? ' raid-tier__btn--active' : ''}`}
+                onClick={() => setCameraMode(id)}
+                aria-pressed={id === cameraMode}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <label className="bp__toggle">
             <input type="checkbox" checked={doorsOpen} onChange={e => setDoorsOpen(e.target.checked)} />
             Открыть двери
@@ -126,8 +141,12 @@ const BlueprintSection: React.FC = () => {
 
       <div className="bp__layout">
         <div className="bp__viewer">
-          <Viewer3D resolved={resolved} />
-          <div className="bp__hint">ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать</div>
+          <Viewer3D resolved={resolved} mode={cameraMode} />
+          <div className="bp__hint">
+            {cameraMode === 'orbit'
+              ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
+              : 'Клик по сцене — захват мыши · мышь — смотреть · WASD — лететь · Space / C — вверх / вниз · Shift — быстрее · Esc — отпустить'}
+          </div>
         </div>
 
         <aside className="bp__panel">

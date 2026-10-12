@@ -1,11 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { buildDeployable, buildElement } from '../blueprint/meshes.ts';
 import type { Resolved } from '../blueprint/types.ts';
+import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
+
+export type CameraMode = 'orbit' | 'fly';
 
 interface Viewer3DProps {
   resolved: Resolved | null;
+  mode: CameraMode;
 }
 
 interface SceneRefs {
@@ -13,12 +18,14 @@ interface SceneRefs {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  fly: PointerLockControls;
+  keys: Set<string>;
+  clock: THREE.Clock;
   content: THREE.Group;
   frame: number;
 }
 
-/** 3D-сцена постройки: вращение мышью, зум колесом, панорамирование правой кнопкой. */
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
 
@@ -74,11 +81,26 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved }) => {
     const content = new THREE.Group();
     scene.add(content);
 
-    const state: SceneRefs = { renderer, scene, camera, controls, content, frame: 0 };
+    const fly = new PointerLockControls(camera, renderer.domElement);
+    const keys = new Set<string>();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!fly.isLocked || !MOVE_KEYS.has(e.code)) return;
+      keys.add(e.code);
+      e.preventDefault();
+    };
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+    const onUnlock = () => keys.clear();
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    fly.addEventListener('unlock', onUnlock);
+
+    const state: SceneRefs = { renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, frame: 0 };
     refs.current = state;
 
     const tick = () => {
-      controls.update();
+      const dt = Math.min(state.clock.getDelta(), 0.1);
+      if (fly.isLocked) applyFlight(camera, keys, dt);
+      else if (controls.enabled) controls.update();
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);
     };
@@ -97,12 +119,38 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved }) => {
     return () => {
       ro.disconnect();
       cancelAnimationFrame(state.frame);
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+      fly.removeEventListener('unlock', onUnlock);
+      if (fly.isLocked) fly.unlock();
+      fly.dispose();
       controls.dispose();
       renderer.dispose();
       host.removeChild(renderer.domElement);
       refs.current = null;
     };
   }, []);
+
+  // Переключение режима камеры: орбита ↔ полёт (захват мыши по клику на сцену)
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    if (mode === 'fly') {
+      s.controls.enabled = false;
+      const lock = () => { if (!s.fly.isLocked) s.fly.lock(); };
+      s.renderer.domElement.addEventListener('click', lock);
+      return () => {
+        s.renderer.domElement.removeEventListener('click', lock);
+        if (s.fly.isLocked) s.fly.unlock();
+      };
+    }
+    // Возврат к орбите: цель — точка в 10 м по направлению взгляда
+    const dir = s.camera.getWorldDirection(new THREE.Vector3());
+    s.controls.target.copy(s.camera.position).addScaledVector(dir, 10);
+    s.controls.enabled = true;
+    s.controls.update();
+    return undefined;
+  }, [mode]);
 
   useEffect(() => {
     const s = refs.current;
