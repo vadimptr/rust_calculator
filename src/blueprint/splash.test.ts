@@ -135,6 +135,8 @@ test('simulation: rockets into the 2x2 roof corner remove three ceilings in one 
   assert.ok(['c1', 'c2', 'c3'].every(id => sim.stages[0].broken.includes(id)));
   assert.equal(sim.units.rocket, 4);
   assert.ok(!sim.broken.some(id => ['door_tc', 'door_hall', 'door_jump'].includes(id)));
+  // стены первого этажа под плитами крыши с крыши не достать
+  assert.ok(!sim.broken.some(id => ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'hw1'].includes(id)), `ground walls broken: ${sim.broken.join(',')}`);
 });
 
 test('simulation: damage accumulates across stages (C4 then explosive ammo on the same wall)', () => {

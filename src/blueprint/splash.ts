@@ -123,6 +123,9 @@ export interface SplashPlan {
 }
 
 const DEG = Math.PI / 180;
+/** Стены и двери чуть короче плит по высоте: их верх и низ не лежат на плоскости пола,
+ * поэтому взрыв на крыше до стены под плитой не достаёт. */
+const WALL_GAP = 0.05;
 
 function toWorld(origin: Vec3, rotation: number, local: Vec3): Vec3 {
   const a = rotation * DEG;
@@ -175,9 +178,9 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     const h = wallHeight(el.kind);
     return {
       id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
-      surface: { kind: 'rect', w: 3, h, y0: 0 },
+      surface: { kind: 'rect', w: 3, h: h - 2 * WALL_GAP, y0: WALL_GAP },
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
-      candidates: rectPoints(3, h).map(p => toWorld(el.position, el.rotation, p)),
+      candidates: rectPoints(3, h - 2 * WALL_GAP, WALL_GAP).map(p => toWorld(el.position, el.rotation, p)),
     };
   }
   if (info.category === 'cell') {
@@ -203,11 +206,12 @@ function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarg
   const y0 = isWindow ? 0.95 : 0;
   const hh = isWindow ? 1.3 : d.kind.includes('double') || d.kind === 'garage-door' ? 2.6 : 2.2;
   const w = d.kind.includes('double') || d.kind === 'garage-door' ? 2.7 : isWindow ? 2.2 : 1.3;
+  const dh = Math.min(hh, h) - 2 * WALL_GAP;
   return {
     id: d.id, kind: d.kind, hp, hit: hitByDoor(d.kind), carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
-    surface: { kind: 'rect', w, h: Math.min(hh, h), y0 },
+    surface: { kind: 'rect', w, h: dh, y0: y0 + WALL_GAP },
     center: [d.position[0], d.position[1] + y0 + Math.min(hh, h) / 2, d.position[2]],
-    candidates: rectPoints(w, hh, y0).map(p => toWorld(d.position, d.rotation, p)),
+    candidates: rectPoints(w, dh, y0 + WALL_GAP).map(p => toWorld(d.position, d.rotation, p)),
   };
 }
 
@@ -283,18 +287,22 @@ export interface Occluder {
   polygon?: [number, number][];
 }
 
-/** Границы преграды включающие; самый конец отрезка (поверхность цели) соседней преградой не считается. */
+/**
+ * Границы преграды включающие; самый конец отрезка (поверхность цели) соседней преградой не
+ * считается — так плиты и стены в общем углу открыты друг другу. Стена под плитой при этом закрыта:
+ * её верх на WALL_GAP ниже плоскости пола, и отрезок пересекает плиту раньше конца.
+ */
 const MARGIN = -1e-6;
 const END_EPS = 1e-3;
 
-export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
+export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true): boolean {
   const la = toLocal(o.origin, o.rotation, a);
   const lb = toLocal(o.origin, o.rotation, b);
   if (o.kind === 'wall') {
     if ((la[0] > 1e-6 && lb[0] > 1e-6) || (la[0] < -1e-6 && lb[0] < -1e-6)) return false;
     if (Math.abs(lb[0] - la[0]) < 1e-9) return false;
     const t = la[0] / (la[0] - lb[0]);
-    if (t > 1 - END_EPS) return false;
+    if (endExempt && t > 1 - END_EPS) return false;
     const y = la[1] + (lb[1] - la[1]) * t;
     const z = la[2] + (lb[2] - la[2]) * t;
     return y >= MARGIN && y <= (o.height ?? 3) - MARGIN && Math.abs(z) <= 1.5 - MARGIN;
@@ -302,7 +310,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
   const t = la[1] / (la[1] - lb[1]);
-  if (t > 1 - END_EPS) return false;
+  if (endExempt && t > 1 - END_EPS) return false;
   const x = la[0] + (lb[0] - la[0]) * t;
   const z = la[2] + (lb[2] - la[2]) * t;
   return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
