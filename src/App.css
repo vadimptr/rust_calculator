@@ -1467,3 +1467,15 @@
   font-size: 0.74rem;
   margin-top: 0.15rem;
 }
+
+.bp__overrides {
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.bp__override-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}

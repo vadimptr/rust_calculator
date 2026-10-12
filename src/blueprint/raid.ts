@@ -10,7 +10,7 @@ import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedEleme
 export const OUTSIDE = '__outside__';
 
 /** Рейд дверей и вставок в окна (обновление 2026-09). optimal — минимум серы. */
-export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard'>, RaidCostRule> = {
+export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | 'drop-box'>, RaidCostRule> = {
   'wooden-door':             { blockId: 'wooden-door', blockName: 'Деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
   'wooden-double-door':      { blockId: 'wooden-double-door', blockName: 'Двойная деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
   'sheet-metal-door':        { blockId: 'sheet-metal-door', blockName: 'Металлическая дверь', satchel: 4, rocket: 2, c4: 1, explosiveAmmo: 63, optimal: { explosiveAmmo: 63 } },
@@ -141,7 +141,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
   const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell' && Number.isInteger(e.level));
   const walls = resolved.elements.filter(e => KINDS[e.kind].category === 'wallType');
   const doorsIn = new Map<string, ResolvedDeployable>();
-  for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard') doorsIn.set(d.parent, d);
+  for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard' && d.kind !== 'drop-box') doorsIn.set(d.parent, d);
 
   /** Стена-тип на вертикали (x, z), перекрывающая высоту y. */
   const wallsAtXZ = new Map<string, ResolvedElement[]>();

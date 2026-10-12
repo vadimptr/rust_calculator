@@ -5,25 +5,44 @@
 import * as THREE from 'three';
 import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
-import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 
+/** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
 export const GRADE_COLORS: Record<Grade, number> = {
-  twig: 0xc9a86a,
+  twig: 0xd9b96a,
   wood: 0x8b5a2b,
   stone: 0x8e8e8e,
-  metal: 0x5d6670,
-  armored: 0x3b3f46,
+  metal: 0x9a4f2a,
+  armored: 0x2a2c2e,
 };
 
+/** Конструкции разных типов из одного материала различаются оттенком: стены темнее, проёмы светлее. */
+export const KIND_TINT: Partial<Record<ElementKind, number>> = {
+  'square-foundation': -0.12, 'triangle-foundation': -0.12,
+  'square-floor': 0.1, 'triangle-floor': 0.1, 'floor-frame': 0.16, 'triangle-floor-frame': 0.16,
+  'wall': 0, 'half-wall': -0.05, 'low-wall': -0.08,
+  'doorway': 0.14, 'window-frame': 0.14, 'wall-frame': 0.14,
+  'stairs-l-shape': -0.06, 'u-shaped-stairs': -0.06,
+  'roof': 0.06, 'roof-triangle': 0.06,
+};
+
+function tint(color: number, k: number): number {
+  const c = new THREE.Color(color);
+  if (k >= 0) c.lerp(new THREE.Color(0xffffff), k); else c.lerp(new THREE.Color(0x000000), -k);
+  return c.getHex();
+}
+
+/** Двери: деревянная светло-коричневая, металлическая ржавая, МВК тёмно-серая; дроп-бокс синий. */
 const DOOR_COLORS: Record<DeployableKind, number> = {
   'tool-cupboard': 0x7a4a1e,
-  'wooden-door': 0x9b6a3a,
-  'sheet-metal-door': 0x6e7f8e,
-  'armored-door': 0x2f333a,
-  'garage-door': 0x5a6a78,
-  'wooden-double-door': 0x9b6a3a,
-  'sheet-metal-double-door': 0x6e7f8e,
-  'armored-double-door': 0x2f333a,
+  'drop-box': 0x2f6fd6,
+  'wooden-door': 0xb98a5a,
+  'sheet-metal-door': 0xa85a2e,
+  'armored-door': 0x3a3d42,
+  'garage-door': 0xa85a2e,
+  'wooden-double-door': 0xb98a5a,
+  'sheet-metal-double-door': 0xa85a2e,
+  'armored-double-door': 0x3a3d42,
   'strengthened-glass-window': 0x9fd3e6,
   'reinforced-glass-window': 0x7fb6cc,
   'metal-window-bars': 0x3a3f45,
@@ -314,15 +333,39 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 
 export function buildElement(el: ResolvedElement): THREE.Object3D {
   const g = new THREE.Group();
-  const color = GRADE_COLORS[el.grade];
+  const color = tint(GRADE_COLORS[el.grade], KIND_TINT[el.kind] ?? 0);
   for (const part of elementParts(el)) g.add(withEdges(part, color));
   g.userData = { id: el.id, kind: el.kind };
   return place(g, el.position, el.rotation);
 }
 
+/** Дроп-бокс на стене: синий ящик на стороне загрузки и стрелка направления передачи сквозь стену. */
+function buildDropBox(d: ResolvedDeployable): THREE.Group {
+  const g = new THREE.Group();
+  const blue = DOOR_COLORS['drop-box'];
+  // out: кладут изнутри (−x), забирают снаружи (+x); in — наоборот
+  const loadSide = d.direction === 'in' ? 1 : -1;
+  g.add(withEdges(box(0.3, 0.45, 0.5, loadSide * (WALL_T / 2 + 0.15), 0, 0), blue));
+  const arrowLen = 1.1;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, arrowLen, 10), new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 }));
+  shaft.rotation.z = Math.PI / 2;
+  shaft.position.set(0, 0.35, 0);
+  shaft.renderOrder = 12;
+  g.add(shaft);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 12), new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 }));
+  const toward = d.direction === 'in' ? -1 : 1;
+  tip.rotation.z = toward === 1 ? -Math.PI / 2 : Math.PI / 2;
+  tip.position.set(toward * (arrowLen / 2 + 0.1), 0.35, 0);
+  tip.renderOrder = 12;
+  g.add(tip);
+  return g;
+}
+
 export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   let g: THREE.Group;
-  if (d.kind === 'tool-cupboard') {
+  if (d.kind === 'drop-box') {
+    g = buildDropBox(d);
+  } else if (d.kind === 'tool-cupboard') {
     g = new THREE.Group();
     // Шкаф: TC_W вдоль стены, TC_D в глубину, TC_H высотой; спинка — локальный −x
     g.add(withEdges(box(TC_D, TC_H, TC_W, 0, TC_H / 2, 0), DOOR_COLORS[d.kind]));

@@ -97,7 +97,7 @@ export function socketsOf(kind: ElementKind): Socket[] {
       return [...edges, 'top'];
     }
     case 'wallType':
-      return info.opening ? ['bottom', 'top', 'opening'] : ['bottom', 'top'];
+      return info.opening ? ['bottom', 'top', 'opening'] : ['bottom', 'top', 'face'];
     case 'stairs':
       return ['bottom'];
     case 'roof':

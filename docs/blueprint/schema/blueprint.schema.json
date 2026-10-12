@@ -97,12 +97,13 @@
         "armored-double-door",
         "strengthened-glass-window",
         "reinforced-glass-window",
-        "metal-window-bars"
+        "metal-window-bars",
+        "drop-box"
       ]
     },
     "Socket": {
       "type": "string",
-      "pattern": "^(edge:[0-3]|top|bottom|opening)$"
+      "pattern": "^(edge:[0-3]|top|bottom|opening|face)$"
     },
     "Vec3": {
       "type": "array",
@@ -287,14 +288,15 @@
               "type": "string",
               "enum": [
                 "top",
-                "opening"
+                "opening",
+                "face"
               ]
             }
           }
         },
         "offset": {
           "$ref": "#/$defs/Vec2",
-          "description": "Смещение [x, z] в метрах от центра ячейки (только для сокета top)."
+          "description": "Шкаф: смещение [x, z] в метрах от центра ячейки. Дроп-бокс: [вдоль стены, высота] от середины низа стены."
         },
         "rotation": {
           "type": "number",
@@ -329,6 +331,14 @@
           "type": "boolean",
           "default": false,
           "description": "Дверь показана открытой (для просмотра и проверки перекрытия). Только для дверей."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "in",
+            "out"
+          ],
+          "description": "Только для дроп-бокса: out — передача изнутри наружу (по нормали стены), in — снаружи внутрь."
         }
       },
       "allOf": [
@@ -352,10 +362,53 @@
               },
               "hinge": false,
               "opens": false,
-              "open": false
+              "open": false,
+              "direction": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "drop-box"
+              }
             }
           },
-          "else": {
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "face"
+                  }
+                }
+              },
+              "hinge": false,
+              "opens": false,
+              "open": false,
+              "rotation": false
+            },
+            "required": [
+              "direction"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tool-cupboard",
+                    "drop-box"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
             "properties": {
               "attach": {
                 "type": "object",
@@ -366,7 +419,8 @@
                 }
               },
               "offset": false,
-              "rotation": false
+              "rotation": false,
+              "direction": false
             }
           }
         }

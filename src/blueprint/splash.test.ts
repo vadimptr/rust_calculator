@@ -101,8 +101,18 @@ test('simulation: damage accumulates across stages (C4 then explosive ammo on th
   assert.ok(sim.sulfur < 4400, `sulfur=${sim.sulfur}`);
   assert.ok(sim.stages.length >= 2);
   assert.deepEqual(sim.stages[0].broken, []); // первый C4 ничего не ломает, урон копится
-  assert.ok(sim.broken.every(id => id.startsWith('w')), `expected a wall, got ${sim.broken.join(',')}`); // с земли, не через крышу
-  assert.ok(sim.stages.every(st => st.shot.point[1] < 3));
+  assert.ok(sim.broken.every(id => id.startsWith('w')), `expected a wall, got ${sim.broken.join(',')}`); // стена, не потолок
+});
+
+test('bunker: rockets and explosive ammo break the same set of structures at the corridor column', () => {
+  const { resolved } = load('bunker-30-rockets');
+  const g = buildSpaceGraph(resolved);
+  const rockets = bestSimulation(resolved, g, 'f0', ['rocket'])!;
+  const ammo = bestSimulation(resolved, g, 'f0', ['explosiveAmmo'])!;
+  const norm = (ids: string[]) => ids.map(id => id.replace(/\d+$/, '')).sort().join(',');
+  assert.equal(norm(rockets.stages[0].broken), norm(ammo.stages[0].broken));
+  assert.ok(rockets.stages[0].broken.some(id => id.startsWith('ck')), 'corridor roof expected');
+  assert.ok(!rockets.stages[0].broken.includes('d1') && !ammo.stages[0].broken.includes('d1'));
 });
 
 

@@ -116,6 +116,12 @@ function placeDeployable(parent: Placed, d: Deployable): Transform {
   if (d.attach.socket === 'opening') {
     return { position: [px, py, pz], rotation: parent.rotation, level: parent.level };
   }
+  if (d.attach.socket === 'face') {
+    // дроп-бокс: на стене, смещение вдоль стены и по высоте; поворот = нормаль стены
+    const [along, height] = d.offset ?? [0, 1.3];
+    const [cx, cz] = dir(parent.rotation);
+    return { position: [px - along * cz, py + height, pz + along * cx], rotation: parent.rotation, level: parent.level };
+  }
   const [ox, oz] = d.offset ?? [0, 0];
   const [cx, cz] = dir(parent.rotation);
   // R(rot) · offset: локальный +x → (cx, cz), локальный +z → (-cz, cx)
@@ -247,6 +253,11 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
         issues.push(err('V04', d.id, `Шкаф ставится только на top фундамента или пола, а не на ${parent.kind}`));
         continue;
       }
+    } else if (d.kind === 'drop-box') {
+      if (d.attach.socket !== 'face' || info.category !== 'wallType' || info.opening || parent.kind === 'low-wall') {
+        issues.push(err('V04', d.id, `Дроп-бокс вешается только на грань стены, а не на ${parent.kind}`));
+        continue;
+      }
     } else {
       if (d.attach.socket !== 'opening' || !info.opening) {
         issues.push(err('V04', d.id, `Дверь ставится только в opening проёма, а не в ${parent.kind}.${d.attach.socket}`));
@@ -261,7 +272,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
     }
     const t = placeDeployable(placed.get(parent.id)!, d);
     resolved.deployables.push({
-      id: d.id, kind: d.kind, parent: parent.id, hinge: d.hinge ?? 'left', opens: d.opens ?? 'outward', open: d.open === true,
+      id: d.id, kind: d.kind, parent: parent.id, hinge: d.hinge ?? 'left', opens: d.opens ?? 'outward', open: d.open === true, direction: d.direction,
       position: t.position.map(round3) as [number, number, number],
       rotation: round3(norm360(t.rotation)), level: t.level,
     } satisfies ResolvedDeployable);

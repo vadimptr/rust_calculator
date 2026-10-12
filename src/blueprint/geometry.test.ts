@@ -162,3 +162,25 @@ test('window insert fits a window frame only', () => {
   const bad = resolveBlueprint({ ...bp, deployables: [{ id: 'd', kind: 'wooden-door', attach: { to: 'win', socket: 'opening' } }] });
   assert.ok(bad.issues.some(i => i.code === 'V11'));
 });
+
+test('drop-box: placed on a wall face with along/height offset, direction kept; rejected on openings and low walls', () => {
+  const bp: Blueprint = { formatVersion: '1.0', meta: { name: 'x' }, elements: [
+    { id: 'f1', kind: 'square-foundation', root: true },
+    { id: 'w', kind: 'wall', attach: { to: 'f1', socket: 'edge:1' } },
+    { id: 'd', kind: 'doorway', attach: { to: 'f1', socket: 'edge:0' } },
+    { id: 'lw', kind: 'low-wall', attach: { to: 'f1', socket: 'edge:2' } },
+  ], deployables: [
+    { id: 'out', kind: 'drop-box', attach: { to: 'w', socket: 'face' }, offset: [-0.8, 1.3], direction: 'out' },
+    { id: 'in', kind: 'drop-box', attach: { to: 'w', socket: 'face' }, offset: [0.8, 1.3], direction: 'in' },
+  ] };
+  const { resolved, issues } = resolveBlueprint(bp);
+  assert.deepEqual(issues.filter(i => i.level === 'error'), []);
+  const out = resolved.deployables.find(d => d.id === 'out')!;
+  // стена на edge:1: позиция (0,0,1.5), поворот 90, вдоль стены — ось −x
+  near(out.position, [0.8, 1.3, 1.5]); angleEq(out.rotation, 90);
+  assert.equal(out.direction, 'out');
+  const bad1 = resolveBlueprint({ ...bp, deployables: [{ id: 'b', kind: 'drop-box', attach: { to: 'd', socket: 'face' }, direction: 'in' }] });
+  assert.ok(bad1.issues.some(i => i.code === 'V04'));
+  const bad2 = resolveBlueprint({ ...bp, deployables: [{ id: 'b', kind: 'drop-box', attach: { to: 'lw', socket: 'face' }, direction: 'in' }] });
+  assert.ok(bad2.issues.some(i => i.code === 'V04'));
+});

@@ -33,9 +33,10 @@ export type DeployableKind =
   | 'armored-double-door'
   | 'strengthened-glass-window'
   | 'reinforced-glass-window'
-  | 'metal-window-bars';
+  | 'metal-window-bars'
+  | 'drop-box';
 
-export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening';
+export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face';
 
 export interface Attach {
   to: string;
@@ -58,8 +59,11 @@ export interface Element {
 export interface Deployable {
   id: string;
   kind: DeployableKind;
-  attach: { to: string; socket: 'top' | 'opening' };
+  attach: { to: string; socket: 'top' | 'opening' | 'face' };
+  /** Шкаф: [x, z] от центра ячейки; дроп-бокс: [вдоль стены, высота]. */
   offset?: [number, number];
+  /** Дроп-бокс: out — изнутри наружу (по нормали стены), in — снаружи внутрь. */
+  direction?: 'in' | 'out';
   rotation?: number;
   hinge?: 'left' | 'right';
   opens?: 'outward' | 'inward';
@@ -106,6 +110,7 @@ export interface ResolvedDeployable extends Transform {
   hinge: 'left' | 'right';
   opens: 'outward' | 'inward';
   open: boolean;
+  direction?: 'in' | 'out';
 }
 
 export interface Resolved {

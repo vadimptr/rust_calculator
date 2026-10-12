@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
 import type { CameraMode } from './Viewer3D';
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
-import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
+import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import { buildSpaceGraph, spacesValue } from '../blueprint/raid.ts';
@@ -49,7 +49,39 @@ const KIND_LABELS: Record<string, string> = {
   'strengthened-glass-window': 'Укреплённое стекло',
   'reinforced-glass-window': 'Усиленное стекло',
   'metal-window-bars': 'Металлическая решётка',
+  'drop-box': 'Дроп-бокс',
 };
+
+/** Переопределение материала и дверей поверх чертежа. */
+type GradeChoice = 'blueprint' | 'wood' | 'stone' | 'metal' | 'armored';
+type DoorChoice = 'blueprint' | 'wooden' | 'metal' | 'armored' | 'garage';
+const GRADE_CHOICES: { id: GradeChoice; label: string }[] = [
+  { id: 'blueprint', label: 'Как в чертеже' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' }, { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' },
+];
+const DOOR_CHOICES: { id: DoorChoice; label: string }[] = [
+  { id: 'blueprint', label: 'Как в чертеже' }, { id: 'wooden', label: 'Деревянные' }, { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'garage', label: 'Гаражки' },
+];
+const SINGLE_BY_CHOICE: Record<Exclude<DoorChoice, 'blueprint'>, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
+const FRAME_BY_CHOICE: Record<Exclude<DoorChoice, 'blueprint'>, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
+const SINGLE_DOOR_KINDS = ['wooden-door', 'sheet-metal-door', 'armored-door'];
+const FRAME_DOOR_KINDS = ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'];
+
+/** Применить переопределения к документу: материал всех элементов и тип всех дверей. */
+function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): unknown {
+  if (grade === 'blueprint' && door === 'blueprint') return data;
+  const doc = JSON.parse(JSON.stringify(data)) as { defaults?: { grade?: string }; elements?: { grade?: string }[]; deployables?: { kind: string }[] };
+  if (grade !== 'blueprint') {
+    doc.defaults = { ...(doc.defaults ?? {}), grade };
+    for (const el of doc.elements ?? []) if (el.grade) el.grade = grade;
+  }
+  if (door !== 'blueprint') {
+    for (const d of doc.deployables ?? []) {
+      if (SINGLE_DOOR_KINDS.includes(d.kind)) d.kind = SINGLE_BY_CHOICE[door];
+      else if (FRAME_DOOR_KINDS.includes(d.kind)) d.kind = FRAME_BY_CHOICE[door];
+    }
+  }
+  return doc;
+}
 
 /** В рейде пол ломают сверху, поэтому называем его потолком. */
 const RAID_KIND_LABELS: Record<string, string> = {
@@ -64,12 +96,13 @@ const GRADE_LABELS: Record<string, string> = {
 
 interface Source {
   label: string;
-  result: LoadResult;
+  /** Исходный документ (объект) — для повторной загрузки с переопределениями. */
+  data: unknown;
 }
 
 function fromPreset(id: string): Source {
   const p = BLUEPRINT_PRESETS.find(x => x.id === id) ?? BLUEPRINT_PRESETS[0];
-  return { label: p.label, result: loadBlueprint(p.data) };
+  return { label: p.label, data: p.data };
 }
 
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
@@ -88,6 +121,11 @@ const BlueprintSection: React.FC = () => {
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
+  const [gradeChoice, setGradeChoice] = useState<GradeChoice>('blueprint');
+  const [doorChoice, setDoorChoice] = useState<DoorChoice>('blueprint');
+
+  // Документ с переопределениями → схема → геометрия
+  const result: LoadResult = useMemo(() => loadBlueprint(applyOverrides(source.data, gradeChoice, doorChoice)), [source, gradeChoice, doorChoice]);
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -100,12 +138,14 @@ const BlueprintSection: React.FC = () => {
     if (!file) return;
     const text = await file.text();
     setActivePreset(null);
-    setSource({ label: file.name, result: parseBlueprint(text) });
+    let data: unknown = null;
+    try { data = JSON.parse(text); } catch { data = { __invalid: text }; }
+    setSource({ label: file.name, data });
     setRaidPlay(0);
     e.target.value = '';
   };
 
-  const { blueprint, resolved, issues } = source.result;
+  const { blueprint, resolved, issues } = result;
 
   // Рейд считается на лету: симуляция по этапам — залп, убрать погибшее, пересчитать доступное, и так до шкафа
   const raid = useMemo(() => {
@@ -194,6 +234,22 @@ const BlueprintSection: React.FC = () => {
             <input type="checkbox" checked={doorsOpen} onChange={e => setDoorsOpen(e.target.checked)} />
             Открыть двери
           </label>
+        </div>
+        <div className="bp__upload bp__overrides">
+          <span className="bp__override-label">Материал</span>
+          <div className="bp__presets" role="group" aria-label="Материал конструкций">
+            {GRADE_CHOICES.map(c => (
+              <button key={c.id} type="button" className={`raid-tier__btn raid-tier__btn--sm${c.id === gradeChoice ? ' raid-tier__btn--active' : ''}`}
+                onClick={() => { setGradeChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === gradeChoice}>{c.label}</button>
+            ))}
+          </div>
+          <span className="bp__override-label">Двери</span>
+          <div className="bp__presets" role="group" aria-label="Тип дверей">
+            {DOOR_CHOICES.map(c => (
+              <button key={c.id} type="button" className={`raid-tier__btn raid-tier__btn--sm${c.id === doorChoice ? ' raid-tier__btn--active' : ''}`}
+                onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice}>{c.label}</button>
+            ))}
+          </div>
           <button type="button" className="bp__upload-btn" onClick={() => fileRef.current?.click()}>
             Загрузить JSON
           </button>

@@ -26,7 +26,7 @@ export interface ExplosiveSpec {
 }
 
 const doorTable = (wood: number, sheet: number, garage: number, armored: number, glass: number, bars: number): Record<DeployableKind, number> => ({
-  'tool-cupboard': 0,
+  'tool-cupboard': 0, 'drop-box': 0,
   'wooden-door': wood, 'wooden-double-door': wood,
   'sheet-metal-door': sheet, 'sheet-metal-double-door': sheet,
   'garage-door': garage,
@@ -266,7 +266,7 @@ export function moveOnSurface(t: SplashTarget, p: Vec3, du: number, dv: number):
 export function allSplashTargets(resolved: Resolved): SplashTarget[] {
   const ids = [
     ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
-    ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
+    ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && d.kind !== 'drop-box').map(d => d.id),
   ];
   return splashTargets(resolved, ids);
 }
@@ -345,7 +345,9 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
     const z = la[2] + (lb[2] - la[2]) * t;
     // стена-преграда: низ с допуском GRAZE (стена, стоящая на крыше, не закрывает плиты вокруг своего
     // низа), верх — полный, чтобы снаружи вдоль стены не достать до кромки потолка
-    return y >= GRAZE && y <= (o.height ?? 3) - GRAZE && Math.abs(z) <= 1.5 - MARGIN;
+    // низ стены почти без допуска: иначе луч снаружи проскальзывал под стеной второго этажа к плитам
+    // пола за ней; верх — с допуском GRAZE для лучей из-под уровня крыши
+    return y >= GRAZE_BOTTOM && y <= (o.height ?? 3) - GRAZE && Math.abs(z) <= 1.5 - MARGIN;
   }
   if ((la[1] > 1e-6 && lb[1] > 1e-6) || (la[1] < -1e-6 && lb[1] < -1e-6)) return false;
   if (Math.abs(lb[1] - la[1]) < 1e-9) return false;
@@ -364,6 +366,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder, endExempt = true):
 /** Запас плиты для лучей вниз (закрывает швы) и допуск кромки для лучей вверх. */
 const SEAM = 0.05;
 const GRAZE = 0.02;
+const GRAZE_BOTTOM = 0.005;
 
 /** Преграды из геометрии: стены-типы и ячейки. Проёмы без живой двери и низкие стены не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
@@ -406,15 +409,35 @@ function visibleImpact(c: Vec3, eye: Vec3, owner: SplashTarget, occ: Occluder[])
   // точка должна быть с той же стороны элемента, что и рейдер
   const side = (p: Vec3) => { const l = toLocal(owner.origin, owner.rotation, p); return Math.sign(owner.axis === 'x' ? l[0] : l[1]); };
   const eyeSide = side(eye);
-  const clear = (p: Vec3) => (eyeSide === 0 || side(p) === eyeSide) && !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o));
+  // для видимости конец отрезка не исключается: точка за самой стеной невидима
+  const clear = (p: Vec3) => (eyeSide === 0 || side(p) === eyeSide) && !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o, false));
   const full = nudgeTowards(c, eye, owner.center);
   if (clear(full)) return full;
   const plain = nudgeTowards(c, eye);
   return clear(plain) ? plain : null;
 }
 
-/** Урон единицы ex в точке p по всем целям с учётом преград; owner — цель, на поверхности которой точка. */
-function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[]): Record<string, number> {
+/** Радиус контакта: элемент, чья ближайшая точка не дальше этого от точки на поверхности, касается взрыва. */
+const CONTACT = 0.15;
+
+/** Сторона точки относительно плоскости цели: +1 по нормали (x) или сверху (y), −1 иначе. */
+function sideOf(t: SplashTarget, p: Vec3): number {
+  const l = toLocal(t.origin, t.rotation, p);
+  return Math.sign(t.axis === 'x' ? l[0] : l[1]);
+}
+
+/**
+ * Урон единицы ex в точке p по всем целям; owner — цель, на поверхности которой точка (raw — точка
+ * до сдвига). Цель задета, если (1) отрезок от взрыва до её ближайшей точки не пересекает целую
+ * преграду, либо (2) правило контакта: цель касается точки удара (ближайшая точка не дальше CONTACT
+ * от raw), открыта рейдеру (есть в exposure) и взрыв с той стороны, с которой к ней есть доступ.
+ * Так удар в угловую колонну задевает все открытые конструкции, сходящиеся в ней, но не скрытые за
+ * стеной проёмы и не потолки, к которым рейдер стоит снизу.
+ */
+function damageMap(
+  ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[],
+  contact?: { raw: Vec3; exposure: Map<string, Vec3> },
+): Record<string, number> {
   const damage: Record<string, number> = {};
   if (!EXPLOSIVES[ex].area) {
     // контактная взрывчатка: только блок, на который поставлена
@@ -427,7 +450,13 @@ function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashT
       const q = nearestPoint(p, t);
       // плиты одной плоскости друг друга не закрывают: взрыв над ними достаёт все плиты угла
       const coplanarSlab = (o: Occluder) => o.kind === 'cell' && t.axis === 'y' && Math.abs(o.origin[1] - (t.origin[1] + FLOOR_MID)) < 1e-6;
-      if (occ.some(o => o.id !== t.carrierId && !coplanarSlab(o) && segmentBlocked(p, q, o))) dmg = 0;
+      const blocked = occ.some(o => o.id !== t.carrierId && !coplanarSlab(o) && segmentBlocked(p, q, o));
+      if (blocked) {
+        const eye = contact?.exposure.get(t.id);
+        const touching = contact && eye && dist(contact.raw, nearestPoint(contact.raw, t)) <= CONTACT
+          && sideOf(t, p) !== 0 && sideOf(t, p) === sideOf(t, eye);
+        if (!touching) dmg = 0;
+      }
     }
     if (dmg > 0) damage[t.id] = dmg;
   }
@@ -435,7 +464,7 @@ function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashT
 }
 
 function liveOccluders(resolved: Resolved, broken: Set<string>, byId: Map<string, SplashTarget>): Occluder[] {
-  const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !broken.has(d.id)).map(d => d.parent));
+  const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && d.kind !== 'drop-box' && !broken.has(d.id)).map(d => d.parent));
   const brokenCarriers = new Set([...broken].map(id => byId.get(id)?.carrierId ?? id));
   return occluders(resolved, liveDoorCarriers).filter(o => !broken.has(o.id) && (!brokenCarriers.has(o.id) || liveDoorCarriers.has(o.id)));
 }
@@ -472,6 +501,7 @@ export type Strategy = 'value' | 'progress' | 'destruction';
 export function simulateRaid(
   resolved: Resolved, graph: SpaceGraph, targetCell: string, allowed: Explosive[], strategy: Strategy = 'value', maxStages = 80,
   onCandidate?: (stage: number, c: { shot: SplashShot; sulfur: number; valueGain: number; progress: number; brokenNow: string[] }) => void,
+  onPre?: (stage: number, shot: SplashShot, pre: number[], ownerId: string) => void,
 ): RaidSimulation {
   const targets = allSplashTargets(resolved);
   const byId = new Map(targets.map(t => [t.id, t]));
@@ -497,6 +527,7 @@ export function simulateRaid(
   while (!reachable.has(targetCell) && stages.length < maxStages) {
     const occ = liveOccluders(resolved, broken, byId);
     const front = frontier(graph, reachable).filter(f => !broken.has(f.id));
+    const exposure = new Map(front.map(f => [f.id, f.from]));
     type Cand = { shot: SplashShot; brokenNow: string[]; opened: string[]; sulfur: number; valueGain: number; progress: number };
     const bestRef: { c: Cand | null } = { c: null };
     const live = targets.filter(t => !broken.has(t.id));
@@ -555,7 +586,7 @@ export function simulateRaid(
       if (!point) return [];
       const shots: SplashShot[] = [];
       for (const ex of allowed) {
-        const damage = damageMap(ex, point, owner, live, occ);
+        const damage = damageMap(ex, point, owner, live, occ, { raw: c, exposure });
         // варианты залпа: одна единица и каждый порог, на котором гибнет очередной задетый элемент
         const needs = Object.entries(damage).map(([id, dmg]) => Math.ceil((hpLeft.get(id) ?? 0) / dmg - 1e-9)).filter(n => n > 0);
         if (needs.length === 0) continue;
@@ -573,7 +604,7 @@ export function simulateRaid(
         const k = c.map(v => v.toFixed(2)).join('|');
         if (seenPts.has(k)) continue;
         seenPts.add(k);
-        for (const shot of makeShots(owner, c, f.from)) pres.push({ shot, owner, eye: f.from, pre: preKey(shot) });
+        for (const shot of makeShots(owner, c, f.from)) { const pre = preKey(shot); onPre?.(stages.length, shot, pre, owner.id); pres.push({ shot, owner, eye: f.from, pre }); }
       }
     }
     // отбор по группам «взрывчатка × класс залпа», чтобы дорогую оценку получили все классы
