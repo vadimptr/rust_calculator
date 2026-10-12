@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
-import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
 export const GRADE_COLORS: Record<Grade, number> = {
@@ -15,22 +15,6 @@ export const GRADE_COLORS: Record<Grade, number> = {
   metal: 0x9a4f2a,
   armored: 0x2a2c2e,
 };
-
-/** Конструкции разных типов из одного материала различаются оттенком: стены темнее, проёмы светлее. */
-export const KIND_TINT: Partial<Record<ElementKind, number>> = {
-  'square-foundation': -0.12, 'triangle-foundation': -0.12,
-  'square-floor': 0.1, 'triangle-floor': 0.1, 'floor-frame': 0.16, 'triangle-floor-frame': 0.16,
-  'wall': 0, 'half-wall': -0.05, 'low-wall': -0.08,
-  'doorway': 0.14, 'window-frame': 0.14, 'wall-frame': 0.14,
-  'stairs-l-shape': -0.06, 'u-shaped-stairs': -0.06,
-  'roof': 0.06, 'roof-triangle': 0.06,
-};
-
-function tint(color: number, k: number): number {
-  const c = new THREE.Color(color);
-  if (k >= 0) c.lerp(new THREE.Color(0xffffff), k); else c.lerp(new THREE.Color(0x000000), -k);
-  return c.getHex();
-}
 
 /** Двери: деревянная светло-коричневая, металлическая ржавая, МВК тёмно-серая; дроп-бокс синий. */
 const DOOR_COLORS: Record<DeployableKind, number> = {
@@ -336,7 +320,7 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 
 export function buildElement(el: ResolvedElement): THREE.Object3D {
   const g = new THREE.Group();
-  const color = tint(GRADE_COLORS[el.grade], KIND_TINT[el.kind] ?? 0);
+  const color = GRADE_COLORS[el.grade];
   for (const part of elementParts(el)) g.add(withEdges(part, color));
   g.userData = { id: el.id, kind: el.kind };
   return place(g, el.position, el.rotation);

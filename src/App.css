@@ -1479,3 +1479,37 @@
   letter-spacing: 0.08em;
   color: var(--text-muted);
 }
+
+.bp__icons {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.bp__icon-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.bp__icon-btn img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.bp__icon-btn:hover {
+  border-color: var(--text-secondary);
+}
+
+.bp__icon-btn--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.18);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}

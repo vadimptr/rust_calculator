@@ -52,33 +52,54 @@ const KIND_LABELS: Record<string, string> = {
   'drop-box': 'Дроп-бокс',
 };
 
-/** Переопределение материала и дверей поверх чертежа. */
-type GradeChoice = 'blueprint' | 'wood' | 'stone' | 'metal' | 'armored';
-type DoorChoice = 'blueprint' | 'wooden' | 'metal' | 'armored' | 'garage';
-const GRADE_CHOICES: { id: GradeChoice; label: string }[] = [
-  { id: 'blueprint', label: 'Как в чертеже' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' }, { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' },
+/** Переопределение материала и дверей поверх чертежа; иконки как в разделе строительства. */
+type GradeChoice = 'wood' | 'stone' | 'metal' | 'armored';
+type DoorChoice = 'wooden' | 'metal' | 'armored' | 'garage';
+const GRADE_CHOICES: { id: GradeChoice; label: string; img: string }[] = [
+  { id: 'wood', label: 'Дерево', img: '/icons/wood.png' },
+  { id: 'stone', label: 'Камень', img: '/icons/stones.png' },
+  { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
+  { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
 ];
-const DOOR_CHOICES: { id: DoorChoice; label: string }[] = [
-  { id: 'blueprint', label: 'Как в чертеже' }, { id: 'wooden', label: 'Деревянные' }, { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'garage', label: 'Гаражки' },
+const DOOR_CHOICES: { id: DoorChoice; label: string; color: string; wide?: boolean }[] = [
+  { id: 'wooden', label: 'Деревянные двери', color: '#b98a5a' },
+  { id: 'metal', label: 'Металлические двери', color: '#a85a2e' },
+  { id: 'armored', label: 'Двери из МВК', color: '#5a5e66' },
+  { id: 'garage', label: 'Гаражные двери (в рамах)', color: '#a85a2e', wide: true },
 ];
-const SINGLE_BY_CHOICE: Record<Exclude<DoorChoice, 'blueprint'>, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
-const FRAME_BY_CHOICE: Record<Exclude<DoorChoice, 'blueprint'>, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
+const SINGLE_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
+const FRAME_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
+
+/** Иконка двери: одиночная створка или широкая гаражная с ламелями. */
+const DoorIcon: React.FC<{ color: string; wide?: boolean }> = ({ color, wide }) => (
+  <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+    {wide ? (
+      <>
+        <rect x="2" y="5" width="22" height="17" rx="1.5" fill={color} stroke="#1a1410" strokeWidth="1" />
+        <line x1="2" y1="10" x2="24" y2="10" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
+        <line x1="2" y1="14" x2="24" y2="14" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
+        <line x1="2" y1="18" x2="24" y2="18" stroke="#1a1410" strokeWidth="1" opacity="0.6" />
+      </>
+    ) : (
+      <>
+        <rect x="7" y="3" width="12" height="20" rx="1.5" fill={color} stroke="#1a1410" strokeWidth="1" />
+        <circle cx="16" cy="13.5" r="1.3" fill="#1a1410" />
+      </>
+    )}
+  </svg>
+);
 const SINGLE_DOOR_KINDS = ['wooden-door', 'sheet-metal-door', 'armored-door'];
 const FRAME_DOOR_KINDS = ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'];
 
 /** Применить переопределения к документу: материал всех элементов и тип всех дверей. */
 function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): unknown {
-  if (grade === 'blueprint' && door === 'blueprint') return data;
+  if (!data || typeof data !== 'object') return data;
   const doc = JSON.parse(JSON.stringify(data)) as { defaults?: { grade?: string }; elements?: { grade?: string }[]; deployables?: { kind: string }[] };
-  if (grade !== 'blueprint') {
-    doc.defaults = { ...(doc.defaults ?? {}), grade };
-    for (const el of doc.elements ?? []) if (el.grade) el.grade = grade;
-  }
-  if (door !== 'blueprint') {
-    for (const d of doc.deployables ?? []) {
-      if (SINGLE_DOOR_KINDS.includes(d.kind)) d.kind = SINGLE_BY_CHOICE[door];
-      else if (FRAME_DOOR_KINDS.includes(d.kind)) d.kind = FRAME_BY_CHOICE[door];
-    }
+  doc.defaults = { ...(doc.defaults ?? {}), grade };
+  for (const el of doc.elements ?? []) if (el.grade) el.grade = grade;
+  for (const d of doc.deployables ?? []) {
+    if (SINGLE_DOOR_KINDS.includes(d.kind)) d.kind = SINGLE_BY_CHOICE[door];
+    else if (FRAME_DOOR_KINDS.includes(d.kind)) d.kind = FRAME_BY_CHOICE[door];
   }
   return doc;
 }
@@ -121,8 +142,8 @@ const BlueprintSection: React.FC = () => {
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
-  const [gradeChoice, setGradeChoice] = useState<GradeChoice>('blueprint');
-  const [doorChoice, setDoorChoice] = useState<DoorChoice>('blueprint');
+  const [gradeChoice, setGradeChoice] = useState<GradeChoice>('stone');
+  const [doorChoice, setDoorChoice] = useState<DoorChoice>('metal');
 
   // Документ с переопределениями → схема → геометрия
   const result: LoadResult = useMemo(() => loadBlueprint(applyOverrides(source.data, gradeChoice, doorChoice)), [source, gradeChoice, doorChoice]);
@@ -237,17 +258,21 @@ const BlueprintSection: React.FC = () => {
         </div>
         <div className="bp__upload bp__overrides">
           <span className="bp__override-label">Материал</span>
-          <div className="bp__presets" role="group" aria-label="Материал конструкций">
+          <div className="bp__icons" role="group" aria-label="Материал конструкций">
             {GRADE_CHOICES.map(c => (
-              <button key={c.id} type="button" className={`raid-tier__btn raid-tier__btn--sm${c.id === gradeChoice ? ' raid-tier__btn--active' : ''}`}
-                onClick={() => { setGradeChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === gradeChoice}>{c.label}</button>
+              <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
+                onClick={() => { setGradeChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
+                <img src={c.img} alt="" />
+              </button>
             ))}
           </div>
           <span className="bp__override-label">Двери</span>
-          <div className="bp__presets" role="group" aria-label="Тип дверей">
+          <div className="bp__icons" role="group" aria-label="Тип дверей">
             {DOOR_CHOICES.map(c => (
-              <button key={c.id} type="button" className={`raid-tier__btn raid-tier__btn--sm${c.id === doorChoice ? ' raid-tier__btn--active' : ''}`}
-                onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice}>{c.label}</button>
+              <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
+                onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice} aria-label={c.label}>
+                <DoorIcon color={c.color} wide={c.wide} />
+              </button>
             ))}
           </div>
           <button type="button" className="bp__upload-btn" onClick={() => fileRef.current?.click()}>
