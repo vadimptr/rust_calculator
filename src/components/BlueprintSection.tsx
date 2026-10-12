@@ -5,9 +5,9 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint, parseBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { raidAlternatives, raidPolyline } from '../blueprint/raid.ts';
+import { bestRaid, raidAlternatives, raidPolyline } from '../blueprint/raid.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { planRocketSplash, volleyAlternatives } from '../blueprint/splash.ts';
+import { EXPLOSIVES, METHOD_EXPLOSIVES, planSplash, volleyAlternatives } from '../blueprint/splash.ts';
 import type { RaidStep } from '../blueprint/raid.ts';
 import { EXPLOSIVE_SHORT_LABELS } from '../data/raidData.ts';
 import type { RaidMethod } from '../types';
@@ -89,13 +89,10 @@ const BlueprintSection: React.FC = () => {
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
-  const [altIndex, setAltIndex] = useState(0);
-  const [altSort, setAltSort] = useState<'cost' | 'opened'>('cost');
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
     setSource(fromPreset(id));
-    setAltIndex(0);
     setRaidPlay(0);
   };
 
@@ -105,65 +102,54 @@ const BlueprintSection: React.FC = () => {
     const text = await file.text();
     setActivePreset(null);
     setSource({ label: file.name, result: parseBlueprint(text) });
-    setAltIndex(0);
     setRaidPlay(0);
     e.target.value = '';
   };
 
   const { blueprint, resolved, issues } = source.result;
 
-  // Варианты рейда считаются на лету: несколько лучших путей до пространства шкафа
+  // Рейд считается на лету: лучший вариант по ценности открытого на единицу серы
   const raid = useMemo(() => {
     if (!blueprint || !resolved) return null;
     const tc = resolved.deployables.find(d => d.kind === 'tool-cupboard');
     const targetCell = tc?.parent ?? blueprint.elements.find(e => e.root)?.id;
     if (!targetCell) return null;
     const targetPos = tc?.position ?? resolved.elements.find(e => e.id === targetCell)!.position;
-    const found = raidAlternatives(
-      resolved, targetCell, raidMethod, ids => planRocketSplash(resolved, ids), 8,
-      (graph, initially, target) => volleyAlternatives(resolved, graph, initially, target),
+    const allowed = METHOD_EXPLOSIVES[raidMethod];
+    const alternatives = raidAlternatives(
+      resolved, targetCell, raidMethod,
+      ids => planSplash(resolved, ids, allowed),
+      (graph, initially, target) => volleyAlternatives(resolved, graph, initially, target, allowed),
     );
-    if (found.length === 0) return null;
-    const cost = (a: typeof found[number]) => (a.rockets !== undefined ? a.rockets * 1400 : a.path.sulfur);
-    const alternatives = altSort === 'opened'
-      ? [...found].sort((a, b) => b.value - a.value || cost(a) - cost(b))
-      : found;
-    // лучший по полостям: наибольшая ценность открытого, при равенстве дешевле
-    const bestOpened = [...found].sort((a, b) => b.value - a.value || cost(a) - cost(b))[0];
-    return { alternatives, targetPos, bestOpened };
-  }, [blueprint, resolved, raidMethod, altSort]);
+    const best = bestRaid(alternatives);
+    if (!best) return null;
+    return { best, targetPos, considered: alternatives.length };
+  }, [blueprint, resolved, raidMethod]);
 
-  const alt = raid ? raid.alternatives[Math.min(altIndex, raid.alternatives.length - 1)] : null;
+  const alt = raid?.best ?? null;
   const activePath = alt?.path ?? null;
-
-  const splash = useMemo(() => {
-    if (!resolved || !activePath || raidMethod !== 'rocket' || activePath.ids.length === 0 || alt?.volley) return null;
-    return planRocketSplash(resolved, activePath.ids);
-  }, [resolved, activePath, raidMethod, alt]);
 
   const raidView = useMemo<RaidView | null>(() => {
     if (!raidOn || !raid || !activePath || !resolved) return null;
     const view: RaidView = { ids: activePath.ids, line: raidPolyline(resolved, activePath, raid.targetPos) };
-    if (!showImpacts) return view;
-    if (alt?.volley) return { ...view, impacts: [{ point: alt.volley.point, count: alt.volley.count }] };
-    if (!splash) return view;
-    return { ...view, impacts: splash.shots.map(s => ({ point: s.point, count: s.count })) };
-  }, [raidOn, raid, alt, activePath, resolved, splash, showImpacts]);
+    if (!showImpacts || !alt) return view;
+    return { ...view, impacts: alt.shots.map(s => ({ point: s.point, count: s.count })) };
+  }, [raidOn, raid, alt, activePath, resolved, showImpacts]);
 
-  const chooseAlt = (i: number) => { setAltIndex(i); setRaidPlay(0); };
-  /** Бейдж имеет смысл, только если варианты отличаются числом полостей. */
-  const found = (r: { alternatives: { value: number }[] }) => new Set(r.alternatives.map(a => a.value)).size > 1;
   const stepName = (st: RaidStep) => `${raidLabel(st.kind)}${st.grade ? ` (${GRADE_LABELS[st.grade] ?? st.grade})` : ''}`;
   const describeSteps = (steps: RaidStep[]) => (steps.length === 0 ? 'свободный проход' : steps.map(stepName).join(' → '));
-  const describeAlt = (a: { path: { steps: RaidStep[] }; volley?: { count: number; broken: string[] } }) => {
+  const describeAlt = (a: { path: { steps: RaidStep[] }; volley?: { count: number; explosive: string; broken: string[] } }) => {
     if (!a.volley) return describeSteps(a.path.steps);
     const n = a.volley.broken.length;
-    const head = `Залп ×${a.volley.count} в шов: ${a.path.steps.slice(0, n).map(stepName).join(' + ')}`;
+    const head = `Залп в угол/шов: ${a.path.steps.slice(0, n).map(stepName).join(' + ')}`;
     const rest = a.path.steps.slice(n);
     return rest.length ? `${head} → ${describeSteps(rest)}` : head;
   };
+  const describeUnits = (units: Partial<Record<string, number>>) =>
+    Object.entries(units).filter(([, n]) => (n ?? 0) > 0)
+      .map(([ex, n]) => `${EXPLOSIVE_SHORT_LABELS[ex as keyof typeof EXPLOSIVE_SHORT_LABELS] ?? ex} ×${n}`).join(' + ');
 
-  const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); setAltIndex(0); };
+  const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
@@ -276,7 +262,7 @@ const BlueprintSection: React.FC = () => {
                         key={m.id}
                         type="button"
                         className={`raid-tier__btn raid-tier__btn--sm${m.id === raidMethod ? ' raid-tier__btn--active' : ''}`}
-                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); setAltIndex(0); }}
+                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); }}
                         aria-pressed={m.id === raidMethod}
                       >
                         {m.label}
@@ -284,31 +270,15 @@ const BlueprintSection: React.FC = () => {
                     ))}
                   </div>
 
-                  <div className="raid-panel__sort">
-                    <span>Варианты:</span>
-                    <div className="bp__presets" role="group" aria-label="Сортировка вариантов">
-                      {([['cost', 'по цене'], ['opened', 'по ценности']] as const).map(([id, label]) => (
-                        <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${altSort === id ? ' raid-tier__btn--active' : ''}`}
-                          onClick={() => { setAltSort(id); setAltIndex(0); setRaidPlay(0); }} aria-pressed={altSort === id}>
-                          {label}
-                        </button>
-                      ))}
+                  <div className="raid-panel__best">
+                    <div className="raid-panel__best-title">{describeAlt(alt!)}</div>
+                    <div className="raid-panel__best-line">
+                      <b>{formatNum(alt!.sulfur)}</b> серы{alt!.units && Object.keys(alt!.units).length ? <> · {describeUnits(alt!.units)}</> : null}
                     </div>
-                  </div>
-                  <div className="raid-panel__alts" role="radiogroup" aria-label="Варианты пути">
-                    {raid.alternatives.map((a, i) => (
-                      <label key={i} className={`raid-panel__alt${a === alt ? ' raid-panel__alt--active' : ''}`}>
-                        <input type="radio" name="raid-alt" checked={a === alt} onChange={() => chooseAlt(i)} />
-                        <span className="raid-panel__alt-text">
-                          <span className="raid-panel__alt-steps">{describeAlt(a)}</span>
-                          <span className="raid-panel__alt-cost">
-                            {a.rockets !== undefined ? <>{a.rockets} ракет · </> : null}
-                            {formatNum(a.path.sulfur)} серы · открывает {a.opened} {a.opened === 1 ? 'полость' : a.opened < 5 ? 'полости' : 'полостей'} · ценность {a.value}
-                            {a === raid.bestOpened && found(raid) ? <span className="raid-panel__badge">самый выигрышный</span> : null}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
+                    <div className="raid-panel__best-line">
+                      открывает {alt!.opened} {alt!.opened === 1 ? 'полость' : alt!.opened < 5 ? 'полости' : 'полостей'} · ценность {alt!.value}
+                      <span className="raid-panel__sub"> · лучший из {raid.considered} вариантов</span>
+                    </div>
                   </div>
 
                   {activePath && (
@@ -333,26 +303,20 @@ const BlueprintSection: React.FC = () => {
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr><td colSpan={3}>Итого</td><td className="bp__counts-n">{formatNum(activePath.sulfur)}</td></tr>
+                          <tr><td colSpan={3}>Итого со сплешем</td><td className="bp__counts-n">{formatNum(alt!.sulfur)}</td></tr>
                         </tfoot>
                       </table>
                     )
                   )}
 
-                  {splash && (
+                  {alt && alt.shots.length > 0 && (
                     <div className="raid-panel__splash">
-                      <div className="raid-panel__splash-title">Сплеш ракет</div>
-                      <p className="raid-panel__splash-line">
-                        <b>{splash.rockets}</b> ракет вместо {splash.rocketsPerItem} по штукам
-                        {splash.rockets < splash.rocketsPerItem
-                          ? <> · экономия <b>{formatNum((splash.rocketsPerItem - splash.rockets) * 1400)}</b> серы</>
-                          : <> · сплеш не помогает</>}
-                      </p>
+                      <div className="raid-panel__splash-title">Куда стрелять</div>
                       <ul className="raid-panel__shots">
-                        {splash.shots.map((s, i) => (
+                        {alt.shots.map((sh, i) => (
                           <li key={i}>
-                            ×{s.count} в точку {i + 1}:{' '}
-                            {Object.entries(s.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v as number)}`).join(', ')}
+                            {EXPLOSIVES[sh.explosive].label} ×{sh.count} в точку {i + 1}:{' '}
+                            {Object.entries(sh.damage).filter(([, v]) => v > 1).map(([id, v]) => `${id} ${Math.round(v as number)}`).join(', ')}
                           </li>
                         ))}
                       </ul>
@@ -369,7 +333,7 @@ const BlueprintSection: React.FC = () => {
                       <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
                     </div>
                   )}
-                  <p className="raid-panel__hint">Путь ищется по стенам, дверям, полам и крыше; мягкая сторона стен не учитывается. Сплеш считается только для ракет, радиусы приблизительные, закрытые двери и полы его не пропускают.</p>
+                  <p className="raid-panel__hint">Путь ищется по стенам, дверям, полам и крыше; мягкая сторона стен не учитывается. «Оптимально» смешивает ракеты, C4 и разрывные; сплеш у каждого свой, радиусы приблизительные, закрытые двери и полы его не пропускают.</p>
                 </>
               )}
             </section>

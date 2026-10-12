@@ -1,22 +1,72 @@
 /**
- * Сплеш ракет (SPEC §9.4): один взрыв бьёт по всем элементам в радиусе с падением урона.
- * Модель приближённая, константы в одном месте, подлежат замеру в игре.
+ * Сплеш взрывчатки (SPEC §9.4): взрыв бьёт по всем элементам в радиусе с падением урона по
+ * расстоянию до ближайшей точки элемента. Ракеты, C4, разрывные патроны и сачели — у каждой свои
+ * урон, радиусы и цена в сере. Модель приближённая, константы в одном месте, подлежат замеру.
  */
 import { KINDS, cellVertices, wallHeight } from './catalog.ts';
+import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 import { cheapestFrom, frontier, reachableSpaces, spacesValue, stepCost } from './raid.ts';
 import type { RaidAlternative, RaidStep, SpaceGraph } from './raid.ts';
-import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { ExplosiveType } from '../types/index.ts';
 
-export const ROCKET = {
-  /** Урон по строительному блоку при прямом попадании (≈137.7 даёт 4 ракеты на каменную стену). */
-  blockDamage: 137.7,
-  /** Урон по двери и вставке в окно: двери ломаются быстрее (1 ракета на деревянную, 2 на металлическую). */
-  doorDamage: 210,
-  /** Полный урон в этом радиусе от центра взрыва до ближайшей точки элемента. */
-  fullRadius: 1.0,
-  /** Дальше этого радиуса урона нет; между радиусами — линейное падение. */
-  maxRadius: 3.8,
-  sulfur: 1400,
+export type Explosive = ExplosiveType;
+
+export interface ExplosiveSpec {
+  label: string;
+  /** Урон по строительному блоку по материалу при прямом попадании. */
+  block: Record<Grade, number>;
+  /** Урон по дверям по виду и по вставкам в окна. */
+  door: Record<DeployableKind, number>;
+  /** Полный урон в этом радиусе (до ближайшей точки элемента), дальше линейное падение до maxRadius. */
+  fullRadius: number;
+  maxRadius: number;
+  sulfur: number;
+}
+
+const doorTable = (wood: number, sheet: number, garage: number, armored: number, glass: number, bars: number): Record<DeployableKind, number> => ({
+  'tool-cupboard': 0,
+  'wooden-door': wood, 'wooden-double-door': wood,
+  'sheet-metal-door': sheet, 'sheet-metal-double-door': sheet,
+  'garage-door': garage,
+  'armored-door': armored, 'armored-double-door': armored,
+  'strengthened-glass-window': glass, 'reinforced-glass-window': bars, 'metal-window-bars': bars,
+});
+
+/** Константы подобраны так, чтобы число единиц на блок совпадало с таблицей рейда 2026-09. */
+export const EXPLOSIVES: Record<Explosive, ExplosiveSpec> = {
+  rocket: {
+    label: 'Ракета',
+    block: { twig: 10, wood: 137.7, stone: 137.7, metal: 137.7, armored: 137.7 },
+    door: doorTable(210, 210, 210, 210, 137.7, 137.7),
+    fullRadius: 1.0, maxRadius: 3.8, sulfur: 1400,
+  },
+  c4: {
+    label: 'C4',
+    block: { twig: 10, wood: 275, stone: 275, metal: 275, armored: 275 },
+    door: doorTable(350, 350, 350, 350, 275, 275),
+    fullRadius: 0.5, maxRadius: 1.5, sulfur: 2200,
+  },
+  explosiveAmmo: {
+    label: 'Разрывной патрон',
+    block: { twig: 10, wood: 5.11, stone: 2.703, metal: 2.5, armored: 2.504 },
+    door: doorTable(11.12, 3.97, 4, 4, 2.5, 2.5),
+    fullRadius: 0.1, maxRadius: 0.5, sulfur: 25,
+  },
+  satchel: {
+    label: 'Сачель',
+    block: { twig: 10, wood: 83.4, stone: 50, metal: 43.5, armored: 43.5 },
+    door: doorTable(100, 62.5, 66.7, 66.7, 40, 43.5),
+    fullRadius: 0.5, maxRadius: 2.0, sulfur: 480,
+  },
+};
+
+/** Наборы для методов рейда: «оптимально» — ракеты, C4 и разрывные вперемешку. */
+export const METHOD_EXPLOSIVES: Record<'optimal' | Explosive, Explosive[]> = {
+  optimal: ['rocket', 'c4', 'explosiveAmmo'],
+  rocket: ['rocket'],
+  c4: ['c4'],
+  explosiveAmmo: ['explosiveAmmo'],
+  satchel: ['satchel'],
 };
 
 export const BLOCK_HP: Record<Grade, number> = { twig: 10, wood: 250, stone: 500, metal: 1000, armored: 2000 };
@@ -35,65 +85,67 @@ export interface SplashTarget {
   id: string;
   kind: string;
   hp: number;
+  /** Урон при прямом попадании по типу взрывчатки. */
+  hit: Record<Explosive, number>;
   /** Элемент-носитель: для стены — она сама, для двери и вставки — её проём. */
   carrierId: string;
-  /** Положение и поворот носителя. */
   origin: Vec3;
   rotation: number;
   /** Ось нормали носителя: x у стен и дверей, y у полов. */
   axis: 'x' | 'y';
-  /** Центр элемента в мире. */
   center: Vec3;
-  /** Поверхность в локальной системе носителя: вертикальный прямоугольник (стена, дверь) или полигон пола. */
+  /** Поверхность в локальной системе носителя. */
   surface: { kind: 'rect'; w: number; h: number; y0: number } | { kind: 'poly'; polygon: [number, number][] };
-  /** Урон от прямого попадания. */
-  hitDamage: number;
-  /** Точки-кандидаты для удара (на поверхности элемента: центр, края, углы). */
+  /** Точки-кандидаты для удара на поверхности: центр, края, углы. */
   candidates: Vec3[];
 }
 
 export interface SplashShot {
   point: Vec3;
+  explosive: Explosive;
   count: number;
-  /** Урон одной ракеты в этой точке по каждой цели. */
+  /** Урон одной единицы в этой точке по каждой цели. */
   damage: Record<string, number>;
 }
 
 export interface SplashPlan {
   shots: SplashShot[];
-  rockets: number;
+  /** Единиц каждой взрывчатки. */
+  units: Partial<Record<Explosive, number>>;
   sulfur: number;
-  /** Сколько ракет ушло бы «по штукам» на те же цели. */
-  rocketsPerItem: number;
-  /** Итоговый урон по каждой цели. */
+  /** Сера «по штукам» лучшей одиночной взрывчаткой на каждый элемент. */
+  sulfurPerItem: number;
   damageTaken: Record<string, number>;
 }
 
 const DEG = Math.PI / 180;
 
-/** Локальная точка (x по нормали, y вверх, z вдоль) → мир. */
 function toWorld(origin: Vec3, rotation: number, local: Vec3): Vec3 {
   const a = rotation * DEG;
   const [lx, ly, lz] = local;
-  return [
-    origin[0] + lx * Math.cos(a) - lz * Math.sin(a),
-    origin[1] + ly,
-    origin[2] + lx * Math.sin(a) + lz * Math.cos(a),
-  ];
+  return [origin[0] + lx * Math.cos(a) - lz * Math.sin(a), origin[1] + ly, origin[2] + lx * Math.sin(a) + lz * Math.cos(a)];
+}
+
+function toLocal(origin: Vec3, rotation: number, p: Vec3): Vec3 {
+  const a = -rotation * DEG;
+  const dx = p[0] - origin[0], dy = p[1] - origin[1], dz = p[2] - origin[2];
+  return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
 function dist(a: Vec3, b: Vec3): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
-/** Доля урона по расстоянию от взрыва до центра цели. */
-export function falloff(d: number): number {
-  if (d <= ROCKET.fullRadius) return 1;
-  if (d >= ROCKET.maxRadius) return 0;
-  return 1 - (d - ROCKET.fullRadius) / (ROCKET.maxRadius - ROCKET.fullRadius);
+function clamp(v: number, lo: number, hi: number): number { return Math.min(hi, Math.max(lo, v)); }
+
+/** Доля урона по расстоянию для данной взрывчатки. */
+export function falloff(ex: Explosive, d: number): number {
+  const { fullRadius, maxRadius } = EXPLOSIVES[ex];
+  if (d <= fullRadius) return 1;
+  if (d >= maxRadius) return 0;
+  return 1 - (d - fullRadius) / (maxRadius - fullRadius);
 }
 
-/** Точки на вертикальном прямоугольнике шириной w и высотой h в локальной системе элемента. */
 function rectPoints(w: number, h: number, y0 = 0): Vec3[] {
   const hw = w / 2;
   return [
@@ -104,13 +156,21 @@ function rectPoints(w: number, h: number, y0 = 0): Vec3[] {
   ];
 }
 
+function hitByGrade(grade: Grade): Record<Explosive, number> {
+  return { rocket: EXPLOSIVES.rocket.block[grade], c4: EXPLOSIVES.c4.block[grade], explosiveAmmo: EXPLOSIVES.explosiveAmmo.block[grade], satchel: EXPLOSIVES.satchel.block[grade] };
+}
+
+function hitByDoor(kind: DeployableKind): Record<Explosive, number> {
+  return { rocket: EXPLOSIVES.rocket.door[kind], c4: EXPLOSIVES.c4.door[kind], explosiveAmmo: EXPLOSIVES.explosiveAmmo.door[kind], satchel: EXPLOSIVES.satchel.door[kind] };
+}
+
 function elementTarget(el: ResolvedElement): SplashTarget | null {
   const info = KINDS[el.kind];
   const hp = BLOCK_HP[el.grade];
   if (info.category === 'wallType') {
     const h = wallHeight(el.kind);
     return {
-      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
+      id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'x',
       surface: { kind: 'rect', w: 3, h, y0: 0 },
       center: [el.position[0], el.position[1] + h / 2, el.position[2]],
       candidates: rectPoints(3, h).map(p => toWorld(el.position, el.rotation, p)),
@@ -122,7 +182,7 @@ function elementTarget(el: ResolvedElement): SplashTarget | null {
     const local: Vec3[] = [[0, 0, 0], [r, 0, 0], [-r, 0, 0], [0, 0, r], [0, 0, -r],
       ...cellVertices(info.shape!).map(([x, z]) => [x, 0, z] as Vec3)];
     return {
-      id: el.id, kind: el.kind, hp, hitDamage: ROCKET.blockDamage, carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
+      id: el.id, kind: el.kind, hp, hit: hitByGrade(el.grade), carrierId: el.id, origin: el.position, rotation: el.rotation, axis: 'y', center: el.position,
       surface: { kind: 'poly', polygon: cellVertices(info.shape!) },
       candidates: local.map(p => toWorld(el.position, el.rotation, p)),
     };
@@ -140,14 +200,13 @@ function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarg
   const hh = isWindow ? 1.3 : d.kind.includes('double') || d.kind === 'garage-door' ? 2.6 : 2.2;
   const w = d.kind.includes('double') || d.kind === 'garage-door' ? 2.7 : isWindow ? 2.2 : 1.3;
   return {
-    id: d.id, kind: d.kind, hp, hitDamage: ROCKET.doorDamage, carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
+    id: d.id, kind: d.kind, hp, hit: hitByDoor(d.kind), carrierId: d.parent, origin: d.position, rotation: d.rotation, axis: 'x',
     surface: { kind: 'rect', w, h: Math.min(hh, h), y0 },
     center: [d.position[0], d.position[1] + y0 + Math.min(hh, h) / 2, d.position[2]],
     candidates: rectPoints(w, hh, y0).map(p => toWorld(d.position, d.rotation, p)),
   };
 }
 
-/** Цели сплеша для списка id (элементы и объекты пути). */
 export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[] {
   const out: SplashTarget[] = [];
   for (const id of ids) {
@@ -159,8 +218,23 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
   return out;
 }
 
-function clamp(v: number, lo: number, hi: number): number { return Math.min(hi, Math.max(lo, v)); }
+/** Все ломаемые элементы и объекты чертежа как цели сплеша. */
+export function allSplashTargets(resolved: Resolved): SplashTarget[] {
+  const ids = [
+    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
+    ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
+  ];
+  return splashTargets(resolved, ids);
+}
 
+function insidePolygon(x: number, z: number, poly: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
 
 /** Ближайшая к p точка поверхности цели (в мире). */
 export function nearestPoint(p: Vec3, t: SplashTarget): Vec3 {
@@ -190,9 +264,9 @@ export function distanceTo(p: Vec3, t: SplashTarget): number {
   return dist(p, nearestPoint(p, t));
 }
 
-/** Урон одной ракеты в точке p по цели t. */
-export function rocketDamage(p: Vec3, t: SplashTarget): number {
-  return t.hitDamage * falloff(distanceTo(p, t));
+/** Урон одной единицы взрывчатки ex в точке p по цели t (без преград). */
+export function unitDamage(ex: Explosive, p: Vec3, t: SplashTarget): number {
+  return t.hit[ex] * falloff(ex, distanceTo(p, t));
 }
 
 /** Преграда для сплеша: вертикальный прямоугольник стены-типа или горизонтальный полигон ячейки. */
@@ -201,36 +275,20 @@ export interface Occluder {
   kind: 'wall' | 'cell';
   origin: Vec3;
   rotation: number;
-  /** Стена: высота; ячейка: вершины полигона в локальных [x, z]. */
   height?: number;
   polygon?: [number, number][];
 }
 
-function toLocal(origin: Vec3, rotation: number, p: Vec3): Vec3 {
-  const a = -rotation * DEG;
-  const dx = p[0] - origin[0], dy = p[1] - origin[1], dz = p[2] - origin[2];
-  return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
-}
-
-function insidePolygon(x: number, z: number, poly: [number, number][]): boolean {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [xi, zi] = poly[i], [xj, zj] = poly[j];
-    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-/** Конец отрезка — поверхность самой цели; пересечение в самом конце соседней преградой не считается. */
+/** Границы преграды включающие; самый конец отрезка (поверхность цели) соседней преградой не считается. */
+const MARGIN = -1e-6;
 const END_EPS = 1e-3;
 
-/** Пересекает ли отрезок a→b преграду (начало включительно, самый конец — нет). */
 export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   const la = toLocal(o.origin, o.rotation, a);
   const lb = toLocal(o.origin, o.rotation, b);
   if (o.kind === 'wall') {
-    if ((la[0] > 1e-6 && lb[0] > 1e-6) || (la[0] < -1e-6 && lb[0] < -1e-6)) return false; // по одну сторону плоскости
-    if (Math.abs(lb[0] - la[0]) < 1e-9) return false; // в плоскости стены — не преграда
+    if ((la[0] > 1e-6 && lb[0] > 1e-6) || (la[0] < -1e-6 && lb[0] < -1e-6)) return false;
+    if (Math.abs(lb[0] - la[0]) < 1e-9) return false;
     const t = la[0] / (la[0] - lb[0]);
     if (t > 1 - END_EPS) return false;
     const y = la[1] + (lb[1] - la[1]) * t;
@@ -246,11 +304,7 @@ export function segmentBlocked(a: Vec3, b: Vec3, o: Occluder): boolean {
   return insidePolygon(x, z, o.polygon!.map(([px, pz]) => [px * (1 - MARGIN / 1.5), pz * (1 - MARGIN / 1.5)] as [number, number]));
 }
 
-/** Границы преграды включающие: пересечение ровно по краю плиты тоже блокирует (иначе отрезок
- * «проскальзывает» внутри шва между плитами). Точки удара сдвигаются от шва в сторону рейдера. */
-const MARGIN = -1e-6;
-
-/** Преграды из геометрии: все стены-типы и ячейки. Проёмы без живой двери не преграда. */
+/** Преграды из геометрии: стены-типы и ячейки. Проёмы без живой двери и низкие стены не преграда. */
 export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Occluder[] {
   const out: Occluder[] = [];
   for (const el of resolved.elements) {
@@ -269,17 +323,12 @@ export function occluders(resolved: Resolved, liveDoorCarriers: Set<string>): Oc
 
 const NUDGE = 0.12;
 
-/**
- * Точка удара: кандидат на поверхности, сдвинутый на NUDGE к точке обзора рейдера и, если это
- * край или угол, ещё на NUDGE наружу вдоль поверхности (от центра элемента): взрыв на шве
- * задевает соседей, но не «проваливается» внутрь шва.
- */
+/** Точка удара: кандидат, сдвинутый к точке обзора рейдера и, у края или угла, наружу вдоль поверхности. */
 export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
   const d: Vec3 = [eye[0] - c[0], eye[1] - c[1], eye[2] - c[2]];
   const len = Math.hypot(...d) || 1;
   const out: Vec3 = [c[0] + (d[0] / len) * NUDGE, c[1] + (d[1] / len) * NUDGE, c[2] + (d[2] / len) * NUDGE];
   if (center) {
-    // только горизонтально: сдвиг вниз у нижнего угла стены увёл бы точку под пол
     const v: Vec3 = [c[0] - center[0], 0, c[2] - center[2]];
     const vl = Math.hypot(...v);
     if (vl > 1e-6) { out[0] += (v[0] / vl) * NUDGE; out[2] += (v[2] / vl) * NUDGE; }
@@ -287,21 +336,45 @@ export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
   return out;
 }
 
-/**
- * Жадный план: пока есть живые цели, стреляем в точку с наибольшим полезным уроном
- * (суммой min(остаток HP, урон) по целям). Одинаковые точки объединяются в count.
- * Правило фронта: рейдер идёт по пути по порядку, поэтому точки удара берутся только
- * на поверхности первой ещё живой цели и целей до неё (внутрь базы снаружи не достать).
- */
-export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan {
-  const targets = splashTargets(resolved, ids);
-  const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
-  const shots = new Map<string, SplashShot>();
-  let rockets = 0;
-  const alive = () => targets.some(t => (hpLeft.get(t.id) ?? 0) > 1e-6);
-  const isAlive = (t: SplashTarget) => (hpLeft.get(t.id) ?? 0) > 1e-6;
+/** Урон единицы ex в точке p по всем целям с учётом преград; owner — цель, на поверхности которой точка. */
+function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[]): Record<string, number> {
+  const damage: Record<string, number> = {};
+  for (const t of targets) {
+    let dmg = unitDamage(ex, p, t);
+    if (dmg > 0 && t.id !== owner.id) {
+      const q = nearestPoint(p, t);
+      if (occ.some(o => o.id !== t.carrierId && segmentBlocked(p, q, o))) dmg = 0;
+    }
+    if (dmg > 0) damage[t.id] = dmg;
+  }
+  return damage;
+}
 
-  /** Точка обзора рейдера у цели i: предыдущая цель; иначе зеркало следующей относительно плоскости цели; иначе +нормаль. */
+function liveOccluders(resolved: Resolved, broken: Set<string>, byId: Map<string, SplashTarget>): Occluder[] {
+  const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !broken.has(d.id)).map(d => d.parent));
+  const brokenCarriers = new Set([...broken].map(id => byId.get(id)?.carrierId ?? id));
+  return occluders(resolved, liveDoorCarriers).filter(o => !broken.has(o.id) && (!brokenCarriers.has(o.id) || liveDoorCarriers.has(o.id)));
+}
+
+/** Сера «по штукам»: каждый элемент лучшей одиночной взрывчаткой из разрешённых. */
+export function perItemSulfur(targets: SplashTarget[], allowed: Explosive[]): number {
+  return targets.reduce((acc, t) => acc + Math.min(...allowed.map(ex => Math.ceil(t.hp / t.hit[ex] - 1e-9) * EXPLOSIVES[ex].sulfur)), 0);
+}
+
+/**
+ * План по пути: цели — элементы пути по порядку. Пока есть живые цели, выбираем пару
+ * (точка на фронте, взрывчатка) с наибольшим полезным уроном на единицу серы; одинаковые
+ * пары объединяются. Правило фронта: стрелять можно только по первой живой цели и целям до неё.
+ */
+export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive[]): SplashPlan {
+  const targets = splashTargets(resolved, ids);
+  const byId = new Map(allSplashTargets(resolved).map(t => [t.id, t]));
+  const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
+  const isAlive = (t: SplashTarget) => (hpLeft.get(t.id) ?? 0) > 1e-6;
+  const shots = new Map<string, SplashShot>();
+  const units: Partial<Record<Explosive, number>> = {};
+  let sulfur = 0;
+
   const raiderEye = (i: number): Vec3 => {
     const t = targets[i];
     if (i > 0) return targets[i - 1].center;
@@ -311,116 +384,74 @@ export function planRocketSplash(resolved: Resolved, ids: string[]): SplashPlan 
     return toWorld(t.origin, t.rotation, local);
   };
 
-  while (alive() && rockets < 500) {
-    const frontier = targets.findIndex(isAlive);
-    // Преграды: целые элементы, кроме уже разрушенных целей (и их проёмов)
-    const destroyedCarriers = new Set(targets.filter(t => !isAlive(t)).map(t => t.carrierId));
-    const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !targets.some(t => t.id === d.id && !isAlive(t))).map(d => d.parent));
-    const occ = occluders(resolved, liveDoorCarriers).filter(o => !destroyedCarriers.has(o.id) || liveDoorCarriers.has(o.id));
-
-    const candidates: { point: Vec3; owner: SplashTarget }[] = [];
-    const seen = new Set<string>();
-    targets.slice(0, frontier + 1).forEach((t, i) => {
+  let guard = 0;
+  while (targets.some(isAlive) && guard++ < 5000) {
+    const broken = new Set(targets.filter(t => !isAlive(t)).map(t => t.id));
+    const occ = liveOccluders(resolved, broken, byId);
+    const frontierIdx = targets.findIndex(isAlive);
+    type Best = { point: Vec3; ex: Explosive; score: number; damage: Record<string, number> };
+    let b: Best | null = null;
+    for (let i = 0; i <= frontierIdx; i++) {
+      const owner = targets[i];
       const eye = raiderEye(i);
-      for (const c of t.candidates) {
-        const point = nudgeTowards(c, eye, t.center);
-        const key = point.map(v => v.toFixed(2)).join('|');
-        if (!seen.has(key)) { seen.add(key); candidates.push({ point, owner: t }); }
-      }
-    });
-
-    let best: { point: Vec3; useful: number; damage: Record<string, number> } | null = null;
-    for (const { point: p, owner } of candidates) {
-      let useful = 0;
-      const damage: Record<string, number> = {};
-      for (const t of targets) {
-        let dmg = rocketDamage(p, t);
-        if (dmg > 0 && t.id !== owner.id) {
-          const q = nearestPoint(p, t);
-          const blocked = occ.some(o => o.id !== t.carrierId && segmentBlocked(p, q, o));
-          if (blocked) dmg = 0;
+      for (const c of owner.candidates) {
+        const point = nudgeTowards(c, eye, owner.center);
+        for (const ex of allowed) {
+          const damage = damageMap(ex, point, owner, targets, occ);
+          let useful = 0;
+          for (const t of targets) useful += Math.min(hpLeft.get(t.id) ?? 0, damage[t.id] ?? 0);
+          const score = useful / EXPLOSIVES[ex].sulfur;
+          if (!b || score > b.score + 1e-12) b = { point, ex, score, damage };
         }
-        damage[t.id] = dmg;
-        useful += Math.min(hpLeft.get(t.id) ?? 0, dmg);
       }
-      if (!best || useful > best.useful + 1e-9) best = { point: p, useful, damage };
     }
-    if (!best || best.useful <= 1e-9) break;
-    for (const t of targets) hpLeft.set(t.id, Math.max(0, (hpLeft.get(t.id) ?? 0) - best.damage[t.id]));
-    rockets++;
-    const key = best.point.map(v => v.toFixed(2)).join('|');
-    const shot = shots.get(key) ?? { point: best.point, count: 0, damage: best.damage };
+    if (!b || b.score <= 1e-12) break;
+    for (const t of targets) hpLeft.set(t.id, Math.max(0, (hpLeft.get(t.id) ?? 0) - (b.damage[t.id] ?? 0)));
+    const key = `${b.ex}|${b.point.map((v: number) => v.toFixed(2)).join('|')}`;
+    const shot = shots.get(key) ?? { point: b.point, explosive: b.ex, count: 0, damage: b.damage };
     shot.count++;
     shots.set(key, shot);
+    units[b.ex] = (units[b.ex] ?? 0) + 1;
+    sulfur += EXPLOSIVES[b.ex].sulfur;
   }
   const damageTaken: Record<string, number> = {};
   for (const t of targets) damageTaken[t.id] = Math.round((t.hp - (hpLeft.get(t.id) ?? 0)) * 10) / 10;
-  const rocketsPerItem = targets.reduce((a, t) => a + Math.ceil(t.hp / t.hitDamage), 0);
-  return { shots: [...shots.values()], rockets, sulfur: rockets * ROCKET.sulfur, rocketsPerItem, damageTaken };
+  return { shots: [...shots.values()], units, sulfur, sulfurPerItem: perItemSulfur(targets, allowed), damageTaken };
 }
 
-
-/** Все ломаемые элементы и объекты чертежа как цели сплеша. */
-export function allSplashTargets(resolved: Resolved): SplashTarget[] {
-  const ids = [
-    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
-    ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
-  ];
-  return splashTargets(resolved, ids);
-}
-
-export interface SplashAlternative {
-  /** Куда и сколько ракет. */
+export interface Volley {
   shot: SplashShot;
-  /** Какие элементы разрушает этот залп. */
   broken: string[];
-  rockets: number;
+  sulfur: number;
 }
 
 /**
- * Залпы в одну точку на границе доступной области: для каждой точки и числа ракет n
- * — какие элементы погибнут (ceil(HP / урон) ≤ n). Возвращает варианты, где гибнет
- * хотя бы один элемент; одинаковые наборы разрушений не повторяются.
+ * Залпы одной взрывчаткой в одну точку на границе доступной области: для точки, взрывчатки и
+ * числа единиц n — какие элементы погибнут (ceil(HP / урон) ≤ n). Одинаковые наборы не повторяются.
  */
-export function splashVolleys(
-  resolved: Resolved,
-  front: { id: string; from: Vec3 }[],
-  alreadyBroken: Set<string>,
-  maxRockets = 12,
-): SplashAlternative[] {
-  const targets = allSplashTargets(resolved).filter(t => !alreadyBroken.has(t.id));
+export function splashVolleys(resolved: Resolved, front: { id: string; from: Vec3 }[], allowed: Explosive[], maxUnits = 12): Volley[] {
+  const targets = allSplashTargets(resolved);
   const byId = new Map(targets.map(t => [t.id, t]));
-  const liveDoorCarriers = new Set(resolved.deployables.filter(d => d.kind !== 'tool-cupboard' && !alreadyBroken.has(d.id)).map(d => d.parent));
-  const brokenCarriers = new Set([...alreadyBroken].map(id => byId.get(id)?.carrierId ?? id));
-  const occ = occluders(resolved, liveDoorCarriers).filter(o => !alreadyBroken.has(o.id) && (!brokenCarriers.has(o.id) || liveDoorCarriers.has(o.id)));
-
-  const out: SplashAlternative[] = [];
+  const occ = liveOccluders(resolved, new Set(), byId);
+  const out: Volley[] = [];
   const seen = new Set<string>();
   for (const f of front) {
     const owner = byId.get(f.id);
     if (!owner) continue;
     for (const c of owner.candidates) {
       const point = nudgeTowards(c, f.from, owner.center);
-      const damage: Record<string, number> = {};
-      const needed: { id: string; n: number }[] = [];
-      for (const t of targets) {
-        let dmg = rocketDamage(point, t);
-        if (dmg > 0 && t.id !== owner.id) {
-          const q = nearestPoint(point, t);
-          if (occ.some(o => o.id !== t.carrierId && segmentBlocked(point, q, o))) dmg = 0;
+      for (const ex of allowed) {
+        const damage = damageMap(ex, point, owner, targets, occ);
+        const needed = Object.entries(damage).map(([id, dmg]) => ({ id, n: Math.ceil(byId.get(id)!.hp / dmg - 1e-9) })).sort((a, b) => a.n - b.n);
+        const limit = ex === 'explosiveAmmo' ? maxUnits * 70 : maxUnits;
+        for (const n of [...new Set(needed.map(x => x.n))]) {
+          if (n > limit) break;
+          const broken = needed.filter(x => x.n <= n).map(x => x.id).sort();
+          const key = `${ex}|${broken.join('|')}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push({ shot: { point, explosive: ex, count: n, damage }, broken, sulfur: n * EXPLOSIVES[ex].sulfur });
         }
-        if (dmg <= 0) continue;
-        damage[t.id] = dmg;
-        needed.push({ id: t.id, n: Math.ceil(t.hp / dmg - 1e-9) });
-      }
-      needed.sort((a, b) => a.n - b.n);
-      for (const n of [...new Set(needed.map(x => x.n))]) {
-        if (n > maxRockets) break;
-        const broken = needed.filter(x => x.n <= n).map(x => x.id).sort();
-        const key = broken.join('|');
-        if (seen.has(key)) continue;
-        seen.add(key);
-        out.push({ shot: { point, count: n, damage }, broken, rockets: n });
       }
     }
   }
@@ -428,45 +459,43 @@ export function splashVolleys(
 }
 
 /**
- * Сплеш-варианты рейда: залп в одну точку на границе доступной области, затем самый дешёвый
- * по штукам остаток пути до шкафа из открывшихся пространств. Учитываются только варианты,
- * где залп открывает хотя бы одно новое пространство.
+ * Сплеш-варианты рейда: залп на границе доступной области плюс самый дешёвый остаток пути до
+ * шкафа из открывшихся пространств. Только залпы, открывающие хотя бы одно новое пространство.
  */
-export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initially: Set<string>, targetCell: string): RaidAlternative[] {
+export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initially: Set<string>, targetCell: string, allowed: Explosive[]): RaidAlternative[] {
   const front = frontier(graph, initially);
-  const volleys = splashVolleys(resolved, front.map(f => ({ id: f.id, from: f.from })), new Set());
+  const volleys = splashVolleys(resolved, front.map(f => ({ id: f.id, from: f.from })), allowed);
   const out: RaidAlternative[] = [];
   for (const v of volleys) {
     const broken = new Set(v.broken);
     const after = reachableSpaces(graph, broken);
-    const openedByVolley = [...after].filter(id => !initially.has(id));
-    if (openedByVolley.length === 0) continue;
-    const rest = cheapestFrom(graph, after, broken, targetCell, 'rocket');
+    if (![...after].some(id => !initially.has(id))) continue;
+    const rest = cheapestFrom(graph, after, broken, targetCell, 'optimal');
     if (!rest) continue;
-    const restRockets = rest.steps.reduce((a, s) => a + s.breakdown.reduce((b, x) => b + x.count, 0), 0);
+    const restPlan = rest.ids.length ? planSplash(resolved, rest.ids, allowed) : null;
     const allBroken = new Set([...broken, ...rest.ids]);
     const openedIds = [...reachableSpaces(graph, allBroken)].filter(id => !initially.has(id));
     const volleySteps: RaidStep[] = v.broken.map(id => {
       const el = resolved.elements.find(e => e.id === id);
-      if (el) return stepCost(el.id, el.kind, el.grade, 'rocket');
+      if (el) return stepCost(el.id, el.kind, el.grade, 'optimal');
       const d = resolved.deployables.find(x => x.id === id)!;
-      return stepCost(d.id, d.kind, undefined, 'rocket');
+      return stepCost(d.id, d.kind, undefined, 'optimal');
     });
-    const rockets = v.rockets + restRockets;
+    const sulfur = v.sulfur + (restPlan?.sulfur ?? 0);
+    const units: Partial<Record<Explosive, number>> = { ...(restPlan?.units ?? {}) };
+    units[v.shot.explosive] = (units[v.shot.explosive] ?? 0) + v.shot.count;
     out.push({
       path: {
-        steps: [...volleySteps, ...rest.steps],
-        sulfur: rockets * ROCKET.sulfur,
-        ids: [...v.broken, ...rest.ids],
-        cells: rest.cells,
-        points: [v.shot.point, ...rest.points],
-        entry: v.shot.point,
+        steps: [...volleySteps, ...rest.steps], sulfur, ids: [...v.broken, ...rest.ids], cells: rest.cells,
+        points: [v.shot.point, ...rest.points], entry: v.shot.point,
       },
-      rockets,
+      sulfur,
+      units,
+      shots: [v.shot, ...(restPlan?.shots ?? [])],
       opened: openedIds.length,
       openedIds,
       value: spacesValue(graph, openedIds, resolved),
-      volley: { point: v.shot.point, count: v.rockets, broken: v.broken },
+      volley: { point: v.shot.point, count: v.shot.count, explosive: v.shot.explosive, broken: v.broken },
     });
   }
   return out;

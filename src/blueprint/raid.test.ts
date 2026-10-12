@@ -112,7 +112,7 @@ test('opened spaces: doors open the airlock and the TC room, a wall opens only t
   const opened = (ids: string[]) => [...reachableSpaces(g, new Set(ids))].filter(id => !initially.has(id)).sort();
   assert.deepEqual(opened(['door_outer', 'door_inner']), ['f1', 'f2']);
   assert.deepEqual(opened(['w1']), ['f1']);
-  const alts = raidAlternatives(resolved, 'f1', 'optimal', () => null);
+  const alts = raidAlternatives(resolved, 'f1', 'optimal', ids => ({ sulfur: ids.length * 1000, units: {}, shots: [] }), () => []);
   const doors = alts.find(a => a.path.ids.join() === 'door_outer,door_inner')!;
   assert.equal(doors.opened, 2);
   assert.equal(doors.value, 3.5); // шкаф 3 + аирлок 0.5

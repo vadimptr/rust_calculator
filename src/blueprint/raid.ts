@@ -331,15 +331,19 @@ export function chooseRaidPath(
 
 export interface RaidAlternative {
   path: RaidPath;
-  /** Ракет со сплешем (только для метода rocket). */
-  rockets?: number;
-  /** Сколько замкнутых пространств открывается с улицы после разрушения элементов пути. */
+  /** Сера с учётом сплеша и смешения взрывчатки. */
+  sulfur: number;
+  /** Единиц каждой взрывчатки. */
+  units: Partial<Record<ExplosiveType, number>>;
+  /** Куда и чем стрелять. */
+  shots: { point: [number, number, number]; explosive: ExplosiveType; count: number; damage: Record<string, number> }[];
+  /** Сколько замкнутых пространств открывается с улицы после разрушения элементов варианта. */
   opened: number;
   openedIds: string[];
   /** Суммарная ценность открытых пространств (§9.3): шкаф дорого, запрыги и тамбуры дёшево. */
   value: number;
-  /** Залп в одну точку (сплеш-вариант): куда, сколько ракет и что он ломает разом. */
-  volley?: { point: [number, number, number]; count: number; broken: string[] };
+  /** Залп в одну точку (сплеш-вариант): куда, чем, сколько и что он ломает разом. */
+  volley?: { point: [number, number, number]; count: number; explosive: ExplosiveType; broken: string[] };
 }
 
 /**
@@ -391,44 +395,47 @@ export function reachableSpaces(graph: SpaceGraph, broken: Set<string>): Set<str
   return seen;
 }
 
+export interface PlanLike { sulfur: number; units: Partial<Record<ExplosiveType, number>>; shots: RaidAlternative['shots'] }
+
 /**
- * Варианты рейда: несколько лучших путей, без повторов по набору ломаемых элементов,
- * отсортированные по ракетам со сплешем (для ракет) или по сере.
+ * Варианты рейда: несколько лучших путей по штукам (каждый пересчитан планировщиком сплеша) и
+ * залпы; без повторов по набору разрушений. Сортировка по сере.
  */
 export function raidAlternatives(
   resolved: Resolved, targetCell: string, method: RaidMethod,
-  planSplash: (ids: string[]) => { rockets: number } | null, k = 8,
-  volleys?: (graph: SpaceGraph, initially: Set<string>, targetCell: string) => RaidAlternative[],
+  planSplash: (ids: string[]) => PlanLike,
+  volleys: (graph: SpaceGraph, initially: Set<string>, targetCell: string) => RaidAlternative[],
+  k = 8,
 ): RaidAlternative[] {
   const graph = buildSpaceGraph(resolved);
   const paths = cheapestRaidPaths(resolved, targetCell, method, k, graph);
   const initially = reachableSpaces(graph, new Set());
-  const seen = new Set<string>();
-  const out: RaidAlternative[] = [];
+  // один набор разрушений — один вариант: самый дешёвый по сере
+  const byKey = new Map<string, RaidAlternative>();
+  const offer = (a: RaidAlternative) => {
+    const key = [...a.path.ids].sort().join('|');
+    const prev = byKey.get(key);
+    if (!prev || a.sulfur < prev.sulfur) byKey.set(key, a);
+  };
   for (const path of paths) {
-    const key = [...path.ids].sort().join('|');
-    if (seen.has(key)) continue;
-    seen.add(key);
     const openedIds = [...reachableSpaces(graph, new Set(path.ids))].filter(id => !initially.has(id));
-    const base = { path, opened: openedIds.length, openedIds, value: spacesValue(graph, openedIds, resolved) };
-    out.push(method === 'rocket' && path.ids.length > 0 ? { ...base, rockets: planSplash(path.ids)?.rockets } : base);
+    const plan = path.ids.length ? planSplash(path.ids) : { sulfur: 0, units: {}, shots: [] };
+    offer({ path: { ...path, sulfur: plan.sulfur }, sulfur: plan.sulfur, units: plan.units, shots: plan.shots, opened: openedIds.length, openedIds, value: spacesValue(graph, openedIds, resolved) });
   }
-  if (method === 'rocket' && volleys) {
-    for (const v of volleys(graph, initially, targetCell)) {
-      const key = [...v.path.ids].sort().join('|');
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(v);
-    }
-  }
-  out.sort((a, b) => (a.rockets ?? 0) - (b.rockets ?? 0) || a.path.sulfur - b.path.sulfur || b.value - a.value || a.path.steps.length - b.path.steps.length);
-  // убрать варианты, которые дороже и при этом не ценнее другого; самый дешёвый путь по штукам
-  // остаётся всегда — как база для сравнения
-  const baseline = out.find(a => !a.volley);
-  const kept = out.filter((a, i) => a === baseline || !out.some((b, j) => j !== i
-    && (b.rockets ?? b.path.sulfur) <= (a.rockets ?? a.path.sulfur) && b.value >= a.value
-    && ((b.rockets ?? b.path.sulfur) < (a.rockets ?? a.path.sulfur) || b.value > a.value || j < i)));
-  return kept.slice(0, 8);
+  for (const v of volleys(graph, initially, targetCell)) offer(v);
+  const out = [...byKey.values()];
+  out.sort((a, b) => a.sulfur - b.sulfur || b.value - a.value || a.path.steps.length - b.path.steps.length);
+  return out;
+}
+
+/**
+ * Один оптимальный вариант: наибольшая ценность открытого на единицу серы; при равенстве —
+ * дешевле. Бесплатные варианты (свободный проход) выигрывают всегда.
+ */
+export function bestRaid(alternatives: RaidAlternative[]): RaidAlternative | null {
+  if (alternatives.length === 0) return null;
+  const score = (a: RaidAlternative) => (a.sulfur <= 0 ? Infinity : a.value / a.sulfur);
+  return [...alternatives].sort((a, b) => score(b) - score(a) || a.sulfur - b.sulfur || b.value - a.value)[0];
 }
 
 /**

@@ -1414,3 +1414,27 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+.raid-panel__best {
+  border: 1px solid var(--accent);
+  background: rgba(207, 72, 32, 0.08);
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+}
+
+.raid-panel__best-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.raid-panel__best-line {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.raid-panel__best-line b {
+  color: var(--text-primary);
+}
