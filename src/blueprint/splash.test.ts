@@ -192,21 +192,22 @@ test('bunker, armored walls and wooden doors: the cheapest plan wins even if a d
   assert.deepEqual(sim.stages.map(s => s.broken), [['door4'], ['door3'], ['door2'], ['door1'], [], ['cw0']]);
 });
 
-test('roof bunker: the roof is a splash target from above and from the vestibule; optimal goes through a wall of the TC cell', () => {
+test('roof bunker: the roof is a pitched splash target over the vestibule; the bunker costs as much as a wall', () => {
   const { resolved } = load('roof-bunker');
   const g = buildSpaceGraph(resolved);
   const roof = allSplashTargets(resolved).find(t => t.id === 'rb')!;
   assert.ok(roof.pitch && roof.pitch < 0, 'roof target is pitched');
-  // низкое ребро у открытого ребра треугольника (x ≈ 0.87, y ≈ 0), высокое над дверью (x ≈ 3.87, y ≈ 3)
+  // низкое ребро над полустеной (x ≈ 4.5, y ≈ 1.5), высокое над дверью (x ≈ 7.5, y ≈ 4.5): сквозь потолок тамбура
   const xs = roof.candidates.map(c => c[0]);
-  assert.ok(Math.min(...xs) < 1 && Math.max(...xs) > 3.7, xs.join(','));
+  assert.ok(Math.min(...xs) < 4.7 && Math.max(...xs) > 7.3, xs.join(','));
   const ys = roof.candidates.map(c => c[1]);
-  assert.ok(Math.min(...ys) < 0.3 && Math.max(...ys) > 2.9, ys.join(','));
-  // только C4: два заряда в крышу-затвор — столько же, сколько в стену
+  assert.ok(Math.min(...ys) < 1.8 && Math.max(...ys) > 4.3, ys.join(','));
+  // твиговая опора — цель за крышей и полустеной, снаружи до неё не добраться без разрушений
   const c4 = bestSimulation(resolved, g, 'f1', ['c4'])!;
   assert.ok(c4.reached);
   assert.equal(c4.sulfur, 4400);
   const optimal = bestSimulation(resolved, g, 'f1', ['rocket', 'c4', 'explosiveAmmo'])!;
   assert.ok(optimal.reached);
   assert.equal(optimal.sulfur, 4300);
+  assert.ok(!optimal.broken.includes('tf'));
 });

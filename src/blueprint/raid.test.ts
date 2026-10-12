@@ -124,18 +124,40 @@ test('opened spaces: 2x2 roof door + inner wall opens the vestibule, the jump-up
   assert.equal(spacesValue(g, opened, resolved), 3.5); // шкаф 3, комната без пола 0.25, запрыг 0.25
 });
 
-test('roof bunker: the roof seals the vestibule from above and its low edge seals the TC cell edge', () => {
+test('roof bunker: the half wall under the roof lip seals the TC room; the twig support is on a half level and off the graph', () => {
   const { resolved } = load('roof-bunker');
   const g = buildSpaceGraph(resolved);
+  assert.ok(!g.nodes.has('tf'));
+  const toCore = g.adj.get('f2')!.find(e => e.to === 'f3')!;
+  assert.equal(toCore.blocker.element?.id, 'hw');
+  assert.deepEqual([...reachableSpaces(g, new Set())].sort(), ['c1', 'c2', 'c3']);
+  assert.deepEqual([...reachableSpaces(g, new Set(['d1']))].sort(), ['c1', 'c2', 'c3', 'f2']);
+  assert.deepEqual([...reachableSpaces(g, new Set(['d1', 'hw']))].sort(), ['c1', 'c2', 'c3', 'f1', 'f2', 'f3']);
+  assert.equal(cheapestRaidPath(resolved, 'f1', 'c4')!.sulfur, 4400);
+});
+
+test('roof on a cell edge: blocks the neighbour cell from above and its low edge blocks the shared edge', () => {
+  const bp: Blueprint = {
+    formatVersion: '1.0', meta: { name: 't' }, defaults: { grade: 'stone' },
+    elements: [
+      { id: 'f1', kind: 'triangle-foundation', root: true },
+      { id: 'w1', kind: 'wall', attach: { to: 'f1', socket: 'edge:1' } },
+      { id: 'w2', kind: 'wall', attach: { to: 'f1', socket: 'edge:2' } },
+      { id: 'c1', kind: 'triangle-floor', attach: { to: 'w1', socket: 'top', selfSocket: 'edge:0' } },
+      { id: 'rb', kind: 'roof', attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } },
+      { id: 'f2', kind: 'square-foundation', attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } },
+      { id: 'w3', kind: 'wall', attach: { to: 'f2', socket: 'edge:1' } },
+      { id: 'w4', kind: 'wall', attach: { to: 'f2', socket: 'edge:3' } },
+      { id: 'w5', kind: 'wall', attach: { to: 'f2', socket: 'edge:2' } },
+    ],
+    deployables: [{ id: 'tc', kind: 'tool-cupboard', attach: { to: 'f1', socket: 'top' } }],
+  };
+  const { resolved, issues } = resolveBlueprint(bp);
+  assert.deepEqual(issues.filter(i => i.level === 'error'), []);
+  const g = buildSpaceGraph(resolved);
   const edges = g.adj.get('f2')!;
-  const up = edges.find(e => e.mid[1] > 1)!;
-  assert.equal(up.blocker.element?.id, 'rb');
-  const toTc = edges.find(e => e.to === 'f1')!;
-  assert.equal(toTc.blocker.element?.id, 'rb');
+  assert.equal(edges.find(e => e.mid[1] > 1)!.blocker.element?.id, 'rb');
+  assert.equal(edges.find(e => e.to === 'f1')!.blocker.element?.id, 'rb');
   assert.deepEqual([...reachableSpaces(g, new Set())].sort(), ['c1']);
-  assert.deepEqual([...reachableSpaces(g, new Set(['d1']))].sort(), ['c1', 'f2']);
   assert.deepEqual([...reachableSpaces(g, new Set(['rb']))].sort(), ['c1', 'f1', 'f2']);
-  // крыша — ступень пути как стена своего материала
-  const path = cheapestRaidPath(resolved, 'f1', 'c4')!;
-  assert.equal(path.sulfur, 4400);
 });
