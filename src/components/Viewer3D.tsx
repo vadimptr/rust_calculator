@@ -20,6 +20,8 @@ interface Viewer3DProps {
   raid: RaidView | null;
   /** Счётчик запусков воспроизведения рейда: изменение на >0 запускает, 0 — сбрасывает. */
   raidPlay: number;
+  /** Ключ чертежа: камера наводится заново только при его смене, а не при каждом пересчёте сцены. */
+  frameKey: string;
 }
 
 interface SceneRefs {
@@ -45,9 +47,10 @@ function applyDoorsOpen(s: SceneRefs, doorsOpen: boolean) {
   }
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, raidPlay }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, raidPlay, frameKey }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
+  const framedKey = useRef<string | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -190,6 +193,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     applyDoorsOpen(s, doorsOpen);
     s.raid.apply(raid);
 
+    // Смена материала или дверей перестраивает меши, но камеру не трогает
+    if (framedKey.current === frameKey) return;
+    framedKey.current = frameKey;
     const bounds = new THREE.Box3().setFromObject(s.content);
     if (bounds.isEmpty()) return;
     const center = bounds.getCenter(new THREE.Vector3());

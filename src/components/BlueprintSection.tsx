@@ -274,7 +274,7 @@ const BlueprintSection: React.FC = () => {
 
       <div className="bp__layout">
         <div className="bp__viewer">
-          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} />
+          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} />
           <div className="bp__hint">
             {cameraMode === 'orbit'
               ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
