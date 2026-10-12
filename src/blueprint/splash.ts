@@ -228,8 +228,9 @@ export function splashTargets(resolved: Resolved, ids: string[]): SplashTarget[]
 
 /** Все ломаемые элементы и объекты чертежа как цели сплеша. */
 export function allSplashTargets(resolved: Resolved): SplashTarget[] {
+  // фундаменты не цель рейда: под ними ничего нет
   const ids = [
-    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || KINDS[e.kind].category === 'cell').map(e => e.id),
+    ...resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' || (KINDS[e.kind].category === 'cell' && !KINDS[e.kind].isFoundation)).map(e => e.id),
     ...resolved.deployables.filter(d => d.kind !== 'tool-cupboard').map(d => d.id),
   ];
   return splashTargets(resolved, ids);
