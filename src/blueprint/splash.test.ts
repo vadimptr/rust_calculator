@@ -84,7 +84,10 @@ test('roof corner volley: full damage to every adjoining roof block, 4 rockets o
   const corner = volleys.find(v => ['c1', 'c2', 'c3'].every(id => v.volley!.broken.includes(id)) && v.volley!.count === 4);
   assert.ok(corner, 'expected a 4-rocket corner volley breaking c1, c2 and c3');
   for (const v of volleys) {
-    if (v.volley!.point[1] > 2.9) assert.ok(!v.volley!.broken.includes('door_tc') && !v.volley!.broken.includes('door_hall'), `roof volley broke ground doors: ${v.volley!.broken.join(',')}`);
+    if (v.volley!.point[1] > 2.9) {
+      const ground = ['door_tc', 'door_hall', 'door_jump'].filter(id => v.volley!.broken.includes(id));
+      assert.deepEqual(ground, [], `roof volley broke ground doors: ${v.volley!.broken.join(',')}`);
+    }
   }
 });
 

@@ -111,6 +111,8 @@ export interface SplashShot {
 }
 
 export interface SplashPlan {
+  /** false — какая-то цель осталась целой: до неё с места рейдера не достать. */
+  complete: boolean;
   shots: SplashShot[];
   /** Единиц каждой взрывчатки. */
   units: Partial<Record<Explosive, number>>;
@@ -338,6 +340,19 @@ export function nudgeTowards(c: Vec3, eye: Vec3, center?: Vec3): Vec3 {
   return out;
 }
 
+/**
+ * Точка удара, видимая с места рейдера: кандидат со сдвигом; если сдвиг наружу увёл точку за
+ * преграду (например, внутрь закрытой комнаты за стеной), берётся сдвиг только к рейдеру; если и
+ * он за преградой — точки нет.
+ */
+function visibleImpact(c: Vec3, eye: Vec3, owner: SplashTarget, occ: Occluder[]): Vec3 | null {
+  const clear = (p: Vec3) => !occ.some(o => o.id !== owner.carrierId && segmentBlocked(eye, p, o));
+  const full = nudgeTowards(c, eye, owner.center);
+  if (clear(full)) return full;
+  const plain = nudgeTowards(c, eye);
+  return clear(plain) ? plain : null;
+}
+
 /** Урон единицы ex в точке p по всем целям с учётом преград; owner — цель, на поверхности которой точка. */
 function damageMap(ex: Explosive, p: Vec3, owner: SplashTarget, targets: SplashTarget[], occ: Occluder[]): Record<string, number> {
   const damage: Record<string, number> = {};
@@ -373,7 +388,7 @@ export function perItemSulfur(targets: SplashTarget[], allowed: Explosive[]): nu
  * (точка на фронте, взрывчатка) с наибольшим полезным уроном на единицу серы; одинаковые
  * пары объединяются. Правило фронта: стрелять можно только по первой живой цели и целям до неё.
  */
-export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive[]): SplashPlan {
+export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive[], eyes?: Record<string, Vec3>): SplashPlan {
   const targets = splashTargets(resolved, ids);
   const byId = new Map(allSplashTargets(resolved).map(t => [t.id, t]));
   const hpLeft = new Map(targets.map(t => [t.id, t.hp]));
@@ -384,6 +399,7 @@ export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive
 
   const raiderEye = (i: number): Vec3 => {
     const t = targets[i];
+    if (eyes?.[t.id]) return eyes[t.id];
     if (i > 0) return targets[i - 1].center;
     const next = targets[i + 1]?.center;
     const local = next ? toLocal(t.origin, t.rotation, next) : ([1, 1.5, 0] as Vec3);
@@ -402,7 +418,8 @@ export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive
       const owner = targets[i];
       const eye = raiderEye(i);
       for (const c of owner.candidates) {
-        const point = nudgeTowards(c, eye, owner.center);
+        const point = visibleImpact(c, eye, owner, occ);
+        if (!point) continue;
         for (const ex of allowed) {
           const damage = damageMap(ex, point, owner, targets, occ);
           let useful = 0;
@@ -423,7 +440,8 @@ export function planSplash(resolved: Resolved, ids: string[], allowed: Explosive
   }
   const damageTaken: Record<string, number> = {};
   for (const t of targets) damageTaken[t.id] = Math.round((t.hp - (hpLeft.get(t.id) ?? 0)) * 10) / 10;
-  return { shots: [...shots.values()], units, sulfur, sulfurPerItem: perItemSulfur(targets, allowed), damageTaken };
+  const complete = !targets.some(isAlive);
+  return { complete, shots: [...shots.values()], units, sulfur: complete ? sulfur : Infinity, sulfurPerItem: perItemSulfur(targets, allowed), damageTaken };
 }
 
 export interface Volley {
@@ -446,7 +464,8 @@ export function splashVolleys(resolved: Resolved, front: { id: string; from: Vec
     const owner = byId.get(f.id);
     if (!owner) continue;
     for (const c of owner.candidates) {
-      const point = nudgeTowards(c, f.from, owner.center);
+      const point = visibleImpact(c, f.from, owner, occ);
+      if (!point) continue;
       for (const ex of allowed) {
         const damage = damageMap(ex, point, owner, targets, occ);
         const needed = Object.entries(damage).map(([id, dmg]) => ({ id, n: Math.ceil(byId.get(id)!.hp / dmg - 1e-9) })).sort((a, b) => a.n - b.n);
@@ -479,7 +498,8 @@ export function volleyAlternatives(resolved: Resolved, graph: SpaceGraph, initia
     if (![...after].some(id => !initially.has(id))) continue;
     const rest = cheapestFrom(graph, after, broken, targetCell, 'optimal');
     if (!rest) continue;
-    const restPlan = rest.ids.length ? planSplash(resolved, rest.ids, allowed) : null;
+    const restPlan = rest.ids.length ? planSplash(resolved, rest.ids, allowed, rest.eyes) : null;
+    if (restPlan && !restPlan.complete) continue;
     const allBroken = new Set([...broken, ...rest.ids]);
     const openedIds = [...reachableSpaces(graph, allBroken)].filter(id => !initially.has(id));
     const volleySteps: RaidStep[] = v.broken.map(id => {

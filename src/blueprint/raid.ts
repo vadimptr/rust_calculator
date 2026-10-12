@@ -49,6 +49,8 @@ export interface RaidPath {
   points: [number, number, number][];
   /** Точка, через которую заходим с улицы. */
   entry?: [number, number, number];
+  /** Откуда рейдер атакует каждый ломаемый элемент: середина пространства перед ним (на высоте 1.5 м). */
+  eyes?: Record<string, [number, number, number]>;
 }
 
 function ruleFor(kind: string, grade?: Grade): RaidCostRule | null {
@@ -253,9 +255,21 @@ export function cheapestRaidPaths(resolved: Resolved, targetCell: string, method
   const toRaidPath = (r: PathResult): RaidPath => {
     const steps = r.hops.flatMap(h => (h.step ? [h.step] : []));
     const nodes = r.hops.map(h => h.to);
+    const eyes: Record<string, [number, number, number]> = {};
+    let from: string = OUTSIDE;
+    for (const h of r.hops) {
+      if (h.step) {
+        const toPos = graph.nodes.get(h.to)!.position;
+        const fromPos = from === OUTSIDE
+          ? ([h.mid[0] * 2 - toPos[0], toPos[1], h.mid[2] * 2 - toPos[2]] as [number, number, number])
+          : graph.nodes.get(from)!.position;
+        eyes[h.step.id] = [fromPos[0], fromPos[1] + 1.5, fromPos[2]];
+      }
+      from = h.to;
+    }
     return {
       steps, sulfur: r.sulfur, ids: steps.map(s => s.id), cells: nodes,
-      points: nodes.map(id => graph.nodes.get(id)!.position), entry: r.hops[0]?.mid,
+      points: nodes.map(id => graph.nodes.get(id)!.position), entry: r.hops[0]?.mid, eyes,
     };
   };
   const first = dijkstra(graph, targetCell, method, new Set(), new Set());
@@ -395,7 +409,7 @@ export function reachableSpaces(graph: SpaceGraph, broken: Set<string>): Set<str
   return seen;
 }
 
-export interface PlanLike { sulfur: number; units: Partial<Record<ExplosiveType, number>>; shots: RaidAlternative['shots'] }
+export interface PlanLike { sulfur: number; units: Partial<Record<ExplosiveType, number>>; shots: RaidAlternative['shots']; complete?: boolean }
 
 /**
  * Варианты рейда: несколько лучших путей по штукам (каждый пересчитан планировщиком сплеша) и
@@ -403,7 +417,7 @@ export interface PlanLike { sulfur: number; units: Partial<Record<ExplosiveType,
  */
 export function raidAlternatives(
   resolved: Resolved, targetCell: string, method: RaidMethod,
-  planSplash: (ids: string[]) => PlanLike,
+  planSplash: (ids: string[], eyes?: Record<string, [number, number, number]>) => PlanLike,
   volleys: (graph: SpaceGraph, initially: Set<string>, targetCell: string) => RaidAlternative[],
   k = 8,
 ): RaidAlternative[] {
@@ -419,7 +433,8 @@ export function raidAlternatives(
   };
   for (const path of paths) {
     const openedIds = [...reachableSpaces(graph, new Set(path.ids))].filter(id => !initially.has(id));
-    const plan = path.ids.length ? planSplash(path.ids) : { sulfur: 0, units: {}, shots: [] };
+    const plan = path.ids.length ? planSplash(path.ids, path.eyes) : { sulfur: 0, units: {}, shots: [], complete: true };
+    if (plan.complete === false) continue; // до какой-то цели с места рейдера не достать
     offer({ path: { ...path, sulfur: plan.sulfur }, sulfur: plan.sulfur, units: plan.units, shots: plan.shots, opened: openedIds.length, openedIds, value: spacesValue(graph, openedIds, resolved) });
   }
   for (const v of volleys(graph, initially, targetCell)) offer(v);
