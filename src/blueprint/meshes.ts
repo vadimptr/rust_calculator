@@ -60,7 +60,7 @@ const EDGE_COLOR = 0x0e0c0a;
 const WALL_T = 0.25;
 const FOUNDATION_D = 0.6;
 /** Проём в doorway: ширина × высота; дверь заполняет его целиком. */
-const DOORWAY_W = 1.0;
+const DOORWAY_W = 1.3;
 const DOORWAY_H = 2.2;
 /** Проём в wall-frame: под гаражную и двойные двери. */
 const FRAME_W = 2.4;
