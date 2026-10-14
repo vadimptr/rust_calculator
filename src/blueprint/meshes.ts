@@ -337,22 +337,27 @@ export function buildElement(el: ResolvedElement): THREE.Object3D {
 }
 
 /** Дроп-бокс на стене: синий ящик на стороне загрузки и стрелка направления передачи сквозь стену. */
+/** Дроп-бокс: сквозь стену, выступает с обеих сторон. Размеры: вдоль стены × высота × глубина. */
+const DROP_W = 0.8;
+const DROP_H = 0.6;
+const DROP_D = WALL_T + 2 * 0.3;
+
+/** Дроп-бокс: синий ящик сквозь стену и короткая стрелка направления передачи, начинающаяся внутри ящика. */
 function buildDropBox(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
-  const blue = DOOR_COLORS['drop-box'];
-  // out: кладут изнутри (−x), забирают снаружи (+x); in — наоборот
-  const loadSide = d.direction === 'in' ? 1 : -1;
-  g.add(withEdges(box(0.3, 0.45, 0.5, loadSide * (WALL_T / 2 + 0.15), 0, 0), blue));
-  const arrowLen = 1.1;
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, arrowLen, 10), new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 }));
+  g.add(withEdges(box(DROP_D, DROP_H, DROP_W, 0, 0, 0), DOOR_COLORS['drop-box']));
+  // out: из −x (внутри) в +x (снаружи); in — наоборот. Стрелка от середины ящика чуть за его грань
+  const toward = d.direction === 'in' ? -1 : 1;
+  const arrowLen = DROP_D / 2 + 0.12;
+  const arrowMat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 });
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, arrowLen, 10), arrowMat);
   shaft.rotation.z = Math.PI / 2;
-  shaft.position.set(0, 0.35, 0);
+  shaft.position.set(toward * arrowLen / 2, 0, 0);
   shaft.renderOrder = 12;
   g.add(shaft);
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 12), new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 }));
-  const toward = d.direction === 'in' ? -1 : 1;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 12), arrowMat);
   tip.rotation.z = toward === 1 ? -Math.PI / 2 : Math.PI / 2;
-  tip.position.set(toward * (arrowLen / 2 + 0.1), 0.35, 0);
+  tip.position.set(toward * (arrowLen + 0.1), 0, 0);
   tip.renderOrder = 12;
   g.add(tip);
   return g;
