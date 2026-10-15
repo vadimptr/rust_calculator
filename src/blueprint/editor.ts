@@ -160,36 +160,87 @@ export function removeElement(bp: Blueprint, id: string): Blueprint {
   if (!target || target.root) return bp;
   const before = resolveBlueprint(bp).resolved;
   let elements = bp.elements.filter(e => e.id !== id);
+  let deployables = bp.deployables ?? [];
   const removed = new Set([id]);
   for (;;) {
     const orphan = elements.find(e => e.attach && removed.has(e.attach.to));
     if (!orphan) break;
     const want = before.elements.find(e => e.id === orphan.id);
     const rest = elements.filter(e => e.id !== orphan.id);
-    const re = want ? reattach({ ...bp, elements: rest }, orphan, want) : null;
+    // для пробы крепления берём только то, что сейчас держится на корне: сироты и их поддеревья
+    // (в том числе ещё не разобранные) сами по себе не разрешатся
+    const live = subtree(elements, elements.find(e => e.root)!.id);
+    const probe = { ...bp, elements: elements.filter(e => live.has(e.id)), deployables: deployables.filter(d => live.has(d.attach.to)) };
+    const re = want ? reattach(probe, orphan, want) : null;
     if (re) {
-      elements = rest.concat({ ...orphan, attach: re });
+      elements = rest.concat({ ...orphan, attach: re.attach });
+      if (re.flipped) ({ elements, deployables } = flipWall({ ...bp, elements, deployables }, orphan.id));
     } else {
       elements = rest;
       removed.add(orphan.id);
     }
   }
-  const deployables = (bp.deployables ?? []).filter(d => !removed.has(d.attach.to));
+  deployables = deployables.filter(d => !removed.has(d.attach.to));
   return { ...bp, elements, deployables };
 }
 
-/** Найти для элемента другое крепление с той же позицией среди соседей в радиусе одной ячейки. */
-function reattach(bp: Blueprint, el: Element, want: Transform): Attach | null {
+/** id элемента и всех, кто висит на нём по цепочке attach. */
+function subtree(elements: Element[], rootId: string): Set<string> {
+  const out = new Set([rootId]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const e of elements) if (e.attach && out.has(e.attach.to) && !out.has(e.id)) { out.add(e.id); grew = true; }
+  }
+  return out;
+}
+
+/**
+ * Найти для элемента другое крепление с той же позицией среди соседей в радиусе одной ячейки.
+ * Поворот должен совпасть точно (иначе сдвинутся дети, висящие на рёбрах); стене-типу на общем
+ * ребре разрешён разворот на 180° — крепление к ячейке с другой стороны ребра, — тогда вызывающий
+ * код разворачивает всё, что на ней висит (flipWall).
+ */
+function reattach(bp: Blueprint, el: Element, want: Transform): { attach: Attach; flipped: boolean } | null {
   const resolved = resolveBlueprint(bp).resolved;
   if (resolved.elements.length === 0) return null;
   const near = resolved.elements.filter(e => Math.hypot(e.position[0] - want.position[0], e.position[2] - want.position[2]) < 4.5 && Math.abs(e.position[1] - want.position[1]) < 3.5);
+  let flipped: Attach | null = null;
   for (const host of near) {
-    // без свёртки по симметрии: поворот должен совпасть точно, иначе сдвинутся дети, висящие на рёбрах
     for (const p of candidatePlacements(bp, resolved, el.kind, host.id, false)) {
-      if (sameTransform(p.transform, want)) return p.attach;
+      if (sameTransform(p.transform, want)) return { attach: p.attach, flipped: false };
+      if (!flipped && KINDS[el.kind].category === 'wallType' && sameTransform(p.transform, want, 180)) flipped = p.attach;
     }
   }
-  return null;
+  return flipped ? { attach: flipped, flipped: true } : null;
+}
+
+/**
+ * Стена-тип развёрнута на 180° (нормаль смотрит в другую сторону): всё, что на ней висит, описано
+ * относительно нормали, поэтому компенсируется — полы и крыши на верху меняют flip, стены сверху
+ * разворачиваются так же (рекурсивно), у дверей меняются петли и сторона открывания, у дроп-боксов
+ * направление и знак смещения вдоль стены. В мире ничего не сдвигается.
+ */
+function flipWall(bp: Blueprint, wallId: string): { elements: Element[]; deployables: Deployable[] } {
+  let elements = bp.elements;
+  let deployables = bp.deployables ?? [];
+  const stacked: string[] = [];
+  elements = elements.map(e => {
+    if (!e.attach || e.attach.to !== wallId) return e;
+    const cat = KINDS[e.kind].category;
+    if (cat === 'wallType') { stacked.push(e.id); return e; }
+    return { ...e, attach: { ...e.attach, flip: !e.attach.flip } };
+  });
+  deployables = deployables.map(d => {
+    if (d.attach.to !== wallId) return d;
+    if (d.kind === 'drop-box') return { ...d, direction: d.direction === 'in' ? 'out' : 'in', offset: d.offset ? [-d.offset[0], d.offset[1]] : d.offset };
+    if (d.kind === 'tool-cupboard') return d;
+    const hinge = (d.hinge ?? 'left') === 'left' ? 'right' : 'left';
+    const opens = (d.opens ?? 'outward') === 'outward' ? 'inward' : 'outward';
+    return { ...d, hinge, opens };
+  });
+  let out = { elements, deployables };
+  for (const id of stacked) out = flipWall({ ...bp, ...out }, id);
+  return out;
 }
 
 export interface DeployPlacement {

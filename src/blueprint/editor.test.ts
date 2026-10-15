@@ -98,3 +98,36 @@ test('new kinds resolve: ramp and foundation steps on a foundation edge, spiral 
   // съезд занимает место соседа: фундамент туда уже не поставить
   assert.equal(candidatePlacements(bp, r.resolved, 'square-foundation', 'f1').length, 2);
 });
+
+test('removing a foundation keeps a doorway on the shared edge: it re-attaches to the other cell, door and floor stay in place', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2' });
+  bp = addElement(bp, 'doorway', { to: 'f2', socket: 'edge:2' });
+  bp = addElement(bp, 'wall', { to: 'f2', socket: 'edge:1' });
+  bp = addElement(bp, 'square-floor', { to: 'dw1', socket: 'top', selfSocket: 'edge:0' });
+  bp = addElement(bp, 'wall', { to: 'dw1', socket: 'top' });
+  bp = addDeployable(bp, { kind: 'wooden-door', attach: { to: 'dw1', socket: 'opening' }, hinge: 'left', opens: 'outward' });
+  bp = addDeployable(bp, { kind: 'drop-box', attach: { to: 'w2', socket: 'face' }, offset: [0.8, 1.3], direction: 'out' });
+  const before = resolveBlueprint(bp).resolved;
+  const after = removeElement(bp, 'f2');
+  const r = resolveBlueprint(after);
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  // w1 стояла только на f2 — падает; проём, пол над ним и стена над проёмом остаются
+  assert.deepEqual(after.elements.map(e => e.id).sort(), ['c1', 'dw1', 'f1', 'w2']);
+  assert.equal(after.elements.find(e => e.id === 'dw1')!.attach!.to, 'f1');
+  for (const id of ['dw1', 'c1', 'w2']) {
+    const a = before.elements.find(e => e.id === id)!, b = r.resolved.elements.find(e => e.id === id)!;
+    assert.deepEqual(b.position, a.position, id);
+  }
+  // пол: та же плита, тот же поворот; проём и стена над ним развёрнуты на 180°
+  assert.equal(r.resolved.elements.find(e => e.id === 'c1')!.rotation, before.elements.find(e => e.id === 'c1')!.rotation);
+  assert.equal((r.resolved.elements.find(e => e.id === 'dw1')!.rotation + 180) % 360, before.elements.find(e => e.id === 'dw1')!.rotation);
+  // дверь на месте, петли и открывание компенсированы (в мире открывается в ту же сторону)
+  const door = after.deployables!.find(d => d.id === 'd1')!;
+  assert.equal(door.hinge, 'right');
+  assert.equal(door.opens, 'inward');
+  const box = after.deployables!.find(d => d.id === 'box1')!;
+  assert.equal(box.direction, 'in');
+  assert.deepEqual(box.offset, [-0.8, 1.3]);
+  assert.deepEqual(r.resolved.deployables.find(d => d.id === 'box1')!.position, before.deployables.find(d => d.id === 'box1')!.position);
+});
