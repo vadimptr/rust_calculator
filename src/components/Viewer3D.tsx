@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { animateDoors, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
-import { KINDS } from '../blueprint/catalog.ts';
+import { KINDS, wallHeight } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -79,11 +79,17 @@ interface SceneRefs {
   alt: number;
   altKey: string;
   candCache: Map<string, Placement[]>;
+  /** Ключ текущего призрака: пока размещение то же, меш не пересобирается. */
+  ghostKey: string;
+  /** Ключ крепления, показанного в прошлый раз: сокет меняется только на заметно более близкий. */
+  lastAttach: string;
 }
 
-const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
-const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
-const DEMOLISH_MAT = new THREE.MeshStandardMaterial({ color: 0xff5a4d, emissive: 0x8e1d14, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
+// Призраки: только лицевые грани и без записи глубины — полупрозрачные грани одной коробки не
+// спорят друг с другом за порядок отрисовки, иначе при движении камеры они мерцают
+const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
+const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.FrontSide });
+const DEMOLISH_MAT = new THREE.MeshStandardMaterial({ color: 0xff5a4d, emissive: 0x8e1d14, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 
 /** Перекрасить построенный объект в призрак: материалы меша и рёбер заменяются, тени выключаются. */
@@ -180,7 +186,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [],
       raid: new RaidOverlay(content, scene), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
-      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(),
+      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '',
     };
     refs.current = state;
 
@@ -202,56 +208,75 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       return null;
     };
 
+    /** Показать призрак: меш пересобирается только когда сменился ключ размещения. */
+    const showGhost = (key: string, pending: Pending, build: () => THREE.Object3D) => {
+      state.pending = pending;
+      if (state.ghostKey === key) return;
+      ghost.clear();
+      ghost.add(build());
+      state.ghostKey = key;
+    };
+
     const refreshGhost = () => {
       state.hoverDirty = false;
-      ghost.clear();
-      state.pending = null;
-      host.dataset.hover = '';
-      host.dataset.pending = '';
       const ed = editorRef.current;
       const res = resolvedRef.current;
-      if (!ed || !res) return;
+      const none = () => { ghost.clear(); state.ghostKey = ''; state.pending = null; state.lastAttach = ''; };
+      host.dataset.hover = '';
+      host.dataset.pending = '';
+      if (!ed || !res) return none();
       const hit = pick();
-      if (!hit) return;
+      if (!hit) return none();
       // что под курсором и что будет сделано по клику: для тестов и отладки
       host.dataset.hover = hit.id;
       if (ed.tool === 'hammer') {
         const src = content.children.find(c => c.userData.id === hit.id);
-        if (!src) return;
-        const copy = hit.deployable
-          ? buildDeployable(res.deployables.find(d => d.id === hit.id)!)
-          : buildElement(res.elements.find(e => e.id === hit.id)!);
-        ghost.add(ghostify(copy, ed.demolish ? DEMOLISH_MAT : HAMMER_MAT));
-        state.pending = { type: 'hammer', id: hit.id, deployable: hit.deployable };
-        return;
+        if (!src) return none();
+        const mat = ed.demolish ? DEMOLISH_MAT : HAMMER_MAT;
+        return showGhost(`hammer|${hit.id}|${ed.demolish}`, { type: 'hammer', id: hit.id, deployable: hit.deployable }, () => ghostify(
+          hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!), mat));
       }
-      if (hit.deployable) return;
+      if (hit.deployable) return none();
       const hostEl = res.elements.find(e => e.id === hit.id);
-      if (!hostEl) return;
+      if (!hostEl) return none();
       if (ed.tool === 'build') {
         const key = `${hit.id}|${ed.kind}`;
         const pt: [number, number, number] = [hit.point.x, hit.point.y, hit.point.z];
         let cands = state.candCache.get(key);
         if (!cands) { cands = placementsNear(ed.blueprint, res, ed.kind, hit.id, pt); state.candCache.set(key, cands); }
-        if (cands.length === 0) return;
+        if (cands.length === 0) return none();
         if (state.altKey !== key) { state.altKey = key; state.alt = 0; }
-        const p = cands[state.alt % cands.length];
+        // ближайший к точке прицела; прежний сокет держится, пока новый не станет ближе на заметную величину —
+        // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
+        const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
+        const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
+        const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
+        let p = sorted[state.alt % sorted.length];
+        if (state.alt === 0) {
+          const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
+          if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
+        }
+        const attachKey = JSON.stringify(p.attach);
+        state.lastAttach = attachKey;
         const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };
-        ghost.add(ghostify(buildElement(el), GHOST_MAT));
-        state.pending = { type: 'element', kind: ed.kind, attach: p.attach };
-        return;
+        return showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el), GHOST_MAT));
       }
       // объект
       const local = toLocal(hostEl, hit.point);
       const dp = deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local);
-      if (!dp) return;
+      if (!dp) return none();
       const d = dp.deployable;
       const rd: ResolvedDeployable = {
         id: '__ghost__', kind: d.kind, parent: hit.id, hinge: d.hinge ?? 'left', opens: d.opens ?? 'outward', open: false,
         direction: d.direction, ...dp.transform,
       };
-      ghost.add(ghostify(buildDeployable(rd), GHOST_MAT));
-      state.pending = { type: 'deploy', d };
+      // шкаф и дроп-бокс едут за курсором: ключ без смещения, позиция обновляется на месте
+      const posKey = d.kind === 'tool-cupboard' || d.kind === 'drop-box' ? '' : JSON.stringify(d);
+      showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d }, () => ghostify(buildDeployable(rd), GHOST_MAT));
+      if (!posKey) {
+        const g = ghost.children[0];
+        if (g) { g.position.set(rd.position[0], rd.position[1], rd.position[2]); g.rotation.y = (-rd.rotation * Math.PI) / 180; }
+      }
     };
 
     const act = (button: number) => {
@@ -393,6 +418,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     s.raid.clear();
     s.content.clear();
     s.ghost.clear();
+    s.ghostKey = '';
     s.candCache.clear();
     s.hoverDirty = true;
     if (!resolved) return;
@@ -432,6 +458,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     s.candCache.clear();
     s.alt = 0;
     s.hoverDirty = true;
+    s.ghostKey = '';
     if (!editor) { s.ghost.clear(); s.pending = null; }
     s.renderer.domElement.style.cursor = editor ? 'crosshair' : '';
   }, [editor]);
