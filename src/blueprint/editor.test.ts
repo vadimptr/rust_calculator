@@ -131,3 +131,23 @@ test('removing a foundation keeps a doorway on the shared edge: it re-attaches t
   assert.deepEqual(box.offset, [-0.8, 1.3]);
   assert.deepEqual(r.resolved.deployables.find(d => d.id === 'box1')!.position, before.deployables.find(d => d.id === 'box1')!.position);
 });
+
+test('nothing can be placed on top of an existing block: a second floor over the same cell, a foundation back onto the root, a wall onto a wall edge from the other cell', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2' });
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:1' });
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:2' });
+  bp = addElement(bp, 'square-floor', { to: 'w1', socket: 'top', selfSocket: 'edge:0' });
+  let resolved = resolveBlueprint(bp).resolved;
+  // пол над f1 уже есть: с верха w2 можно поставить только наружу
+  const floors = candidatePlacements(bp, resolved, 'square-floor', 'w2');
+  assert.equal(floors.length, 1);
+  assert.ok(Math.hypot(floors[0].transform.position[0], floors[0].transform.position[2]) > 1);
+  assert.equal(candidatePlacements(bp, resolved, 'triangle-floor-frame', 'w2').length, 1);
+  // с f2 нельзя поставить фундамент на место f1 ни одним ребром
+  assert.ok(candidatePlacements(bp, resolved, 'square-foundation', 'f2').every(p => Math.hypot(...p.transform.position) > 1));
+  // стена на общем ребре f1/f2 со стороны f2 — одна позиция, затем занята
+  bp = addElement(bp, 'doorway', { to: 'f1', socket: 'edge:0' });
+  resolved = resolveBlueprint(bp).resolved;
+  assert.ok(candidatePlacements(bp, resolved, 'wall', 'f2').every(p => Math.abs(p.transform.position[0] - 1.5) > 0.1));
+});

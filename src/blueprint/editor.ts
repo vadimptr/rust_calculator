@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { KINDS, canAttach, defaultSelfSocket, socketsOf, wallHeight } from './catalog.ts';
+import { KINDS, canAttach, cellVertices, defaultSelfSocket, socketsOf, wallHeight } from './catalog.ts';
 import { resolveBlueprint } from './geometry.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
 
@@ -83,9 +83,33 @@ function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean 
         || (e.position[1] > t.position[1] && e.position[1] < t.position[1] + wallHeight(kind) - 0.01);
       return sameSpan && Math.hypot(e.position[0] - t.position[0], e.position[2] - t.position[2]) < 0.01 && Math.abs(((e.rotation - t.rotation) % 180 + 180) % 180) < 0.5;
     }
-    if (cat === 'stairs') return KINDS[e.kind].category === 'stairs' && sameTransform(e, t, 90);
-    return sameTransform(e, t);
+    // ячейки, крыши, съезды и лестницы одного уровня: пересечение контуров в плане (треугольник
+    // внутри квадрата — тоже пересечение); поворот не важен, одну плиту можно прикрепить любым ребром
+    if (Math.abs(e.position[1] - t.position[1]) > 0.01) return false;
+    return polygonsOverlap(footprint(e.kind, e), footprint(kind, t));
   });
+}
+
+/** Контур блока в плане (мир, [x, z]), усаженный на 5 см, чтобы соседи по ребру не считались пересечением. */
+function footprint(kind: ElementKind, t: Transform): [number, number][] {
+  const shape = KINDS[kind].shape ?? 'square';
+  const a = (t.rotation * Math.PI) / 180;
+  const k = 1 - 0.05 / (shape === 'square' ? 1.5 : 0.866);
+  return cellVertices(shape).map(([x, z]) => [t.position[0] + (x * Math.cos(a) - z * Math.sin(a)) * k, t.position[2] + (x * Math.sin(a) + z * Math.cos(a)) * k]);
+}
+
+/** Пересечение выпуклых многоугольников (разделяющая ось). */
+function polygonsOverlap(p: [number, number][], q: [number, number][]): boolean {
+  for (const poly of [p, q]) {
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, z1] = poly[i], [x2, z2] = poly[(i + 1) % poly.length];
+      const nx = z1 - z2, nz = x2 - x1;
+      const proj = (pts: [number, number][]) => pts.map(([x, z]) => x * nx + z * nz);
+      const a = proj(p), b = proj(q);
+      if (Math.max(...a) <= Math.min(...b) || Math.max(...b) <= Math.min(...a)) return false;
+    }
+  }
+  return true;
 }
 
 /** Все возможные размещения элемента типа kind на сокетах хозяина hostId. */
