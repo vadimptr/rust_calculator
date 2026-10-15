@@ -54,7 +54,7 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
   const [px, py, pz] = parent.position;
 
   // Ячейка ребром к ребру ячейки
-  if (p.category === 'cell' && edgeIndex(a.socket) !== null && (c.category === 'cell' || c.category === 'roof')) {
+  if (p.category === 'cell' && edgeIndex(a.socket) !== null && (c.category === 'cell' || c.category === 'roof' || c.category === 'ramp')) {
     const k = edgeIndex(a.socket)!;
     const m = edgeIndex(selfSocket)!;
     const normal = parent.rotation + edgeAngle(p.shape!, k);

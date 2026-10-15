@@ -1523,3 +1523,76 @@
   right: 2px;
   bottom: 2px;
 }
+
+/* --- Режим стройки --- */
+.viewer3d--aim::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgba(191, 224, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.palette {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.palette__tools {
+  display: inline-flex;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.palette__group {
+  margin-top: 0.55rem;
+}
+
+.palette__title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.palette__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.palette__item {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.76rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.palette__item:hover {
+  border-color: var(--text-secondary);
+}
+
+.palette__item--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.18);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.bp__icon-text {
+  font-size: 1.1rem;
+  line-height: 1;
+}

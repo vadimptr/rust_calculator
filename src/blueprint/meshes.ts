@@ -162,6 +162,7 @@ function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
 function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   const steps = 8;
   const parts: THREE.BufferGeometry[] = [];
+  if (kind === 'spiral-stairs') return spiralParts();
   if (kind === 'u-shaped-stairs') {
     // два марша: первый по +z половине вверх до 1.5, второй по −z половине обратно до 3
     for (let i = 0; i < steps / 2; i++) {
@@ -177,6 +178,39 @@ function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   for (let i = 0; i < steps; i++) {
     const rise = (i + 1) * (3 / steps);
     parts.push(box(3 / steps, rise, 1.4, -1.5 + (i + 0.5) * (3 / steps), rise / 2, 0.8));
+  }
+  return parts;
+}
+
+/** Съезд: плита от верха фундамента (x = +1.5, ближнее ребро) вниз к земле (x = −1.5). */
+function rampGeometry(): THREE.BufferGeometry {
+  const s = new THREE.Shape([
+    new THREE.Vector2(1.5, 0), new THREE.Vector2(1.5, -FLOOR_T), new THREE.Vector2(-1.5, -FOUNDATION_D - FLOOR_T), new THREE.Vector2(-1.5, -FOUNDATION_D),
+  ]);
+  return new THREE.ExtrudeGeometry(s, { depth: 3, bevelEnabled: false }).translate(0, 0, -1.5);
+}
+
+/** Ступени фундамента: четыре ступени от верха фундамента к земле. */
+function stepsParts(): THREE.BufferGeometry[] {
+  const n = 4;
+  const parts: THREE.BufferGeometry[] = [];
+  for (let i = 0; i < n; i++) {
+    const top = -(i * FOUNDATION_D) / n;
+    const h = FOUNDATION_D - (i * FOUNDATION_D) / n + 0.1;
+    parts.push(box(3 / n, h, 3, 1.5 - (i + 0.5) * (3 / n), top - h / 2, 0));
+  }
+  return parts;
+}
+
+/** Винтовая лестница: столб и клиновидные ступени по кругу на высоту этажа. */
+function spiralParts(): THREE.BufferGeometry[] {
+  const parts: THREE.BufferGeometry[] = [new THREE.CylinderGeometry(0.18, 0.18, 3, 12).translate(0, 1.5, 0)];
+  const steps = 12;
+  for (let i = 0; i < steps; i++) {
+    const a0 = (i / steps) * Math.PI * 2, a1 = ((i + 1) / steps) * Math.PI * 2;
+    const y = ((i + 1) / steps) * 3;
+    const shape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(1.3 * Math.cos(a0), 1.3 * Math.sin(a0)), new THREE.Vector2(1.3 * Math.cos(a1), 1.3 * Math.sin(a1))]);
+    parts.push(new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, y, 0));
   }
   return parts;
 }
@@ -220,6 +254,8 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
       return stairsParts(el.kind);
     case 'roof':
       return [roofGeometry(info.shape!)];
+    case 'ramp':
+      return el.kind === 'ramp' ? [rampGeometry()] : stepsParts();
   }
 }
 

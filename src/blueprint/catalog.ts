@@ -14,7 +14,7 @@ export const ROOF_RISE = 3;
 export const FLOOR_T = 0.2;
 
 export type Shape = 'square' | 'triangle';
-export type Category = 'cell' | 'wallType' | 'stairs' | 'roof';
+export type Category = 'cell' | 'wallType' | 'stairs' | 'roof' | 'ramp';
 
 export interface KindInfo {
   category: Category;
@@ -40,8 +40,12 @@ export const KINDS: Record<ElementKind, KindInfo> = {
   'wall-frame':           { category: 'wallType', height: WALL_H, opening: 'frame' },
   'stairs-l-shape':       { category: 'stairs' },
   'u-shaped-stairs':      { category: 'stairs' },
+  'spiral-stairs':        { category: 'stairs' },
   'roof':                 { category: 'roof', shape: 'square' },
   'roof-triangle':        { category: 'roof', shape: 'triangle' },
+  // съезд и ступени: на ребро фундамента, занимают место соседней ячейки и спускаются на землю
+  'ramp':                 { category: 'ramp', shape: 'square' },
+  'foundation-steps':     { category: 'ramp', shape: 'square' },
 };
 
 export const SINGLE_DOORS: DeployableKind[] = ['wooden-door', 'sheet-metal-door', 'armored-door'];
@@ -102,6 +106,8 @@ export function socketsOf(kind: ElementKind): Socket[] {
       return ['bottom'];
     case 'roof':
       return Array.from({ length: edgeCount(info.shape!) }, (_, i) => `edge:${i}` as Socket);
+    case 'ramp':
+      return ['edge:0'];
   }
 }
 
@@ -121,6 +127,7 @@ export function canAttach(
     if (c.category === 'cell' && cEdge) return !!p.isFoundation === !!c.isFoundation;
     if (c.category === 'wallType' && selfSocket === 'bottom') return true;
     if (c.category === 'roof' && selfSocket === 'edge:0') return true;
+    if (c.category === 'ramp' && selfSocket === 'edge:0') return !!p.isFoundation;
     return false;
   }
   if (p.category === 'cell' && socket === 'top') {

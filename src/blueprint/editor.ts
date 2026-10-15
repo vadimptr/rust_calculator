@@ -1,0 +1,258 @@
+/**
+ * Режим стройки: чистые операции над документом чертежа. Призрак ставится в сокет наведённого
+ * элемента, как в игре: для выбранного типа перебираются все совместимые сокеты хозяина, каждый
+ * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
+ * совместимости), а из удавшихся берётся ближайший к точке наведения.
+ */
+import { KINDS, canAttach, defaultSelfSocket, socketsOf, wallHeight } from './catalog.ts';
+import { resolveBlueprint } from './geometry.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
+
+export const GRADES: Grade[] = ['twig', 'wood', 'stone', 'metal', 'armored'];
+
+/** Строительный план Rust: все конструкции, по группам, как в игровом меню. */
+export const BUILD_PLAN: { group: string; kinds: ElementKind[] }[] = [
+  { group: 'Фундаменты', kinds: ['square-foundation', 'triangle-foundation', 'foundation-steps', 'ramp'] },
+  { group: 'Стены', kinds: ['wall', 'half-wall', 'low-wall', 'doorway', 'window-frame', 'wall-frame'] },
+  { group: 'Полы', kinds: ['square-floor', 'triangle-floor', 'floor-frame', 'triangle-floor-frame'] },
+  { group: 'Лестницы', kinds: ['stairs-l-shape', 'u-shaped-stairs', 'spiral-stairs'] },
+  { group: 'Крыши', kinds: ['roof', 'roof-triangle'] },
+];
+
+/** Объекты, которые ставятся в режиме стройки. */
+export const DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [
+  { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
+  { group: 'Двойные и гаражные', kinds: ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'] },
+  { group: 'В окно', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars'] },
+  { group: 'Прочее', kinds: ['tool-cupboard', 'drop-box'] },
+];
+
+const ID_PREFIX: Record<ElementKind, string> = {
+  'square-foundation': 'f', 'triangle-foundation': 'tf', 'foundation-steps': 'fs', 'ramp': 'rp',
+  'wall': 'w', 'half-wall': 'hw', 'low-wall': 'lw', 'doorway': 'dw', 'window-frame': 'wf', 'wall-frame': 'fr',
+  'square-floor': 'c', 'triangle-floor': 'tc', 'floor-frame': 'ff', 'triangle-floor-frame': 'tff',
+  'stairs-l-shape': 'st', 'u-shaped-stairs': 'us', 'spiral-stairs': 'ss', 'roof': 'r', 'roof-triangle': 'tr',
+};
+
+const DEPLOY_PREFIX: Partial<Record<DeployableKind, string>> = { 'tool-cupboard': 'cup', 'drop-box': 'box' };
+
+/** Свободный id с префиксом по типу. */
+export function freshId(bp: Blueprint, kind: ElementKind | DeployableKind): string {
+  const prefix = (ID_PREFIX as Record<string, string>)[kind] ?? DEPLOY_PREFIX[kind as DeployableKind] ?? (kind.includes('window') ? 'win' : 'd');
+  const used = new Set([...(bp.elements ?? []).map(e => e.id), ...(bp.deployables ?? []).map(d => d.id)]);
+  for (let n = 1; ; n++) {
+    const id = `${prefix}${n}`;
+    if (!used.has(id)) return id;
+  }
+}
+
+/** Пустая постройка: один квадратный фундамент из веток, как первый блок в игре. */
+export function newBlueprint(name = 'Новая постройка', foundation: ElementKind = 'square-foundation'): Blueprint {
+  return {
+    formatVersion: '1.0',
+    meta: { name, gameVersion: '2026-09', tags: ['custom'] },
+    defaults: { grade: 'twig' },
+    elements: [{ id: 'f1', kind: foundation, root: true }],
+    deployables: [],
+  };
+}
+
+export interface Placement {
+  attach: Attach;
+  transform: Transform;
+}
+
+const GHOST = '__ghost__';
+
+function sameTransform(a: Transform, b: Transform, angleMod = 360): boolean {
+  const d = Math.hypot(a.position[0] - b.position[0], a.position[1] - b.position[1], a.position[2] - b.position[2]);
+  const da = Math.abs((((a.rotation - b.rotation) % angleMod) + angleMod) % angleMod);
+  return d < 0.01 && (da < 0.5 || da > angleMod - 0.5);
+}
+
+/** Пересекается ли новый элемент с уже стоящим: та же категория места и та же позиция. */
+function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean {
+  const cat = KINDS[kind].category;
+  const place = (c: string) => (c === 'cell' || c === 'roof' || c === 'ramp' ? 'cell' : c);
+  return resolved.elements.some(e => {
+    if (place(KINDS[e.kind].category) !== place(cat)) return false;
+    if (cat === 'wallType') {
+      // стены на одном ребре: одна позиция, нормали могут смотреть в разные стороны
+      const sameSpan = Math.abs(e.position[1] - t.position[1]) < 0.01
+        || (t.position[1] > e.position[1] && t.position[1] < e.position[1] + wallHeight(e.kind) - 0.01)
+        || (e.position[1] > t.position[1] && e.position[1] < t.position[1] + wallHeight(kind) - 0.01);
+      return sameSpan && Math.hypot(e.position[0] - t.position[0], e.position[2] - t.position[2]) < 0.01 && Math.abs(((e.rotation - t.rotation) % 180 + 180) % 180) < 0.5;
+    }
+    if (cat === 'stairs') return KINDS[e.kind].category === 'stairs' && sameTransform(e, t, 90);
+    return sameTransform(e, t);
+  });
+}
+
+/** Все возможные размещения элемента типа kind на сокетах хозяина hostId. */
+export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: ElementKind, hostId: string, dedupe = true): Placement[] {
+  const host = bp.elements.find(e => e.id === hostId);
+  if (!host) return [];
+  const out: Placement[] = [];
+  const seen = new Set<string>();
+  const selfSockets = KINDS[kind].category === 'wallType' || KINDS[kind].category === 'stairs' ? ['bottom' as Socket] : socketsOf(kind);
+  for (const socket of socketsOf(host.kind)) {
+    if (socket === 'opening' || socket === 'face') continue;
+    for (const self of selfSockets) {
+      if (!canAttach(host.kind, socket, kind, self)) continue;
+      const flips = KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType' ? [false, true] : [false];
+      const turnsList = KINDS[kind].category === 'stairs' ? [0, 1, 2, 3] : [0];
+      for (const flip of flips) for (const turns of turnsList) {
+        const attach: Attach = { to: hostId, socket };
+        if (defaultSelfSocket(kind) !== self) attach.selfSocket = self;
+        if (flip) attach.flip = true;
+        if (turns) attach.turns = turns as 0 | 1 | 2 | 3;
+        const ghost: Element = { id: GHOST, kind, attach };
+        const r = resolveBlueprint({ ...bp, elements: [...bp.elements, ghost], deployables: [] });
+        if (r.issues.some(i => i.level === 'error')) continue;
+        const t = r.resolved.elements.find(e => e.id === GHOST);
+        if (!t) continue;
+        // ячейка, приставленная разными своими рёбрами, занимает одно и то же место: поворот берётся
+        // по модулю симметрии формы, первым остаётся вариант с edge:0
+        const sym = dedupe && KINDS[kind].category === 'cell' ? 360 / (KINDS[kind].shape === 'square' ? 4 : 3) : 360;
+        const key = `${t.position.map(v => v.toFixed(2)).join('|')}|${(((t.rotation % sym) + sym) % sym).toFixed(0)}|${turns}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (overlaps(kind, t, resolved)) continue;
+        out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level } });
+      }
+    }
+  }
+  return out;
+}
+
+/** Размещения, отсортированные по близости к точке наведения. */
+export function placementsNear(bp: Blueprint, resolved: Resolved, kind: ElementKind, hostId: string, point: [number, number, number]): Placement[] {
+  const dist = (p: Placement) => {
+    const [x, y, z] = p.transform.position;
+    const h = KINDS[kind].category === 'wallType' ? wallHeight(kind) / 2 : 0;
+    return Math.hypot(x - point[0], y + h - point[1], z - point[2]);
+  };
+  return candidatePlacements(bp, resolved, kind, hostId).sort((a, b) => dist(a) - dist(b));
+}
+
+export function addElement(bp: Blueprint, kind: ElementKind, attach: Attach, grade?: Grade): Blueprint {
+  const el: Element = { id: freshId(bp, kind), kind, attach };
+  if (grade && grade !== bp.defaults?.grade) el.grade = grade;
+  return { ...bp, elements: [...bp.elements, el] };
+}
+
+export function upgradeElement(bp: Blueprint, id: string, grade: Grade): Blueprint {
+  return { ...bp, elements: bp.elements.map(e => (e.id === id ? { ...e, grade } : e)) };
+}
+
+/** Элемент, в который рейкастом попал курсор, и доступные ему размещения с учётом текущего чертежа. */
+export function transformOf(resolved: Resolved, id: string): ResolvedElement | undefined {
+  return resolved.elements.find(e => e.id === id);
+}
+
+/**
+ * Снос элемента. Дети, висевшие на нём, перецепляются к любому другому элементу, дающему ту же
+ * позицию (как в игре, где блок держится на всех соседях); кому перецепиться не к кому — сносятся
+ * тоже, вместе со своими объектами. Корень снести нельзя.
+ */
+export function removeElement(bp: Blueprint, id: string): Blueprint {
+  const target = bp.elements.find(e => e.id === id);
+  if (!target || target.root) return bp;
+  const before = resolveBlueprint(bp).resolved;
+  let elements = bp.elements.filter(e => e.id !== id);
+  const removed = new Set([id]);
+  for (;;) {
+    const orphan = elements.find(e => e.attach && removed.has(e.attach.to));
+    if (!orphan) break;
+    const want = before.elements.find(e => e.id === orphan.id);
+    const rest = elements.filter(e => e.id !== orphan.id);
+    const re = want ? reattach({ ...bp, elements: rest }, orphan, want) : null;
+    if (re) {
+      elements = rest.concat({ ...orphan, attach: re });
+    } else {
+      elements = rest;
+      removed.add(orphan.id);
+    }
+  }
+  const deployables = (bp.deployables ?? []).filter(d => !removed.has(d.attach.to));
+  return { ...bp, elements, deployables };
+}
+
+/** Найти для элемента другое крепление с той же позицией среди соседей в радиусе одной ячейки. */
+function reattach(bp: Blueprint, el: Element, want: Transform): Attach | null {
+  const resolved = resolveBlueprint(bp).resolved;
+  if (resolved.elements.length === 0) return null;
+  const near = resolved.elements.filter(e => Math.hypot(e.position[0] - want.position[0], e.position[2] - want.position[2]) < 4.5 && Math.abs(e.position[1] - want.position[1]) < 3.5);
+  for (const host of near) {
+    // без свёртки по симметрии: поворот должен совпасть точно, иначе сдвинутся дети, висящие на рёбрах
+    for (const p of candidatePlacements(bp, resolved, el.kind, host.id, false)) {
+      if (sameTransform(p.transform, want)) return p.attach;
+    }
+  }
+  return null;
+}
+
+export interface DeployPlacement {
+  deployable: Omit<Deployable, 'id'>;
+  transform: Transform;
+}
+
+/**
+ * Размещение объекта на наведённом элементе: дверь или вставка — в свободный проём, шкаф — на верх
+ * ячейки в точку наведения, дроп-бокс — на грань стены в точку наведения. local — точка наведения в
+ * локальных осях хозяина (x по нормали, y вверх, z вдоль).
+ */
+export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number]): DeployPlacement | null {
+  const host = bp.elements.find(e => e.id === hostId);
+  const ht = resolved.elements.find(e => e.id === hostId);
+  if (!host || !ht) return null;
+  const info = KINDS[host.kind];
+  const taken = (bp.deployables ?? []).filter(d => d.attach.to === hostId);
+  let deployable: Omit<Deployable, 'id'>;
+  if (kind === 'tool-cupboard') {
+    if (info.category !== 'cell' || info.isFrame) return null;
+    if (taken.some(d => d.kind === 'tool-cupboard')) return null;
+    const r = (info.shape === 'square' ? 1.5 : 0.866) - 0.35;
+    const clamp = (v: number) => Math.max(-r, Math.min(r, v));
+    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0]) * 100) / 100, Math.round(clamp(local[2]) * 100) / 100], rotation: 0 };
+  } else if (kind === 'drop-box') {
+    if (info.category !== 'wallType' || info.opening || host.kind === 'low-wall') return null;
+    const h = wallHeight(host.kind);
+    deployable = { kind, attach: { to: hostId, socket: 'face' }, offset: [Math.round(Math.max(-1.1, Math.min(1.1, local[2])) * 10) / 10, Math.round(Math.max(0.4, Math.min(h - 0.4, local[1])) * 10) / 10], direction: local[0] >= 0 ? 'in' : 'out' };
+  } else {
+    if (!info.opening) return null;
+    if (taken.length > 0) return null;
+    const accepts = info.opening === 'single' ? ['wooden-door', 'sheet-metal-door', 'armored-door']
+      : info.opening === 'frame' ? ['garage-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door']
+        : ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars'];
+    if (!accepts.includes(kind)) return null;
+    deployable = { kind, attach: { to: hostId, socket: 'opening' } };
+    if (info.opening !== 'window') {
+      // петли с той стороны, куда ближе курсор (глядя снаружи по нормали: left = +z)
+      deployable.hinge = local[2] >= 0 ? 'left' : 'right';
+      deployable.opens = 'outward';
+    }
+  }
+  const probe: Blueprint = { ...bp, deployables: [...(bp.deployables ?? []), { id: GHOST, ...deployable } as Deployable] };
+  const r = resolveBlueprint(probe);
+  if (r.issues.some(i => i.level === 'error')) return null;
+  const t = r.resolved.deployables.find(d => d.id === GHOST);
+  if (!t) return null;
+  return { deployable, transform: { position: t.position, rotation: t.rotation, level: t.level } };
+}
+
+export function addDeployable(bp: Blueprint, d: Omit<Deployable, 'id'>): Blueprint {
+  const dep = { id: freshId(bp, d.kind), ...d } as Deployable;
+  return { ...bp, deployables: [...(bp.deployables ?? []), dep] };
+}
+
+export function removeDeployable(bp: Blueprint, id: string): Blueprint {
+  return { ...bp, deployables: (bp.deployables ?? []).filter(d => d.id !== id) };
+}
+
+/** Документ для скачивания: без вычисляемого слоя, с отступами. */
+export function exportBlueprint(bp: Blueprint): string {
+  const { resolved: _resolved, ...rest } = bp as Blueprint & { resolved?: unknown };
+  void _resolved;
+  return JSON.stringify({ $schema: 'https://github.com/vadimptr/rust_calculator/docs/blueprint/schema/blueprint.schema.json', ...rest }, null, 2) + '\n';
+}

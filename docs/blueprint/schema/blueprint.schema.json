@@ -68,6 +68,8 @@
       "enum": [
         "square-foundation",
         "triangle-foundation",
+        "foundation-steps",
+        "ramp",
         "wall",
         "half-wall",
         "low-wall",
@@ -80,6 +82,7 @@
         "triangle-floor-frame",
         "stairs-l-shape",
         "u-shaped-stairs",
+        "spiral-stairs",
         "roof",
         "roof-triangle"
       ]

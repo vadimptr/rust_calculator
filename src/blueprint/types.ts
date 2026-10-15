@@ -19,8 +19,11 @@ export type ElementKind =
   | 'triangle-floor-frame'
   | 'stairs-l-shape'
   | 'u-shaped-stairs'
+  | 'spiral-stairs'
   | 'roof'
-  | 'roof-triangle';
+  | 'roof-triangle'
+  | 'ramp'
+  | 'foundation-steps';
 
 export type DeployableKind =
   | 'tool-cupboard'
