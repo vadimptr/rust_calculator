@@ -18,6 +18,8 @@ export type EditorTool = 'build' | 'deploy' | 'hammer';
 /** Режим стройки: что в руках и куда сообщать о действиях. Документ — проверенный чертёж. */
 export interface EditorState {
   tool: EditorTool;
+  /** Киянка в режиме сноса: ЛКМ (тап на тачпаде) сносит вместо апгрейда. */
+  demolish: boolean;
   kind: ElementKind;
   deployKind: DeployableKind;
   grade: Grade;
@@ -81,6 +83,7 @@ interface SceneRefs {
 
 const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
 const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
+const DEMOLISH_MAT = new THREE.MeshStandardMaterial({ color: 0xff5a4d, emissive: 0x8e1d14, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 
 /** Перекрасить построенный объект в призрак: материалы меша и рёбер заменяются, тени выключаются. */
@@ -218,7 +221,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
         const copy = hit.deployable
           ? buildDeployable(res.deployables.find(d => d.id === hit.id)!)
           : buildElement(res.elements.find(e => e.id === hit.id)!);
-        ghost.add(ghostify(copy, HAMMER_MAT));
+        ghost.add(ghostify(copy, ed.demolish ? DEMOLISH_MAT : HAMMER_MAT));
         state.pending = { type: 'hammer', id: hit.id, deployable: hit.deployable };
         return;
       }
@@ -258,8 +261,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (p.type === 'element' && button === 0) ed.onPlace(p.kind, p.attach);
       else if (p.type === 'deploy' && button === 0) ed.onDeploy(p.d);
       else if (p.type === 'hammer') {
-        if (button === 0 && !p.deployable) ed.onUpgrade(p.id);
-        if (button === 2) ed.onRemove(p.id, p.deployable);
+        if (button === 2 || (button === 0 && ed.demolish)) ed.onRemove(p.id, p.deployable);
+        else if (button === 0 && !p.deployable) ed.onUpgrade(p.id);
       }
       state.candCache.clear();
       state.hoverDirty = true;

@@ -157,6 +157,7 @@ const BlueprintSection: React.FC = () => {
   const [buildKind, setBuildKind] = useState<ElementKind>('wall');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
   const [buildGrade, setBuildGrade] = useState<Grade>('twig');
+  const [demolish, setDemolish] = useState(false);
 
   // Документ с переопределениями → схема → геометрия
   const result: LoadResult = useMemo(
@@ -202,13 +203,13 @@ const BlueprintSection: React.FC = () => {
   const editor = useMemo<EditorState | null>(() => {
     if (!editing || !blueprint) return null;
     return {
-      tool, kind: buildKind, deployKind, grade: buildGrade, blueprint,
+      tool, demolish, kind: buildKind, deployKind, grade: buildGrade, blueprint,
       onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, buildGrade)),
       onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
       onUpgrade: (id: string) => applyDoc(upgradeElement(blueprint, id, buildGrade)),
       onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
     };
-  }, [editing, blueprint, tool, buildKind, deployKind, buildGrade, applyDoc]);
+  }, [editing, blueprint, tool, demolish, buildKind, deployKind, buildGrade, applyDoc]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -350,7 +351,7 @@ const BlueprintSection: React.FC = () => {
           <div className="bp__hint">
             {editing
               ? (cameraMode === 'orbit'
-                ? 'Наведи на блок — синий призрак встанет в ближайший сокет · ЛКМ — поставить или апгрейд киянкой · ПКМ / Delete — снести киянкой · R — другой вариант · перетаскивание вращает камеру'
+                ? 'Наведи на блок — синий призрак встанет в ближайший сокет · клик — поставить, апгрейд или снос (по режиму киянки) · R — другой вариант · перетаскивание вращает камеру'
                 : 'Клик — захват мыши, прицел в центре · ЛКМ — поставить или апгрейд · ПКМ — снести киянкой · R — другой вариант · WASD, Space / C — лететь · Esc — отпустить')
               : cameraMode === 'orbit'
                 ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
@@ -413,6 +414,15 @@ const BlueprintSection: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {tool === 'hammer' && (
+                <div className="palette__group">
+                  <div className="palette__title">Действие по клику</div>
+                  <div className="bp__presets" role="group" aria-label="Действие киянки">
+                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${!demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(false)} aria-pressed={!demolish}>Апгрейд</button>
+                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(true)} aria-pressed={demolish}>Снести</button>
+                  </div>
+                </div>
+              )}
               <div className="palette__group">
                 <div className="palette__title">{tool === 'hammer' ? 'Апгрейд до' : 'Материал новых блоков'}</div>
                 <div className="bp__icons" role="group" aria-label="Материал">
@@ -422,7 +432,7 @@ const BlueprintSection: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {tool === 'hammer' && <p className="raid-panel__hint">ЛКМ по блоку — апгрейд до выбранного материала, ПКМ или Delete — снести. Блоки, которые держались только на снесённом, падают вместе с ним; корневой фундамент снести нельзя.</p>}
+                {tool === 'hammer' && <p className="raid-panel__hint">{demolish ? 'Клик или тап по блоку — снести (подсветка красная).' : 'Клик по блоку — апгрейд до выбранного материала; снос — режим «Снести», ПКМ или Delete.'} Блоки, которые держались только на снесённом, падают вместе с ним; корневой фундамент снести нельзя.</p>}
                 {tool === 'build' && <p className="raid-panel__hint">Как в игре: новый блок ставится в сокет того блока, на который наведён курсор. R перебирает варианты (сторона пола, поворот лестницы). Полный строительный план: {GRADES.length} материала, {BUILD_PLAN.reduce((n, g) => n + g.kinds.length, 0)} конструкций.</p>}
                 {tool === 'deploy' && <p className="raid-panel__hint">Двери — в проём (петли с той стороны, где курсор), вставки — в оконный проём, шкаф — на пол в точку курсора, дроп-бокс — на стену (направление по стороне, с которой наведён).</p>}
               </div>
