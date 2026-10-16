@@ -1824,3 +1824,107 @@
   padding: 0.45rem 0.5rem;
   font-size: 0.72rem;
 }
+
+/* Нижняя панель инструментов (как слоты в игре) */
+.hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  z-index: 3;
+}
+
+.hotbar__slot {
+  position: relative;
+  width: 112px;
+  height: 74px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: var(--text-primary);
+  background: rgba(20, 17, 14, 0.78);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hotbar__slot--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.32);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.hotbar__key {
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.hotbar__sub {
+  max-width: 100%;
+  padding: 0 0.3rem;
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Радиальное меню (зажатая ПКМ) */
+.radial {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.radial__ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(15, 13, 11, 0.55) 0%, rgba(15, 13, 11, 0.82) 70%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.radial__item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  color: #e8e2d6;
+  background: rgba(30, 26, 22, 0.92);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.radial__item--sel {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.radial__center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(15, 13, 11, 0.9);
+  border-radius: 6px;
+}

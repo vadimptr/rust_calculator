@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
-import type { CameraMode, EditorState, EditorTool } from './Viewer3D';
+import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, GRADES, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade } from '../blueprint/types.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import type { RaidSimulation } from '../blueprint/splash.ts';
@@ -114,14 +114,38 @@ const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
 
-/** Киянка: материалы апгрейда с иконками раздела строительства; ветки — без иконки. */
-const HAMMER_GRADES: { id: Grade; label: string; img?: string }[] = [
-  { id: 'twig', label: 'Ветки' },
-  { id: 'wood', label: 'Дерево', img: '/icons/wood.png' },
-  { id: 'stone', label: 'Камень', img: '/icons/stones.png' },
-  { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
-];
+/** Короткие подписи для кольца радиального меню. */
+const SHORT_LABELS: Record<string, string> = {
+  'square-foundation': 'Фундамент', 'triangle-foundation': 'Тр. фунд.', 'foundation-steps': 'Ступени', 'ramp': 'Съезд',
+  'wall': 'Стена', 'half-wall': 'Полустена', 'low-wall': 'Низкая', 'doorway': 'Проём', 'window-frame': 'Окно', 'wall-frame': 'Рама',
+  'square-floor': 'Пол', 'triangle-floor': 'Тр. пол', 'floor-frame': 'Рама пола', 'triangle-floor-frame': 'Тр. рама',
+  'stairs-l-shape': 'Лестн. L', 'u-shaped-stairs': 'Лестн. U', 'spiral-stairs': 'Винтовая', 'roof': 'Крыша', 'roof-triangle': 'Тр. крыша',
+  'wooden-door': 'Дер. дверь', 'sheet-metal-door': 'Мет. дверь', 'armored-door': 'МВК дверь',
+  'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
+  'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка',
+  'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
+};
+
+/** Радиальные меню: блоки строительного плана, объекты, апгрейд и снос киянкой. */
+const RADIAL: Record<EditorTool, RadialItem[]> = {
+  build: BUILD_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
+  deploy: DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
+  hammer: [
+    { id: 'twig', label: 'Ветки' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
+    { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'remove', label: 'Снести' },
+  ],
+};
+
+const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
+
+/** Иконки нижней панели: строительный план, киянка, объект. */
+const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {tool === 'build' && <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="M3.5 9.5h17M9.5 9.5v11M14 14h4M14 17h4" /></>}
+    {tool === 'hammer' && <><path d="M14.5 3.5l6 6-2.5 2.5-6-6z" /><path d="M13 8L4 17l3 3 9-9" /></>}
+    {tool === 'deploy' && <><path d="M6 21V3h12v18" /><path d="M4 21h16" /><circle cx="14.5" cy="12" r="0.9" fill="currentColor" /></>}
+  </svg>
+);
 
 function downloadFile(name: string, text: string) {
   const a = document.createElement('a');
@@ -146,7 +170,7 @@ function fromPreset(id: string, grade: GradeChoice = 'stone', door: DoorChoice =
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
 function initialPresetId(): string {
   const wanted = new URLSearchParams(window.location.search).get('bp');
-  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : BLUEPRINT_PRESETS[0].id;
+  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'starter-2x1';
 }
 
 const BlueprintSection: React.FC = () => {
@@ -166,11 +190,12 @@ const BlueprintSection: React.FC = () => {
   const [tool, setTool] = useState<EditorTool>('build');
   const [buildKind, setBuildKind] = useState<ElementKind>('wall');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
-  const [buildGrade, setBuildGrade] = useState<Grade>('twig');
-  const [demolish, setDemolish] = useState(false);
 
   // Документ с переопределениями → схема → геометрия
-  const result: LoadResult = useMemo(() => loadBlueprint(source.data), [source]);
+  const result: LoadResult = useMemo(
+    () => (source.data === null ? { blueprint: null, resolved: EMPTY_RESOLVED, issues: [] } : loadBlueprint(source.data)),
+    [source],
+  );
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
@@ -188,11 +213,17 @@ const BlueprintSection: React.FC = () => {
     setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, d) }));
     setRaidPlay(0);
   };
-  const startNew = () => {
-    setActivePreset(null);
-    setSource({ label: 'Новая постройка', data: newBlueprint() });
-    setRaidPlay(0);
-  };
+
+  // 1 / 2 / 3 — строительный план, киянка, объект (как слоты в игре)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
+      if (t) { setTool(t); e.preventDefault(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
   const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
     // после каждого действия — обрушение блоков без опоры, как в игре
@@ -217,15 +248,24 @@ const BlueprintSection: React.FC = () => {
   const { blueprint, resolved, issues } = result;
 
   const editor = useMemo<EditorState | null>(() => {
-    if (!blueprint) return null;
+    if (!blueprint && source.data !== null) return null;
     return {
-      tool, demolish, kind: buildKind, deployKind, grade: buildGrade, blueprint,
-      onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, buildGrade)),
-      onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
-      onUpgrade: (id: string) => applyDoc(upgradeElement(blueprint, id, buildGrade)),
-      onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      tool, kind: buildKind, deployKind, blueprint, radial: RADIAL,
+      // новые блоки — из веток, как в игре; грейд меняется киянкой
+      onPlace: (kind: ElementKind, attach: Attach) => blueprint && applyDoc(addElement(blueprint, kind, attach, 'twig')),
+      onPlaceRoot: (kind: ElementKind) => applyDoc(newBlueprint('Новая постройка', kind)),
+      onDeploy: (d: Omit<Deployable, 'id'>) => blueprint && applyDoc(addDeployable(blueprint, d)),
+      onRemove: (id: string, deployable: boolean) => blueprint && applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {
+        if (t === 'build') setBuildKind(itemId as ElementKind);
+        else if (t === 'deploy') setDeployKind(itemId as DeployableKind);
+        else if (blueprint && targetId) {
+          if (itemId === 'remove') applyDoc(targetDeployable ? removeDeployable(blueprint, targetId) : removeElement(blueprint, targetId));
+          else if (!targetDeployable) applyDoc(upgradeElement(blueprint, targetId, itemId as Grade));
+        }
+      },
     };
-  }, [blueprint, tool, demolish, buildKind, deployKind, buildGrade, applyDoc]);
+  }, [blueprint, source.data, tool, buildKind, deployKind, applyDoc]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -299,9 +339,6 @@ const BlueprintSection: React.FC = () => {
                 </button>
               </li>
             ))}
-            <li>
-              <button type="button" className={`bp__list-item${activePreset === null && source.label === 'Новая постройка' ? ' bp__list-item--active' : ''}`} onClick={startNew}>+ Новая постройка</button>
-            </li>
           </ul>
           <div className="bp__side-actions">
             <div className="bp__row">
@@ -347,10 +384,19 @@ const BlueprintSection: React.FC = () => {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
               </button>
             </div>
+            <div className="hotbar" role="group" aria-label="Инструменты">
+              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'апгрейд и снос'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
+                <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id} aria-label={label}>
+                  <span className="hotbar__key">{i + 1}</span>
+                  <ToolIcon tool={id} />
+                  <span className="hotbar__sub">{sub}</span>
+                </button>
+              ))}
+            </div>
             <div className="bp__hint">
-              {cameraMode === 'orbit'
-                ? 'Наведи на блок — синий призрак встанет в ближайший сокет · клик — поставить, апгрейд или снос (по режиму киянки) · R — другой вариант · перетаскивание вращает камеру'
-                : 'Клик — захват мыши, прицел в центре · ЛКМ — поставить или апгрейд · ПКМ — снести киянкой · R — другой вариант · WASD, Space / C — лететь · Esc — отпустить'}
+              {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
+              {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · D — снести · средняя кнопка — сдвиг камеры'}
+              {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — направление дроп-бокса · средняя кнопка — сдвиг камеры'}
             </div>
           </div>
         </div>
@@ -383,58 +429,7 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {(
-            <section className="palette">
-              <div className="palette__tools" role="group" aria-label="Инструмент">
-                {([['build', 'Строительный план'], ['deploy', 'Объекты'], ['hammer', 'Киянка']] as [EditorTool, string][]).map(([id, label]) => (
-                  <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${tool === id ? ' raid-tier__btn--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id}>{label}</button>
-                ))}
-              </div>
-              {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
-              {tool === 'build' && BUILD_PLAN.map(g => (
-                <div key={g.group} className="palette__group">
-                  <div className="palette__title">{g.group}</div>
-                  <div className="palette__items">
-                    {g.kinds.map(k => (
-                      <button key={k} type="button" className={`palette__item${buildKind === k ? ' palette__item--active' : ''}`} onClick={() => setBuildKind(k)} aria-pressed={buildKind === k}>{KIND_LABELS[k]}</button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {tool === 'deploy' && DEPLOY_PLAN.map(g => (
-                <div key={g.group} className="palette__group">
-                  <div className="palette__title">{g.group}</div>
-                  <div className="palette__items">
-                    {g.kinds.map(k => (
-                      <button key={k} type="button" className={`palette__item${deployKind === k ? ' palette__item--active' : ''}`} onClick={() => setDeployKind(k)} aria-pressed={deployKind === k}>{KIND_LABELS[k]}</button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {tool === 'hammer' && (
-                <div className="palette__group">
-                  <div className="palette__title">Действие по клику</div>
-                  <div className="bp__presets" role="group" aria-label="Действие киянки">
-                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${!demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(false)} aria-pressed={!demolish}>Апгрейд</button>
-                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(true)} aria-pressed={demolish}>Снести</button>
-                  </div>
-                </div>
-              )}
-              <div className="palette__group">
-                <div className="palette__title">{tool === 'hammer' ? 'Апгрейд до' : 'Материал новых блоков'}</div>
-                <div className="bp__icons" role="group" aria-label="Материал">
-                  {HAMMER_GRADES.map(c => (
-                    <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${buildGrade === c.id ? ' bp__icon-btn--active' : ''}`} onClick={() => setBuildGrade(c.id)} aria-pressed={buildGrade === c.id} aria-label={c.label}>
-                      {c.img ? <img src={c.img} alt="" /> : <span className="bp__icon-text">🌿</span>}
-                    </button>
-                  ))}
-                </div>
-                {tool === 'hammer' && <p className="raid-panel__hint">{demolish ? 'Клик или тап по блоку — снести (подсветка красная).' : 'Клик по блоку — апгрейд до выбранного материала; снос — режим «Снести», ПКМ или Delete.'} Блоки, которые держались только на снесённом, падают вместе с ним; корневой фундамент снести нельзя.</p>}
-                {tool === 'build' && <p className="raid-panel__hint">Как в игре: новый блок ставится в сокет того блока, на который наведён курсор. R перебирает варианты (сторона пола, поворот лестницы). Полный строительный план: {GRADES.length} материала, {BUILD_PLAN.reduce((n, g) => n + g.kinds.length, 0)} конструкций.</p>}
-                {tool === 'deploy' && <p className="raid-panel__hint">Двери — в проём (петли с той стороны, где курсор), вставки — в оконный проём, шкаф — на пол в точку курсора, дроп-бокс — на стену (направление по стороне, с которой наведён).</p>}
-              </div>
-            </section>
-          )}
+          {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
 
           {resolved && raidBusy && (
             <section className="raid-panel">

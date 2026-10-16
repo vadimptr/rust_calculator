@@ -504,11 +504,13 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
   shaft.rotation.z = Math.PI / 2;
   shaft.position.set(toward * arrowLen / 2, 0, 0);
   shaft.renderOrder = 12;
+  shaft.userData.keepMaterial = true; // у призрака стрелка остаётся своей, видно направление
   g.add(shaft);
   const tip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 12), arrowMat);
   tip.rotation.z = toward === 1 ? -Math.PI / 2 : Math.PI / 2;
   tip.position.set(toward * (arrowLen + 0.1), 0, 0);
   tip.renderOrder = 12;
+  tip.userData.keepMaterial = true;
   g.add(tip);
   return g;
 }
