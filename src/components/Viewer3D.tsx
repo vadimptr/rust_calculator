@@ -464,13 +464,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (editorRef.current && !(e.target instanceof HTMLInputElement)) {
-        if (e.code === 'KeyR') { state.alt++; state.hoverDirty = true; e.preventDefault(); return; }
-        if (e.code === 'KeyD' && editorRef.current.tool === 'hammer' && !fly.isLocked) {
+        // киянка: R — снести блок под прицелом; в остальных инструментах R — другой вариант
+        if (e.code === 'KeyR' && editorRef.current.tool === 'hammer') {
           const p = state.pending;
           if (p && p.type === 'hammer') { editorRef.current.onRemove(p.id, p.deployable); state.candCache.clear(); state.hoverDirty = true; }
           e.preventDefault();
           return;
         }
+        if (e.code === 'KeyR') { state.alt++; state.hoverDirty = true; e.preventDefault(); return; }
         if (e.code === 'Delete' || e.code === 'Backspace') {
           const p = state.pending;
           if (p && p.type === 'hammer') { editorRef.current.onRemove(p.id, p.deployable); state.candCache.clear(); state.hoverDirty = true; }
