@@ -269,27 +269,59 @@ function gableGeometry(peak: 1 | -1): THREE.BufferGeometry {
   return new THREE.ExtrudeGeometry(s, { depth: WALL_T, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(WALL_T / 2, 0, 0);
 }
 
-function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
-  const steps = 8;
+/**
+ * Марш лестницы, полый снизу: наклонная плита толщиной 0.1 и ступени на ней. Ширина — по оси across
+ * (a0..a1), подъём — вдоль оси along от s0 (высота y0) до s1 (высота y1); along = 'z' или 'x'.
+ */
+function flight(along: 'x' | 'z', a0: number, a1: number, s0: number, s1: number, y0: number, y1: number, steps = 7): THREE.BufferGeometry[] {
   const parts: THREE.BufferGeometry[] = [];
-  if (kind === 'spiral-stairs') return spiralParts();
-  if (kind === 'u-shaped-stairs') {
-    // два марша: первый по +z половине вверх до 1.5, второй по −z половине обратно до 3
-    for (let i = 0; i < steps / 2; i++) {
-      const rise = (i + 1) * (3 / steps);
-      parts.push(box(3 / (steps / 2), rise, 1.4, -1.5 + (i + 0.5) * (3 / (steps / 2)), rise / 2, 0.75));
-    }
-    for (let i = 0; i < steps / 2; i++) {
-      const rise = 1.5 + (i + 1) * (3 / steps);
-      parts.push(box(3 / (steps / 2), rise, 1.4, 1.5 - (i + 0.5) * (3 / (steps / 2)), rise / 2, -0.75));
-    }
-    return parts;
-  }
+  const w = Math.abs(a1 - a0), ac = (a0 + a1) / 2;
+  const run = s1 - s0, rise = y1 - y0;
+  const len = Math.hypot(run, rise);
+  // наклонная плита под ступенями
+  const plate = new THREE.BoxGeometry(along === 'z' ? w : len, 0.1, along === 'z' ? len : w);
+  const tilt = Math.atan2(rise, Math.abs(run));
+  if (along === 'z') plate.rotateX(run > 0 ? -tilt : tilt); else plate.rotateZ(run > 0 ? tilt : -tilt);
+  const sm = (s0 + s1) / 2, ym = (y0 + y1) / 2 - 0.08;
+  plate.translate(along === 'z' ? ac : sm, ym, along === 'z' ? sm : ac);
+  parts.push(plate);
+  // ступени: проступь и подступенок, без заливки до пола
   for (let i = 0; i < steps; i++) {
-    const rise = (i + 1) * (3 / steps);
-    parts.push(box(3 / steps, rise, 1.4, -1.5 + (i + 0.5) * (3 / steps), rise / 2, 0.8));
+    const t0 = i / steps, t1 = (i + 1) / steps;
+    const sa = s0 + run * t0, sb = s0 + run * t1;
+    const top = y0 + rise * t1;
+    const d = Math.abs(sb - sa), h = rise / steps + 0.06;
+    const c = (sa + sb) / 2;
+    parts.push(along === 'z' ? box(w, h, d, ac, top - h / 2, c) : box(d, h, w, c, top - h / 2, ac));
   }
   return parts;
+}
+
+/** Площадка лестницы: плита толщиной 0.15 на высоте y. */
+function landing(x0: number, x1: number, z0: number, z1: number, y: number): THREE.BufferGeometry {
+  return box(x1 - x0, 0.15, z1 - z0, (x0 + x1) / 2, y - 0.075, (z0 + z1) / 2);
+}
+
+/**
+ * Лестницы как в игре — полые марши с площадкой на 1.43 м (раскладка по DeployVolumeOBB префабов):
+ * L — марш по одной половине клетки к площадке в углу, поворот на 90° и второй марш вдоль задней стороны;
+ * U — два марша по разным половинам и площадка во всю ширину.
+ */
+function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
+  if (kind === 'spiral-stairs') return spiralParts();
+  const L = 1.43;
+  if (kind === 'u-shaped-stairs') {
+    return [
+      ...flight('z', 0.1, 1.3, 1.45, 0.13, 0, L),
+      landing(-1.3, 1.3, -1.3, 0.13, L),
+      ...flight('z', -1.3, -0.1, 0.13, 1.45, L, 3),
+    ];
+  }
+  return [
+    ...flight('z', 0.06, 1.26, 1.45, 0.0, 0, L),
+    landing(0.06, 1.3, -1.3, 0.0, L),
+    ...flight('x', -1.28, -0.08, 0.06, -1.45, L, 3),
+  ];
 }
 
 /** Съезд: плита от верха фундамента (x = +1.5, ближнее ребро) вниз к земле (x = −1.5). */

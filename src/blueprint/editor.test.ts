@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, upgradeElement } from './editor.ts';
+import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, settle, upgradeElement } from './editor.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -50,8 +50,8 @@ test('removing a wall re-attaches the floor to another wall under it; removing t
   assert.ok(['w2', 'w3'].includes(c1.attach!.to), c1.attach!.to);
   const pos = resolveBlueprint(after).resolved.elements.find(e => e.id === 'c1')!.position;
   assert.deepEqual(pos, [0, 3, 0]);
-  // сносим и остальные стены — потолок падает
-  const bare = removeElement(removeElement(after, 'w2'), 'w3');
+  // сносим и остальные стены — потолок без опоры обрушивается (по стабильности)
+  const bare = settle(removeElement(removeElement(after, 'w2'), 'w3')).blueprint;
   assert.ok(!bare.elements.some(e => e.id === 'c1'));
   assert.deepEqual(resolveBlueprint(bare).issues.filter(i => i.level === 'error'), []);
   // корень снести нельзя
@@ -109,11 +109,11 @@ test('removing a foundation keeps a doorway on the shared edge: it re-attaches t
   bp = addDeployable(bp, { kind: 'wooden-door', attach: { to: 'dw1', socket: 'opening' }, hinge: 'left', opens: 'outward' });
   bp = addDeployable(bp, { kind: 'drop-box', attach: { to: 'w2', socket: 'face' }, offset: [0.8, 1.3], direction: 'out' });
   const before = resolveBlueprint(bp).resolved;
-  const after = removeElement(bp, 'f2');
+  const after = settle(removeElement(bp, 'f2')).blueprint;
   const r = resolveBlueprint(after);
   assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
-  // w1 стояла только на f2 — падает; проём, пол над ним и стена над проёмом остаются
-  assert.deepEqual(after.elements.map(e => e.id).sort(), ['c1', 'dw1', 'f1', 'w2']);
+  // w1 стояла на f2, но держится боком на проёме (0.1 × 0.7 = 7% > 5%) — как в игре; остальное на месте
+  assert.deepEqual(after.elements.map(e => e.id).sort(), ['c1', 'dw1', 'f1', 'w1', 'w2']);
   assert.equal(after.elements.find(e => e.id === 'dw1')!.attach!.to, 'f1');
   for (const id of ['dw1', 'c1', 'w2']) {
     const a = before.elements.find(e => e.id === id)!, b = r.resolved.elements.find(e => e.id === id)!;
@@ -277,41 +277,48 @@ test('aim picks the support edge: on a foundation the inward roof follows the ed
   assert.ok(!out.attach.flip);
 });
 
-test('triangle roofs in a row merge: a triangle roof beside a triangle roof is inverted and lies in the same plane', async () => {
-  const { gableWalls } = await import('./conditional.ts');
-  void gableWalls;
+test('triangle roofs in a row merge automatically (roof.straight.right): a coplanar inverted filler closes each gap', async () => {
+  const { triangleRoofFillers } = await import('./conditional.ts');
   let bp = newBlueprint();
   bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
-  bp = addElement(bp, 'roof-triangle', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' });
-  bp = addElement(bp, 'roof-triangle', { to: 'f2', socket: 'edge:0', selfSocket: 'edge:0' });
-  let resolved = resolveBlueprint(bp).resolved;
-  // сбоку от первой — перевёрнутый треугольник в просвете между двумя
-  const side = candidatePlacements(bp, resolved, 'roof-triangle', 'tr1');
-  assert.ok(side.length >= 1, 'side placements');
-  const gap = side.find(p => p.transform.inverted && Math.abs(p.transform.position[2] - 1.5) < 0.01);
-  assert.ok(gap, side.map(p => JSON.stringify(p.transform)).join(' '));
-  bp = addElement(bp, 'roof-triangle', gap!.attach);
-  const r = resolveBlueprint(bp);
-  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
-  const inv = r.resolved.elements.find(e => e.id === 'tr3')!;
-  assert.equal(inv.inverted, true);
-  assert.equal(inv.position[1], 0);
-  // устойчив: держится на соседних скатах
-  const { computeStability } = await import('./stability.ts');
-  assert.ok(computeStability(r.resolved).get('tr3')! > 0.05);
-  void resolved;
-});
-
-test('inverted triangle roof is coplanar with its neighbours: high side between their apexes, low vertex at their shared base corner', () => {
-  let bp = newBlueprint();
-  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
-  bp = addElement(bp, 'roof-triangle', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' });
-  bp = addElement(bp, 'roof-triangle', { to: 'f2', socket: 'edge:0', selfSocket: 'edge:0' });
+  bp = addElement(bp, 'square-foundation', { to: 'f2', socket: 'edge:1', selfSocket: 'edge:3' });
+  for (const f of ['f1', 'f2', 'f3']) bp = addElement(bp, 'roof-triangle', { to: f, socket: 'edge:0', selfSocket: 'edge:0' });
   const resolved = resolveBlueprint(bp).resolved;
-  const gap = candidatePlacements(bp, resolved, 'roof-triangle', 'tr1').filter(p => p.transform.inverted);
-  assert.ok(gap.length > 0);
-  for (const g of gap) {
-    const tr1 = resolved.elements.find(e => e.id === 'tr1')!;
-    assert.equal(((g.transform.rotation - tr1.rotation) % 360 + 360) % 360, 180);
-  }
+  const fills = triangleRoofFillers(resolved);
+  assert.equal(fills.length, 2);
+  // вершины вставки: две вершины соседних крыш на высоте 3 и их общий угол основания на высоте 0
+  const a = 0.866, C = 1.732;
+  const corners = (e: { position: [number, number, number]; rotation: number; inverted?: boolean }) => {
+    const ang = e.rotation * Math.PI / 180, base = e.inverted ? 3 : 0, top = e.inverted ? 0 : 3;
+    return ([[a, base, -1.5], [a, base, 1.5], [-C, top, 0]] as [number, number, number][]).map(([x, y, z]) =>
+      [e.position[0] + x * Math.cos(ang) - z * Math.sin(ang), e.position[1] + y, e.position[2] + x * Math.sin(ang) + z * Math.cos(ang)].map(v => Math.round(v * 100) / 100).join(','));
+  };
+  const all = new Set(resolved.elements.filter(e => e.kind === 'roof-triangle').flatMap(e => corners(e)));
+  for (const f of fills) for (const c of corners(f.el)) assert.ok(all.has(c), `filler vertex ${c} not shared`);
+  // разный грейд — не срастаются
+  bp.elements.find(e => e.id === 'tr2')!.grade = 'metal';
+  assert.equal(triangleRoofFillers(resolveBlueprint(bp).resolved).length, 0);
+});
+test('removing a middle foundation keeps everything else: the far foundation is anchored by offset, only unsupported blocks fall', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
+  bp = addElement(bp, 'square-foundation', { to: 'f2', socket: 'edge:1', selfSocket: 'edge:3' });
+  bp = addElement(bp, 'wall', { to: 'f3', socket: 'edge:0' });
+  bp = addElement(bp, 'wall', { to: 'f2', socket: 'edge:0' });
+  const before = resolveBlueprint(bp).resolved;
+  const { blueprint, collapsed } = settle(removeElement(bp, 'f2'));
+  // f3 и стена на нём стоят; стена на снесённом f2 держится боком на соседней (7%) — ничего не удалено
+  assert.deepEqual(blueprint.elements.map(e => e.id).sort(), ['f1', 'f3', 'w1', 'w2']);
+  assert.deepEqual(collapsed, []);
+  // одиночная стена на снесённом фундаменте падает
+  let lone = newBlueprint();
+  lone = addElement(lone, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
+  lone = addElement(lone, 'wall', { to: 'f2', socket: 'edge:1' });
+  assert.deepEqual(settle(removeElement(lone, 'f2')).collapsed, ['w1']);
+  const r = resolveBlueprint(blueprint);
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  assert.equal(blueprint.elements.find(e => e.id === 'f3')!.attach!.socket, 'offset');
+  for (const id of ['f3', 'w1']) assert.deepEqual(r.resolved.elements.find(e => e.id === id)!.position, before.elements.find(e => e.id === id)!.position);
+  // к закреплённому смещением фундаменту можно строить дальше
+  assert.ok(candidatePlacements(blueprint, r.resolved, 'wall', 'f3').length > 0);
 });

@@ -9,7 +9,7 @@ import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { aimDistance, deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
-import { cornerPosts, gableWalls, hipRoofs } from '../blueprint/conditional.ts';
+import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
@@ -580,6 +580,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id)));
     // угловые стойки стен: без id, клик проходит сквозь них к стенам
     for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
+    // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)
+    for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s, doorsOpen);

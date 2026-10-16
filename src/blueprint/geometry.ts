@@ -50,6 +50,12 @@ interface Placed extends Transform { el: Element; inverted?: boolean }
 
 function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transform {
   const a = child.attach!;
+  if (a.socket === 'offset') {
+    const [ox, oy, oz] = a.offset!;
+    const [cx, cz] = dir(parent.rotation);
+    const [px0, py0, pz0] = parent.position;
+    return { position: [px0 + ox * cx - oz * cz, py0 + oy, pz0 + ox * cz + oz * cx], rotation: parent.rotation + (a.rotation ?? 0), level: parent.level + oy / 3 };
+  }
   const p = KINDS[parent.el.kind];
   const c = KINDS[child.kind];
   const [px, py, pz] = parent.position;
@@ -180,6 +186,14 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       continue;
     }
     if (!KINDS[e.kind]) { issues.push(err('V03', e.id, `Неизвестный тип «${e.kind}»`)); continue; }
+    // крепление смещением: блок держится не сокетом, а положением относительно элемента `to`
+    if (e.attach.socket === 'offset') {
+      if (!e.attach.offset) { issues.push(err('V03', e.id, 'Для socket offset нужно поле offset')); continue; }
+      const list = children.get(parent.id) ?? [];
+      list.push(e);
+      children.set(parent.id, list);
+      continue;
+    }
     if (!socketsOf(parent.kind).includes(e.attach.socket)) {
       issues.push(err('V03', e.id, `У ${parent.kind} «${parent.id}» нет сокета ${e.attach.socket}`));
       continue;
@@ -211,6 +225,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   for (const [pid, list] of children) {
     const parent = byId.get(pid)!;
     for (const c of list) {
+      if (c.attach!.socket === 'offset') continue;
       const key = slotKey(parent, c.attach!.socket, c, c.attach!.flip === true);
       const prev = slots.get(key);
       if (prev) issues.push(err('V05', c.id, `Слот ${key} уже занят элементом «${prev}»`));

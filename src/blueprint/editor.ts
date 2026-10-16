@@ -271,28 +271,28 @@ export function removeElement(bp: Blueprint, id: string): Blueprint {
   const target = bp.elements.find(e => e.id === id);
   if (!target || target.root) return bp;
   const before = resolveBlueprint(bp).resolved;
+  const root = bp.elements.find(e => e.root)!;
   let elements = bp.elements.filter(e => e.id !== id);
-  let deployables = bp.deployables ?? [];
-  const removed = new Set([id]);
-  for (;;) {
-    const orphan = elements.find(e => e.attach && removed.has(e.attach.to));
-    if (!orphan) break;
+  let deployables = (bp.deployables ?? []).filter(d => d.attach.to !== id);
+  // Снос не тянет за собой поддерево: блоки, висевшие на снесённом, перецепляются к соседу с той же
+  // позицией, а кому не к кому — закрепляются смещением от корня. Что упадёт, решает стабильность (settle).
+  for (const orphan of elements.filter(e => e.attach?.to === id)) {
     const want = before.elements.find(e => e.id === orphan.id);
+    if (!want) continue;
     const rest = elements.filter(e => e.id !== orphan.id);
-    // для пробы крепления берём только то, что сейчас держится на корне: сироты и их поддеревья
-    // (в том числе ещё не разобранные) сами по себе не разрешатся
-    const live = subtree(elements, elements.find(e => e.root)!.id);
-    const probe = { ...bp, elements: elements.filter(e => live.has(e.id)), deployables: deployables.filter(d => live.has(d.attach.to)) };
-    const re = want ? reattach(probe, orphan, want) : null;
+    const live = subtree(rest, root.id);
+    const probe = { ...bp, elements: rest.filter(e => live.has(e.id)), deployables: deployables.filter(d => live.has(d.attach.to)) };
+    const re = reattach(probe, orphan, want);
     if (re) {
-      elements = rest.concat({ ...orphan, attach: re.attach });
+      elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach: re.attach } : e));
       if (re.flipped) ({ elements, deployables } = flipWall({ ...bp, elements, deployables }, orphan.id));
     } else {
-      elements = rest;
-      removed.add(orphan.id);
+      // корень стоит в начале координат без поворота: смещение — мировое положение блока
+      const attach: Attach = { to: root.id, socket: 'offset', offset: want.position.map(v => Math.round(v * 1000) / 1000) as [number, number, number] };
+      if (want.rotation) attach.rotation = want.rotation;
+      elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach } : e));
     }
   }
-  deployables = deployables.filter(d => !removed.has(d.attach.to));
   return { ...bp, elements, deployables };
 }
 

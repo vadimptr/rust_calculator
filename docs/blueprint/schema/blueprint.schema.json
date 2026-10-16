@@ -106,7 +106,7 @@
     },
     "Socket": {
       "type": "string",
-      "pattern": "^(edge:[0-3]|top|bottom|opening|face)$"
+      "pattern": "^(edge:[0-3]|top|bottom|opening|face|offset)$"
     },
     "Vec3": {
       "type": "array",
@@ -200,6 +200,14 @@
           ],
           "default": 0,
           "description": "Только фундамент к фундаменту: сдвиг соседа по высоте в метрах. В игре у фундамента три ряда боковых сокетов (foundation-top/mid/bot) с шагом 1.5 м; верх фундамента — на земле, на высоте полустены или стены (0, 1.5, 3 м)."
+        },
+        "offset": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Только socket offset: положение [x, y, z] в метрах в системе элемента to (x по его нормали/оси 0°, y вверх)."
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Только socket offset: поворот в плане относительно элемента to, градусы."
         }
       }
     },
