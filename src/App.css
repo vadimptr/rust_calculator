@@ -1952,3 +1952,39 @@
   .docs-page { padding: 1.1rem 1rem 1.5rem; }
   .docs-page__title { font-size: 1.35rem; }
 }
+
+.docs-settings {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.docs-settings h3 {
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+
+.docs-settings__hint {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.docs-settings__hint a { color: #f08a62; }
+.docs-settings .docs-md { margin-top: 0.75rem; }
+.docs-settings td:nth-child(3) { min-width: 18rem; }
+
+.docs-settings__more {
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.docs-settings__more:hover { color: var(--text-primary); border-color: var(--accent); }
+
+.docs-settings__extra { color: var(--text-muted); white-space: nowrap; }
+.docs-settings td:nth-child(4) { min-width: 9rem; }

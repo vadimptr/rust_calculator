@@ -87,7 +87,7 @@ code: [HumanNPC.cs, NPCPlayer.cs, ScientistNPC.cs, ScientistBrain.cs, AIBrainSen
 
 - Описание состояний старых NPC — в [[npc-ai]]; как они видят и слышат — в [[npc-perception]].
 - **Охрана аванпоста и бандитки** (`HostileTargetsOnly = 1`) реагирует только на враждебных игроков и не ослепляется флешкой. Правила враждебности — в [[safe-zones]].
-- **Пугала**: тело получает от игроков ×0,25 урона (`halloween.scarecrow_body_dmg_modifier`), голова — полный; урон от NPC ×2. Удар осиновым колом (`vampirestake`) или боеприпасом «vamp» (режущий+колющий+Generic ≤ 0,1) — «освобождение души»: урон ×1000 и бонусный лут. Их бобовые гранаты наносят игрокам ×0,1 (`halloween.scarecrow_beancan_vs_player_dmg_modifier`), не чаще раза в 8 с на весь сервер. Численность: `halloween.scarecrowpopulation` = 0 (событие выключено, `halloween.enabled` = false).
+- **Пугала**: тело получает от игроков ×0,25 урона (`halloween.scarecrow_body_dmg_modifier`), голова — полный; урон от NPC ×2. Удар осиновым колом (`vampirestake`) или боеприпасом «vamp» (режущий+колющий+Generic ≤ 0,1) — «освобождение души»: урон ×1000 и бонусный лут. Их бобовые гранаты наносят игрокам ×0,1 (`halloween.scarecrow_beancan_vs_player_dmg_modifier`), не чаще раза в 8 с на весь сервер. Численность: `halloween.scarecrowpopulation` = 0. Флаг `halloween.enabled` в коде ни на что не влияет: пугала появляются, только если поднять численность.
 
 ### Труп и лут
 

@@ -36,10 +36,18 @@ venv/bin/python -I tools/game-data/dump_scene.py rustsrv/Bundles/shared/assetsce
 # 3. Страницы-таблицы
 venv/bin/python -I tools/game-data/build_pages.py out docs/game/pages
 
-# 4. Декомпиляция кода, если нужно перепроверить механики
+# 4. Реестр серверных настроек (ConVar) из декомпилированного кода
+venv/bin/python -I tools/game-data/build_convars.py src-decompiled docs/game/convars.json
+
+# 5. Декомпиляция кода, если нужно перепроверить механики
 ilspycmd rustsrv/RustDedicated_Data/Managed/Assembly-CSharp.dll \
   -r rustsrv/RustDedicated_Data/Managed -p -o src-decompiled
 ```
+
+Русские описания настроек лежат в `docs/game/convars.ru.json` и пишутся вручную. Новые настройки,
+которых там нет, на страницах показываются с английской подсказкой из игры.
+
+Шаг 4 использует декомпилированный код, поэтому его запускают после шага 5.
 
 После шага 3 поменяйте дату `DATE` в `build_pages.py` и запустите `npm test`: тест проверит,
 что все страницы разбираются и ссылки между ними не битые.
