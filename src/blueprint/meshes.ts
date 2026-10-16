@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
+import type { GableShape } from './conditional.ts';
 import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
@@ -217,6 +218,14 @@ function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   }
 }
 
+/** Стена-фронтон: треугольник от низа до ската крыши, вершина на стороне peak (локальная z). */
+function gableGeometry(peak: 1 | -1): THREE.BufferGeometry {
+  const top = ROOF_RISE - 0.02;
+  const s = new THREE.Shape([new THREE.Vector2(-1.5, 0), new THREE.Vector2(1.5, 0), new THREE.Vector2(1.5 * peak, top)]);
+  // форма в (z, y), толщина по x: после поворота на −90° вокруг Y ось формы x уходит в z, глубина — в −x
+  return new THREE.ExtrudeGeometry(s, { depth: WALL_T, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(WALL_T / 2, 0, 0);
+}
+
 function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   const steps = 8;
   const parts: THREE.BufferGeometry[] = [];
@@ -413,9 +422,11 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
   return group;
 }
 
-export function buildElement(el: ResolvedElement): THREE.Object3D {
+/** Построить блок; gable — условная модель «фронтон» для полной стены (conditional.ts). */
+export function buildElement(el: ResolvedElement, gable?: GableShape): THREE.Object3D {
   const g = new THREE.Group();
-  const parts = elementParts(el).map(part => withEdges(part, GRADE_TINT[el.grade], el.grade));
+  const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)] : elementParts(el);
+  const parts = geos.map(part => withEdges(part, GRADE_TINT[el.grade], el.grade));
   if (el.bunker) {
     // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору
     const drop = new THREE.Group();

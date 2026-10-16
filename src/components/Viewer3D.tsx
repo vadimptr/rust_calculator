@@ -9,6 +9,7 @@ import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
+import { gableWalls } from '../blueprint/conditional.ts';
 import type { Placement } from '../blueprint/editor.ts';
 
 export type CameraMode = 'orbit' | 'fly';
@@ -247,7 +248,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       const attachKey = JSON.stringify(p.attach);
       state.lastAttach = attachKey;
       const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };
-      showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el), GHOST_MAT));
+      const cur = resolvedRef.current;
+      const gable = ed.kind === 'wall' && cur ? gableWalls({ ...cur, elements: [...cur.elements, el] }).get(el.id) : undefined;
+      showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable), GHOST_MAT));
       return true;
     };
 
@@ -298,7 +301,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
         if (!src) return none();
         const mat = ed.demolish ? DEMOLISH_MAT : HAMMER_MAT;
         return showGhost(`hammer|${hit.id}|${ed.demolish}`, { type: 'hammer', id: hit.id, deployable: hit.deployable }, () => ghostify(
-          hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!), mat));
+          hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!, gableWalls(res).get(hit.id)), mat));
       }
       if (hit.deployable) return none();
       const hostEl = res.elements.find(e => e.id === hit.id);
@@ -474,7 +477,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     s.hoverDirty = true;
     if (!resolved) return;
 
-    for (const el of resolved.elements) s.content.add(buildElement(el));
+    const gables = gableWalls(resolved);
+    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id)));
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s, doorsOpen);
