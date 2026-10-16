@@ -101,6 +101,8 @@ export interface Transform {
   position: [number, number, number];
   rotation: number;
   level: number;
+  /** Только треугольная крыша: перевёрнута (см. ResolvedElement.inverted). */
+  inverted?: boolean;
 }
 
 export interface ResolvedElement extends Transform {
@@ -108,6 +110,8 @@ export interface ResolvedElement extends Transform {
   kind: ElementKind;
   grade: Grade;
   bunker?: boolean;
+  /** Треугольная крыша перевёрнута: ребро edge:0 у конька, вершина у края (заполняет просвет между соседними). */
+  inverted?: boolean;
 }
 
 export interface ResolvedDeployable extends Transform {

@@ -46,7 +46,7 @@ function slotKey(parent: Element, socket: Socket, child: Element, flip: boolean)
   return `${parent.id}/${socket}`;
 }
 
-interface Placed extends Transform { el: Element }
+interface Placed extends Transform { el: Element; inverted?: boolean }
 
 function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transform {
   const a = child.attach!;
@@ -235,6 +235,8 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       const self = child.attach!.selfSocket ?? defaultSelfSocket(child.kind)!;
       const t = placeChild(cur, child, self);
       const pc: Placed = { el: child, ...t, rotation: norm360(t.rotation) };
+      // треугольная крыша, приставленная боком к треугольной, перевёрнута относительно неё
+      if (child.kind === 'roof-triangle' && cur.el.kind === 'roof-triangle' && child.attach!.socket !== 'edge:0') pc.inverted = !cur.inverted;
       placed.set(child.id, pc);
       queue.push(pc);
     }
@@ -256,7 +258,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   for (const e of elements) {
     const p = placed.get(e.id)!;
     resolved.elements.push({
-      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}),
+      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}), ...(p.inverted ? { inverted: true } : {}),
       position: p.position.map(round3) as [number, number, number],
       rotation: round3(p.rotation), level: p.level,
     } satisfies ResolvedElement);

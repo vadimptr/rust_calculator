@@ -141,7 +141,12 @@ export function canAttach(
     return false;
   }
   if (p.category === 'roof' && (socket === 'edge:1' || socket === 'edge:3')) {
-    return c.category === 'roof' && (selfSocket === 'edge:1' || selfSocket === 'edge:3');
+    return c.category === 'roof' && (selfSocket === 'edge:1' || selfSocket === 'edge:3') && p.shape === c.shape;
+  }
+  // треугольная крыша боком к треугольной: соседний треугольник перевёрнут (широкой стороной к коньку)
+  if (p.category === 'roof' && p.shape === 'triangle' && (socket === 'edge:1' || socket === 'edge:2')) {
+    // то же ребро: только так перевёрнутый треугольник ложится в плоскость соседа (поворот на 180°)
+    return c.category === 'roof' && c.shape === 'triangle' && selfSocket === socket;
   }
   return false;
 }

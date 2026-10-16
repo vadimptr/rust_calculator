@@ -235,7 +235,8 @@ function roofFrame(el: ResolvedElement): Frame & { polygon: [number, number][] }
   const square = KINDS[el.kind].shape === 'square';
   const run = square ? 3 : TRI_CIRCUM * 1.5;
   const length = Math.hypot(run, ROOF_RISE);
-  const pitch = -Math.atan2(ROOF_RISE, run) / DEG;
+  // перевёрнутая треугольная крыша поднимается к ребру edge:0
+  const pitch = (el.inverted ? 1 : -1) * Math.atan2(ROOF_RISE, run) / DEG;
   const midX = square ? 0 : -TRI_CIRCUM / 4;
   const origin = toWorld({ origin: el.position, rotation: el.rotation }, [midX, ROOF_RISE / 2 + FLOOR_T / 2, 0]);
   const h = length / 2;

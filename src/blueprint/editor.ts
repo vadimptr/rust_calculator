@@ -188,8 +188,8 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
         if (seen.has(key)) continue;
         seen.add(key);
         if (overlaps(kind, t, resolved)) continue;
-        if (KINDS[kind].category === 'roof' && !roofSupported(kind, t, resolved)) continue;
-        out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level } });
+        if (KINDS[kind].category === 'roof' && !t.inverted && !roofSupported(kind, t, resolved)) continue;
+        out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level, ...(t.inverted ? { inverted: true } : {}) } });
       }
     }
   }

@@ -276,3 +276,42 @@ test('aim picks the support edge: on a foundation the inward roof follows the ed
   assert.equal(out.attach.socket, 'edge:1');
   assert.ok(!out.attach.flip);
 });
+
+test('triangle roofs in a row merge: a triangle roof beside a triangle roof is inverted and lies in the same plane', async () => {
+  const { gableWalls } = await import('./conditional.ts');
+  void gableWalls;
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
+  bp = addElement(bp, 'roof-triangle', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' });
+  bp = addElement(bp, 'roof-triangle', { to: 'f2', socket: 'edge:0', selfSocket: 'edge:0' });
+  let resolved = resolveBlueprint(bp).resolved;
+  // сбоку от первой — перевёрнутый треугольник в просвете между двумя
+  const side = candidatePlacements(bp, resolved, 'roof-triangle', 'tr1');
+  assert.ok(side.length >= 1, 'side placements');
+  const gap = side.find(p => p.transform.inverted && Math.abs(p.transform.position[2] - 1.5) < 0.01);
+  assert.ok(gap, side.map(p => JSON.stringify(p.transform)).join(' '));
+  bp = addElement(bp, 'roof-triangle', gap!.attach);
+  const r = resolveBlueprint(bp);
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  const inv = r.resolved.elements.find(e => e.id === 'tr3')!;
+  assert.equal(inv.inverted, true);
+  assert.equal(inv.position[1], 0);
+  // устойчив: держится на соседних скатах
+  const { computeStability } = await import('./stability.ts');
+  assert.ok(computeStability(r.resolved).get('tr3')! > 0.05);
+  void resolved;
+});
+
+test('inverted triangle roof is coplanar with its neighbours: high side between their apexes, low vertex at their shared base corner', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
+  bp = addElement(bp, 'roof-triangle', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' });
+  bp = addElement(bp, 'roof-triangle', { to: 'f2', socket: 'edge:0', selfSocket: 'edge:0' });
+  const resolved = resolveBlueprint(bp).resolved;
+  const gap = candidatePlacements(bp, resolved, 'roof-triangle', 'tr1').filter(p => p.transform.inverted);
+  assert.ok(gap.length > 0);
+  for (const g of gap) {
+    const tr1 = resolved.elements.find(e => e.id === 'tr1')!;
+    assert.equal(((g.transform.rotation - tr1.rotation) % 360 + 360) % 360, 180);
+  }
+});

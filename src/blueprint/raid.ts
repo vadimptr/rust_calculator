@@ -150,7 +150,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
   const roofs = resolved.elements.filter(e => KINDS[e.kind].category === 'roof');
   const roofOver = new Map(roofs.map(r => [key3(...r.position), r]));
   const roofLowAt = new Map<string, ResolvedElement>();
-  for (const r of roofs) roofLowAt.set(key3(...edgeMids(KINDS[r.kind].shape!, r.position, r.rotation)[0]), r);
+  for (const r of roofs) if (!r.inverted) roofLowAt.set(key3(...edgeMids(KINDS[r.kind].shape!, r.position, r.rotation)[0]), r);
   const doorsIn = new Map<string, ResolvedDeployable>();
   for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard' && d.kind !== 'drop-box') doorsIn.set(d.parent, d);
 

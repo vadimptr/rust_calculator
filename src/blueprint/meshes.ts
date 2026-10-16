@@ -325,7 +325,7 @@ function spiralParts(): THREE.BufferGeometry[] {
   return parts;
 }
 
-function roofGeometry(shape: Shape): THREE.BufferGeometry {
+function roofGeometry(shape: Shape, inverted = false): THREE.BufferGeometry {
   if (shape === 'square') {
     // сечение в плоскости (x, y): низкое ребро на x = +1.5, высокое на x = −1.5
     const s = new THREE.Shape([
@@ -336,7 +336,9 @@ function roofGeometry(shape: Shape): THREE.BufferGeometry {
   }
   const a = TRI_CIRCUM / 2; // апофема треугольника
   const geo = new THREE.BufferGeometry();
-  const low1 = [a, 0, -1.5], low2 = [a, 0, 1.5], apex = [-TRI_CIRCUM, ROOF_RISE, 0];
+  // перевёрнутый треугольник: ребро edge:0 у конька, вершина у края — в той же плоскости, что соседи
+  const base = inverted ? ROOF_RISE : 0, top = inverted ? 0 : ROOF_RISE;
+  const low1 = [a, base, -1.5], low2 = [a, base, 1.5], apex = [-TRI_CIRCUM, top, 0];
   const t = FLOOR_T;
   const up = (v: number[]) => [v[0], v[1] + t, v[2]];
   const tri = (p: number[], q: number[], r: number[]) => [...p, ...q, ...r];
@@ -364,7 +366,7 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
     case 'stairs':
       return stairsParts(el.kind);
     case 'roof':
-      return [roofGeometry(info.shape!)];
+      return [roofGeometry(info.shape!, el.inverted)];
     case 'ramp':
       return el.kind === 'ramp' ? [rampGeometry()] : stepsParts();
   }

@@ -94,6 +94,14 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
         const floors = not(cellEdge.get(p)).filter(id => !KINDS[els.find(x => x.id === id)!.kind].isFoundation);
         s.push({ factor, candidates: [...not(wallTop.get(p)), ...floors, ...not(roofHigh.get(p))] });
       }
+    } else if (info.category === 'roof' && e.inverted) {
+      // перевёрнутый треугольник держится на соседних скатах по бокам
+      for (const k of [1, 2]) {
+        const m = edgeMid(e, k);
+        const near = els.filter(o => o.id !== e.id && o.kind === 'roof-triangle' && Math.abs(o.position[1] - e.position[1]) < 0.05
+          && [1, 2].some(j => { const q = edgeMid(o, j); return Math.hypot(q[0] - m[0], q[2] - m[2]) < 0.05; }));
+        s.push({ factor: SUPPORT.roofLowEdge, candidates: near.map(o => o.id) });
+      }
     } else if (info.category === 'roof') {
       const p = key(edgeMid(e, 0));
       s.push({ factor: SUPPORT.roofLowEdge, candidates: [...not(wallTop.get(p)), ...not(cellEdge.get(p))] });
