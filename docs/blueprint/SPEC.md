@@ -194,8 +194,10 @@
 | `wall-frame.opening` | | | | | | | | гаражная, двойная |
 | `window-frame.opening` | | | | | | | | стекло, решётка |
 
-«Стена-тип» — `wall`, `half-wall`, `low-wall`, `doorway`, `window-frame`,
-`wall-frame`. Одинарные двери: `wooden-door`, `sheet-metal-door`,
+Фундаменты крепятся только к рёбрам фундаментов и потому всегда на
+уровне земли; игровые варианты «фундамент на высоте полустены» и «на
+высоте стены» в v1.0 не моделируются. «Стена-тип» — `wall`, `half-wall`,
+`low-wall`, `doorway`, `window-frame`, `wall-frame`. Одинарные двери: `wooden-door`, `sheet-metal-door`,
 `armored-door`. Двойные: `wooden-double-door`, `sheet-metal-double-door`,
 `armored-double-door`.
 

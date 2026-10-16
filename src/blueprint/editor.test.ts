@@ -151,3 +151,13 @@ test('nothing can be placed on top of an existing block: a second floor over the
   resolved = resolveBlueprint(bp).resolved;
   assert.ok(candidatePlacements(bp, resolved, 'wall', 'f2').every(p => Math.abs(p.transform.position[0] - 1.5) > 0.1));
 });
+
+test('foundations are ground-level only: none can be placed on a wall top, floors still can', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  const resolved = resolveBlueprint(bp).resolved;
+  assert.equal(candidatePlacements(bp, resolved, 'square-foundation', 'w1').length, 0);
+  assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'w1').length, 0);
+  assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'w1').length, 2);
+  assert.ok(resolveBlueprint(addElement(bp, 'square-foundation', { to: 'w1', socket: 'top', selfSocket: 'edge:0' })).issues.some(i => i.code === 'V04'));
+});

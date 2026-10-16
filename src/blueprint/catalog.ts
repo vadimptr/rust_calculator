@@ -134,7 +134,8 @@ export function canAttach(
     return c.category === 'stairs' && selfSocket === 'bottom' && p.shape === 'square';
   }
   if (p.category === 'wallType' && socket === 'top') {
-    if (c.category === 'cell' && cEdge) return true;
+    // на верх стены — только полы и рамы: фундаменты стоят на земле (уровни полустены и стены из игры пока не моделируются)
+    if (c.category === 'cell' && cEdge) return !c.isFoundation;
     if (c.category === 'wallType' && selfSocket === 'bottom') return true;
     if (c.category === 'roof' && selfSocket === 'edge:0') return true;
     return false;
