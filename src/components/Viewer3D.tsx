@@ -236,11 +236,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
       const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
       const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
-      let p = sorted[state.alt % sorted.length];
-      if (state.alt === 0) {
-        const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
-        if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
-      }
+      let p = sorted[0];
+      const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
+      if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
+      // R перебирает варианты в том же сокете: сторона крыши или пола на стене, поворот лестницы —
+      // а не другие рёбра
+      const group = sorted.filter(c => c.attach.to === p.attach.to && c.attach.socket === p.attach.socket);
+      if (state.alt > 0 && group.length > 1) p = group[state.alt % group.length];
       const attachKey = JSON.stringify(p.attach);
       state.lastAttach = attachKey;
       const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };

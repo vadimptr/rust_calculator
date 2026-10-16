@@ -161,3 +161,23 @@ test('foundations are ground-level only: none can be placed on a wall top, floor
   assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'w1').length, 2);
   assert.ok(resolveBlueprint(addElement(bp, 'square-foundation', { to: 'w1', socket: 'top', selfSocket: 'edge:0' })).issues.some(i => i.code === 'V04'));
 });
+
+test('roof needs support under its low edge: both sides of a wall top are fine, a roof beside another roof past the corner is not', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  let resolved = resolveBlueprint(bp).resolved;
+  const onWall = candidatePlacements(bp, resolved, 'roof', 'w1');
+  assert.equal(onWall.length, 2);
+  bp = addElement(bp, 'roof', onWall[0].attach);
+  resolved = resolveBlueprint(bp).resolved;
+  // сбоку от крыши стены нет — крыша висела бы в воздухе
+  assert.equal(candidatePlacements(bp, resolved, 'roof', 'r1').length, 0);
+  // появился соседний фундамент со стеной на той же линии — боковая крыша получает опору
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
+  bp = addElement(bp, 'wall', { to: 'f2', socket: 'edge:0' });
+  resolved = resolveBlueprint(bp).resolved;
+  const beside = candidatePlacements(bp, resolved, 'roof', 'r1');
+  assert.equal(beside.length, 1);
+  // крыша низким ребром на ребро фундамента (съезд-крыша) опирается на само ребро
+  assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 3);
+});

@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { KINDS, canAttach, cellVertices, defaultSelfSocket, socketsOf, wallHeight } from './catalog.ts';
+import { KINDS, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { resolveBlueprint } from './geometry.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
 
@@ -112,6 +112,30 @@ function polygonsOverlap(p: [number, number][], q: [number, number][]): boolean 
   return true;
 }
 
+/** Середины рёбер ячейки или крыши в мире. */
+function edgeMids(kind: ElementKind, t: Transform): [number, number, number][] {
+  const shape = KINDS[kind].shape ?? 'square';
+  return Array.from({ length: edgeCount(shape) }, (_, k) => {
+    const a = ((t.rotation + edgeAngle(shape, k)) * Math.PI) / 180;
+    return [t.position[0] + apothem(shape) * Math.cos(a), t.position[1], t.position[2] + apothem(shape) * Math.sin(a)];
+  });
+}
+
+/**
+ * Опора крыши: под её низким ребром должен быть верх стены-типа или ребро ячейки того же уровня.
+ * Иначе крыша, прицепленная боком к соседней крыше за углом здания, висела бы в воздухе.
+ */
+function roofSupported(kind: ElementKind, t: Transform, resolved: Resolved): boolean {
+  const low = edgeMids(kind, t)[0];
+  const near = (a: [number, number, number], b: [number, number, number]) => Math.hypot(a[0] - b[0], a[2] - b[2]) < 0.05 && Math.abs(a[1] - b[1]) < 0.05;
+  return resolved.elements.some(e => {
+    const info = KINDS[e.kind];
+    if (info.category === 'wallType') return near([e.position[0], e.position[1] + wallHeight(e.kind), e.position[2]], low);
+    if (info.category === 'cell') return edgeMids(e.kind, e).some(m => near(m, low));
+    return false;
+  });
+}
+
 /** Все возможные размещения элемента типа kind на сокетах хозяина hostId. */
 export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: ElementKind, hostId: string, dedupe = true): Placement[] {
   const host = bp.elements.find(e => e.id === hostId);
@@ -142,6 +166,7 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
         if (seen.has(key)) continue;
         seen.add(key);
         if (overlaps(kind, t, resolved)) continue;
+        if (KINDS[kind].category === 'roof' && !roofSupported(kind, t, resolved)) continue;
         out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level } });
       }
     }
