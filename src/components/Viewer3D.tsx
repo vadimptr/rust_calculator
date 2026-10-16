@@ -91,6 +91,7 @@ const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x
 const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.FrontSide });
 const DEMOLISH_MAT = new THREE.MeshStandardMaterial({ color: 0xff5a4d, emissive: 0x8e1d14, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
+const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 /** Перекрасить построенный объект в призрак: материалы меша и рёбер заменяются, тени выключаются. */
 function ghostify(o: THREE.Object3D, mat: THREE.Material): THREE.Object3D {
@@ -217,6 +218,43 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       state.ghostKey = key;
     };
 
+    /** Точка прицела на земле (плоскость верха фундаментов), когда луч не попал ни в один блок. */
+    const groundPoint = (): THREE.Vector3 | null => {
+      const ndc = fly.isLocked ? new THREE.Vector2(0, 0) : state.pointer;
+      if (!ndc) return null;
+      state.raycaster.setFromCamera(ndc, camera);
+      const p = new THREE.Vector3();
+      return state.raycaster.ray.intersectPlane(GROUND_PLANE, p) ? p : null;
+    };
+
+    /** Выбрать размещение, ближайшее к точке прицела (с гистерезисом и перебором по R), и показать призрак. */
+    const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number], altKey: string) => {
+      if (cands.length === 0) return false;
+      if (state.altKey !== altKey) { state.altKey = altKey; state.alt = 0; }
+      // ближайший к точке прицела; прежний сокет держится, пока новый не станет ближе на заметную величину —
+      // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
+      const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
+      const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
+      const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
+      let p = sorted[state.alt % sorted.length];
+      if (state.alt === 0) {
+        const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
+        if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
+      }
+      const attachKey = JSON.stringify(p.attach);
+      state.lastAttach = attachKey;
+      const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };
+      showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el), GHOST_MAT));
+      return true;
+    };
+
+    const candidatesOf = (ed: EditorState, res: Resolved, hostId: string, pt: [number, number, number]) => {
+      const key = `${hostId}|${ed.kind}`;
+      let cands = state.candCache.get(key);
+      if (!cands) { cands = placementsNear(ed.blueprint, res, ed.kind, hostId, pt); state.candCache.set(key, cands); }
+      return cands;
+    };
+
     const refreshGhost = () => {
       state.hoverDirty = false;
       const ed = editorRef.current;
@@ -226,6 +264,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       host.dataset.pending = '';
       if (!ed || !res) return none();
       const hit = pick();
+      // Фундаменты, съезды и ступени ставятся как в игре — прицелом в землю рядом с постройкой: хозяином
+      // становится любой фундамент поблизости, а не только тот, в который попал луч
+      const groundKind = ed.tool === 'build' && (KINDS[ed.kind].isFoundation || KINDS[ed.kind].category === 'ramp');
+      if (groundKind) {
+        const g = hit && !hit.deployable ? hit.point : groundPoint();
+        if (!g) return none();
+        const pt: [number, number, number] = [g.x, 0, g.z];
+        const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6);
+        host.dataset.hover = hit?.id ?? 'ground';
+        return showPlacement(ed, hosts.flatMap(hst => candidatesOf(ed, res, hst.id, pt)), pt, `ground|${ed.kind}`) ? undefined : none();
+      }
       if (!hit) return none();
       // что под курсором и что будет сделано по клику: для тестов и отладки
       host.dataset.hover = hit.id;
@@ -240,26 +289,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       const hostEl = res.elements.find(e => e.id === hit.id);
       if (!hostEl) return none();
       if (ed.tool === 'build') {
-        const key = `${hit.id}|${ed.kind}`;
         const pt: [number, number, number] = [hit.point.x, hit.point.y, hit.point.z];
-        let cands = state.candCache.get(key);
-        if (!cands) { cands = placementsNear(ed.blueprint, res, ed.kind, hit.id, pt); state.candCache.set(key, cands); }
-        if (cands.length === 0) return none();
-        if (state.altKey !== key) { state.altKey = key; state.alt = 0; }
-        // ближайший к точке прицела; прежний сокет держится, пока новый не станет ближе на заметную величину —
-        // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
-        const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
-        const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
-        const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
-        let p = sorted[state.alt % sorted.length];
-        if (state.alt === 0) {
-          const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
-          if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
-        }
-        const attachKey = JSON.stringify(p.attach);
-        state.lastAttach = attachKey;
-        const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };
-        return showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el), GHOST_MAT));
+        return showPlacement(ed, candidatesOf(ed, res, hit.id, pt), pt, `${hit.id}|${ed.kind}`) ? undefined : none();
       }
       // объект
       const local = toLocal(hostEl, hit.point);
