@@ -2,9 +2,9 @@
 id: electricity
 title: Электричество
 kind: mechanic
-group: Защита базы и электричество
+group: Электричество
 summary: Как сервер считает электросеть — источники, проход мощности через устройства, потребление, сплиттеры, ветвители, блокировщики, батареи, генераторы и провода.
-related: [battery, solar-panel, wind-turbine, auto-turret, sam-site, turret-targeting, building-privilege]
+related: [io-engine, flicker, circuit-loops, electricity-quirks, electric-consumers, battery, solar-panel, wind-turbine, electric-generator, splitter, electrical-branch, blocker, combiner, logic-gates, memory-cell, timer, power-counter, switches, sensors, auto-turret, sam-site, turret-targeting, building-privilege]
 code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, ElectricalCombiner.cs, ORSwitch.cs, ElectricBattery.cs, SolarPanel.cs, ElectricWindmill.cs, FuelGenerator.cs, ElectricGenerator.cs, WireTool.cs]
 ---
 
@@ -18,6 +18,16 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 Сеть не «течёт» непрерывно. Изменение входа ставит устройство в очередь, и сервер раз в кадр
 обрабатывает очередь в пределах бюджета времени. Поэтому сигнал распространяется по цепочке
 не мгновенно.
+
+Подробнее по темам:
+
+- алгоритм сервера, очереди и задержки — [[io-engine]];
+- режим мерцания и трюки с батареями — [[flicker]];
+- петли и короткие замыкания — [[circuit-loops]];
+- сборник неочевидного поведения — [[electricity-quirks]];
+- потребление всех приборов — [[electric-consumers]];
+- элементы: [[splitter]], [[electrical-branch]], [[blocker]], [[combiner]], [[logic-gates]],
+  [[memory-cell]], [[timer]], [[power-counter]], [[switches]], [[sensors]], [[electric-generator]].
 
 ## Как работает
 
@@ -37,6 +47,8 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 получит `(10 − 1) / 3 = 3`.
 
 ### Потребление устройств (из кода)
+
+Полная таблица с префабами и особенностями спроса — [[electric-consumers]].
 
 | Устройство | `ConsumptionAmount` | Где |
 |---|---|---|
@@ -88,13 +100,17 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 Если на входе 1 больше 0, выход отдаёт 0. Пока блокировщик закрыт, он сообщает, что не хочет
 питания (`WantsPower` = false). Поэтому батарея не считает нагрузку за ним.
 
-**Сумматор** (`ElectricalCombiner`). Потребляет 0. Выход = сумма трёх входов. Это единственный
-элемент с явной защитой от короткого замыкания (см. ниже).
+**Сумматор** (`ElectricalCombiner`). Потребляет 0. Выход = сумма двух входов (в префабе
+`electrical.combiner.deployed` два входа, оба принимают провод только от корневых устройств).
+Проверяет короткое замыкание (см. ниже). Подробнее — [[combiner]].
 
-**OR** (`ORSwitch`). Выход = `max(вход1, вход2)`, а не сумма. «Хочет питания» только тот вход,
+**OR** (`ORSwitch`). Выход = `max(вход1, вход2)`, а не сумма. AND и XOR тоже выдают максимум
+(см. [[logic-gates]]). «Хочет питания» только тот вход,
 что сильнее. Поэтому батарея на слабом входе не разряжается.
 
 ### Очередь обновлений и скорость сигнала
+
+Подробно — [[io-engine]].
 
 - Изменение входа (`UpdateFromInput`) или ручное `MarkDirty` кладёт устройство в очередь своего
   типа. Таких очередей шесть: `ElectricHighPriority`, `ElectricLowPriority`, `Fluidic`,
@@ -114,6 +130,8 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 
 ### «Мерцание» (защита от осцилляций)
 
+Подробно, с трюками и списком затронутых классов, — [[flicker]].
+
 `IOStateChanged` считает изменения состояния. Если их было больше 5 с интервалами меньше
 1 с, устройство считается «мерцающим» (`IsFlickering`). В этом режиме `DesiredPower`
 возвращает полное потребление, даже если питания не хватает. Батарея при заряде берёт
@@ -122,14 +140,17 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 
 ### Короткое замыкание и петли
 
-Отдельной общей проверки на петли нет. Защита встроена в конкретные устройства.
+Отдельной общей проверки на петли нет. Защита встроена в сумматор, OR, XOR и ячейку памяти.
+Подробно — [[circuit-loops]].
 
 - **Сумматор**: при каждом входе с ненулевым значением вызывается
   `IsConnectedTo(this, slot, backtracking * 2, defaultReturn: true)`. Это обход вверх
   по основным входам на глубину `ioentity.backtracking * 2` = **16** шагов. Если цепочка
   приходит обратно в сам сумматор, вход обнуляется и ставится флаг `Reserved7`
   (`Flag_ShortCircuit`).
-- **OR-переключатель**: такой же обход на глубину `backtracking` = 8. Петля обнуляет вход.
+- **OR и XOR**: такой же обход на глубину `backtracking` = 8, без ложных срабатываний. Петля
+  обнуляет вход (XOR ещё зажигает `Reserved7`).
+- **Ячейка памяти**: обход вниз по выходам; замыкание, только если оба выхода ведут в неё.
 - Батареи, панели, генераторы, сплиттеры и сумматоры помечены как «корневые»
   (`IsRootEntity`). Изменение схемы (`SendChangedToRoot`) поднимается вверх до них,
   и они пересчитывают выходы.
@@ -155,7 +176,10 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 | Солнечная панель ([[solar-panel]]) | `floor(20 × InverseLerp(0.3, 0.7, dot) × healthFraction)`, ночью 0, в тени 0 (префаб `solarpanel.large.deployed`) | раз в ~5 с |
 | Ветрогенератор ([[wind-turbine]]) | `floor(150 × clamp01(InverseLerp(0,50,высота)×0.5 + шум Перлина))` (префаб `electric.windmill.small`) | раз в 20 с |
 | Топливный генератор (`FuelGenerator`) | **40** (`outputEnergy` в префабе `small_fuel_generator.deployed`; в коде 35), пока включён | постоянно |
-| Монументный генератор (`ElectricGenerator`) | `electricAmount`: 100 у `generator.small` (в коде 8), может зависеть от стадии энергосети | при изменении |
+| Тестовый и монументный генератор (`ElectricGenerator`) | `electricAmount`: 100 у `generator.small` (в коде 8) **на каждый из трёх выходов**, у монументных может зависеть от стадии энергосети | без троттлинга |
+| Водяное колесо (`ElectricWaterWheel`) | до 30 от воды, до 60 вручную (префаб `electric.waterwheel`) | раз в ~1 с |
+
+Подробнее — [[electric-generator]].
 
 **Малый топливный генератор** (`FuelGenerator`):
 
@@ -181,13 +205,15 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
   тоже нужно право строительства. Подробнее — [[building-privilege]].
 - Вход и выход свободны, и тип провода совпадает (электрика, вода, индустриальный).
 - Провисание каждой точки — от 0 до 2 (`MIN_SLACK`/`MAX_SLACK`).
-- Оба устройства на одном транспорте или оба не на транспорте. По умолчанию
-  (`ioentity.allow_on_boats` = false) провода на транспорте и у лодочной верфи запрещены.
+- Оба устройства на одном транспорте или оба не на транспорте. Если `ioentity.allow_on_boats`
+  выключен, провода на транспорте и у лодочной верфи запрещены. В описании ConVar значение
+  по умолчанию `True`, а инициализатор поля в коде — `false`.
 - Отдельные входы принимают провод только от «корневых» устройств (`rootConnectionsOnly`,
   задаётся в префабе).
 
-В коде есть константа `maxLineNodes = 16`, но в серверной проверке я её использования
-не нашёл. Лимит узлов, вероятно, клиентский.
+Константа `maxLineNodes = 16` в серверной проверке не используется, но `ValidateLine`
+принимает от 2 до 18 точек линии (16 промежуточных узлов плюс концы). Прямая видимость
+проверяется только для индустриальных труб: электрический провод проходит сквозь стены.
 
 ## Числа и настройки
 
@@ -197,7 +223,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 | `ioentity.backtracking` | 8 | Глубина обхода для поиска петель (сумматор использует ×2) |
 | `ioentity.framebudgetelectriclowpriorityms` | 0.5 | Бюджет кадра на электрику игроков, мс |
 | `ioentity.framebudgetelectrichighpriorityms` | 1 | Бюджет на монументную электрику, мс |
-| `ioentity.allow_on_boats` | false | Разрешить провода на транспорте |
+| `ioentity.allow_on_boats` | True по ConVar (поле в коде false) | Разрешить провода на транспорте |
 | `electricbattery.dischargebudgetms` | 0.05 | Бюджет проверки разряда батарей |
 | `solarpanel.sunupdatebudgetms` | 0.05 | Бюджет пересчёта солнечных панелей |
 | `ioentity.infiniteiopower` | false | Админ-режим: вся электрика игроков получает 999 |

@@ -2,7 +2,7 @@
 id: sam-site
 title: ПВО (SAM site)
 kind: object
-group: Защита базы и электричество
+group: Защита базы
 summary: Зенитная установка — 25 rW, бьёт всё летающее выше себя в радиусе 150 м без проверки авторизации, очередями по 6 ракет с упреждением.
 related: [turret-targeting, auto-turret, electricity, battery, data-explosives, data-entity-health, data-protection]
 code: [SamSite.cs, PlayerHelicopter.cs, HotAirBalloon.cs, Drone.cs, Parachute.cs, MLRSRocket.cs]

@@ -7,10 +7,14 @@ import argparse, json, os, re
 ap = argparse.ArgumentParser()
 ap.add_argument('dump'); ap.add_argument('pattern')
 ap.add_argument('--cls'); ap.add_argument('--fields'); ap.add_argument('--limit', type=int, default=40)
+ap.add_argument('--monuments', action='store_true', help='also search monuments.jsonl (monument scenes, large)')
 a = ap.parse_args()
 recs = []
-for n in ('items.jsonl', 'content.jsonl', 'prefabs.jsonl'):
-    for l in open(os.path.join(a.dump, n)):
+for n in ('items.jsonl', 'content.jsonl', 'prefabs.jsonl', 'monuments.jsonl'):
+    path = os.path.join(a.dump, n)
+    if not os.path.exists(path) or (n == 'monuments.jsonl' and not a.monuments):
+        continue
+    for l in open(path):
         r = json.loads(l); r['_src'] = n; recs.append(r)
 names = {}
 for r in recs:

@@ -29,6 +29,9 @@ venv/bin/python -I tools/game-data/dump.py rustsrv/Bundles/shared/items.preload.
 venv/bin/python -I tools/game-data/dump.py rustsrv/Bundles/shared/content.bundle out/content.jsonl
 venv/bin/python -I tools/game-data/dump_scene.py rustsrv/Bundles/shared/assetscenes.bundle \
   rustsrv/Bundles/AssetSceneManifest.json out/prefabs.jsonl
+# сцены монументов и мира (~150 МБ): монументы, расписания ивентов, головоломки
+venv/bin/python -I tools/game-data/dump_scene.py rustsrv/Bundles/shared/assetscenes.bundle \
+  rustsrv/Bundles/AssetSceneManifest.json out/monuments.jsonl 'monument|world|props'
 
 # 3. Страницы-таблицы
 venv/bin/python -I tools/game-data/build_pages.py out docs/game/pages
@@ -48,6 +51,7 @@ ilspycmd rustsrv/RustDedicated_Data/Managed/Assembly-CSharp.dll \
 | `items.preload.bundle` | `ItemDefinition`, `ItemBlueprint` (рецепты), моды предметов: снаряды, готовка, контейнеры |
 | `content.bundle` | ScriptableObject'ы: грейды (`BuildingGrade`), защита (`ProtectionProperties`), лут (`LootSpawn`); компоненты `Construction` блоков |
 | `assetscenes.bundle`, сцена `AssetScene-prefabs` | Префабы сущностей: двери, взрывчатка, турели, ящики, печи. Корень объекта в сцене назван путём префаба |
+| `assetscenes.bundle`, сцены `AssetScene-monument.*`, `-world`, `-props.*` | Монументы целиком (ящики, считыватели карт, радиация, NPC), расписания ивентов. Поиск: `query.py ... --monuments` |
 
 Поиск по выгрузке:
 

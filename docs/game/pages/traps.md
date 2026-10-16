@@ -2,7 +2,7 @@
 id: traps
 title: Мина и капкан
 kind: object
-group: Защита базы и электричество
+group: Защита базы
 summary: Противопехотная мина взрывается, когда с неё сходят, и её может обезвредить напарник жертвы; капкан бьёт на 50 укуса + 30 колющего и взводится кем угодно.
 related: [turret-targeting, shotgun-trap, flame-turret, damage-system, building-privilege, data-explosives, data-entity-health]
 code: [Landmine.cs, BearTrap.cs, BaseTrap.cs]

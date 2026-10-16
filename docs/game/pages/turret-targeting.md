@@ -2,7 +2,7 @@
 id: turret-targeting
 title: Наведение турелей
 kind: mechanic
-group: Защита базы и электричество
+group: Защита базы
 summary: Как автотурель, турель Аванпоста, ПВО, огнемётная турель и дробовик-ловушка решают, в кого стрелять — авторизация, радиус, линия видимости, миролюбивый режим, интерференция.
 related: [auto-turret, sam-site, flame-turret, shotgun-trap, traps, electricity, building-privilege, tool-cupboard, safe-zones, projectile-ballistics, data-entity-health]
 code: [AutoTurret.cs, NPCAutoTurret.cs, SamSite.cs, FlameTurret.cs, GunTrap.cs, TargetTrigger.cs, ConVar/Sentry.cs]
