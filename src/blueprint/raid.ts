@@ -138,7 +138,12 @@ function edgeMids(shape: 'square' | 'triangle', pos: [number, number, number], r
 
 /** Граф пространств (SPEC §9.3). */
 export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
-  const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell' && Number.isInteger(e.level));
+  // Пространства — над фундаментами (на любой из трёх высот) и над полами целых этажей относительно
+  // фундамента своей колонки; полы на половинной высоте (запрыг) узлами не являются
+  const foundations = resolved.elements.filter(e => KINDS[e.kind].isFoundation);
+  const baseLevel = (e: ResolvedElement) => foundations.find(f => Math.hypot(f.position[0] - e.position[0], f.position[2] - e.position[2]) < 0.05)?.level ?? 0;
+  const cells = resolved.elements.filter(e => KINDS[e.kind].category === 'cell'
+    && (KINDS[e.kind].isFoundation || Number.isInteger(Math.round((e.level - baseLevel(e)) * 1000) / 1000)));
   const walls = resolved.elements.filter(e => KINDS[e.kind].category === 'wallType');
   // Крыша лежит над позицией соседней ячейки своего уровня: закрывает это пространство сверху,
   // а её низкое ребро перекрывает ребро, к которому она примыкает (затвор роф-бункера)

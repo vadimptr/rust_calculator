@@ -312,7 +312,8 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
   const info = KINDS[el.kind];
   switch (info.category) {
     case 'cell':
-      if (info.isFoundation) return [cellSlab(info.shape!, FOUNDATION_D)];
+      // фундамент на высоте полустены или стены доходит до земли
+      if (info.isFoundation) return [cellSlab(info.shape!, FOUNDATION_D + Math.max(0, el.position[1]))];
       if (info.isFrame) return [cellSlab(info.shape!, FLOOR_T, 0.72)];
       return [cellSlab(info.shape!, FLOOR_T)];
     case 'wallType':

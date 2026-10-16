@@ -47,6 +47,8 @@ export interface Attach {
   selfSocket?: Socket;
   flip?: boolean;
   turns?: 0 | 1 | 2 | 3;
+  /** Только фундамент к фундаменту: сдвиг по высоте в метрах (ряды сокетов foundation-top/mid/bot в игре). */
+  rise?: -3 | -1.5 | 0 | 1.5 | 3;
 }
 
 export interface Element {

@@ -81,6 +81,8 @@ function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean 
   return resolved.elements.some(e => {
     if (place(KINDS[e.kind].category) !== place(cat)) return false;
     if (cat === 'roof') return sameTransform(e, t);
+    // фундаменты стоят от земли до своего верха: два в одной колонке пересекаются при любой высоте
+    if (KINDS[kind].isFoundation && KINDS[e.kind].isFoundation) return polygonsOverlap(footprint(e.kind, e), footprint(kind, t));
     if (cat === 'wallType') {
       // стены на одном ребре: одна позиция, нормали могут смотреть в разные стороны
       const sameSpan = Math.abs(e.position[1] - t.position[1]) < 0.01
@@ -154,11 +156,16 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
       if (!canAttach(host.kind, socket, kind, self)) continue;
       const flips = KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType' ? [false, true] : [false];
       const turnsList = KINDS[kind].category === 'stairs' ? [0, 1, 2, 3] : [0];
-      for (const flip of flips) for (const turns of turnsList) {
+      // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
+      const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;
+      const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
+        ? [0, 1.5, 3].map(y => y - hostY) : [0];
+      for (const flip of flips) for (const turns of turnsList) for (const rise of rises) {
         const attach: Attach = { to: hostId, socket };
         if (defaultSelfSocket(kind) !== self) attach.selfSocket = self;
         if (flip) attach.flip = true;
         if (turns) attach.turns = turns as 0 | 1 | 2 | 3;
+        if (rise) attach.rise = rise as Attach['rise'];
         const ghost: Element = { id: GHOST, kind, attach };
         const r = resolveBlueprint({ ...bp, elements: [...bp.elements, ghost], deployables: [] });
         if (r.issues.some(i => i.level === 'error')) continue;
@@ -167,7 +174,7 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
         // ячейка, приставленная разными своими рёбрами, занимает одно и то же место: поворот берётся
         // по модулю симметрии формы, первым остаётся вариант с edge:0
         const sym = dedupe && KINDS[kind].category === 'cell' ? 360 / (KINDS[kind].shape === 'square' ? 4 : 3) : 360;
-        const key = `${t.position.map(v => v.toFixed(2)).join('|')}|${(((t.rotation % sym) + sym) % sym).toFixed(0)}|${turns}`;
+        const key = `${t.position.map(v => v.toFixed(2)).join('|')}|${(((t.rotation % sym) + sym) % sym).toFixed(0)}|${turns}|${rise}`;
         if (seen.has(key)) continue;
         seen.add(key);
         if (overlaps(kind, t, resolved)) continue;
@@ -201,7 +208,8 @@ export function placementAnchor(kind: ElementKind, p: Placement): string {
   if (cat === 'cell' || cat === 'roof' || cat === 'ramp') {
     const k = p.attach.selfSocket ? Number(p.attach.selfSocket.slice(5)) : 0;
     const m = edgeMids(kind, p.transform)[k] ?? p.transform.position;
-    return `${r(m[0])}|${r(m[1])}|${r(m[2])}`;
+    // у фундамента высота — вариант того же места: R перебирает 0 / 1.5 / 3 м
+    return KINDS[kind].isFoundation ? `${r(m[0])}|${r(m[2])}` : `${r(m[0])}|${r(m[1])}|${r(m[2])}`;
   }
   return p.transform.position.map(r).join('|');
 }

@@ -62,7 +62,9 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
     const rot = normal + 180 - edgeAngle(c.shape!, m);
     const [nx, nz] = dir(normal);
     const d = apothem(p.shape!) + apothem(c.shape!);
-    return { position: [px + d * nx, py, pz + d * nz], rotation: rot, level: parent.level };
+    // фундамент к фундаменту: сдвиг по высоте (ряды сокетов foundation-top/mid/bot)
+    const rise = c.category === 'cell' ? a.rise ?? 0 : 0;
+    return { position: [px + d * nx, py + rise, pz + d * nz], rotation: rot, level: parent.level + rise / 3 };
   }
 
   // Стена-тип на ребро ячейки
@@ -190,6 +192,10 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       issues.push(err('V04', e.id, `${e.kind}.${self} нельзя крепить к ${parent.kind}.${e.attach.socket}`));
       continue;
     }
+    if (e.attach.rise && !(KINDS[parent.kind].isFoundation && KINDS[e.kind].isFoundation && edgeIndex(e.attach.socket) !== null)) {
+      issues.push(err('V04', e.id, 'rise допустим только у фундамента, приставленного к ребру фундамента'));
+      continue;
+    }
     const list = children.get(parent.id) ?? [];
     list.push(e);
     children.set(parent.id, list);
@@ -227,6 +233,13 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       placed.set(child.id, pc);
       queue.push(pc);
     }
+  }
+
+  // V12: верх фундамента — на земле, на высоте полустены или стены
+  for (const [id, p] of placed) {
+    if (!KINDS[p.el.kind].isFoundation) continue;
+    const y = p.position[1];
+    if (![0, 1.5, 3].some(v => Math.abs(y - v) < 1e-6)) issues.push(err('V12', id, `Фундамент на высоте ${round3(y)} м: допустимо 0, 1.5 или 3 м от земли`));
   }
 
   // V02: недостижимые элементы (циклы или оторванные ветки)

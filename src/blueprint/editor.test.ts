@@ -18,7 +18,7 @@ test('new blueprint: one twig foundation; walls snap to its four edges, nearest 
   const near = placementsNear(bp, resolved, 'wall', 'f1', [1.4, 1, 0.2]);
   assert.deepEqual(near[0].attach, { to: 'f1', socket: 'edge:0' });
   // соседний фундамент — тоже четыре варианта, съезд — четыре, лестница на top — четыре поворота
-  assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'f1').length, 4);
+  assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'f1').length, 12); // 4 ребра × 3 высоты
   assert.equal(candidatePlacements(bp, resolved, 'ramp', 'f1').length, 4);
   assert.equal(candidatePlacements(bp, resolved, 'stairs-l-shape', 'f1').length, 4);
   // пол на фундамент ребром к ребру нельзя (фундамент к фундаменту, пол к полу)
@@ -96,7 +96,7 @@ test('new kinds resolve: ramp and foundation steps on a foundation edge, spiral 
   const ramp = r.resolved.elements.find(e => e.kind === 'ramp')!;
   assert.deepEqual(ramp.position, [3, 0, 0]);
   // съезд занимает место соседа: фундамент туда уже не поставить
-  assert.equal(candidatePlacements(bp, r.resolved, 'square-foundation', 'f1').length, 2);
+  assert.equal(candidatePlacements(bp, r.resolved, 'square-foundation', 'f1').length, 6); // 2 ребра × 3 высоты
 });
 
 test('removing a foundation keeps a doorway on the shared edge: it re-attaches to the other cell, door and floor stay in place', () => {
@@ -194,4 +194,39 @@ test('roofs do not collide with each other: a crossing roof at the same position
   assert.ok(fromW2.some(p => !p.attach.flip), fromW2.map(p => JSON.stringify(p.attach)).join(' '));
   // с той же стены внутрь — точный дубль, занято
   assert.ok(candidatePlacements(bp, resolved, 'roof', 'w1').every(p => p.attach.flip));
+});
+
+test('foundation heights: a neighbour foundation can sit at ground, half-wall or wall height (0 / 1.5 / 3 m); R cycles them on the same edge', async () => {
+  const { placementAnchor } = await import('./editor.ts');
+  const bp = newBlueprint();
+  const resolved = resolveBlueprint(bp).resolved;
+  const cands = candidatePlacements(bp, resolved, 'square-foundation', 'f1');
+  assert.equal(cands.length, 12);
+  const east = cands.filter(c => Math.abs(c.transform.position[0] - 3) < 0.01);
+  assert.deepEqual(east.map(c => c.transform.position[1]).sort(), [0, 1.5, 3]);
+  assert.equal(new Set(east.map(c => placementAnchor('square-foundation', c))).size, 1);
+  // от поднятого фундамента — те же три абсолютные высоты, ниже земли нельзя
+  const raised = addElement(bp, 'square-foundation', east.find(c => c.transform.position[1] === 3)!.attach);
+  const r2 = resolveBlueprint(raised);
+  assert.deepEqual(r2.issues.filter(i => i.level === 'error'), []);
+  assert.equal(r2.resolved.elements.find(e => e.id === 'f2')!.level, 1);
+  const fromRaised = candidatePlacements(raised, r2.resolved, 'square-foundation', 'f2').map(c => c.transform.position[1]);
+  assert.ok(fromRaised.every(y => [0, 1.5, 3].includes(y)), fromRaised.join(','));
+  // на месте поднятого фундамента нельзя поставить ещё один ни на какой высоте
+  assert.ok(candidatePlacements(raised, r2.resolved, 'square-foundation', 'f1').every(c => Math.abs(c.transform.position[0] - 3) > 0.01));
+  // недопустимая высота и rise не у фундамента — ошибки
+  assert.ok(resolveBlueprint(addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: -1.5 })).issues.some(i => i.code === 'V12'));
+  assert.ok(resolveBlueprint(addElement(bp, 'wall', { to: 'f1', socket: 'edge:0', rise: 1.5 })).issues.some(i => i.code === 'V04'));
+});
+
+test('raid graph: a wall-height foundation is a space at level 1, its walls and floor work as usual', async () => {
+  const { buildSpaceGraph, reachableSpaces } = await import('./raid.ts');
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: 1.5 });
+  for (const k of [0, 1, 3]) bp = addElement(bp, 'wall', { to: 'f2', socket: `edge:${k}` as 'edge:0' });
+  const r = resolveBlueprint(bp);
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  const g = buildSpaceGraph(r.resolved);
+  assert.ok(g.nodes.has('f2'));
+  assert.ok(reachableSpaces(g, new Set()).has('f2'), 'open edge toward f1 and open top');
 });
