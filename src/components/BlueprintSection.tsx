@@ -170,7 +170,7 @@ function fromPreset(id: string, grade: GradeChoice = 'stone', door: DoorChoice =
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
 function initialPresetId(): string {
   const wanted = new URLSearchParams(window.location.search).get('bp');
-  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'starter-2x1';
+  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'empty';
 }
 
 const BlueprintSection: React.FC = () => {
@@ -188,7 +188,7 @@ const BlueprintSection: React.FC = () => {
 
   // Режим стройки включён всегда: документ правится напрямую
   const [tool, setTool] = useState<EditorTool>('build');
-  const [buildKind, setBuildKind] = useState<ElementKind>('wall');
+  const [buildKind, setBuildKind] = useState<ElementKind>('square-foundation');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
 
   // Документ с переопределениями → схема → геометрия
