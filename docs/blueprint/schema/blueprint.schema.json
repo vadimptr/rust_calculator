@@ -5,53 +5,71 @@
   "description": "Чертёж постройки Rust: граф строительных блоков, соединённых через сокеты, плюс размещаемые объекты (шкаф, двери). См. docs/blueprint/SPEC.md.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["formatVersion", "meta", "elements"],
+  "required": [
+    "formatVersion",
+    "meta",
+    "elements"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "formatVersion": { "const": "1.0" },
-    "meta": { "$ref": "#/$defs/Meta" },
+    "$schema": {
+      "type": "string"
+    },
+    "formatVersion": {
+      "const": "1.0"
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
     "defaults": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "grade": { "$ref": "#/$defs/Grade" }
+        "grade": {
+          "$ref": "#/$defs/Grade"
+        }
       }
     },
     "elements": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/Element" }
+      "items": {
+        "$ref": "#/$defs/Element"
+      },
+      "description": "Строительные блоки. Ровно один элемент помечен root: true, остальные имеют attach."
     },
     "deployables": {
       "type": "array",
       "default": [],
-      "items": { "$ref": "#/$defs/Deployable" }
+      "items": {
+        "$ref": "#/$defs/Deployable"
+      }
     },
-    "raidPath": {
-      "description": "Упорядоченный список id элементов и объектов, которые рейдер разрушает по пути к цели.",
-      "type": "array",
-      "items": { "$ref": "#/$defs/Id" },
-      "uniqueItems": true
-    },
-    "resolved": { "$ref": "#/$defs/Resolved" }
+    "resolved": {
+      "$ref": "#/$defs/Resolved"
+    }
   },
-
   "$defs": {
     "Id": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_-]{0,63}$"
     },
-
     "Grade": {
       "type": "string",
-      "enum": ["twig", "wood", "stone", "metal", "armored"]
+      "enum": [
+        "twig",
+        "wood",
+        "stone",
+        "metal",
+        "armored"
+      ]
     },
-
     "ElementKind": {
       "type": "string",
       "enum": [
         "square-foundation",
         "triangle-foundation",
+        "foundation-steps",
+        "ramp",
         "wall",
         "half-wall",
         "low-wall",
@@ -64,11 +82,11 @@
         "triangle-floor-frame",
         "stairs-l-shape",
         "u-shaped-stairs",
+        "spiral-stairs",
         "roof",
         "roof-triangle"
       ]
     },
-
     "DeployableKind": {
       "type": "string",
       "enum": [
@@ -79,74 +97,82 @@
         "garage-door",
         "wooden-double-door",
         "sheet-metal-double-door",
-        "armored-double-door"
+        "armored-double-door",
+        "strengthened-glass-window",
+        "reinforced-glass-window",
+        "metal-window-bars",
+        "drop-box"
       ]
     },
-
     "Socket": {
       "type": "string",
-      "pattern": "^(edge:[0-3]|top|bottom|opening)$"
+      "pattern": "^(edge:[0-3]|top|bottom|opening|face)$"
     },
-
     "Vec3": {
       "type": "array",
-      "items": { "type": "number" },
+      "items": {
+        "type": "number"
+      },
       "minItems": 3,
       "maxItems": 3
     },
-
     "Vec2": {
       "type": "array",
-      "items": { "type": "number" },
+      "items": {
+        "type": "number"
+      },
       "minItems": 2,
       "maxItems": 2
     },
-
     "Meta": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
-        "description": { "type": "string" },
-        "author": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "gameVersion": {
           "type": "string",
           "description": "Месяц обновления игры, под которое проверен чертёж, например \"2026-09\"."
         },
         "tags": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "uniqueItems": true
         }
       }
     },
-
-    "Anchor": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["position"],
-      "properties": {
-        "position": {
-          "$ref": "#/$defs/Vec3",
-          "description": "[x, y, z] в метрах. y — высота верхней плоскости фундамента."
-        },
-        "rotation": {
-          "type": "number",
-          "default": 0,
-          "description": "Угол в градусах в плоскости (x, z), см. SPEC §4.1."
-        }
-      }
-    },
-
     "Attach": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["to", "socket"],
+      "required": [
+        "to",
+        "socket"
+      ],
       "properties": {
-        "to": { "$ref": "#/$defs/Id" },
-        "socket": { "$ref": "#/$defs/Socket" },
+        "to": {
+          "$ref": "#/$defs/Id"
+        },
+        "socket": {
+          "$ref": "#/$defs/Socket"
+        },
         "selfSocket": {
           "$ref": "#/$defs/Socket",
           "description": "Сокет самого элемента, которым он прикладывается. Обязателен для элементов с несколькими подходящими сокетами (фундаменты, полы, крыши)."
@@ -162,55 +188,154 @@
           "maximum": 3,
           "default": 0,
           "description": "Поворот элемента внутри ячейки в четвертях оборота (только для лестниц)."
+        },
+        "rise": {
+          "type": "number",
+          "enum": [
+            -3,
+            -1.5,
+            0,
+            1.5,
+            3
+          ],
+          "default": 0,
+          "description": "Только фундамент к фундаменту: сдвиг соседа по высоте в метрах. В игре у фундамента три ряда боковых сокетов (foundation-top/mid/bot) с шагом 1.5 м; верх фундамента — на земле, на высоте полустены или стены (0, 1.5, 3 м)."
         }
       }
     },
-
     "Element": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind"],
+      "required": [
+        "id",
+        "kind"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/Id" },
-        "kind": { "$ref": "#/$defs/ElementKind" },
-        "grade": { "$ref": "#/$defs/Grade" },
-        "anchor": { "$ref": "#/$defs/Anchor" },
-        "attach": { "$ref": "#/$defs/Attach" },
-        "label": { "type": "string" },
-        "notes": { "type": "string" }
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/ElementKind"
+        },
+        "grade": {
+          "$ref": "#/$defs/Grade"
+        },
+        "attach": {
+          "$ref": "#/$defs/Attach"
+        },
+        "bunker": {
+          "type": "boolean",
+          "description": "Деталь затвора роф-бункера, которую хозяин убирает, чтобы войти: крыша-затвор или твиговая плита-опора под ней. Переключатель «Открыть двери» в просмотре их убирает. Только для крыш и полов."
+        },
+        "label": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "root": {
+          "const": true,
+          "description": "Корневой фундамент: ячейка, на которой стоит шкаф. Ровно один на документ (единственность проверяет валидатор, V02)."
+        }
       },
       "oneOf": [
-        { "required": ["anchor"], "properties": { "attach": false } },
-        { "required": ["attach"], "properties": { "anchor": false } }
+        {
+          "required": [
+            "root"
+          ],
+          "properties": {
+            "attach": false
+          }
+        },
+        {
+          "required": [
+            "attach"
+          ],
+          "properties": {
+            "root": false
+          }
+        }
       ],
       "allOf": [
         {
-          "if": { "properties": { "kind": { "enum": ["square-foundation", "triangle-foundation"] } } },
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "square-foundation",
+                  "triangle-foundation"
+                ]
+              }
+            }
+          },
           "then": {},
-          "else": { "properties": { "anchor": false } }
+          "else": {
+            "properties": {
+              "root": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "roof",
+                  "roof-triangle",
+                  "square-floor",
+                  "triangle-floor"
+                ]
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "bunker": false
+            }
+          }
         }
       ]
     },
-
     "Deployable": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind", "attach"],
+      "required": [
+        "id",
+        "kind",
+        "attach"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/Id" },
-        "kind": { "$ref": "#/$defs/DeployableKind" },
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "$ref": "#/$defs/DeployableKind"
+        },
         "attach": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["to", "socket"],
+          "required": [
+            "to",
+            "socket"
+          ],
           "properties": {
-            "to": { "$ref": "#/$defs/Id" },
-            "socket": { "type": "string", "enum": ["top", "opening"] }
+            "to": {
+              "$ref": "#/$defs/Id"
+            },
+            "socket": {
+              "type": "string",
+              "enum": [
+                "top",
+                "opening",
+                "face"
+              ]
+            }
           }
         },
         "offset": {
           "$ref": "#/$defs/Vec2",
-          "description": "Смещение [x, z] в метрах от центра ячейки (только для сокета top)."
+          "description": "Шкаф: смещение [x, z] в метрах от центра ячейки. Дроп-бокс: [вдоль стены, высота] от середины низа стены."
         },
         "rotation": {
           "type": "number",
@@ -219,97 +344,231 @@
         },
         "hinge": {
           "type": "string",
-          "enum": ["left", "right"],
+          "enum": [
+            "left",
+            "right"
+          ],
           "default": "left",
           "description": "Сторона петель, глядя снаружи (по нормали проёма). Только для дверей."
         },
-        "label": { "type": "string" },
-        "notes": { "type": "string" }
+        "label": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "opens": {
+          "type": "string",
+          "enum": [
+            "outward",
+            "inward"
+          ],
+          "default": "outward",
+          "description": "Куда распахивается дверь: outward — по нормали проёма (наружу), inward — против нормали. Только для дверей."
+        },
+        "open": {
+          "type": "boolean",
+          "default": false,
+          "description": "Дверь показана открытой (для просмотра и проверки перекрытия). Только для дверей."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "in",
+            "out"
+          ],
+          "description": "Только для дроп-бокса: out — передача изнутри наружу (по нормали стены), in — снаружи внутрь."
+        }
       },
       "allOf": [
         {
-          "if": { "properties": { "kind": { "const": "tool-cupboard" } } },
-          "then": {
+          "if": {
             "properties": {
-              "attach": { "type": "object", "properties": { "socket": { "const": "top" } } },
-              "hinge": false
+              "kind": {
+                "const": "tool-cupboard"
+              }
             }
           },
-          "else": {
+          "then": {
             "properties": {
-              "attach": { "type": "object", "properties": { "socket": { "const": "opening" } } },
-              "offset": false,
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "top"
+                  }
+                }
+              },
+              "hinge": false,
+              "opens": false,
+              "open": false,
+              "direction": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "drop-box"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "face"
+                  }
+                }
+              },
+              "hinge": false,
+              "opens": false,
+              "open": false,
               "rotation": false
+            },
+            "required": [
+              "direction"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tool-cupboard",
+                    "drop-box"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "opening"
+                  }
+                }
+              },
+              "offset": false,
+              "rotation": false,
+              "direction": false
             }
           }
         }
       ]
     },
-
     "ResolvedTransform": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["position", "rotation", "level"],
+      "required": [
+        "position",
+        "rotation",
+        "level"
+      ],
       "properties": {
-        "position": { "$ref": "#/$defs/Vec3" },
-        "rotation": { "type": "number" },
-        "level": { "type": "number", "multipleOf": 0.5 },
+        "position": {
+          "$ref": "#/$defs/Vec3"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "level": {
+          "type": "number",
+          "multipleOf": 0.5
+        },
         "sockets": {
           "type": "object",
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["position", "normal"],
+            "required": [
+              "position",
+              "normal"
+            ],
             "properties": {
-              "position": { "$ref": "#/$defs/Vec3" },
-              "normal": { "$ref": "#/$defs/Vec2" }
+              "position": {
+                "$ref": "#/$defs/Vec3"
+              },
+              "normal": {
+                "$ref": "#/$defs/Vec2"
+              }
             }
           }
         }
       }
     },
-
     "Resolved": {
       "description": "Вычисляемый слой. Никогда не редактируется руками; пересчитывается движком геометрии.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["generator", "sourceHash", "elements"],
+      "required": [
+        "generator",
+        "sourceHash",
+        "elements"
+      ],
       "properties": {
-        "generator": { "type": "string" },
+        "generator": {
+          "type": "string"
+        },
         "sourceHash": {
           "type": "string",
           "pattern": "^sha256:[0-9a-f]{64}$"
         },
         "elements": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/ResolvedTransform" }
+          "additionalProperties": {
+            "$ref": "#/$defs/ResolvedTransform"
+          }
         },
         "deployables": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/ResolvedTransform" }
+          "additionalProperties": {
+            "$ref": "#/$defs/ResolvedTransform"
+          }
         },
         "adjacency": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["a", "b"],
+            "required": [
+              "a",
+              "b"
+            ],
             "properties": {
-              "a": { "$ref": "#/$defs/SocketRef" },
-              "b": { "$ref": "#/$defs/SocketRef" }
+              "a": {
+                "$ref": "#/$defs/SocketRef"
+              },
+              "b": {
+                "$ref": "#/$defs/SocketRef"
+              }
             }
           }
         }
       }
     },
-
     "SocketRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "socket"],
+      "required": [
+        "id",
+        "socket"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/Id" },
-        "socket": { "$ref": "#/$defs/Socket" }
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "socket": {
+          "$ref": "#/$defs/Socket"
+        }
       }
     }
   }

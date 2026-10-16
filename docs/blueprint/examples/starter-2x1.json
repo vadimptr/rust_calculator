@@ -2,29 +2,149 @@
   "$schema": "../schema/blueprint.schema.json",
   "formatVersion": "1.0",
   "meta": {
-    "name": "Starter 2x1",
-    "description": "Два квадратных фундамента, стены по периметру, дверной проём с металлической дверью, перекрытие и шкаф в дальней ячейке.",
+    "name": "Дом 2×1 с аирлоком",
+    "description": "Два квадратных фундамента: корневая ячейка со шкафом и тамбур-аирлок. Внутренний проём у шкафа — рама стены с двойной металлической дверью, которая открывается в тамбур; внешний одиночный проём стоит на боковой стене тамбура в том же углу. Открытая двойная дверь перекрывает проход от наружной двери, поэтому в тамбур не зайти, пока дверь у шкафа открыта.",
     "gameVersion": "2026-09",
-    "tags": ["starter", "example"]
+    "tags": [
+      "starter",
+      "airlock",
+      "example"
+    ]
   },
-  "defaults": { "grade": "stone" },
+  "defaults": {
+    "grade": "stone"
+  },
   "elements": [
-    { "id": "f1", "kind": "square-foundation", "anchor": { "position": [0, 0, 0] } },
-    { "id": "f2", "kind": "square-foundation", "attach": { "to": "f1", "socket": "edge:0", "selfSocket": "edge:2" } },
-
-    { "id": "d1", "kind": "doorway", "grade": "metal", "attach": { "to": "f1", "socket": "edge:2" } },
-    { "id": "w1", "kind": "wall", "attach": { "to": "f1", "socket": "edge:1" } },
-    { "id": "w2", "kind": "wall", "attach": { "to": "f1", "socket": "edge:3" } },
-    { "id": "w3", "kind": "wall", "attach": { "to": "f2", "socket": "edge:0" } },
-    { "id": "w4", "kind": "wall", "attach": { "to": "f2", "socket": "edge:1" } },
-    { "id": "w5", "kind": "wall", "attach": { "to": "f2", "socket": "edge:3" } },
-
-    { "id": "c1", "kind": "square-floor", "attach": { "to": "w1", "socket": "top", "selfSocket": "edge:1" } },
-    { "id": "c2", "kind": "square-floor", "attach": { "to": "c1", "socket": "edge:0", "selfSocket": "edge:2" } }
+    {
+      "id": "f1",
+      "kind": "square-foundation",
+      "root": true,
+      "label": "Ячейка со шкафом"
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      },
+      "label": "Аирлок"
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:2"
+      }
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:3"
+      }
+    },
+    {
+      "id": "d_inner",
+      "kind": "wall-frame",
+      "grade": "metal",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0"
+      },
+      "label": "Внутренний проём (рама стены под двойную дверь)",
+      "notes": "Двойная дверь открывается в тамбур и ложится поперёк прохода от внешней двери."
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:0"
+      }
+    },
+    {
+      "id": "w5",
+      "kind": "wall",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:3"
+      }
+    },
+    {
+      "id": "d_outer",
+      "kind": "doorway",
+      "grade": "metal",
+      "attach": {
+        "to": "f2",
+        "socket": "edge:1"
+      },
+      "label": "Внешний проём (боковая стена тамбура)"
+    },
+    {
+      "id": "c1",
+      "kind": "square-floor",
+      "attach": {
+        "to": "w1",
+        "socket": "top",
+        "selfSocket": "edge:1"
+      }
+    },
+    {
+      "id": "c2",
+      "kind": "square-floor",
+      "attach": {
+        "to": "c1",
+        "socket": "edge:0",
+        "selfSocket": "edge:2"
+      }
+    }
   ],
   "deployables": [
-    { "id": "door1", "kind": "sheet-metal-door", "attach": { "to": "d1", "socket": "opening" }, "hinge": "right" },
-    { "id": "tc1", "kind": "tool-cupboard", "attach": { "to": "f2", "socket": "top" }, "offset": [0.8, 0.8], "rotation": 225 }
-  ],
-  "raidPath": ["door1"]
+    {
+      "id": "door_outer",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "d_outer",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "outward"
+    },
+    {
+      "id": "door_inner",
+      "kind": "sheet-metal-double-door",
+      "attach": {
+        "to": "d_inner",
+        "socket": "opening"
+      },
+      "notes": "Нормаль рамы смотрит в тамбур, поэтому outward = в тамбур.",
+      "opens": "outward"
+    },
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [
+        -1.075,
+        -0.825
+      ],
+      "rotation": 0,
+      "notes": "Прижат спинкой и боком к стенам дальнего угла."
+    }
+  ]
 }

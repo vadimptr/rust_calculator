@@ -1,0 +1,82 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "1.0",
+  "meta": {
+    "name": "Шкаф в треугольнике с окном",
+    "description": "Треугольный каменный фундамент, две стены и оконный проём с укреплённым стеклом, треугольный пол сверху. Шкаф стоит в дальнем углу фронтом к окну, чтобы пополнять его через окно.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "tc",
+      "window",
+      "example"
+    ]
+  },
+  "defaults": {
+    "grade": "stone"
+  },
+  "elements": [
+    {
+      "id": "f1",
+      "kind": "triangle-foundation",
+      "root": true
+    },
+    {
+      "id": "win",
+      "kind": "window-frame",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:0"
+      },
+      "label": "Окно к шкафу"
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:1"
+      }
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "attach": {
+        "to": "f1",
+        "socket": "edge:2"
+      }
+    },
+    {
+      "id": "c1",
+      "kind": "triangle-floor",
+      "attach": {
+        "to": "w2",
+        "socket": "top",
+        "selfSocket": "edge:1"
+      }
+    }
+  ],
+  "deployables": [
+    {
+      "id": "glass",
+      "kind": "strengthened-glass-window",
+      "attach": {
+        "to": "win",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "tc1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [
+        -0.23,
+        0
+      ],
+      "rotation": 0,
+      "notes": "В дальнем углу между стенами w2 и w3, фронтом к окну."
+    }
+  ]
+}

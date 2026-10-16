@@ -1,6 +1,11 @@
 name: Actions 😎
 
-on: [push, pull_request]
+on: [push]
+
+# Один проект — одна очередь: деплои не бегут параллельно и не ломают docker-compose на сервере.
+concurrency:
+  group: deploy-rust_calculator
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -34,6 +39,8 @@ jobs:
   deploy:
     name: Deploy image ✨
     needs: build
+    # На сервер уезжает только main; ветки лишь собираются.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
