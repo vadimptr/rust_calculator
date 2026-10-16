@@ -8,7 +8,7 @@ import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade,
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { deployPlacement, placementsNear } from '../blueprint/editor.ts';
+import { deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
 import type { Placement } from '../blueprint/editor.ts';
 
 export type CameraMode = 'orbit' | 'fly';
@@ -228,10 +228,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     };
 
     /** Выбрать размещение, ближайшее к точке прицела (с гистерезисом и перебором по R), и показать призрак. */
-    const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number], altKey: string) => {
+    const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number]) => {
       if (cands.length === 0) return false;
-      if (state.altKey !== altKey) { state.altKey = altKey; state.alt = 0; }
-      // ближайший к точке прицела; прежний сокет держится, пока новый не станет ближе на заметную величину —
+      // ближайший к точке прицела; прежнее место держится, пока новое не станет ближе на заметную величину —
       // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
       const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
       const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
@@ -239,9 +238,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       let p = sorted[0];
       const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
       if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
-      // R перебирает варианты в том же сокете: сторона крыши или пола на стене, поворот лестницы —
-      // а не другие рёбра
-      const group = sorted.filter(c => c.attach.to === p.attach.to && c.attach.socket === p.attach.socket);
+      // R перебирает варианты с тем же якорем (ребром опоры): крыша над зданием или наружу, пол по ту или
+      // другую сторону стены, поворот лестницы — а не другие рёбра. Смена якоря сбрасывает перебор.
+      const anchor = placementAnchor(ed.kind, p);
+      if (state.altKey !== anchor) { state.altKey = anchor; state.alt = 0; }
+      const group = sorted.filter(c => placementAnchor(ed.kind, c) === anchor);
       if (state.alt > 0 && group.length > 1) p = group[state.alt % group.length];
       const attachKey = JSON.stringify(p.attach);
       state.lastAttach = attachKey;
@@ -255,6 +256,18 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       let cands = state.candCache.get(key);
       if (!cands) { cands = placementsNear(ed.blueprint, res, ed.kind, hostId, pt); state.candCache.set(key, cands); }
       return cands;
+    };
+
+    /** Кандидаты от всех блоков рядом с точкой прицела, без дублей по положению: один и тот же сокет
+     *  (ребро пола и верх стены под ним) принадлежит нескольким блокам. */
+    const candidatesAround = (ed: EditorState, res: Resolved, hostIds: string[], pt: [number, number, number]) => {
+      const seen = new Set<string>();
+      const out: Placement[] = [];
+      for (const id of hostIds) for (const c of candidatesOf(ed, res, id, pt)) {
+        const k = `${c.transform.position.map(v => v.toFixed(2)).join('|')}|${c.transform.rotation.toFixed(0)}|${c.attach.turns ?? 0}`;
+        if (!seen.has(k)) { seen.add(k); out.push(c); }
+      }
+      return out;
     };
 
     const refreshGhost = () => {
@@ -273,9 +286,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
         const g = hit && !hit.deployable ? hit.point : groundPoint();
         if (!g) return none();
         const pt: [number, number, number] = [g.x, 0, g.z];
-        const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6);
+        const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6).map(e => e.id);
         host.dataset.hover = hit?.id ?? 'ground';
-        return showPlacement(ed, hosts.flatMap(hst => candidatesOf(ed, res, hst.id, pt)), pt, `ground|${ed.kind}`) ? undefined : none();
+        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt) ? undefined : none();
       }
       if (!hit) return none();
       // что под курсором и что будет сделано по клику: для тестов и отладки
@@ -292,7 +305,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (!hostEl) return none();
       if (ed.tool === 'build') {
         const pt: [number, number, number] = [hit.point.x, hit.point.y, hit.point.z];
-        return showPlacement(ed, candidatesOf(ed, res, hit.id, pt), pt, `${hit.id}|${ed.kind}`) ? undefined : none();
+        // хозяева — все блоки рядом с точкой прицела: сокет на ребре пола есть и у стены под ним
+        const hosts = res.elements
+          .filter(e => KINDS[e.kind].category !== 'stairs' && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 3.3 && Math.abs(e.position[1] - pt[1]) < 3.6)
+          .map(e => e.id);
+        if (!hosts.includes(hit.id)) hosts.unshift(hit.id);
+        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt) ? undefined : none();
       }
       // объект
       const local = toLocal(hostEl, hit.point);
@@ -387,7 +405,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (state.hoverDirty) {
         refreshGhost();
         const p = state.pending;
-        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? p.attach.to + '/' + p.attach.socket : p.d.kind}` : '';
+        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.d.kind}` : '';
       }
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);

@@ -73,9 +73,12 @@ function sameTransform(a: Transform, b: Transform, angleMod = 360): boolean {
 /** Пересекается ли новый элемент с уже стоящим: та же категория места и та же позиция. */
 function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean {
   const cat = KINDS[kind].category;
-  const place = (c: string) => (c === 'cell' || c === 'roof' || c === 'ramp' ? 'cell' : c);
+  // крыша занимает объём над плоскостью уровня и с плитой того же уровня не спорит (чердак над полом);
+  // две крыши в одной позиции — пересечение при любом наклоне
+  const place = (c: string) => (c === 'cell' || c === 'ramp' ? 'cell' : c);
   return resolved.elements.some(e => {
     if (place(KINDS[e.kind].category) !== place(cat)) return false;
+    if (cat === 'roof') return Math.hypot(e.position[0] - t.position[0], e.position[1] - t.position[1], e.position[2] - t.position[2]) < 0.01;
     if (cat === 'wallType') {
       // стены на одном ребре: одна позиция, нормали могут смотреть в разные стороны
       const sameSpan = Math.abs(e.position[1] - t.position[1]) < 0.01
@@ -113,7 +116,7 @@ function polygonsOverlap(p: [number, number][], q: [number, number][]): boolean 
 }
 
 /** Середины рёбер ячейки или крыши в мире. */
-function edgeMids(kind: ElementKind, t: Transform): [number, number, number][] {
+export function edgeMids(kind: ElementKind, t: Transform): [number, number, number][] {
   const shape = KINDS[kind].shape ?? 'square';
   return Array.from({ length: edgeCount(shape) }, (_, k) => {
     const a = ((t.rotation + edgeAngle(shape, k)) * Math.PI) / 180;
@@ -182,6 +185,23 @@ export function placementsNear(bp: Blueprint, resolved: Resolved, kind: ElementK
     return Math.hypot(x - point[0], y + h - point[1], z - point[2]);
   };
   return candidatePlacements(bp, resolved, kind, hostId).sort((a, b) => dist(a) - dist(b));
+}
+
+/**
+ * Якорь размещения — точка сокета, за который блок держится: середина своего ребра у ячеек, крыш и
+ * съездов (ребро соседа или верх стены), позиция у стен и лестниц. Варианты с одним якорем — это
+ * один и тот же «куда поставить» с разной ориентацией: крыша над зданием или наружу, пол по ту или
+ * другую сторону стены, поворот лестницы.
+ */
+export function placementAnchor(kind: ElementKind, p: Placement): string {
+  const cat = KINDS[kind].category;
+  const r = (v: number) => (Math.round(v * 100) / 100 + 0).toFixed(2);
+  if (cat === 'cell' || cat === 'roof' || cat === 'ramp') {
+    const k = p.attach.selfSocket ? Number(p.attach.selfSocket.slice(5)) : 0;
+    const m = edgeMids(kind, p.transform)[k] ?? p.transform.position;
+    return `${r(m[0])}|${r(m[1])}|${r(m[2])}`;
+  }
+  return p.transform.position.map(r).join('|');
 }
 
 export function addElement(bp: Blueprint, kind: ElementKind, attach: Attach, grade?: Grade): Blueprint {

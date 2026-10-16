@@ -39,7 +39,8 @@ function slotKey(parent: Element, socket: Socket, child: Element, flip: boolean)
   }
   if (p.category === 'wallType' && socket === 'top') {
     if (c.category === 'wallType') return `${parent.id}/top/wall`;
-    return `${parent.id}/top/${flip ? 'back' : 'front'}`;
+    // с каждой стороны верха стены — один пол и одна крыша: крыша над полом (чердак) допустима
+    return `${parent.id}/top/${flip ? 'back' : 'front'}/${c.category === 'roof' ? 'roof' : 'cell'}`;
   }
   if (p.category === 'cell' && socket === 'top') return `${parent.id}/top/stairs`;
   return `${parent.id}/${socket}`;

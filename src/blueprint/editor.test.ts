@@ -178,6 +178,7 @@ test('roof needs support under its low edge: both sides of a wall top are fine, 
   resolved = resolveBlueprint(bp).resolved;
   const beside = candidatePlacements(bp, resolved, 'roof', 'r1');
   assert.equal(beside.length, 1);
-  // крыша низким ребром на ребро фундамента (съезд-крыша) опирается на само ребро
-  assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 3);
+  // крыша низким ребром на ребро фундамента (съезд-крыша) опирается на само ребро; над соседним
+  // фундаментом тоже можно — крыша лежит выше плоскости уровня и с плитой не спорит
+  assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 4);
 });
