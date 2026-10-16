@@ -79,6 +79,12 @@ function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean 
   // только точный дубль: та же позиция и тот же наклон. Игровое «сращивание» крыш (угловые формы
   // на стыке скатов) не моделируется.
   const place = (c: string) => (c === 'cell' || c === 'ramp' ? 'cell' : c);
+  // фундамент занимает объём от земли до своего верха: крыша над его контуром не может начинаться
+  // ниже верха (иначе скат уходит внутрь фундамента), и фундамент нельзя поднять сквозь стоящую крышу
+  const roofIntoFoundation = (roof: Transform & { kind: ElementKind }, f: Transform & { kind: ElementKind }) =>
+    f.position[1] > roof.position[1] + 0.01 && polygonsOverlap(footprint(roof.kind, roof), footprint(f.kind, f));
+  if (cat === 'roof' && resolved.elements.some(e => KINDS[e.kind].isFoundation && roofIntoFoundation({ ...t, kind }, e))) return true;
+  if (KINDS[kind].isFoundation && resolved.elements.some(e => KINDS[e.kind].category === 'roof' && roofIntoFoundation(e, { ...t, kind }))) return true;
   return resolved.elements.some(e => {
     if (place(KINDS[e.kind].category) !== place(cat)) return false;
     if (cat === 'roof') return sameTransform(e, t);
@@ -155,7 +161,10 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
     if (socket === 'opening' || socket === 'face') continue;
     for (const self of selfSockets) {
       if (!canAttach(host.kind, socket, kind, self)) continue;
-      const flips = KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType' ? [false, true] : [false];
+      // две стороны: пол или крыша на верху стены — по обе стороны; крыша на ребре ячейки — наружу и внутрь
+      const twoSided = (KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType')
+        || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
+      const flips = twoSided ? [false, true] : [false];
       const turnsList = KINDS[kind].category === 'stairs' ? [0, 1, 2, 3] : [0];
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;

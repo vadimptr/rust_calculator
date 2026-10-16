@@ -180,7 +180,7 @@ test('roof needs support under its low edge: both sides of a wall top are fine, 
   assert.equal(beside.length, 1);
   // крыша низким ребром на ребро фундамента (съезд-крыша) опирается на само ребро; над соседним
   // фундаментом тоже можно — крыша лежит выше плоскости уровня и с плитой не спорит
-  assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 4);
+  assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 8); // 4 ребра × наружу и внутрь
 });
 
 test('roofs do not collide with each other: a crossing roof at the same position is allowed, an exact duplicate is not', () => {
@@ -229,4 +229,31 @@ test('raid graph: a wall-height foundation is a space at level 1, its walls and 
   const g = buildSpaceGraph(r.resolved);
   assert.ok(g.nodes.has('f2'));
   assert.ok(reachableSpaces(g, new Set()).has('f2'), 'open edge toward f1 and open top');
+});
+
+test('roof on a foundation edge: both outward and inward (R toggles), never into a foundation', async () => {
+  const { placementAnchor } = await import('./editor.ts');
+  let bp = newBlueprint();
+  let resolved = resolveBlueprint(bp).resolved;
+  const roofs = candidatePlacements(bp, resolved, 'roof', 'f1');
+  // 4 ребра × (наружу, внутрь)
+  assert.equal(roofs.length, 8);
+  const edge0 = roofs.filter(p => p.attach.socket === 'edge:0');
+  assert.equal(edge0.length, 2);
+  assert.equal(new Set(edge0.map(p => placementAnchor('roof', p))).size, 1);
+  const inward = edge0.find(p => p.attach.flip)!;
+  assert.deepEqual(inward.transform.position, [0, 0, 0]);
+  // низкое ребро внутренней крыши — на ребре фундамента (x = 1.5)
+  const r = resolveBlueprint(addElement(bp, 'roof', inward.attach));
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  // поднятый сосед: крыша наружу в его сторону ушла бы в фундамент — не предлагается
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: 1.5 });
+  resolved = resolveBlueprint(bp).resolved;
+  const after = candidatePlacements(bp, resolved, 'roof', 'f1').filter(p => p.attach.socket === 'edge:0');
+  assert.ok(after.every(p => p.attach.flip), after.map(p => JSON.stringify(p.attach)).join(' '));
+  // и наоборот: под стоящую крышу наружу нельзя поднять фундамент
+  let bp2 = addElement(newBlueprint(), 'roof', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' });
+  const r2 = resolveBlueprint(bp2).resolved;
+  const f = candidatePlacements(bp2, r2, 'square-foundation', 'f1').filter(p => Math.abs(p.transform.position[0] - 3) < 0.01);
+  assert.deepEqual(f.map(p => p.transform.position[1]), [0]);
 });

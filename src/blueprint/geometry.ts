@@ -59,8 +59,13 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
     const k = edgeIndex(a.socket)!;
     const m = edgeIndex(selfSocket)!;
     const normal = parent.rotation + edgeAngle(p.shape!, k);
-    const rot = normal + 180 - edgeAngle(c.shape!, m);
     const [nx, nz] = dir(normal);
+    // крыша внутрь (flip): низкое ребро на ребре ячейки, скат поднимается над самой ячейкой
+    if (c.category === 'roof' && a.flip === true) {
+      const back = apothem(p.shape!) - apothem(c.shape!);
+      return { position: [px + back * nx, py, pz + back * nz], rotation: normal - edgeAngle(c.shape!, m), level: parent.level };
+    }
+    const rot = normal + 180 - edgeAngle(c.shape!, m);
     const d = apothem(p.shape!) + apothem(c.shape!);
     // фундамент к фундаменту: сдвиг по высоте (ряды сокетов foundation-top/mid/bot)
     const rise = c.category === 'cell' ? a.rise ?? 0 : 0;
