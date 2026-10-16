@@ -12,6 +12,7 @@ import { aimDistance, deployPlacement, placementAnchor, placementsNear } from '.
 import { cornerPosts, gableWalls, hipRoofs } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
+import RadialMenu, { radialOuter } from './RadialMenu';
 
 export type CameraMode = 'orbit' | 'fly';
 
@@ -636,30 +637,16 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     if (s) applyDoorsOpen(s, doorsOpen);
   }, [doorsOpen]);
 
-  const n = radial?.items.length ?? 0;
-  const R = Math.max(100, n * 12.5);
+  const outer = radialOuter(radial?.items.length ?? 0);
   // меню целиком внутри сцены: центр сдвигается от краёв
   const hostW = hostRef.current?.clientWidth ?? 0, hostH = hostRef.current?.clientHeight ?? 0;
-  const pad = R + 40;
+  const pad = outer + 8;
   const rx = radial ? Math.min(Math.max(radial.x, pad), Math.max(pad, hostW - pad)) : 0;
   const ry = radial ? Math.min(Math.max(radial.y, pad), Math.max(pad, hostH - pad)) : 0;
   return (
     <>
       <div className={`viewer3d${editor && mode === 'fly' ? ' viewer3d--aim' : ''}`} ref={hostRef} />
-      {radial && (
-        <div className="radial" style={{ left: rx, top: ry }} aria-hidden="true">
-          <div className="radial__ring" style={{ width: R * 2 + 70, height: R * 2 + 70 }} />
-          {radial.items.map((it, i) => {
-            const a = (i / n) * 2 * Math.PI;
-            return (
-              <div key={it.id} className={`radial__item${i === radial.sel ? ' radial__item--sel' : ''}`} style={{ transform: `translate(-50%, -50%) translate(${Math.sin(a) * R}px, ${-Math.cos(a) * R}px)` }}>
-                {it.short ?? it.label}
-              </div>
-            );
-          })}
-          <div className="radial__center">{radial.sel >= 0 ? radial.items[radial.sel].label : radial.tool === 'hammer' ? 'Выбери действие' : 'Выбери'}</div>
-        </div>
-      )}
+      {radial && <RadialMenu x={rx} y={ry} items={radial.items} sel={radial.sel} outer={outer} title={radial.tool === 'hammer' ? 'Выбери действие' : 'Выбери'} />}
     </>
   );
 };

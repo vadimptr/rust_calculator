@@ -1829,7 +1829,7 @@
 .hotbar {
   position: absolute;
   left: 50%;
-  bottom: 34px;
+  bottom: 30px;
   transform: translateX(-50%);
   display: flex;
   gap: 0.4rem;
@@ -1838,8 +1838,8 @@
 
 .hotbar__slot {
   position: relative;
-  width: 112px;
-  height: 74px;
+  width: 78px;
+  height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1860,24 +1860,24 @@
 
 .hotbar__key {
   position: absolute;
-  left: 6px;
-  top: 4px;
-  font-size: 0.68rem;
+  left: 5px;
+  top: 2px;
+  font-size: 0.6rem;
   font-weight: 800;
   color: var(--text-secondary);
 }
 
 .hotbar__sub {
   max-width: 100%;
-  padding: 0 0.3rem;
-  font-size: 0.66rem;
+  padding: 0 0.25rem;
+  font-size: 0.6rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Радиальное меню (зажатая ПКМ) */
+/* Радиальное меню (зажатая ПКМ): сегменты с картинками */
 .radial {
   position: absolute;
   width: 0;
@@ -1886,33 +1886,56 @@
   pointer-events: none;
 }
 
-.radial__ring {
+.radial__svg {
   position: absolute;
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(15, 13, 11, 0.55) 0%, rgba(15, 13, 11, 0.82) 70%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: visible;
 }
 
-.radial__item {
+.radial__seg {
+  fill: rgba(20, 17, 14, 0.82);
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+  transition: fill 0.06s;
+}
+
+.radial__seg--sel {
+  fill: rgba(207, 72, 32, 0.78);
+  stroke: rgba(255, 170, 130, 0.9);
+}
+
+.radial__hub {
+  fill: rgba(15, 13, 11, 0.6);
+}
+
+.radial__icon {
   position: absolute;
   left: 0;
   top: 0;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.72rem;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   color: #e8e2d6;
-  background: rgba(30, 26, 22, 0.92);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
 }
 
-.radial__item--sel {
+.radial__icon img {
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+
+.radial__icon--sel {
   color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
+}
+
+.radial__caption {
+  position: absolute;
+  top: 100%;
+  margin-top: 1px;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  color: #fff;
 }
 
 .radial__center {
@@ -1920,11 +1943,9 @@
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  padding: 0.35rem 0.6rem;
-  font-size: 0.8rem;
+  max-width: 120px;
+  font-size: 0.72rem;
   font-weight: 700;
-  white-space: nowrap;
+  text-align: center;
   color: #fff;
-  background: rgba(15, 13, 11, 0.9);
-  border-radius: 6px;
 }

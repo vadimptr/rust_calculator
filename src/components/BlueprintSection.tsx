@@ -140,7 +140,7 @@ const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
 
 /** Иконки нижней панели: строительный план, киянка, объект. */
 const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
-  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     {tool === 'build' && <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="M3.5 9.5h17M9.5 9.5v11M14 14h4M14 17h4" /></>}
     {tool === 'hammer' && <><path d="M14.5 3.5l6 6-2.5 2.5-6-6z" /><path d="M13 8L4 17l3 3 9-9" /></>}
     {tool === 'deploy' && <><path d="M6 21V3h12v18" /><path d="M4 21h16" /><circle cx="14.5" cy="12" r="0.9" fill="currentColor" /></>}
@@ -385,7 +385,7 @@ const BlueprintSection: React.FC = () => {
               </button>
             </div>
             <div className="hotbar" role="group" aria-label="Инструменты">
-              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'апгрейд и снос'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
+              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
                 <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id} aria-label={label}>
                   <span className="hotbar__key">{i + 1}</span>
                   <ToolIcon tool={id} />
