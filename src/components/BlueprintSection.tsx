@@ -100,6 +100,16 @@ function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): un
   return doc;
 }
 
+/** Иконка двери: закрытая — полотно в проёме, открытая — полотно повёрнуто наружу. */
+const DoorIcon: React.FC<{ open: boolean }> = ({ open }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+    <path d="M4 21h16M6 21V3h12v18" />
+    {open
+      ? <><path d="M6 3l7 3v15l-7-0" fill="currentColor" fillOpacity="0.25" /><circle cx="11" cy="13" r="0.9" fill="currentColor" /></>
+      : <><rect x="7.5" y="4.5" width="9" height="16.5" fill="currentColor" fillOpacity="0.25" /><circle cx="14.5" cy="13" r="0.9" fill="currentColor" /></>}
+  </svg>
+);
+
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
@@ -113,7 +123,7 @@ const HAMMER_GRADES: { id: Grade; label: string; img?: string }[] = [
   { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
 ];
 
-function download(name: string, text: string) {
+function downloadFile(name: string, text: string) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   a.download = name;
@@ -127,9 +137,10 @@ interface Source {
   data: unknown;
 }
 
-function fromPreset(id: string): Source {
+function fromPreset(id: string, grade: GradeChoice = 'stone', door: DoorChoice = 'metal'): Source {
   const p = BLUEPRINT_PRESETS.find(x => x.id === id) ?? BLUEPRINT_PRESETS[0];
-  return { label: p.label, data: p.data };
+  // материал и двери из переключателей сразу применяются к чертежу
+  return { label: p.label, data: applyOverrides(p.data, grade, door) };
 }
 
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
@@ -151,8 +162,7 @@ const BlueprintSection: React.FC = () => {
   const [gradeChoice, setGradeChoice] = useState<GradeChoice>('stone');
   const [doorChoice, setDoorChoice] = useState<DoorChoice>('metal');
 
-  // Режим стройки: переопределения запекаются в документ при входе, дальше документ правится напрямую
-  const [editing, setEditing] = useState(false);
+  // Режим стройки включён всегда: документ правится напрямую
   const [tool, setTool] = useState<EditorTool>('build');
   const [buildKind, setBuildKind] = useState<ElementKind>('wall');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
@@ -160,25 +170,27 @@ const BlueprintSection: React.FC = () => {
   const [demolish, setDemolish] = useState(false);
 
   // Документ с переопределениями → схема → геометрия
-  const result: LoadResult = useMemo(
-    () => loadBlueprint(editing ? source.data : applyOverrides(source.data, gradeChoice, doorChoice)),
-    [source, gradeChoice, doorChoice, editing],
-  );
+  const result: LoadResult = useMemo(() => loadBlueprint(source.data), [source]);
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
-    setSource(fromPreset(id));
+    setSource(fromPreset(id, gradeChoice, doorChoice));
     setRaidPlay(0);
   };
-
-  const startEditing = () => {
-    setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, doorChoice) }));
-    setEditing(true);
+  /** Материал всех блоков и тип всех дверей — сразу в чертёж. */
+  const chooseGrade = (g: GradeChoice) => {
+    setGradeChoice(g);
+    setSource(s => ({ label: s.label, data: applyOverrides(s.data, g, doorChoice) }));
+    setRaidPlay(0);
+  };
+  const chooseDoor = (d: DoorChoice) => {
+    setDoorChoice(d);
+    setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, d) }));
+    setRaidPlay(0);
   };
   const startNew = () => {
     setActivePreset(null);
     setSource({ label: 'Новая постройка', data: newBlueprint() });
-    setEditing(true);
     setRaidPlay(0);
   };
   const [collapsedNote, setCollapsedNote] = useState('');
@@ -205,7 +217,7 @@ const BlueprintSection: React.FC = () => {
   const { blueprint, resolved, issues } = result;
 
   const editor = useMemo<EditorState | null>(() => {
-    if (!editing || !blueprint) return null;
+    if (!blueprint) return null;
     return {
       tool, demolish, kind: buildKind, deployKind, grade: buildGrade, blueprint,
       onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, buildGrade)),
@@ -213,7 +225,7 @@ const BlueprintSection: React.FC = () => {
       onUpgrade: (id: string) => applyDoc(upgradeElement(blueprint, id, buildGrade)),
       onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
     };
-  }, [editing, blueprint, tool, demolish, buildKind, deployKind, buildGrade, applyDoc]);
+  }, [blueprint, tool, demolish, buildKind, deployKind, buildGrade, applyDoc]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -271,95 +283,75 @@ const BlueprintSection: React.FC = () => {
     });
   }, [resolved]);
 
+  const download = () => blueprint && downloadFile(`${(blueprint.meta.name || 'blueprint').replace(/[^\wа-яё-]+/gi, '_')}.json`, exportBlueprint(blueprint));
+
   return (
     <section className="bp">
-      <div className="bp__toolbar">
-        <div className="bp__presets" role="group" aria-label="Готовые постройки">
-          {BLUEPRINT_PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className={`raid-tier__btn${p.id === activePreset ? ' raid-tier__btn--active' : ''}`}
-              onClick={() => choosePreset(p.id)}
-              aria-pressed={p.id === activePreset}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <div className="bp__upload">
-          <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
-          <div className="bp__presets" role="group" aria-label="Камера">
-            {([['orbit', 'Орбита'], ['fly', 'Полёт']] as [CameraMode, string][]).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                className={`raid-tier__btn${id === cameraMode ? ' raid-tier__btn--active' : ''}`}
-                onClick={() => setCameraMode(id)}
-                aria-pressed={id === cameraMode}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <label className="bp__toggle">
-            <input type="checkbox" checked={doorsOpen} onChange={e => setDoorsOpen(e.target.checked)} />
-            Открыть двери
-          </label>
-          <div className="bp__presets" role="group" aria-label="Режим">
-            <button type="button" className={`raid-tier__btn${!editing ? ' raid-tier__btn--active' : ''}`} onClick={() => setEditing(false)} aria-pressed={!editing}>Просмотр</button>
-            <button type="button" className={`raid-tier__btn${editing ? ' raid-tier__btn--active' : ''}`} onClick={() => { if (!editing) startEditing(); }} aria-pressed={editing}>Стройка</button>
-          </div>
-        </div>
-        <div className="bp__upload bp__overrides">
-          {!editing && (
-            <>
-              <span className="bp__override-label">Материал</span>
-              <div className="bp__icons" role="group" aria-label="Материал конструкций">
-                {GRADE_CHOICES.map(c => (
-                  <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
-                    onClick={() => { setGradeChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
-                    <img src={c.img} alt="" />
-                  </button>
-                ))}
-              </div>
-              <span className="bp__override-label">Двери</span>
-              <div className="bp__icons" role="group" aria-label="Тип дверей">
-                {DOOR_CHOICES.map(c => (
-                  <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
-                    onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice} aria-label={c.label}>
-                    <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-          {editing && (
-            <>
-              <button type="button" className="raid-tier__btn" onClick={startNew}>Новая постройка</button>
-              <button type="button" className="raid-tier__btn" disabled={!blueprint} onClick={() => blueprint && download(`${(blueprint.meta.name || 'blueprint').replace(/[^\wа-яё-]+/gi, '_')}.json`, exportBlueprint(blueprint))}>Скачать JSON</button>
-            </>
-          )}
-          <button type="button" className="bp__upload-btn" onClick={() => fileRef.current?.click()}>
-            Загрузить JSON
-          </button>
-          <a className="bp__spec-link" href="https://github.com/vadimptr/rust_calculator/blob/main/docs/blueprint/SPEC.md" target="_blank" rel="noreferrer">
-            формат чертежа
-          </a>
-        </div>
-      </div>
-
+      <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
       <div className="bp__layout">
-        <div className="bp__viewer">
-          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
-          <div className="bp__hint">
-            {editing
-              ? (cameraMode === 'orbit'
+        <nav className="bp__side" aria-label="Постройки">
+          <div className="bp__side-title">Шаблоны</div>
+          <ul className="bp__list">
+            {BLUEPRINT_PRESETS.map(p => (
+              <li key={p.id}>
+                <button type="button" className={`bp__list-item${p.id === activePreset ? ' bp__list-item--active' : ''}`} onClick={() => choosePreset(p.id)} aria-pressed={p.id === activePreset}>
+                  {p.label}
+                </button>
+              </li>
+            ))}
+            <li>
+              <button type="button" className={`bp__list-item${activePreset === null && source.label === 'Новая постройка' ? ' bp__list-item--active' : ''}`} onClick={startNew}>+ Новая постройка</button>
+            </li>
+          </ul>
+          <div className="bp__side-actions">
+            <div className="bp__row">
+              <button type="button" className="bp__upload-btn bp__grow" onClick={() => fileRef.current?.click()}>Загрузить JSON</button>
+              <a className="bp__icon-btn bp__help" href="https://github.com/vadimptr/rust_calculator/blob/main/docs/blueprint/SPEC.md" target="_blank" rel="noreferrer" data-tip="Формат чертежа: описание JSON">?</a>
+            </div>
+            <button type="button" className="raid-tier__btn bp__side-btn" disabled={!blueprint} onClick={download}>Скачать JSON</button>
+          </div>
+        </nav>
+
+        <div className="bp__center">
+          <div className="bp__overrides">
+            <span className="bp__override-label">Материал</span>
+            <div className="bp__icons" role="group" aria-label="Материал конструкций">
+              {GRADE_CHOICES.map(c => (
+                <button key={c.id} type="button" data-tip={`Все блоки — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
+                  onClick={() => chooseGrade(c.id)} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
+                  <img src={c.img} alt="" />
+                </button>
+              ))}
+            </div>
+            <span className="bp__override-label">Двери</span>
+            <div className="bp__icons" role="group" aria-label="Тип дверей">
+              {DOOR_CHOICES.map(c => (
+                <button key={c.id} type="button" data-tip={`Все двери — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
+                  onClick={() => chooseDoor(c.id)} aria-pressed={c.id === doorChoice} aria-label={c.label}>
+                  <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
+                </button>
+              ))}
+            </div>
+            <button type="button" className={`bp__icon-btn bp__doors-toggle${doorsOpen ? ' bp__icon-btn--active' : ''}`} onClick={() => setDoorsOpen(o => !o)} aria-pressed={doorsOpen}
+              aria-label={doorsOpen ? 'Закрыть двери' : 'Открыть двери'} data-tip={doorsOpen ? 'Двери открыты — нажми, чтобы закрыть все двери' : 'Двери закрыты — нажми, чтобы открыть все двери и крыши-затворы'}>
+              <DoorIcon open={doorsOpen} />
+            </button>
+          </div>
+          <div className="bp__viewer">
+            <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
+            <div className="bp__camera" role="group" aria-label="Камера">
+              <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
+              </button>
+              <button type="button" className={`bp__icon-btn${cameraMode === 'fly' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('fly')} aria-pressed={cameraMode === 'fly'} aria-label="Полёт" data-tip="Полёт: клик по сцене — захват мыши, WASD — лететь, Esc — отпустить" data-tip-pos="left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
+              </button>
+            </div>
+            <div className="bp__hint">
+              {cameraMode === 'orbit'
                 ? 'Наведи на блок — синий призрак встанет в ближайший сокет · клик — поставить, апгрейд или снос (по режиму киянки) · R — другой вариант · перетаскивание вращает камеру'
-                : 'Клик — захват мыши, прицел в центре · ЛКМ — поставить или апгрейд · ПКМ — снести киянкой · R — другой вариант · WASD, Space / C — лететь · Esc — отпустить')
-              : cameraMode === 'orbit'
-                ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
-                : 'Клик по сцене — захват мыши · мышь — смотреть · WASD — лететь · Space / C — вверх / вниз · Shift — быстрее · Esc — отпустить'}
+                : 'Клик — захват мыши, прицел в центре · ЛКМ — поставить или апгрейд · ПКМ — снести киянкой · R — другой вариант · WASD, Space / C — лететь · Esc — отпустить'}
+            </div>
           </div>
         </div>
 
@@ -391,7 +383,7 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {editing && (
+          {(
             <section className="palette">
               <div className="palette__tools" role="group" aria-label="Инструмент">
                 {([['build', 'Строительный план'], ['deploy', 'Объекты'], ['hammer', 'Киянка']] as [EditorTool, string][]).map(([id, label]) => (
