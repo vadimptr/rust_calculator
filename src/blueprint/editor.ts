@@ -212,6 +212,29 @@ export function placementsNear(bp: Blueprint, resolved: Resolved, kind: ElementK
  * один и тот же «куда поставить» с разной ориентацией: крыша над зданием или наружу, пол по ту или
  * другую сторону стены, поворот лестницы.
  */
+/** Точка якоря в мире: середина ребра опоры у ячеек и крыш, середина стены по высоте у стен. */
+export function anchorPoint(kind: ElementKind, p: Placement): [number, number, number] {
+  const cat = KINDS[kind].category;
+  if (cat === 'cell' || cat === 'roof' || cat === 'ramp') {
+    const k = p.attach.selfSocket ? Number(p.attach.selfSocket.slice(5)) : 0;
+    return edgeMids(kind, p.transform)[k] ?? p.transform.position;
+  }
+  const [x, y, z] = p.transform.position;
+  return [x, y + (cat === 'wallType' ? wallHeight(kind) / 2 : 0), z];
+}
+
+/**
+ * Близость варианта к точке прицела: сначала ребро опоры (куда целится игрок), затем сама
+ * позиция блока — она различает стороны одного ребра (крыша внутрь или наружу, пол по ту или
+ * другую сторону стены). По одной позиции нельзя: у крыш внутрь на всех рёбрах ячейки центр общий.
+ */
+export function aimDistance(kind: ElementKind, p: Placement, aim: [number, number, number]): number {
+  const a = anchorPoint(kind, p);
+  const [x, y, z] = p.transform.position;
+  const h = KINDS[kind].category === 'wallType' ? wallHeight(kind) / 2 : 0;
+  return Math.hypot(a[0] - aim[0], a[1] - aim[1], a[2] - aim[2]) + 0.25 * Math.hypot(x - aim[0], y + h - aim[1], z - aim[2]);
+}
+
 export function placementAnchor(kind: ElementKind, p: Placement): string {
   const cat = KINDS[kind].category;
   const r = (v: number) => (Math.round(v * 100) / 100 + 0).toFixed(2);

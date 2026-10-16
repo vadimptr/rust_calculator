@@ -257,3 +257,22 @@ test('roof on a foundation edge: both outward and inward (R toggles), never into
   const f = candidatePlacements(bp2, r2, 'square-foundation', 'f1').filter(p => Math.abs(p.transform.position[0] - 3) < 0.01);
   assert.deepEqual(f.map(p => p.transform.position[1]), [0]);
 });
+
+test('aim picks the support edge: on a foundation the inward roof follows the edge the cursor is near', async () => {
+  const { aimDistance } = await import('./editor.ts');
+  let bp = newBlueprint();
+  bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: 3 });
+  const resolved = resolveBlueprint(bp).resolved;
+  const cands = candidatePlacements(bp, resolved, 'roof', 'f1');
+  const best = (aim: [number, number, number]) => [...cands].sort((a, b) => aimDistance('roof', a, aim) - aimDistance('roof', b, aim))[0];
+  // курсор на верху фундамента у каждого из рёбер → внутренняя крыша на этом ребре
+  for (const [aim, edge] of [[[1.2, 0, 0], 'edge:0'], [[0, 0, 1.2], 'edge:1'], [[-1.2, 0, 0], 'edge:2'], [[0, 0, -1.2], 'edge:3']] as [[number, number, number], string][]) {
+    const p = best(aim);
+    assert.equal(p.attach.socket, edge, JSON.stringify(aim));
+    if (edge !== 'edge:0') assert.equal(p.attach.flip, true);
+  }
+  // курсор на земле снаружи у ребра → крыша наружу
+  const out = best([0, 0, 2.2]);
+  assert.equal(out.attach.socket, 'edge:1');
+  assert.ok(!out.attach.flip);
+});

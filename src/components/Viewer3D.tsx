@@ -3,12 +3,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
-import { KINDS, wallHeight } from '../blueprint/catalog.ts';
+import { KINDS } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
+import { aimDistance, deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
 import { cornerPosts, gableWalls, hipRoofs } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
@@ -243,8 +243,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (cands.length === 0) return false;
       // ближайший к точке прицела; прежнее место держится, пока новое не станет ближе на заметную величину —
       // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
-      const h = KINDS[ed.kind].category === 'wallType' ? wallHeight(ed.kind) / 2 : 0;
-      const dist = (p: Placement) => Math.hypot(p.transform.position[0] - pt[0], p.transform.position[1] + h - pt[1], p.transform.position[2] - pt[2]);
+      const dist = (p: Placement) => aimDistance(ed.kind, p, pt);
       const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
       let p = sorted[0];
       const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
