@@ -2,9 +2,9 @@
 id: solar-panel
 title: Солнечная панель
 kind: object
-group: Защита базы и электричество
+group: Электричество
 summary: Большая солнечная панель даёт до 20 rW по углу к солнцу, всё или ничего в тени, и меньше при повреждении; пересчитывается раз в несколько секунд.
-related: [electricity, battery, wind-turbine, data-entity-health]
+related: [electricity, battery, wind-turbine, electric-generator, electricity-quirks, data-entity-health]
 code: [SolarPanel.cs, BaseEntity.cs]
 ---
 

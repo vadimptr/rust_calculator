@@ -2,7 +2,7 @@
 id: shotgun-trap
 title: Дробовик-ловушка
 kind: object
-group: Защита базы и электричество
+group: Защита базы
 summary: Неподвижная ловушка на самодельных патронах — стреляет 20 дробинами по 10 урона в конусе 40° раз в 0.5 с, если чужой без авторизации в шкафу видит её с 9 м.
 related: [turret-targeting, flame-turret, tool-cupboard, building-privilege, data-entity-health, data-protection]
 code: [GunTrap.cs]

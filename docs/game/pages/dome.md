@@ -1,0 +1,43 @@
+---
+id: dome
+title: Купол (Sphere Tank)
+kind: object
+group: Монументы
+summary: Небольшой радтаун-резервуар с синей картой, зелёным считывателем и насосами сырой нефти, которые работают от топливных рубильников нефтевышек и самого Купола.
+related: [monuments, monument-puzzles, monument-radiation, oil-rig, power-plant]
+code: [WaterCatcher.cs, OilSwitchBroadcast.cs, TimerSwitch.cs, PuzzleReset.cs]
+---
+
+## Кратко
+
+`small/sphere_tank.prefab` («The Dome»). Радиация одна зона `LOW`. Зелёный считыватель,
+щиток, переработчик, зона сброса чинука. На полу синяя карта (∞) и базовый фрагмент.
+Пазл: сброс 1800 с, радиус 6 м, радиационный сброс. Ящики: `crate_normal_2` 11, `crate_normal`
+4; бочки 10 + 10.
+
+## Поведение
+
+### Сырая нефть
+
+На Куполе 3 насоса `CrudeOilProducer` (`WaterCatcher` с `requireOilSwitchActive = 1`,
+`requiredPowergridStage = 1`). Они производят сырую нефть, только если:
+
+1. энергосеть на стадии ≥ 1 ([[power-plant]]);
+2. где-то на сервере активен топливный рубильник (`OilSwitchBroadcast`): на
+   [[oil-rig|нефтевышках]] (множитель 0.5 малая, 1.0 большая) или в префабах
+   `spheretankfuelswitch` (1.0) и `spheretankfuelswitch.small` (0.5) — по названию это рубильники
+   «резервуара», в выгрузке они лежат отдельными префабами; их генераторы требуют стадии 3.
+
+Множители всех активных рубильников складываются и умножают выработку. После включения
+насос прогревается `WaterCatcher.OilProductionStartDelay = 900` с. Рубильник держится
+`1200 + 900 = 2100` с (`OilSwitchBroadcast.GetHasPower` переписывает длину таймера).
+
+## Нюансы
+
+- Множитель глобальный: рубильник, включённый на нефтевышке, разгоняет насосы Купола, даже
+  если на Куполе никого нет.
+- Без хотя бы одного тяжёлого предохранителя на Электростанции насосы стоят.
+
+## Где в коде
+
+- `WaterCatcher.OnOilSwitchToggled`, `ToggleProducing`; `OilSwitchBroadcast.GetHasPower`.

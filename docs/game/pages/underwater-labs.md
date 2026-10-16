@@ -1,0 +1,62 @@
+---
+id: underwater-labs
+title: Подводные лаборатории
+kind: object
+group: Монументы
+summary: Процедурно собранный подводный комплекс из модулей: вход через мунпул, до трёх комнат вглубь, одна красная комната с элитками и радиацией HIGH, подводные жители и сброс по «уснувшей» AI-зоне.
+related: [monuments, monument-puzzles, monument-radiation, scientists, train-tunnels]
+code: [GenerateDungeonBase.cs, DungeonBaseInfo.cs, DungeonBaseLink.cs, DungeonBaseSocket.cs, TriggerSubmarineMoonpool.cs, UnderwaterDweller.cs, NPCDwelling.cs, NPCSpawner.cs, PuzzleReset.cs]
+---
+
+## Кратко
+
+На карте ставится одна подводная лаборатория (`PlaceMonuments`: 1 штука, 1500 м до такой же).
+Префаб монумента (`underwater_lab/underwater_lab_a..d.prefab`) — это только входной модуль с
+мунпулом; остальное собирает генератор `GenerateDungeonBase` из модулей
+(`autospawn/underwater-lab-*`). Отключается `World.Config.UnderwaterLabs`.
+
+## Характеристики
+
+| Параметр | Значение | Откуда |
+|----------|----------|--------|
+| Глубина от мунпула | до 3 комнат (комната «стоит» 1, трубы — 0) | `PlaceSegments(budget = 3, floors = 2)` |
+| Этажи | 0–2, торцы до 3 | `MaxFloor = 2` |
+| Попыток генерации | 25, берётся вариант с наибольшим числом уникальных комнат | `GenerateDungeonBase.Process` |
+| Доп. входы | второй мунпул при > 5 сегментах, третий при > 25 | `GenerateDungeonBase` |
+| Красная комната | максимум одна (900x900_1way / 1200x1200_1way / 1500x1500_ladder) | `MaxCountLocal = 1`, общий `MaxCountIdentifier` |
+| В красной комнате | 2–3 `crate_elite`, продвинутый фрагмент, ящики с патронами, тех. ящики; радиация `HIGH` | `SpawnGroup`, `TriggerRadiation` модуля |
+| Мунпул | ящик топлива (900–1800 с), `crate_normal`/`_2`, 2 нефтяные бочки (1200–1800 с) | префаб монумента |
+| Подводные жители | `npc_underwaterdweller`: 125 HP, по 1 на комнату с пазлом, ∞; плюс «жилища» с шансом NPC 0.3 | `NPCSpawner`, `NPCDwelling.NPCSpawnChance` |
+| Сброс | 1800 с, когда «уснёт» общая AI-зона лаборатории | `PuzzleReset`, `CheckSleepingAIZForPlayers` |
+
+## Поведение
+
+- **Вход.** `TriggerSubmarineMoonpool` в мунпуле лишь сообщает подлодке, что она всплыла в
+  мунпуле. Заплыть можно и вплавь.
+- **Пазлы.** Считыватели зелёный/синий/красный и щитки с предохранителем стоят в отдельных
+  модулях; механика — [[monument-puzzles]]. Зелёные карты спаунятся в некоторых модулях
+  (`1200x1200_1way_ladder`, `1200x1200_3way`, в `1500x1500_lshaped` — с респауном 900–1800 с).
+- **Жители.** Все AI-зоны модулей при генерации сливаются в одну с `ShouldSleepAI`; зона
+  просыпается, когда игрок в пределах границ лаборатории + 100 м.
+- **Сброс.** Пазлы модулей и «DwellersReset» ждут, пока AI-зона уснёт (рядом нет игроков),
+  и раз в 1800 с пересоздают лут и жителей. Радиационного сброса у лаборатории нет.
+
+## Нюансы
+
+- **Красная комната одна на всю лабораторию** — если генератор её не поставил, элиток нет.
+- **Дополнительным входом может стать только модуль `900x900_2way_moonpool`**: у четырёх
+  «базовых» мунпулов `MaxCountLocal = 0`, а `PlaceSegments` такие модули пропускает.
+- У `NPCSpawner` жителей есть настройки `SenseRange 30 / TargetLostRange 50`, но
+  `UseStatModifiers = 0`, так что они не действуют (а если включить, `TargetLostRange`
+  умножился бы на себя — скрытая ошибка).
+- Сброс не мешает: игроки в 100 м от границ держат зону «бодрствующей».
+
+## На практике
+
+- Ищите модуль с красным считывателем первым — в нём весь ценный лут, но и радиация `HIGH`.
+- Подлодка или водолазное снаряжение + предохранители + все три карты.
+
+## Где в коде
+
+- `GenerateDungeonBase.Process`, `PlaceSegments`, `SetupAI`.
+- `TriggerSubmarineMoonpool`, `UnderwaterDweller`, `NPCDwelling`, `PuzzleReset`.

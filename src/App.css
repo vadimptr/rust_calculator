@@ -1701,7 +1701,34 @@
 
 .docs-nav__list ul { list-style: none; }
 
-.docs-nav__group + .docs-nav__group { margin-top: 0.9rem; }
+.docs-nav__group + .docs-nav__group { margin-top: 0.35rem; }
+
+.docs-nav__group-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.3rem 0.2rem;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+}
+
+.docs-nav__group-btn:hover { color: var(--text-primary); }
+
+.docs-nav__caret { display: inline-block; transition: transform 0.12s; font-size: 0.7rem; }
+.docs-nav__caret--open { transform: rotate(90deg); }
+
+.docs-nav__count {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
 
 .docs-nav__group h3 {
   font-size: 0.7rem;

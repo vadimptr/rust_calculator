@@ -2,7 +2,7 @@
 id: auto-turret
 title: Автотурель
 kind: object
-group: Защита базы и электричество
+group: Защита базы
 summary: Электрическая турель со своим оружием и списком авторизации — 10 rW, 2 с на загрузку, сектор 180°, 30 м, до 12 работающих в радиусе 40 м.
 related: [turret-targeting, electricity, battery, building-privilege, tool-cupboard, sam-site, data-entity-health, data-protection, projectile-ballistics]
 code: [AutoTurret.cs, BaseProjectile.cs, ConVar/Sentry.cs]

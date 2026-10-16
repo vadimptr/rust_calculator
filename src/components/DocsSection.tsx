@@ -114,6 +114,19 @@ export default function DocsSection({ pageId }: { pageId: string | null }) {
   const [kind, setKind] = useState<KindFilter>('all');
   const mainRef = useRef<HTMLDivElement>(null);
   const page = pageId ? DOC_BY_ID.get(pageId) ?? null : null;
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(page ? [page.group] : []));
+
+  useEffect(() => {
+    if (page) setOpenGroups(prev => (prev.has(page.group) ? prev : new Set(prev).add(page.group)));
+  }, [page]);
+
+  const toggleGroup = (g: string) =>
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g);
+      else next.add(g);
+      return next;
+    });
 
   useEffect(() => {
     mainRef.current?.scrollIntoView({ block: 'start' });
@@ -165,14 +178,28 @@ export default function DocsSection({ pageId }: { pageId: string | null }) {
             DOC_GROUPS.map(g => {
               const pages = visible.filter(p => p.group === g);
               if (!pages.length) return null;
+              const open = openGroups.has(g);
               return (
                 <div key={g} className="docs-nav__group">
-                  <h3>{g}</h3>
-                  <ul>
-                    {pages.map(p => (
-                      <li key={p.id}><PageLink page={p} active={p.id === pageId} /></li>
-                    ))}
-                  </ul>
+                  <h3>
+                    <button
+                      type="button"
+                      className="docs-nav__group-btn"
+                      aria-expanded={open}
+                      onClick={() => toggleGroup(g)}
+                    >
+                      <span className={`docs-nav__caret${open ? ' docs-nav__caret--open' : ''}`} aria-hidden="true">▸</span>
+                      {g}
+                      <span className="docs-nav__count">{pages.length}</span>
+                    </button>
+                  </h3>
+                  {open && (
+                    <ul>
+                      {pages.map(p => (
+                        <li key={p.id}><PageLink page={p} active={p.id === pageId} /></li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               );
             })
