@@ -9,6 +9,7 @@ import Summary from './components/Summary';
 import RaidTable from './components/RaidTable';
 
 const BlueprintSection = lazy(() => import('./components/BlueprintSection'));
+const DocsSection = lazy(() => import('./components/DocsSection'));
 
 import './App.css';
 
@@ -42,31 +43,43 @@ const CATEGORY_ORDER: BuildingBlock['category'][] = [
   'foundation', 'floor', 'wall', 'opening', 'window', 'stairs', 'roof',
 ];
 
-type Section = 'build' | 'view';
+type Section = 'build' | 'view' | 'docs';
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'build', label: 'Строительство' },
   { id: 'view', label: '3D-просмотр' },
+  { id: 'docs', label: 'Документация' },
 ];
 
 function sectionFromHash(): Section {
-  const h = window.location.hash.replace('#', '');
+  const h = window.location.hash.replace('#', '').split('/')[0];
   return SECTIONS.some(s => s.id === h) ? (h as Section) : 'build';
+}
+
+/** id страницы документации из адреса вида #docs/<id>. */
+function docIdFromHash(): string | null {
+  const m = window.location.hash.match(/^#docs\/([a-z0-9-]+)$/);
+  return m ? m[1] : null;
 }
 
 function App() {
   const [quantities, setQuantities] = useState<Quantities>(initialQuantities);
   const [raidTier, setRaidTier] = useState<Tier>(DEFAULT_TIER);
   const [section, setSection] = useState<Section>(sectionFromHash);
+  const [docId, setDocId] = useState<string | null>(docIdFromHash);
 
   useEffect(() => {
-    const onHash = () => setSection(sectionFromHash());
+    const onHash = () => {
+      setSection(sectionFromHash());
+      setDocId(docIdFromHash());
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   const selectSection = (s: Section) => {
     setSection(s);
+    setDocId(null);
     window.history.replaceState(null, '', s === 'build' ? window.location.pathname : `#${s}`);
   };
 
@@ -142,7 +155,15 @@ function App() {
         </div>
       </header>
 
-      {section === 'view' ? (
+      {section === 'docs' ? (
+        <div className="app-layout app-layout--wide">
+          <main className="app-main">
+            <Suspense fallback={<div className="bp__loading">Загрузка документации…</div>}>
+              <DocsSection pageId={docId} />
+            </Suspense>
+          </main>
+        </div>
+      ) : section === 'view' ? (
         <div className="app-layout app-layout--wide">
           <main className="app-main">
             <Suspense fallback={<div className="bp__loading">Загрузка 3D…</div>}>
