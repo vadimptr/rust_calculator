@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
-import type { GableShape } from './conditional.ts';
+import type { CornerPost, GableShape } from './conditional.ts';
 import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
@@ -218,6 +218,49 @@ function wallParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
   }
 }
 
+/** Обрезать выпуклый многоугольник полуплоскостью a·x + b·z ≥ 0 (Сазерленд — Ходжман). */
+function clipPoly(poly: [number, number][], a: number, b: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length];
+    const fp = a * p[0] + b * p[1], fq = a * q[0] + b * q[1];
+    if (fp >= 0) out.push(p);
+    if ((fp >= 0) !== (fq >= 0)) { const t = fp / (fp - fq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); }
+  }
+  return out;
+}
+
+/**
+ * Скат крыши, обрезанный по вальмам: в плане — квадрат 3×3, обрезанный диагоналями x ≥ s·z со
+ * сторон соседних скатов; верх — плоскость ската y = 1.5 − x (низ на x = +1.5), толщина FLOOR_T.
+ */
+function hipRoofGeometry(sides: (1 | -1)[]): THREE.BufferGeometry {
+  let poly: [number, number][] = [[1.5, -1.5], [1.5, 1.5], [-1.5, 1.5], [-1.5, -1.5]];
+  for (const s of sides) poly = clipPoly(poly, 1, -s);
+  const y = (x: number) => (ROOF_RISE / 3) * (1.5 - x);
+  const verts: number[] = [];
+  const tri = (a: number[], b: number[], c: number[]) => verts.push(...a, ...b, ...c);
+  const top = poly.map(([x, z]) => [x, y(x) + FLOOR_T, z]);
+  const bot = poly.map(([x, z]) => [x, y(x), z]);
+  for (let i = 1; i + 1 < poly.length; i++) { tri(top[0], top[i + 1], top[i]); tri(bot[0], bot[i], bot[i + 1]); }
+  for (let i = 0; i < poly.length; i++) {
+    const j = (i + 1) % poly.length;
+    tri(bot[i], top[i], top[j]); tri(bot[i], top[j], bot[j]);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** Угловая стойка стен: квадратный столб толщиной в стену на стыке торцов. */
+export function buildCornerPost(p: CornerPost): THREE.Object3D {
+  const h = p.height - WALL_TOP_GAP;
+  const g = new THREE.Group();
+  g.add(withEdges(box(WALL_T, h, WALL_T, 0, h / 2, 0), GRADE_TINT[p.grade], p.grade));
+  return place(g, p.position, p.rotation);
+}
+
 /** Стена-фронтон: треугольник от низа до ската крыши, вершина на стороне peak (локальная z). */
 function gableGeometry(peak: 1 | -1): THREE.BufferGeometry {
   const top = ROOF_RISE - 0.02;
@@ -423,10 +466,11 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
   return group;
 }
 
-/** Построить блок; gable — условная модель «фронтон» для полной стены (conditional.ts). */
-export function buildElement(el: ResolvedElement, gable?: GableShape): THREE.Object3D {
+/** Построить блок; gable — фронтон для полной стены, hips — вальмы крыши (conditional.ts). */
+export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[]): THREE.Object3D {
   const g = new THREE.Group();
-  const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)] : elementParts(el);
+  const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)]
+    : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
   const parts = geos.map(part => withEdges(part, GRADE_TINT[el.grade], el.grade));
   if (el.bunker) {
     // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору

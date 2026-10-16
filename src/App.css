@@ -1596,3 +1596,29 @@
   font-size: 1.1rem;
   line-height: 1;
 }
+
+.viewer3d__label {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  color: #e8e2d6;
+  background: rgba(20, 17, 14, 0.75);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.viewer3d__label:empty {
+  display: none;
+}
+
+.viewer3d__label--bad {
+  color: #ffb08a;
+}
+
+.palette__note {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: #ffb08a;
+}

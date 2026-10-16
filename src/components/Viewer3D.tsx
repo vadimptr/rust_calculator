@@ -2,14 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { animateDoors, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
+import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
 import { KINDS, wallHeight } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
-import { gableWalls } from '../blueprint/conditional.ts';
+import { cornerPosts, gableWalls, hipRoofs } from '../blueprint/conditional.ts';
+import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
 
 export type CameraMode = 'orbit' | 'fly';
@@ -82,6 +83,11 @@ interface SceneRefs {
   candCache: Map<string, Placement[]>;
   /** Ключ текущего призрака: пока размещение то же, меш не пересобирается. */
   ghostKey: string;
+  /** Стабильность блоков текущей сцены (0..1). */
+  stability: Map<string, number>;
+  ghostStab: number;
+  /** Подпись в углу сцены: стабильность наведённого блока или призрака. */
+  label: HTMLDivElement;
   /** Ключ крепления, показанного в прошлый раз: сокет меняется только на заметно более близкий. */
   lastAttach: string;
 }
@@ -90,6 +96,7 @@ interface SceneRefs {
 // спорят друг с другом за порядок отрисовки, иначе при движении камеры они мерцают
 const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.FrontSide });
+const FALL_MAT = new THREE.MeshStandardMaterial({ color: 0xff8a3d, emissive: 0x8a3a10, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const DEMOLISH_MAT = new THREE.MeshStandardMaterial({ color: 0xff5a4d, emissive: 0x8e1d14, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -181,6 +188,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     scene.add(content);
     const ghost = new THREE.Group();
     scene.add(ghost);
+    const label = document.createElement('div');
+    label.className = 'viewer3d__label';
+    host.appendChild(label);
 
     const fly = new PointerLockControls(camera, renderer.domElement);
     const keys = new Set<string>();
@@ -188,7 +198,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [],
       raid: new RaidOverlay(content, scene), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
-      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '',
+      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
 
@@ -249,8 +259,15 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       state.lastAttach = attachKey;
       const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: ed.grade, ...p.transform };
       const cur = resolvedRef.current;
-      const gable = ed.kind === 'wall' && cur ? gableWalls({ ...cur, elements: [...cur.elements, el] }).get(el.id) : undefined;
-      showGhost(`build|${ed.kind}|${ed.grade}|${attachKey}`, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable), GHOST_MAT));
+      const withGhost = cur ? { ...cur, elements: [...cur.elements, el] } : null;
+      const gable = ed.kind === 'wall' && withGhost ? gableWalls(withGhost).get(el.id) : undefined;
+      // стабильность призрака: если ниже 5%, блок обрушится сразу после постановки
+      const key = `build|${ed.kind}|${ed.grade}|${attachKey}`;
+      if (state.ghostKey !== key && withGhost) state.ghostStab = computeStability(withGhost).get(el.id) ?? 1;
+      const st = state.ghostStab;
+      label.textContent = st < COLLAPSE ? `Обрушится: стабильность ${Math.round(st * 100)}%` : `Стабильность ${Math.round(st * 100)}%`;
+      if (st < COLLAPSE) label.className = 'viewer3d__label viewer3d__label--bad';
+      showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
       return true;
     };
 
@@ -280,6 +297,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       const none = () => { ghost.clear(); state.ghostKey = ''; state.pending = null; state.lastAttach = ''; };
       host.dataset.hover = '';
       host.dataset.pending = '';
+      label.textContent = '';
+      label.className = 'viewer3d__label';
       if (!ed || !res) return none();
       const hit = pick();
       // Фундаменты, съезды и ступени ставятся как в игре — прицелом в землю рядом с постройкой: хозяином
@@ -299,6 +318,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (ed.tool === 'hammer') {
         const src = content.children.find(c => c.userData.id === hit.id);
         if (!src) return none();
+        const st = state.stability.get(hit.id);
+        if (st !== undefined) label.textContent = `${hit.id}: стабильность ${Math.round(st * 100)}%`;
         const mat = ed.demolish ? DEMOLISH_MAT : HAMMER_MAT;
         return showGhost(`hammer|${hit.id}|${ed.demolish}`, { type: 'hammer', id: hit.id, deployable: hit.deployable }, () => ghostify(
           hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!, gableWalls(res).get(hit.id)), mat));
@@ -477,8 +498,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     s.hoverDirty = true;
     if (!resolved) return;
 
+    s.stability = computeStability(resolved);
     const gables = gableWalls(resolved);
-    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id)));
+    const hips = hipRoofs(resolved);
+    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id)));
+    // угловые стойки стен: без id, клик проходит сквозь них к стенам
+    for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s, doorsOpen);

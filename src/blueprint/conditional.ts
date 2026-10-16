@@ -57,3 +57,60 @@ export function gableWalls(resolved: Resolved): Map<string, GableShape> {
   }
   return out;
 }
+
+/**
+ * Сращивание крыш (RoofLeft/RoofRight с углом 90°): две квадратные крыши одного грейда в одной
+ * ячейке на одном уровне, скаты под прямым углом. Как угловые модели игры, каждая показывает только
+ * часть ниже соседней — вместе они дают вальму (скат на угол). sides — знаки локальной z крыши, с
+ * которых к ней примыкает соседний скат; крыша обрезается по диагонали x = s·z.
+ */
+export function hipRoofs(resolved: Resolved): Map<string, (1 | -1)[]> {
+  const out = new Map<string, (1 | -1)[]>();
+  const roofs = resolved.elements.filter(e => e.kind === 'roof');
+  for (const a of roofs) {
+    for (const b of roofs) {
+      if (a === b || a.grade !== b.grade || !near(a.position, b.position)) continue;
+      const d = (((b.rotation - a.rotation) % 360) + 360) % 360;
+      if (Math.abs(d - 90) > 1 && Math.abs(d - 270) > 1) continue;
+      // низкое ребро соседа в локальных координатах a: на стороне z = ±1.5
+      const low = edgeMid(b, 0);
+      const ang = -a.rotation * DEG;
+      const z = (low[0] - a.position[0]) * Math.sin(ang) + (low[2] - a.position[2]) * Math.cos(ang);
+      const s: 1 | -1 = z >= 0 ? 1 : -1;
+      const list = out.get(a.id) ?? [];
+      if (!list.includes(s)) list.push(s);
+      out.set(a.id, list);
+    }
+  }
+  return out;
+}
+
+/** Угловая стойка: заполняет внешний зазор там, где сходятся торцы двух стен (WallCornerLeft/Right). */
+export interface CornerPost { position: [number, number, number]; rotation: number; height: number; grade: ResolvedElement['grade'] }
+
+const CORNER_KINDS = new Set(['wall', 'half-wall', 'low-wall', 'doorway', 'window-frame']);
+
+export function cornerPosts(resolved: Resolved): CornerPost[] {
+  const walls = resolved.elements.filter(e => CORNER_KINDS.has(e.kind));
+  const ends = (w: ResolvedElement) => {
+    const a = w.rotation * DEG;
+    const dx = -Math.sin(a) * 1.5, dz = Math.cos(a) * 1.5;
+    return [[w.position[0] + dx, w.position[2] + dz], [w.position[0] - dx, w.position[2] - dz]];
+  };
+  const posts = new Map<string, CornerPost>();
+  for (let i = 0; i < walls.length; i++) for (let j = i + 1; j < walls.length; j++) {
+    const a = walls[i], b = walls[j];
+    // тот же грейд и тот же низ — как в игре, угол только между одинаковыми стенами одного яруса
+    if (a.grade !== b.grade || Math.abs(a.position[1] - b.position[1]) > 0.05) continue;
+    const da = Math.abs(((((a.rotation - b.rotation) % 180) + 180) % 180));
+    if (da < 10 || da > 170) continue;
+    for (const p of ends(a)) for (const q of ends(b)) {
+      if (Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.05) continue;
+      const k = `${p[0].toFixed(2)}|${a.position[1].toFixed(2)}|${p[1].toFixed(2)}`;
+      const height = Math.min(wallHeight(a.kind), wallHeight(b.kind));
+      const prev = posts.get(k);
+      if (!prev || prev.height < height) posts.set(k, { position: [p[0], a.position[1], p[1]], rotation: a.rotation, height, grade: a.grade });
+    }
+  }
+  return [...posts.values()];
+}

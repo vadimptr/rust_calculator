@@ -6,6 +6,7 @@
  */
 import { KINDS, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { resolveBlueprint } from './geometry.ts';
+import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
 
 export const GRADES: Grade[] = ['twig', 'wood', 'stone', 'metal', 'armored'];
@@ -385,4 +386,24 @@ export function exportBlueprint(bp: Blueprint): string {
   const { resolved: _resolved, ...rest } = bp as Blueprint & { resolved?: unknown };
   void _resolved;
   return JSON.stringify({ $schema: 'https://github.com/vadimptr/rust_calculator/docs/blueprint/schema/blueprint.schema.json', ...rest }, null, 2) + '\n';
+}
+
+/**
+ * Обрушение, как в игре: блоки со стабильностью ниже 5% разрушаются, затем пересчёт — до
+ * устойчивого состояния. Возвращает новый чертёж и id обрушившихся блоков.
+ */
+export function settle(bp: Blueprint): { blueprint: Blueprint; collapsed: string[] } {
+  const collapsed: string[] = [];
+  let cur = bp;
+  for (let guard = 0; guard < 200; guard++) {
+    const r = resolveBlueprint(cur);
+    if (r.issues.some(i => i.level === 'error')) break;
+    const root = cur.elements.find(e => e.root)?.id;
+    const fall = unstable(r.resolved).filter(id => id !== root && cur.elements.some(e => e.id === id));
+    if (fall.length === 0) break;
+    const before = new Set(cur.elements.map(e => e.id));
+    for (const id of fall) if (cur.elements.some(e => e.id === id)) cur = removeElement(cur, id);
+    for (const id of before) if (!cur.elements.some(e => e.id === id)) collapsed.push(id);
+  }
+  return { blueprint: cur, collapsed };
 }

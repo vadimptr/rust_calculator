@@ -5,7 +5,7 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, GRADES, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, upgradeElement } from '../blueprint/editor.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, GRADES, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -181,8 +181,12 @@ const BlueprintSection: React.FC = () => {
     setEditing(true);
     setRaidPlay(0);
   };
+  const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
-    setSource(s => ({ label: s.label, data: next }));
+    // после каждого действия — обрушение блоков без опоры, как в игре
+    const { blueprint: settled, collapsed } = settle(next);
+    setCollapsedNote(collapsed.length ? `Обрушилось без опоры: ${collapsed.length} (${collapsed.join(', ')})` : '');
+    setSource(s => ({ label: s.label, data: settled }));
     setRaidPlay(0);
   }, []);
 
@@ -394,6 +398,7 @@ const BlueprintSection: React.FC = () => {
                   <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${tool === id ? ' raid-tier__btn--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id}>{label}</button>
                 ))}
               </div>
+              {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
               {tool === 'build' && BUILD_PLAN.map(g => (
                 <div key={g.group} className="palette__group">
                   <div className="palette__title">{g.group}</div>
