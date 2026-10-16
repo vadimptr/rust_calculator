@@ -182,3 +182,16 @@ test('roof needs support under its low edge: both sides of a wall top are fine, 
   // фундаментом тоже можно — крыша лежит выше плоскости уровня и с плитой не спорит
   assert.equal(candidatePlacements(bp, resolved, 'roof', 'f2').length, 4);
 });
+
+test('roofs do not collide with each other: a crossing roof at the same position is allowed, an exact duplicate is not', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:1' });
+  bp = addElement(bp, 'roof', { to: 'w1', socket: 'top', selfSocket: 'edge:0' });
+  const resolved = resolveBlueprint(bp).resolved;
+  // с соседней стены крыша внутрь ложится на ту же ячейку под другим углом — можно
+  const fromW2 = candidatePlacements(bp, resolved, 'roof', 'w2');
+  assert.ok(fromW2.some(p => !p.attach.flip), fromW2.map(p => JSON.stringify(p.attach)).join(' '));
+  // с той же стены внутрь — точный дубль, занято
+  assert.ok(candidatePlacements(bp, resolved, 'roof', 'w1').every(p => p.attach.flip));
+});

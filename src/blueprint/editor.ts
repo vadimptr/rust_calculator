@@ -73,12 +73,14 @@ function sameTransform(a: Transform, b: Transform, angleMod = 360): boolean {
 /** Пересекается ли новый элемент с уже стоящим: та же категория места и та же позиция. */
 function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean {
   const cat = KINDS[kind].category;
-  // крыша занимает объём над плоскостью уровня и с плитой того же уровня не спорит (чердак над полом);
-  // две крыши в одной позиции — пересечение при любом наклоне
+  // Крыша занимает объём над плоскостью уровня и с плитой того же уровня не спорит (чердак над полом).
+  // Крыши друг другу тоже не мешают, как в игре — скаты могут проходить друг сквозь друга; запрещён
+  // только точный дубль: та же позиция и тот же наклон. Игровое «сращивание» крыш (угловые формы
+  // на стыке скатов) не моделируется.
   const place = (c: string) => (c === 'cell' || c === 'ramp' ? 'cell' : c);
   return resolved.elements.some(e => {
     if (place(KINDS[e.kind].category) !== place(cat)) return false;
-    if (cat === 'roof') return Math.hypot(e.position[0] - t.position[0], e.position[1] - t.position[1], e.position[2] - t.position[2]) < 0.01;
+    if (cat === 'roof') return sameTransform(e, t);
     if (cat === 'wallType') {
       // стены на одном ребре: одна позиция, нормали могут смотреть в разные стороны
       const sameSpan = Math.abs(e.position[1] - t.position[1]) < 0.01
