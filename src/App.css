@@ -1637,7 +1637,7 @@
   grid-template-columns: 220px minmax(0, 1fr) 400px;
   gap: 0.75rem;
   align-items: stretch;
-  height: calc(100vh - 192px);
+  height: calc(100vh - 140px);
   min-height: 520px;
 }
 
@@ -1948,4 +1948,57 @@
   font-weight: 700;
   text-align: center;
   color: #fff;
+}
+
+.bp__section-title {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.cost__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+.cost__res {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cost__res img, .cost__days img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.cost__note {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.cost__days {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cost__days th, .cost__days td {
+  padding: 0.3rem 0.4rem;
+  text-align: right;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.cost__days th:first-child, .cost__days td:first-child {
+  text-align: left;
+  color: var(--text-secondary);
 }

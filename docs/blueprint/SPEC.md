@@ -475,21 +475,27 @@ HP у всех блоков одного материала одинаковые
 
 ### 9.2 Стоимость постройки и апкип
 
+Формулы игры, реализация — `src/blueprint/cost.ts`:
+
 ```
-build  = Σ по элементам  blocks[kind].buildCost[resource(grade)]
-upkeep = Σ по элементам  blocks[kind].upkeepCost[resource(grade)]   // за сутки
-       + Σ по объектам   deployables[kind].upkeep
+cost(block)   = baseCost(grade) × costMultiplier(kind)
+build         = Σ cost(block) + Σ крафт объектов
+rate(N)       = средняя ставка по брекетам от числа N облагаемых сущностей:
+                первые 15 по 10 %, следующие 50 по 15 %, следующие 125 по 20 %, дальше 33.3 %
+upkeep/сутки  = Σ cost(облагаемых) × rate(N)
 ```
 
-Каталог `src/data/blocks.ts` уже содержит все `kind` v1.0, кроме трёх:
+`baseCost`: twig 50 wood, wood 200 wood, stone 300 stone, metal 200 metal
+fragments, armored 25 HQM. `costMultiplier`: фундамент, стена, полустенка,
+лестницы 1; дверной и оконный проём 0.7; треугольный фундамент, ступени,
+рампа, низкая стена, рама стены, пол, рама пола, крыши 0.5; треугольный пол
+и его рама 0.25.
 
-| `kind` | Стоимость | Источник |
-|---|---|---|
-| `low-wall` | как `wall` | игра: 200 wood / 300 stone / 200 metal / 25 hqm |
-| `floor-frame` | как `square-floor` | 100 wood / 150 stone / 100 metal / 13 hqm |
-| `triangle-floor-frame` | как `triangle-floor` | 50 wood / 75 stone / 50 metal / 7 hqm |
-
-Их нужно добавить в `blocks.ts` при реализации. Стоимость объектов:
+Облагаются блоки, двери и вставки в окна (по цене крафта, без шестерёнок).
+Шкаф и дроп-бокс входят только в стоимость постройки. Считается один
+игрок, групповой множитель не учитывается. Панель справа показывает
+стоимость, содержание в сутки и таблицу на 1, 2, 3, 5, 10, 15, 20, 25 и
+30 суток.
 
 | `kind` | Крафт | HP |
 |---|---|---|
@@ -504,10 +510,7 @@ upkeep = Σ по элементам  blocks[kind].upkeepCost[resource(grade)]   
 | `strengthened-glass-window` | 50 metal fragments | 350 |
 | `reinforced-glass-window` | 4 HQM | 500 |
 | `metal-window-bars` | 25 metal fragments | 500 |
-
-Ресурс `gears` в текущем `Resources` отсутствует; при реализации
-стоимость объектов хранится отдельной таблицей с собственным типом, а
-не впихивается в `Resources`.
+| `drop-box` | 100 metal fragments | — |
 
 ### 9.3 Рейд
 

@@ -5,6 +5,8 @@ import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
+import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
+import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
 
@@ -137,6 +139,11 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
 };
 
 const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
+
+/** Содержание по дням и иконки ресурсов. */
+const UPKEEP_DAYS = [1, 2, 3, 5, 10, 15, 20, 25, 30];
+const RES_ICONS: Record<ResourceKey, string> = { wood: '/icons/wood.png', stone: '/icons/stones.png', metal: '/icons/metal.fragments.png', hqm: '/icons/metal.refined.png' };
+const RES_LABELS: Record<ResourceKey, string> = { wood: 'Дерево', stone: 'Камень', metal: 'Металлические фрагменты', hqm: 'МВК' };
 
 /** Иконки нижней панели: строительный план, киянка, объект. */
 const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
@@ -310,6 +317,8 @@ const BlueprintSection: React.FC = () => {
   const toggleRaid = (on: boolean) => { setRaidOn(on); setRaidPlay(0); };
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
+
+  const cost = useMemo(() => (resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved]);
 
   const counts = useMemo(() => {
     if (!resolved) return [];
@@ -497,17 +506,54 @@ const BlueprintSection: React.FC = () => {
             </section>
           )}
 
-          {resolved && (
-            <table className="bp__counts">
-              <tbody>
-                {counts.map(c => (
-                  <tr key={c.key}>
-                    <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
-                    <td className="bp__counts-n">×{c.n}</td>
-                  </tr>
+          {resolved && counts.length > 0 && (
+            <>
+              <div className="bp__section-title">Состав</div>
+              <table className="bp__counts">
+                <tbody>
+                  {counts.map(c => (
+                    <tr key={c.key}>
+                      <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
+                      <td className="bp__counts-n">×{c.n}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {cost && (
+            <section className="cost">
+              <div className="bp__section-title">Стоимость постройки</div>
+              <div className="cost__row">
+                {RESOURCE_KEYS.filter(k => cost.build[k] > 0).map(k => (
+                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
                 ))}
-              </tbody>
-            </table>
+              </div>
+              <div className="bp__section-title">Содержание в сутки</div>
+              <div className="cost__row">
+                {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
+                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(Math.ceil(cost.upkeep[k]))}</span>
+                ))}
+              </div>
+              <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
+              <table className="cost__days">
+                <thead>
+                  <tr>
+                    <th>Дней</th>
+                    {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {UPKEEP_DAYS.map(d => (
+                    <tr key={d}>
+                      <td>{d}</td>
+                      {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <td key={k}>{formatNum(Math.ceil(cost.upkeep[k] * d))}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
           )}
         </aside>
       </div>
