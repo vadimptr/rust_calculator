@@ -190,8 +190,9 @@ export default function DocsSection({ pageId }: { pageId: string | null }) {
       return next;
     });
 
+  // при смене страницы — в самый верх, вместе с шапкой сайта (scrollIntoView прятал шапку)
   useEffect(() => {
-    mainRef.current?.scrollIntoView({ block: 'start' });
+    window.scrollTo({ top: 0 });
   }, [pageId]);
 
   const visible = useMemo(() => {
