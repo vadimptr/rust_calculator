@@ -1,0 +1,91 @@
+---
+id: power-plant
+title: Электростанция и энергосеть
+kind: object
+group: Монументы
+summary: Электростанция — большой радтаун с красной и зелёной картами, а ещё единственное место, где тяжёлыми предохранителями поднимают общую для сервера стадию энергосети, от которой зависят доп. комнаты лута, переработчики, нефть, маркетплейс и запуск спутника.
+related: [monuments, monument-puzzles, monument-radiation, recycler, drone-marketplace, launch-site, oil-rig, dome, electricity]
+code: [PowergridManager.cs, PowergridFuseBox.cs, PowergridStageConfig.cs, Powergrid.cs, PowergridIOAccessPoint.cs, PowergridPowerline.cs, ElectricGenerator.cs, Recycler.cs, Marketplace.cs, WaterCatcher.cs, PuzzleReset.cs]
+---
+
+## Кратко
+
+`large/powerplant_1.prefab` («Power Plant»). Как монумент: радиация `MEDIUM` ×4 и одна зона
+`HIGH`, 4 зелёных и 2 синих считывателя, 1 щиток, 3 переработчика, стол изучения, 2 ремонтных
+верстака, карьер (`MiningQuarry`), зона сброса чинука. На полу — зелёная и красная карты
+(обе одноразовые, ∞). Главный пазл: сброс 1800 с, радиус 40 м, радиационный сброс.
+
+Главная особенность — **щитки энергосети** (`PowergridFuseBox`): малый на 5 и большой на 15
+гнёзд, всего 20. В них вставляются только тяжёлые предохранители `fuse.highgrade`. Число
+вставленных предохранителей задаёт **стадию энергосети сервера** — общую для всех игроков.
+
+## Характеристики
+
+### Стадии (`assets/content/config/powergridstageconfig.asset`)
+
+| Стадия | Предохранителей | Что включает (генераторы с `requiredPowergridStage` и др.) |
+|--------|-----------------|------------------------------------------------------------|
+| 1 | 1 | доп. комнаты лута на Свалке, в Гаванях, Паромном терминале, Заправке, холодильник Супермаркета; насосы нефти Купола; столбы ЛЭП дают ток |
+| 2 | 4 | комнаты управления Электростанции, Депо, Водоочистной, Аэродрома, Радтауна, Канализационного отвода; зелёный переработчик: эффективность 0.5 → 0.6; маркетплейс начинает заряжаться (от 4 предохранителей) |
+| 3 | 10 | нефтевышки (топливный рубильник), Космодром, Военные туннели, Ракетная шахта (туннель 6), Аэродром, топливный рубильник Купола |
+| 4 | 18 | Аэродром («Stage 4 Powergrid»), красный переработчик, зелёный переработчик быстрее (5 → 4,5 с), компьютер запуска спутника на [[launch-site|Космодроме]] |
+
+Стадия = наибольшая, для которой предохранителей хватает (`PowergridStageConfig.GetStageForFuseCount`).
+Пересчёт идёт в `PowergridManager.ServerTick`; объекты ближе к станции переключаются первыми.
+
+### Столбы ЛЭП
+
+На 35 % столбов ЛЭП появляется точка подключения (`PowergridPowerline.ShouldSpawnAccessPoint`).
+К ней можно протянуть провод **без права строительства**. Мощность:
+`Lerp(5, 50, (n − 1) / (гнёзд − 1))` (`powergrid.powerlineBasePowerOutput = 5`,
+`powerlineMaxPowerOutput = 50`): 1 предохранитель — 5, 20 — 50.
+
+### Износ предохранителей (`PowergridManager.ServerFuseDeteriorationTick`, раз в 1 с)
+
+- Потеря в секунду = `maxCondition / powergrid.fuseLifespanSeconds (9600)` × скорость × масштаб онлайна.
+- **3 самых изношенных** предохранителя (`fuseFullDecayCount = 3`) изнашиваются на полной
+  скорости: свежий живёт 9600 с = 2 ч 40 мин.
+- Остальные — на 8–12 % скорости (`fuseSlowDecayFractionMin/Max`, выбирается по хешу предмета):
+  примерно 22–33 часа.
+- Масштаб онлайна: при ≤ 10 игроках (`fuseDecayLowPop`) ×0.25 (`fuseDecayLowPopScale`),
+  линейно до ×1 при 100 (`fuseDecayHighPop`).
+- Выгоревший предохранитель выпадает на землю перед щитком.
+
+## Поведение
+
+- **Вынуть предохранитель нельзя.** Попытка — удар током на 2 урона
+  (`PowergridFuseBox.Server_OnFuseRemovalAttempt`). Можно только **заменить** на предохранитель
+  с большей прочностью (`CanSwapFrom`).
+- Маркетплейс дронов ([[drone-marketplace]]): ёмкость 100, принимает заказы при 50 %;
+  заряжается на 0,01/с за каждый предохранитель, если их ≥ 4; при 1–3 держит заряд, при 0
+  разряжается на 0,05/с (`powergrid.marketplace*`).
+- Арендные магазины: при стадии > 0 еда в торговых автоматах портится в 10 раз медленнее
+  (`RentableShopVendingMachine.Server_OnPowergridStageChanged`).
+
+## Нюансы
+
+- **Пороги не зависят от числа станций.** Количество гнёзд и предохранителей глобальное; на
+  карте с двумя станциями гнёзд 40, а пороги те же 1/4/10/18.
+- **Подсказка ConVar `satellite.require_powerplant` врёт**: там написано «стадия 1+», а
+  `SatelliteControlComputer.RPC_PowerUp` требует **стадию 4**.
+- `powergrid.simulatePowerPlantFuses` (0) прибавляет «виртуальные» предохранители — меняет и
+  стадию, и зарядку маркетплейса, и мощность ЛЭП.
+- `powergrid.enabled = false` — генераторы со стадией работают по полю `ifPowergridDisabled`
+  (выключены или как обычные).
+- При ошибке загрузки конфигурации стадий в лог пишется «Failed to load EntityColorSwapLookup» —
+  скопированное сообщение.
+
+## На практике
+
+- Один тяжёлый предохранитель на станции уже открывает комнаты 1-й стадии по всей карте.
+- Чтобы держать 4-ю стадию, нужно 18 предохранителей; три самых старых горят за 2 ч 40 мин
+  (на пустом сервере — в 4 раза медленнее). Меняйте самые изношенные.
+- Ставить предохранители выгоднее при низком онлайне: износ ×0.25 до 10 игроков.
+
+## Где в коде
+
+- `PowergridManager.Server_GetPowerPlantInsertedFuses`, `ServerTick`, `ServerFuseDeteriorationTick`,
+  `Server_GetCurrentPowerlineEnergy`.
+- `PowergridFuseBox.Server_DeteriorateFuse`, `Server_OnFuseRemovalAttempt`, `CanSwapFrom`.
+- `PowergridStageConfig.GetStageForFuseCount`; `ElectricGenerator.GetCurrentEnergy`.
+- `Recycler` (конфиг `RecyclerConfig`), `Marketplace.Server_GetChargeRate`, `WaterCatcher.ToggleProducing`.
