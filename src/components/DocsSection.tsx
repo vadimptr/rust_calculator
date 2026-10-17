@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { marked } from 'marked';
-import { DOC_BY_ID, DOC_PAGES } from '../docs/content';
+import { CONVAR_PAGES, DOC_BY_ID, DOC_PAGES, PAGE_CONVARS, conVarDescription } from '../docs/content';
 import { DOC_GROUPS, KIND_LABEL, backlinks, resolveWikiLinks, searchPages, type DocKind, type DocPage } from '../docs/parse';
 
 type KindFilter = 'all' | DocKind;
@@ -68,6 +68,67 @@ function Overview() {
   );
 }
 
+const SETTINGS_PREVIEW = 8;
+const SETTINGS_LINKS = 3;
+
+/** Текст с `кодом` в обратных кавычках. */
+function InlineCode({ text }: { text: string }) {
+  return <>{text.split(/(`[^`]+`)/).map((part, i) =>
+    part.startsWith('`') && part.endsWith('`') && part.length > 1
+      ? <code key={i}>{part.slice(1, -1)}</code>
+      : <span key={i}>{part}</span>)}</>;
+}
+
+function SettingsBlock({ pageId }: { pageId: string }) {
+  const list = PAGE_CONVARS.get(pageId) ?? [];
+  const [all, setAll] = useState(false);
+  if (!list.length) return null;
+  const shown = all ? list : list.slice(0, SETTINGS_PREVIEW);
+  return (
+    <section className="docs-settings">
+      <h3>Настройки сервера</h3>
+      <p className="docs-settings__hint">
+        Что администратор может изменить в этой механике. Значения по умолчанию — из кода сервера;
+        на конкретном сервере они могут быть другими. <a href="#docs/data-server-settings">Все настройки</a>
+      </p>
+      <div className="docs-md">
+        <table>
+          <thead>
+            <tr><th>Настройка</th><th>По умолчанию</th><th>Что делает</th><th>Ещё на страницах</th></tr>
+          </thead>
+          <tbody>
+            {shown.map(c => {
+              const others = (CONVAR_PAGES.get(c.name) ?? []).filter(id => id !== pageId);
+              return (
+                <tr key={c.name}>
+                  <td><code>{c.name}</code></td>
+                  <td>{c.default ?? '—'}</td>
+                  <td><InlineCode text={conVarDescription(c)} /></td>
+                  <td>
+                    {others.length
+                      ? others.slice(0, SETTINGS_LINKS).map((id, i) => (
+                          <span key={id}>{i > 0 && ', '}<a href={`#docs/${id}`}>{DOC_BY_ID.get(id)?.title ?? id}</a></span>
+                        ))
+                      : '—'}
+                    {others.length > SETTINGS_LINKS && (
+                      <span className="docs-settings__extra"> и ещё {others.length - SETTINGS_LINKS}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {list.length > SETTINGS_PREVIEW && (
+        <button type="button" className="docs-settings__more" onClick={() => setAll(v => !v)}>
+          {all ? 'Свернуть' : `Показать все (${list.length})`}
+        </button>
+      )}
+    </section>
+  );
+}
+
 function Page({ page }: { page: DocPage }) {
   const html = useMemo(() => renderMarkdown(page.body), [page]);
   const related = page.related.map(id => DOC_BY_ID.get(id)).filter((p): p is DocPage => !!p);
@@ -83,6 +144,7 @@ function Page({ page }: { page: DocPage }) {
       <h2 className="docs-page__title">{page.title}</h2>
       {page.summary && <p className="docs-page__lead">{page.summary}</p>}
       <div className="docs-md" dangerouslySetInnerHTML={{ __html: html }} />
+      {page.id !== 'data-server-settings' && <SettingsBlock key={page.id} pageId={page.id} />}
       {(related.length > 0 || incoming.length > 0) && (
         <footer className="docs-page__footer">
           {related.length > 0 && (

@@ -157,7 +157,7 @@ decayTimer += Δ
 | `decay.outside_test_range` | `50` м | Длина лучей проверки «снаружи» |
 | `decay.duration_*`, `decay.delay_*` | см. таблицу | Сроки и задержки по грейдам, в часах |
 | `decay.duration_override`, `decay.delay_override` | `0` | Общие значения, в секундах |
-| `decay.debug` | `false` | Лог тиков |
+| `decay.debug` | `false` | Объявлена, но в коде не используется |
 | `decay.forcedecaytick` | команда | Немедленный тик у всех сущностей |
 
 ## Нюансы

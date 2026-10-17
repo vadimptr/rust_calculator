@@ -4,11 +4,14 @@ title: Настройки сервера (ConVar)
 kind: mechanic
 group: Сервер и режимы
 summary: Подборка ConVar, которые сильнее всего меняют игру — распад и содержание, урон, исчезновение предметов и трупов, ранение, спальники, погода, время, команды, ивенты — со значениями по умолчанию из кода и ссылками на страницы.
-related: [decay, upkeep, game-modes, raid-window, day-night-weather, teams, wipe-and-saves, deep-sea, world-events, respawn, sleeping-bag, wounded, death-drop, damage-system, building-grades, turret-targeting, farming, gathering]
+related: [decay, upkeep, game-modes, raid-window, day-night-weather, teams, wipe-and-saves, deep-sea, world-events, respawn, sleeping-bag, wounded, death-drop, damage-system, building-grades, turret-targeting, farming, gathering, data-server-settings]
 code: [ConVar/Server.cs, ConVar/Decay.cs, ConVar/Env.cs, ConVar/Weather.cs, ConVar/Softcore.cs, ConVar/DeepSea.cs, ConVar/Player.cs, ConVar/Global.cs, ConVar/Spawn.cs, ConVar/Sentry.cs, ConVar/Bradley.cs, ConVar/PatrolHelicopter.cs, ConVar/Vehicle.cs, ConVar/Clan.cs, RelationshipManager.cs, GameModeSoftcore.cs, ConsoleGen.cs]
 ---
 
 ## Кратко
+
+Полный список всех настроек, которые встречаются в документации, с описаниями — [[data-server-settings]].
+На каждой странице внизу есть блок «Настройки сервера» с теми, что влияют на её механику.
 
 ConVar — серверные переменные, которые меняются командой в консоли или в `server.cfg`. Здесь
 собраны значения **по умолчанию из кода** этой версии сервера. Режим игры может переписать часть
@@ -115,7 +118,8 @@ ConVar — серверные переменные, которые меняют�
 | `heli.lifetimeminutes` | 30 | жизнь патрульного вертолёта, мин | [[patrol-helicopter]] |
 | `events.set_event_enabled` / `set_event_min_delay` / `set_event_max_delay` | — | расписание ивентов | [[world-events]] |
 | `deepsea.enabled` / `deepsea.wipeduration` | true / 10800 | глубокое море | [[deep-sea]] |
-| `halloween.enabled` / `xmas.enabled` | false / false | праздничные события | — |
+| `xmas.enabled` | false | Рождественское событие: подарки в чулках (`XMasRefill`) и праздничные предметы | — |
+| `halloween.enabled` | false | Объявлена, но в коде не используется: Хэллоуин включают другие настройки | — |
 
 ## Нюансы
 

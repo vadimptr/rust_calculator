@@ -20,6 +20,9 @@ export const DOC_GROUPS = [
   'Сервер и режимы',
 ] as const;
 
+/** Страницы, которые собираются в приложении, а не лежат файлом в docs/game/pages. */
+export const VIRTUAL_PAGE_IDS: readonly string[] = ['data-server-settings'];
+
 export type DocGroup = (typeof DOC_GROUPS)[number];
 export type DocKind = 'mechanic' | 'object' | 'data';
 
