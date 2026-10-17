@@ -12,12 +12,11 @@
 .app-header {
   background: linear-gradient(180deg, #1a100a 0%, #161412 100%);
   border-bottom: 2px solid var(--accent);
-  padding: 1.5rem 1rem;
+  padding: 0.9rem 1rem;
 }
 
 .app-header__inner {
-  max-width: 1600px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .app-header__title {
@@ -1637,7 +1636,7 @@
   grid-template-columns: 220px minmax(0, 1fr) 400px;
   gap: 0.75rem;
   align-items: stretch;
-  height: calc(100vh - 140px);
+  height: calc(100vh - 110px);
   min-height: 520px;
 }
 

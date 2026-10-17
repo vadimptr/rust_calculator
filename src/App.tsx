@@ -13,9 +13,6 @@ function App() {
             <span className="app-header__rust">RUST</span>
             {' '}Калькулятор постройки
           </h1>
-          <p className="app-header__subtitle">
-            Стройка как в игре, стоимость, содержание и рейд базы
-          </p>
         </div>
       </header>
       <div className="app-layout app-layout--wide">
