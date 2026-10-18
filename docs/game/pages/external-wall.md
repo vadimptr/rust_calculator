@@ -1,0 +1,104 @@
+---
+id: external-wall
+title: Высокая внешняя стена
+kind: object
+group: Двери и замки
+summary: Высокая деревянная или каменная стена вокруг базы — SimpleBuildingBlock, а не блок постройки; цепляется к самому старому зданию в радиусе 16 м и платит содержание по фиксированной ставке 20%.
+related: [external-gate, wall, decay, upkeep, tool-cupboard, building-privilege, stability, construction-placement, protection, damage-system, data-entity-health, data-protection, data-crafting]
+code: [SimpleBuildingBlock.cs, DecayEntity.cs, BuildingPrivlidge.cs, Upkeep.cs, ConVar/Decay.cs, SimpleUpgrade.cs, SimpleBuildingBlockModelVariant.cs]
+---
+
+## Кратко
+
+Высокая внешняя стена — не `BuildingBlock`, а `SimpleBuildingBlock`. У неё нет грейдов,
+улучшения молотком и сокетов для стен и потолков. Это развёртываемый предмет со своей
+стабильностью, распадом и содержанием. Ворота в такой стене — отдельный объект
+[[external-gate]].
+
+## Характеристики
+
+| Параметр | Значение | Откуда |
+|----------|----------|--------|
+| Класс | `SimpleBuildingBlock` → `StabilityEntity` (ледяная — `IceFence : GraveyardFence : SimpleBuildingBlock`) | `SimpleBuildingBlock.cs` |
+| Параметры распада | `DeployableDecay`: задержка 0, срок 8 ч | префабы, см. [[decay]] |
+| Ставка содержания | `decay.high_wall_upkeep = 0.2` × множитель группы | `BuildingPrivlidge.GetEntityUpkeepMultiplier`, `Upkeep.highWall = 1` во всех префабах |
+| Дальность постановки | 6 + 1 м | `Construction.maxplaceDistance` = 6 |
+| Подбор | выключен | `pickup.enabled = 0` |
+| Поиск здания для привязки | самый старый блок в радиусе 16 м | `DecayEntity.GetNearbyBuildingBlock` |
+| Апгрейд | в предмет из `UpgradeItems`, за 1 предмет | `SimpleBuildingBlock.DoSimpleUpgrade` |
+| Блок апгрейда после урона | 30 с | `DoSimpleUpgrade` |
+
+Варианты по префабам (`startHealth`, `baseProtection`, рецепт `ItemBlueprint`):
+
+| Стена | Префаб | HP | Защита | Рецепт (на 3 стены) | Содержание в сутки за стену (× группа) | `UpgradeItems` |
+|---|---|---|---|---|---|---|
+| Деревянная | `wall.external.high.wood` | 500 | `BlockWood` | 4000 Wood, верстак 1 | ≈ 267 Wood | → каменная, саманная, ледяная |
+| Каменная | `wall.external.high.stone` | 500 | `BlockStone` | 4000 Stones, 1 Sheet Metal, верстак 2 | ≈ 267 Stones | — |
+| Саманная | `wall.external.high.adobe` | 500 | `BlockStone` | 4000 Stones, 1 Sheet Metal (не крафтится) | ≈ 267 Stones | — |
+| Ледяная | `wall.external.high.ice` | 500 | `BlockStone` | 3000 Stones (не крафтится) | 200 Stones | — |
+| Legacy (деревянная) | `wall.external.high.legacy` | 500 | `BlockWood` | 4000 Wood (не крафтится) | ≈ 267 Wood | → каменная, саманная, ледяная |
+
+Поле `Construction.healthMultiplier` у стен 1,5–2,4, но на HP оно не влияет: этот множитель
+читает только `ConstructionGrade`, а у стены грейдов нет. Защита — [[data-protection]]; сверх
+неё на стене висит `DirectionProperties` с `BuildingShell` (90 % ближнего боя, 50 % пуль и стрел),
+и коробка слабого места нулевая, так что работает он с обеих сторон.
+
+## Поведение
+
+### Привязка к зданию
+
+Обычная развёртываемая вещь цепляется к **ближайшему** блоку постройки в радиусе 1,5 м.
+У стены с флагом `Upkeep.highWall` всё иначе: она ищет блоки в радиусе **16 м** и берёт
+**самый старый** (`IsOlderThan`), а не ближайший.
+
+На каждом тике распада стена проверяет шкаф. Если шкафа нет или он принадлежит другому
+зданию, стена заново ищет здание (`AttachToBuilding(null)`).
+
+### Содержание
+
+Блоки здания платят по «скобкам» в зависимости от их числа: 0.1, 0.15, 0.2 или 0.333 от
+стоимости ([[upkeep]]). Высокие стены и ворота всегда платят по ставке `decay.high_wall_upkeep`
+(0.2), умноженной на групповой множитель шкафа. В расчёт идут только ингредиенты
+категории «Ресурсы» из рецепта стены.
+
+### Апгрейд и внешний вид
+
+Стена реализует `ISimpleUpgradable`. Если в префабе задан список `UpgradeItems`, её можно
+заменить на другой вариант за один предмет. По ассетам список есть только у деревянных стен
+(`wood` и `legacy`): их можно заменить на каменную, саманную или ледяную, отдав один предмет
+нужной стены. Апгрейд запрещён в первые 30 с после урона и в чужой зоне шкафа.
+
+Модель стены выбирается из нескольких вариантов `SimpleBuildingBlockModelVariant` по хешу
+сетевого id. Это только внешний вид.
+
+## Нюансы
+
+- **Привязка к самому старому зданию.** Если рядом две базы, стена прицепится к той, что
+  построена раньше, даже если вторая ближе. Платить за неё будет шкаф этого здания.
+- **Ставка не зависит от размера базы.** 0.2 для стен против 0.1 для блоков маленькой базы.
+  Стена на маленькой базе обходится вдвое дороже обычного блока той же стоимости. На большой
+  базе (скобка 0.333) — наоборот, дешевле.
+- **Апгрейд сохраняет абсолютное HP**, как у дверей (`Reskin_Restore` → `SetHealth`).
+- **Ближний бой — обычным профилем.** `BaseMelee.GetAttackStats` не применяет
+  `deployableDamageOverrides` к `SimpleBuildingBlock`.
+- **Перекраска блокируется предметами рядом.** `CanBeRedirectSwapped` запрещает смену, если в
+  объёме стены есть что-то кроме блоков, дверей, печей и баррикад.
+- **Правила размещения — в префабе.** Стена ставится на землю сокетом `Socket_Terrain`. На нём
+  висят `SocketMod_TerrainCheck` (все точки «в земле»: 3 у деревянной, 10 у каменной, саманной
+  и ледяной) и по два `SocketMod_Attraction` с группами `outwall.bottom` / `outwall.top`
+  (`outerRadius` 2 м, Shift отключает): стена «прилипает» к краю соседней стены или ворот.
+  Общие проверки — в [[construction-placement]].
+
+## На практике
+
+- Ставьте стены не дальше 16 м от блоков своей базы, иначе их не будет содержать ваш шкаф.
+- Посчитать содержание стен: стоимость ресурсов стены × 0.2 × групповой множитель, в сутки.
+  Рецепт делится на число стен за крафт (3): за каменную выходит 4000 / 3 × 0.2 ≈ 267 камня.
+- Битую стену апгрейдить бессмысленно: HP не восстановится.
+
+## Где в коде
+
+- `SimpleBuildingBlock` — апгрейд, варианты модели, перекраска.
+- `DecayEntity.GetNearbyBuildingBlock`, `DecayEntity.OnDecay` — привязка к зданию.
+- `BuildingPrivlidge.GetEntityUpkeepMultiplier`, `ConVar.Decay.high_wall_upkeep` — содержание.
+- `Upkeep.highWall` — флаг в префабе.

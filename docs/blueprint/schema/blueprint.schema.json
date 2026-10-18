@@ -44,14 +44,6 @@
         "$ref": "#/$defs/Deployable"
       }
     },
-    "raidPath": {
-      "description": "Упорядоченный список id элементов и объектов, которые рейдер разрушает по пути к цели.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/Id"
-      },
-      "uniqueItems": true
-    },
     "resolved": {
       "$ref": "#/$defs/Resolved"
     }
@@ -76,6 +68,8 @@
       "enum": [
         "square-foundation",
         "triangle-foundation",
+        "foundation-steps",
+        "ramp",
         "wall",
         "half-wall",
         "low-wall",
@@ -88,6 +82,7 @@
         "triangle-floor-frame",
         "stairs-l-shape",
         "u-shaped-stairs",
+        "spiral-stairs",
         "roof",
         "roof-triangle"
       ]
@@ -102,12 +97,16 @@
         "garage-door",
         "wooden-double-door",
         "sheet-metal-double-door",
-        "armored-double-door"
+        "armored-double-door",
+        "strengthened-glass-window",
+        "reinforced-glass-window",
+        "metal-window-bars",
+        "drop-box"
       ]
     },
     "Socket": {
       "type": "string",
-      "pattern": "^(edge:[0-3]|top|bottom|opening)$"
+      "pattern": "^(edge:[0-3]|top|bottom|opening|face|offset)$"
     },
     "Vec3": {
       "type": "array",
@@ -181,7 +180,7 @@
         "flip": {
           "type": "boolean",
           "default": false,
-          "description": "Для присоединения к сокету top стены: разместить элемент по другую сторону стены."
+          "description": "Для присоединения к сокету top стены: разместить элемент по другую сторону стены. Для крыши на ребре ячейки: внутрь — низким ребром на ребре, скатом над самой ячейкой (без flip — наружу, над соседней позицией)."
         },
         "turns": {
           "type": "integer",
@@ -189,6 +188,26 @@
           "maximum": 3,
           "default": 0,
           "description": "Поворот элемента внутри ячейки в четвертях оборота (только для лестниц)."
+        },
+        "rise": {
+          "type": "number",
+          "enum": [
+            -3,
+            -1.5,
+            0,
+            1.5,
+            3
+          ],
+          "default": 0,
+          "description": "Только фундамент к фундаменту: сдвиг соседа по высоте в метрах. В игре у фундамента три ряда боковых сокетов (foundation-top/mid/bot) с шагом 1.5 м; верх фундамента — на земле, на высоте полустены или стены (0, 1.5, 3 м)."
+        },
+        "offset": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Только socket offset: положение [x, y, z] в метрах в системе элемента to (x по его нормали/оси 0°, y вверх)."
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Только socket offset: поворот в плане относительно элемента to, градусы."
         }
       }
     },
@@ -211,6 +230,10 @@
         },
         "attach": {
           "$ref": "#/$defs/Attach"
+        },
+        "bunker": {
+          "type": "boolean",
+          "description": "Деталь затвора роф-бункера, которую хозяин убирает, чтобы войти: крыша-затвор или твиговая плита-опора под ней. Переключатель «Открыть двери» в просмотре их убирает. Только для крыш и полов."
         },
         "label": {
           "type": "string"
@@ -259,6 +282,26 @@
               "root": false
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "roof",
+                  "roof-triangle",
+                  "square-floor",
+                  "triangle-floor"
+                ]
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "properties": {
+              "bunker": false
+            }
+          }
         }
       ]
     },
@@ -292,14 +335,15 @@
               "type": "string",
               "enum": [
                 "top",
-                "opening"
+                "opening",
+                "face"
               ]
             }
           }
         },
         "offset": {
           "$ref": "#/$defs/Vec2",
-          "description": "Смещение [x, z] в метрах от центра ячейки (только для сокета top)."
+          "description": "Шкаф: смещение [x, z] в метрах от центра ячейки. Дроп-бокс: [вдоль стены, высота] от середины низа стены."
         },
         "rotation": {
           "type": "number",
@@ -320,6 +364,28 @@
         },
         "notes": {
           "type": "string"
+        },
+        "opens": {
+          "type": "string",
+          "enum": [
+            "outward",
+            "inward"
+          ],
+          "default": "outward",
+          "description": "Куда распахивается дверь: outward — по нормали проёма (наружу), inward — против нормали. Только для дверей."
+        },
+        "open": {
+          "type": "boolean",
+          "default": false,
+          "description": "Дверь показана открытой (для просмотра и проверки перекрытия). Только для дверей."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "in",
+            "out"
+          ],
+          "description": "Только для дроп-бокса: out — передача изнутри наружу (по нормали стены), in — снаружи внутрь."
         }
       },
       "allOf": [
@@ -341,10 +407,55 @@
                   }
                 }
               },
-              "hinge": false
+              "hinge": false,
+              "opens": false,
+              "open": false,
+              "direction": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "drop-box"
+              }
             }
           },
-          "else": {
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "face"
+                  }
+                }
+              },
+              "hinge": false,
+              "opens": false,
+              "open": false,
+              "rotation": false
+            },
+            "required": [
+              "direction"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tool-cupboard",
+                    "drop-box"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
             "properties": {
               "attach": {
                 "type": "object",
@@ -355,7 +466,8 @@
                 }
               },
               "offset": false,
-              "rotation": false
+              "rotation": false,
+              "direction": false
             }
           }
         }
