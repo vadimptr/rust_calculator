@@ -2171,7 +2171,6 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   padding: 1.5rem 1.75rem 2rem;
-  max-width: 920px;
 }
 
 .docs-page__crumbs {
