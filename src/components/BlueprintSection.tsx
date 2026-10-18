@@ -66,14 +66,14 @@ type DoorChoice = 'wooden' | 'metal' | 'armored' | 'garage';
 const GRADE_CHOICES: { id: GradeChoice; label: string; img: string }[] = [
   { id: 'wood', label: 'Дерево', img: '/icons/wood.png' },
   { id: 'stone', label: 'Камень', img: '/icons/stones.png' },
-  { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
+  { id: 'metal', label: 'Металл', img: '/icons/metal.fragments.png' },
+  { id: 'armored', label: 'МВК', img: '/icons/metal.refined.png' },
 ];
 const DOOR_CHOICES: { id: DoorChoice; label: string; img: string; wide?: boolean }[] = [
   { id: 'wooden', label: 'Деревянные двери', img: '/icons/wood.png' },
-  { id: 'metal', label: 'Металлические двери', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'Двери из МВК', img: '/icons/metal.fragments.png' },
-  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/metal.refined.png', wide: true },
+  { id: 'metal', label: 'Металлические двери', img: '/icons/metal.fragments.png' },
+  { id: 'armored', label: 'Двери из МВК', img: '/icons/metal.refined.png' },
+  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/metal.fragments.png', wide: true },
 ];
 const SINGLE_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
 const FRAME_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
@@ -405,7 +405,7 @@ const BlueprintSection: React.FC = () => {
             <div className="bp__hint">
               {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
               {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · R — снести · средняя кнопка — сдвиг камеры'}
-              {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — направление дроп-бокса · средняя кнопка — сдвиг камеры'}
+              {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры'}
             </div>
           </div>
         </div>

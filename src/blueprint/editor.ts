@@ -365,7 +365,7 @@ export interface DeployPlacement {
  * ячейки в точку наведения, дроп-бокс — на грань стены в точку наведения. local — точка наведения в
  * локальных осях хозяина (x по нормали, y вверх, z вдоль).
  */
-export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number]): DeployPlacement | null {
+export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number], rotation = 0): DeployPlacement | null {
   const host = bp.elements.find(e => e.id === hostId);
   const ht = resolved.elements.find(e => e.id === hostId);
   if (!host || !ht) return null;
@@ -375,9 +375,12 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   if (kind === 'tool-cupboard') {
     if (info.category !== 'cell' || info.isFrame) return null;
     if (taken.some(d => d.kind === 'tool-cupboard')) return null;
-    const r = (info.shape === 'square' ? 1.5 : 0.866) - 0.35;
-    const clamp = (v: number) => Math.max(-r, Math.min(r, v));
-    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0]) * 100) / 100, Math.round(clamp(local[2]) * 100) / 100], rotation: 0 };
+    // свободная точка в пределах ячейки: шкаф (1.1 × 0.6 м) целиком на ней, с учётом поворота
+    const side = Math.abs(Math.round(rotation / 90)) % 2 === 1;
+    const [hx, hz] = side ? [0.55, 0.3] : [0.3, 0.55];
+    const edge = info.shape === 'square' ? 1.5 : 0.866;
+    const clamp = (v: number, h: number) => { const r = Math.max(0, edge - h); return Math.max(-r, Math.min(r, v)); };
+    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0], hx) * 100) / 100, Math.round(clamp(local[2], hz) * 100) / 100], rotation };
   } else if (kind === 'drop-box') {
     if (info.category !== 'wallType' || info.opening || host.kind === 'low-wall') return null;
     const h = wallHeight(host.kind);

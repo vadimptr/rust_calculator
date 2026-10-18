@@ -224,6 +224,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       state.raycaster.setFromCamera(ndc, camera);
       const hits = state.raycaster.intersectObjects(content.children, true);
       for (const h of hits) {
+        // только поверхности: контурные линии ловят луч в радиусе метра, и прицел прилипал к рёбрам
+        if (!(h.object as THREE.Mesh).isMesh) continue;
         let o: THREE.Object3D | null = h.object;
         while (o && o.userData.id === undefined) o = o.parent;
         if (!o || !(o as THREE.Mesh).visible) continue;
@@ -357,7 +359,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       }
       // объект
       const local = toLocal(hostEl, hit.point);
-      const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local) : null;
+      // шкаф: R поворачивает на 90° (прямо / боком)
+      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : 0;
+      const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn) : null;
       if (!dp) return none();
       const d = { ...dp.deployable };
       // дроп-бокс: R меняет направление передачи
@@ -504,7 +508,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       if (state.hoverDirty) {
         refreshGhost();
         const p = state.pending;
-        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'root' ? p.kind : p.d.kind}` : '';
+        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'root' ? p.kind : p.d.kind + (p.d.offset ? JSON.stringify(p.d.offset) : '') + (p.d.rotation ? `@${p.d.rotation}` : '')}` : '';
       }
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);
