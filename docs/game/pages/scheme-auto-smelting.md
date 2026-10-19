@@ -5,7 +5,7 @@ kind: scheme
 group: Схемы
 icon: furnace.large
 summary: Руда и дерево из ящика сами расходятся по печам, а металл, сера и уголь сами уезжают в ящик выхода — два промышленных конвейера и адаптеры на печах, без сортировки и ручного дележа.
-related: [furnace, smelting, data-smelting, industrial-conveyor, storage-adaptor, industrial-splitter-combiner, industrial-system, industrial-quirks]
+related: [furnace, smelting, data-smelting, industrial-conveyor, storage-adaptor, industrial-splitter-combiner, industrial-system, industrial-quirks, timer, blocker, logic-gates]
 code: [IndustrialConveyor.cs, IOEntity.cs, BaseOven.cs, IndustrialStorageAdaptor.cs, ElectricOven.cs, Igniter.cs]
 ---
 
@@ -109,10 +109,135 @@ belt unload.Industrial Output -> out.Industrial In
 - **Конвейер включается руками один раз.** При пропаже тока он выключается и сам включается, когда ток вернётся.
 - **Во время автосейва индустрия стоит** (`server.pauseindustrialduringsave`), а печи плавят — запас Max в печи это сглаживает.
 
-### Электропечи
+## Электропечи с автовключением
 
-Та же схема без дерева: на каждую электропечь — провод «Power In» на 3 rW (на саму печь, не на адаптер).
-Включается сама при подаче тока, без руды ничего не тратит, угля не даёт. Медленнее большой печи в 3 раза.
+Электропечи не жгут дерево и не дают угля, но у них своя особенность: **сама электропечь не выключается**,
+когда руда кончилась. Пока на «Power In» есть хотя бы 3 rW, она включена и потребляет 3 rW вхолостую
+(`ElectricOven.CanRunWithNoFuel`, `ElectricFurnaceIO.DesiredPower`). Если питать печи от батареи, лучше
+подавать ток только тогда, когда есть что плавить. Схема ниже делает это сама: положили руду в ящик — печи
+включились, доплавили последнюю — выключились.
+
+Предметная часть та же, что и выше, только без дерева: ящик руды → подача → адаптеры электропечей
+цепочкой → выгрузка → ящик выхода. Провод тока идёт на саму печь, а не на адаптер. У электропечи 2 входных
+слота и 3 выходных, плавит она в 3 раза медленнее большой печи: 30 металла, 60 серы или 15 МВК в минуту.
+
+### Откуда схема знает про руду
+
+- **Руда в ящике.** Конвейер подачи зажигает «Filter Pass», пока в ящике есть руда под его фильтр, и «Filter Fail»,
+  когда её нет (`IndustrialConveyor.CheckIfAnyInputPassesFilters`). Смотрится содержимое ящика, а не факт
+  переноса. Значение на выходе — 1 rW, если на конвейер приходит ≥ 2 rW. Других датчиков содержимого в
+  игре нет: монитор хранилища даёт импульс 0,5 с на любое изменение и на электропечь не ставится, у
+  адаптера сигнального выхода нет.
+- **Руда внутри печей.** Её не видно ничем: конвейер забирает из печи только выходные слоты. Поэтому
+  остаток доплавляется **по таймеру** после того, как ящик опустел, а **Max на подаче обязателен** — он
+  ограничивает, сколько руды лежит в печи. Без Max конвейер набьёт печь до двух стопок, а доплавка 2000
+  металла — это 67 минут.
+
+### Схема управления током
+
+```scheme
+node src 10,0 icon=electric.battery.rechargable.medium "Источник тока" "≥ 3N + 5 rW" out: Power Output
+node br 215,0 icon=electrical.branch "Ветвитель" "Branch Out = 5" in: Power In out: Power Out, Branch Out
+node feed 450,0 icon=industrial.conveyor "Конвейер подачи" "фильтр: руда + Max" in: Power In out: Passthrough, Filter Fail
+node unload 680,0 icon=industrial.conveyor "Конвейер выгрузки" "без фильтра" in: Power In out: Passthrough
+node and2 680,150 icon=electric.andswitch "AND" "3 rW, пока ящик пуст" in: Input A, Input B out: Power Out
+node spt 660,300 flip icon=electric.splitter "Сплиттер" "3 → 1 / 1 / 1" in: Power In out: Power Out 1, Power Out 2, Power Out 3
+node blk2 200,300 flip icon=electric.blocker "Блокировщик 2" "«время вышло»" in: Power In, Block Passthrough out: Power Out
+node tmr 440,470 flip icon=electric.timer "Таймер" "T = 200 с" in: Power In, Toggle On out: Power Out
+node blk1 80,620 icon=electric.blocker "Блокировщик 1" "ключ печей" in: Power In, Block Passthrough out: Power Out
+node spo 330,620 icon=electric.splitter "Сплиттер" "9 → 3 / 3 / 3" in: Power In out: Power Out 1, Power Out 2, Power Out 3
+node ef1 560,610 icon=electric.furnace "Электропечь 1" "3 rW" in: Power In
+node ef2 560,720 icon=electric.furnace "Электропечь 2" "3 rW" in: Power In
+node ef3 560,830 icon=electric.furnace "Электропечь 3" "3 rW" in: Power In
+wire src.Power Output -> br.Power In "≥ 14"
+wire br.Branch Out -> feed.Power In "5"
+wire feed.Passthrough -> unload.Power In "4"
+wire unload.Passthrough -> and2.Input A "3"
+wire feed.Filter Fail -> and2.Input B "ящик пуст"
+wire and2.Power Out -> spt.Power In "3"
+wire spt.Power Out 1 -> tmr.Power In "1"
+wire spt.Power Out 2 -> tmr.Toggle On "1"
+wire spt.Power Out 3 -> blk2.Power In "1"
+wire tmr.Power Out -> blk2.Block Passthrough
+wire blk2.Power Out -> blk1.Block Passthrough "стоп"
+wire br.Power Out -> blk1.Power In "≥ 9"
+wire blk1.Power Out -> spo.Power In
+wire spo.Power Out 1 -> ef1.Power In "3"
+wire spo.Power Out 2 -> ef2.Power In "3"
+wire spo.Power Out 3 -> ef3.Power In "3"
+```
+
+Логика в одну строку: печи под током, пока в ящике есть руда **или** ещё идёт таймер доплавки.
+
+### Как собрать
+
+1. Источник → ветвитель с **«Branch Out» = 5**. «Branch Out» → «Power In» подачи → «Passthrough» подачи →
+   «Power In» выгрузки → «Passthrough» выгрузки → «Input A» элемента AND. Каждый конвейер забирает 1 rW
+   («Passthrough» = вход − 1), так что на AND приходит ровно 3.
+2. «Power Out» ветвителя (всё остальное, ≥ 3 rW на печь) → «Power In» блокировщика 1.
+3. «Filter Fail» подачи → «Input B» AND. AND выдаёт 3 rW, пока ящик пуст. Он здесь нужен как усилитель:
+   «Filter Fail» даёт только 1 rW, а сигнал надо раздать на три входа.
+4. «Power Out» AND → сплиттер. Его **«Power Out 1» → «Power In» таймера, «Power Out 2» → «Toggle On» таймера**
+   (именно в таком порядке), «Power Out 3» → «Power In» блокировщика 2.
+5. «Power Out» таймера → «Block Passthrough» блокировщика 2. «Power Out» блокировщика 2 → «Block Passthrough»
+   блокировщика 1.
+6. «Power Out» блокировщика 1 → сплиттер → «Power In» каждой электропечи. Для больше чем трёх печей —
+   цепочка ветвителей с «Branch Out» = 3.
+7. Фильтр подачи: режим Any, только руда, **Max: металл 50, сера 50, МВК 20**. Таймер — **T = 200 с**.
+   Выгрузка без фильтра. Включить оба конвейера.
+
+### Как работает
+
+1. **Покой.** Ящик пуст → «Filter Fail» горит → AND даёт 3 → таймер давно отработал → блокировщик 2 даёт ток
+   на блок блокировщика 1 → печи без тока. Тратятся только 2 rW на конвейеры.
+2. **Положили руду.** В ближайший тик подачи (через 2,5–7,5 с) руда уезжает в печи, «Filter Fail» гаснет →
+   AND 0 → таймер и блокировщик 2 обесточены → блокировщик 1 открыт → печи включаются (`ElectricFurnaceIO.UpdateHasPower`
+   → `StartCooking`) и плавят. Каждый тик подача доливает их до Max, выгрузка уносит готовое.
+3. **Ящик опустел.** «Filter Fail» загорается → AND 3 → сплиттер сначала даёт ток таймеру, потом старт
+   (`IOEntity.UpdateOutputs` обходит выходы по порядку) → таймер идёт и держит блокировщик 2 закрытым →
+   печи доплавляют остаток.
+4. **Через T секунд** таймер гаснет → блокировщик 2 даёт ток → блокировщик 1 закрывается → печи выключены.
+5. **Новая руда в любой момент** — снова шаг 2. Таймер при этом обесточивается и сбрасывается (`TimerSwitch`
+   обнуляет отсчёт при потере тока), поэтому следующий отсчёт начнётся с нуля, когда ящик опустеет **в последний раз**.
+
+Время доплавки после опустения ящика с Max 50 / 50 / 20, если в печи лежит пара разных руд:
+
+| В печи | Сера | Металл | МВК | Металл + сера | Металл + МВК |
+|---|---|---|---|---|---|
+| Секунд | 50 | 100 | 80 | 150 | 180 |
+
+Отсюда T = 200 с с запасом. Если T мало, недоплавленное просто останется в печах до следующей партии.
+
+### Числа (3 печи)
+
+| | |
+|---|---|
+| Источник должен выдавать | ≥ 14 rW (3N + 5) |
+| Расход в работе | 11 rW (по 3 на печь и по 1 на конвейер) |
+| Расход в простое | 2 rW, без автоматики было бы 11 |
+| Плавка | 90 металла, 180 серы или 45 МВК в минуту — как одна большая печь |
+| Включение после закладки руды | до 7,5 с |
+| Выключение после опустения ящика | до 7,5 с + T |
+
+Малой батареи (15 rW) хватает на 3 печи. Одна стопка руды в ящике тянет до 12 электропечей на сере,
+до 20 на металле, до 30 на МВК.
+
+### Нюансы
+
+- **«Branch Out» должен быть 5.** Тогда после двух конвейеров на AND приходит 3. При 4 будет 2, сплиттер разделит
+  как 1 / 1 / 0, блокировщик 2 останется без тока, и печи не выключатся никогда.
+- **Не путайте провода таймера.** Если старт придёт раньше тока, таймер его проигнорирует (`SwitchPressed`
+  требует питания), и печи погаснут сразу после опустения ящика.
+- **Конвейер подачи не выключать кнопкой.** Выключенный, но запитанный конвейер не тикает, и «Filter Pass» /
+  «Filter Fail» замирают. Замер Pass — печи будут гореть вечно.
+- **На конвейер нужно ≥ 2 rW**, иначе «Filter Fail» выдаёт 0. Здесь через подачу идёт весь ток, так что условие выполняется.
+- **Переполнился ящик выхода — тупик.** Печи встают на паузу, все упираются в Max, через T выключаются. Когда ящик
+  освободят, они сами не включатся: подача ничего не везёт, сигнал не меняется. Лечится нажатием на таймер рукой.
+- **«Filter Pass» иногда гаснет при руде в ящике** — если за тик ничего не перевезли из-за Max. Так бывает с МВК
+  (4 с на единицу). Схеме это не мешает: таймер на мгновение запустится и тут же сбросится следующим тиком.
+- **Первое включение с пустым ящиком** — печи T секунд простоят под током, один раз.
+- Экономия от выключения есть **только при питании от батареи**: батарея считает расход по потреблению
+  печей, а солнечная панель и генератор выдают своё независимо от нагрузки.
 
 ## Где в коде
 
@@ -121,5 +246,7 @@ belt unload.Industrial Output -> out.Industrial In
 - `IOEntity.FindContainerSource` — обход сети сквозь адаптеры, стоп на конвейере, до 32 точек.
 - `BaseOven.InputSlotRange`, `OutputSlotRange`, `GetAllowedSlots`, `ItemFilter`, `Cook`, `ConsumeFuel`, `StartCooking`.
 - `IndustrialStorageAdaptor` — слоты печи для конвейера.
-- `ElectricOven`, `ElectricFurnaceIO` — электропечь.
+- `ElectricOven.CanRunWithNoFuel`, `OvenFull`; `ElectricFurnaceIO.UpdateHasPower`, `DesiredPower` — электропечь не гаснет без руды.
+- `IndustrialConveyor.CheckIfAnyInputPassesFilters`, `GetPassthroughAmount` — сигналы «Filter Pass» / «Filter Fail».
+- `TimerSwitch.UpdateFromInput`, `SwitchPressed`, `EndTimer`; `ElectricalBlocker`, `ANDSwitch`, `Splitter` — логика автовыключения.
 - `Igniter.IgniteInRange` — поджигатель.
