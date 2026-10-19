@@ -33,35 +33,62 @@ const DOOR_COLORS: Record<DeployableKind, number> = {
   'metal-window-bars': 0x3a3f45,
 };
 
-/** Текстуры материалов (public/textures, CC0 с ambientCG): по одной карте цвета на материал. */
-export type TextureId = Grade;
-/** Оттенок поверх текстуры: белый — как есть; солома теплее серой соломенной крыши. */
-const GRADE_TINT: Record<Grade, number> = { twig: 0xf2d48c, wood: 0xffffff, stone: 0xffffff, metal: 0xffffff, armored: 0xffffff };
-const DOOR_TEX: Partial<Record<DeployableKind, TextureId>> = {
-  'tool-cupboard': 'wood', 'wooden-door': 'wood', 'wooden-double-door': 'wood',
-  'sheet-metal-door': 'metal', 'sheet-metal-double-door': 'metal', 'garage-door': 'metal',
-  'armored-door': 'armored', 'armored-double-door': 'armored', 'metal-window-bars': 'armored',
+const TEX_DIR = '/textures/game/';
+const TILE = 3;
+type GradeFace = 'side' | 'top' | 'roof';
+type ObjectTextured = 'wooden-door' | 'sheet-metal-door' | 'armored-door' | 'wooden-double-door' | 'sheet-metal-double-door'
+  | 'armored-double-door' | 'garage-door' | 'tool-cupboard' | 'drop-box';
+type ObjectFace = 'front' | 'back' | 'edge' | 'side' | 'top';
+const DOOR_GRADE: Partial<Record<DeployableKind, Grade>> = {
+  'wooden-double-door': 'wood', 'sheet-metal-double-door': 'metal', 'armored-double-door': 'armored',
 };
-const DOOR_TINT: Partial<Record<DeployableKind, number>> = {
-  'tool-cupboard': 0xd8c0a8, 'sheet-metal-door': 0xe0c8b8, 'sheet-metal-double-door': 0xe0c8b8, 'garage-door': 0xb0b0b0,
-};
-/** Ширина карты к высоте: камень 2:1, остальные квадратные. */
-const TEX_ASPECT: Record<TextureId, number> = { twig: 1, wood: 1, stone: 2, metal: 1, armored: 1 };
-/** Размер плитки текстуры в метрах: стена 3 м — две плитки. */
-const TILE = 1.5;
-const textureCache = new Map<TextureId, THREE.Texture>();
-function texture(id: TextureId): THREE.Texture | null {
-  if (typeof document === 'undefined') return null; // node: без текстур
-  let t = textureCache.get(id);
+const textureCache = new Map<string, THREE.Texture>();
+function texture(name: string, color = true, mirror = false): THREE.Texture | null {
+  if (typeof document === 'undefined') return null;
+  const key = `${name}|${mirror}`;
+  let t = textureCache.get(key);
   if (!t) {
-    t = new THREE.TextureLoader().load(`/textures/${id}.jpg`);
+    t = new THREE.TextureLoader().load(`${TEX_DIR}${name}.webp`);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.colorSpace = THREE.SRGBColorSpace;
+    if (color) t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
-    t.repeat.set(1 / TEX_ASPECT[id], 1);
-    textureCache.set(id, t);
+    if (mirror) { t.repeat.x = -1; t.offset.x = 1; }
+    textureCache.set(key, t);
   }
   return t;
+}
+
+const gradeMaterials = new Map<string, THREE.MeshStandardMaterial>();
+function gradeMaterial(grade: Grade, face: GradeFace): THREE.MeshStandardMaterial {
+  const key = `${grade}|${face}`;
+  let m = gradeMaterials.get(key);
+  if (!m) {
+    const map = texture(`${grade}-${face}`);
+    const metallic = grade === 'metal' || grade === 'armored';
+    m = new THREE.MeshStandardMaterial({
+      color: map ? 0xffffff : GRADE_COLORS[grade], map: map ?? undefined, normalMap: texture(`${grade}-${face}-n`, false) ?? undefined,
+      roughness: metallic ? 0.75 : 0.9, metalness: metallic ? 0.2 : 0.02, side: THREE.DoubleSide,
+      alphaTest: grade === 'twig' && face === 'side' ? 0.5 : 0,
+    });
+    gradeMaterials.set(key, m);
+  }
+  return m;
+}
+
+const objectMaterials = new Map<string, THREE.MeshStandardMaterial>();
+function objectMaterial(kind: ObjectTextured, face: ObjectFace, mirror = false): THREE.MeshStandardMaterial {
+  const key = `${kind}|${face}|${mirror}`;
+  let m = objectMaterials.get(key);
+  if (!m) {
+    const map = texture(`${kind}-${face}`, true, mirror);
+    const metallic = !kind.startsWith('wooden') && kind !== 'tool-cupboard';
+    m = new THREE.MeshStandardMaterial({
+      color: map ? 0xffffff : DOOR_COLORS[kind], map: map ?? undefined,
+      roughness: metallic ? 0.7 : 0.9, metalness: metallic ? 0.25 : 0.02, side: THREE.DoubleSide,
+    });
+    objectMaterials.set(key, m);
+  }
+  return m;
 }
 
 /**
@@ -85,6 +112,65 @@ function boxUV(geo: THREE.BufferGeometry): THREE.BufferGeometry {
   return geo;
 }
 
+function splitTopFaces(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  const flat = geo.index ? geo.toNonIndexed() : geo;
+  if (!flat.attributes.normal) flat.computeVertexNormals();
+  const names = Object.keys(flat.attributes);
+  const count = flat.attributes.position.count / 3;
+  const side: number[] = [], top: number[] = [];
+  const nor = flat.attributes.normal;
+  for (let t = 0; t < count; t++) {
+    let ny = 0, len = 0;
+    for (let k = 0; k < 3; k++) {
+      const i = t * 3 + k;
+      ny += nor.getY(i);
+      len += Math.hypot(nor.getX(i), nor.getY(i), nor.getZ(i));
+    }
+    (Math.abs(ny) > 0.7 * len ? top : side).push(t);
+  }
+  const out = new THREE.BufferGeometry();
+  for (const name of names) {
+    const src = flat.attributes[name] as THREE.BufferAttribute;
+    const size = src.itemSize;
+    const arr = new Float32Array(src.count * size);
+    let o = 0;
+    for (const t of [...side, ...top]) {
+      for (let k = 0; k < 3 * size; k++) arr[o++] = src.array[t * 3 * size + k];
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size));
+  }
+  out.addGroup(0, side.length * 3, 0);
+  out.addGroup(side.length * 3, top.length * 3, 1);
+  return out;
+}
+
+function gradeMesh(geometry: THREE.BufferGeometry, grade: Grade, topFace: GradeFace = 'top'): THREE.Group {
+  const g = new THREE.Group();
+  const geo = splitTopFaces(boxUV(geometry));
+  const mesh = new THREE.Mesh(geo, [gradeMaterial(grade, 'side'), gradeMaterial(grade, topFace)]);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  g.add(mesh);
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 20), edgeMaterial));
+  return g;
+}
+
+function faceBox(w: number, h: number, d: number, x: number, y: number, z: number, faces: THREE.Material[]): THREE.Group {
+  const g = new THREE.Group();
+  const geometry = box(w, h, d, x, y, z);
+  const mesh = new THREE.Mesh(geometry, faces);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  g.add(mesh);
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 20), edgeMaterial));
+  return g;
+}
+
+function doorFaces(kind: ObjectTextured, mirror = false): THREE.Material[] {
+  const edge = objectMaterial(kind, 'edge');
+  return [objectMaterial(kind, 'front', mirror), objectMaterial(kind, 'back', mirror), edge, edge, edge, edge];
+}
+
 const GLASS = new THREE.MeshStandardMaterial({ color: 0x9fd3e6, transparent: true, opacity: 0.35, roughness: 0.15, metalness: 0.1, side: THREE.DoubleSide });
 const GLASS_REINFORCED = new THREE.MeshStandardMaterial({ color: 0x7fb6cc, transparent: true, opacity: 0.5, roughness: 0.2, metalness: 0.2, side: THREE.DoubleSide });
 
@@ -93,13 +179,12 @@ function buildWindowInsert(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
   const y = WINDOW_SILL + WINDOW_H / 2;
   if (d.kind === 'metal-window-bars') {
-    const color = DOOR_COLORS[d.kind];
     const n = 5;
     for (let i = 0; i < n; i++) {
       const z = -WINDOW_W / 2 + (WINDOW_W / (n + 1)) * (i + 1);
-      g.add(withEdges(box(0.08, WINDOW_H, 0.08, 0, y, z), color, 'armored'));
+      g.add(gradeMesh(box(0.08, WINDOW_H, 0.08, 0, y, z), 'armored'));
     }
-    g.add(withEdges(box(0.08, 0.08, WINDOW_W, 0, y, 0), color, 'armored'));
+    g.add(gradeMesh(box(0.08, 0.08, WINDOW_W, 0, y, 0), 'armored'));
     return g;
   }
   const pane = new THREE.Mesh(box(0.04, WINDOW_H - 0.1, WINDOW_W - 0.1, 0, y, 0), d.kind === 'reinforced-glass-window' ? GLASS_REINFORCED : GLASS);
@@ -133,27 +218,21 @@ export const TC_W = 1.1;
 export const TC_D = 0.6;
 export const TC_H = 1.9;
 
-const materialCache = new Map<string, THREE.MeshStandardMaterial>();
-function material(color: number, tex?: TextureId): THREE.MeshStandardMaterial {
-  const key = `${tex ?? ''}|${color}`;
-  let m = materialCache.get(key);
+const materialCache = new Map<number, THREE.MeshStandardMaterial>();
+function material(color: number): THREE.MeshStandardMaterial {
+  let m = materialCache.get(color);
   if (!m) {
-    const map = tex ? texture(tex) : null;
-    const metallic = tex === 'metal' || tex === 'armored';
-    m = new THREE.MeshStandardMaterial({
-      color, map: map ?? undefined, roughness: map ? (metallic ? 0.7 : 0.9) : 0.85, metalness: map && metallic ? 0.25 : 0.05, side: THREE.DoubleSide,
-    });
-    materialCache.set(key, m);
+    m = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide });
+    materialCache.set(color, m);
   }
   return m;
 }
 
 const edgeMaterial = new THREE.LineBasicMaterial({ color: EDGE_COLOR, transparent: true, opacity: 0.6 });
 
-function withEdges(geometry: THREE.BufferGeometry, color: number, tex?: TextureId): THREE.Group {
+function withEdges(geometry: THREE.BufferGeometry, color: number): THREE.Group {
   const g = new THREE.Group();
-  if (tex) boxUV(geometry);
-  const mesh = new THREE.Mesh(geometry, material(color, tex));
+  const mesh = new THREE.Mesh(geometry, material(color));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   g.add(mesh);
@@ -257,7 +336,7 @@ function hipRoofGeometry(sides: (1 | -1)[]): THREE.BufferGeometry {
 export function buildCornerPost(p: CornerPost): THREE.Object3D {
   const h = p.height - WALL_TOP_GAP;
   const g = new THREE.Group();
-  g.add(withEdges(box(WALL_T, h, WALL_T, 0, h / 2, 0), GRADE_TINT[p.grade], p.grade));
+  g.add(gradeMesh(box(WALL_T, h, WALL_T, 0, h / 2, 0), p.grade));
   return place(g, p.position, p.rotation);
 }
 
@@ -421,11 +500,11 @@ const DOOR_SPEED = 3.2;
  * взгляде снаружи по нормали). Полотно тянется от петли к центру проёма. Открытая дверь
  * повёрнута на 90° вокруг петли: outward — в сторону +x, inward — в сторону −x.
  */
-function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward' | 'inward', color: number, tex?: TextureId): THREE.Group {
+function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward' | 'inward', faces: THREE.Material[]): THREE.Group {
   const pivot = new THREE.Group();
   pivot.position.set(0, 0, hingeZ);
   const toCenter = hingeZ > 0 ? -1 : 1;
-  pivot.add(withEdges(box(DOOR_T, height, width, 0, height / 2, toCenter * width / 2), color, tex));
+  pivot.add(faceBox(DOOR_T, height, width, 0, height / 2, toCenter * width / 2, faces));
   pivot.add(withEdges(box(0.18, height, 0.14, 0, height / 2, 0), 0x1a1a1a));
   const sign = hingeZ > 0 ? -1 : 1; // полотно вдоль −z → +x при −90°, вдоль +z → +x при +90°
   const anim: DoorAnim = { type: 'leaf', closed: 0, open: (opens === 'outward' ? sign : -sign) * (Math.PI / 2), target: false };
@@ -435,13 +514,11 @@ function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward
 
 function buildDoor(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
-  const tex = DOOR_TEX[d.kind];
-  const color = (tex ? DOOR_TINT[d.kind] : undefined) ?? (tex ? 0xffffff : DOOR_COLORS[d.kind]);
+  const kind = d.kind as ObjectTextured;
   switch (d.kind) {
     case 'garage-door': {
-      // Гаражная дверь поднимается вверх, открытая — вровень с притолокой
       const lift = new THREE.Group();
-      lift.add(withEdges(box(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0), color, tex));
+      lift.add(faceBox(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0, doorFaces(kind)));
       const anim: DoorAnim = { type: 'lift', closed: 0, open: FRAME_H - 0.3, target: false };
       lift.userData.door = anim;
       g.add(lift);
@@ -450,13 +527,12 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, color, tex));
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, color, tex));
-      // неподвижная верхняя часть над створками
-      g.add(withEdges(box(DOOR_T, FRAME_H - DOUBLE_LEAF_H, FRAME_W, 0, DOUBLE_LEAF_H + (FRAME_H - DOUBLE_LEAF_H) / 2, 0), color, tex));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, doorFaces(kind)));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, doorFaces(kind, true)));
+      g.add(gradeMesh(box(DOOR_T, FRAME_H - DOUBLE_LEAF_H, FRAME_W, 0, DOUBLE_LEAF_H + (FRAME_H - DOUBLE_LEAF_H) / 2, 0), DOOR_GRADE[d.kind]!));
       return g;
     default:
-      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, color, tex));
+      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, doorFaces(kind, d.hinge === 'left')));
       return g;
   }
 }
@@ -505,7 +581,8 @@ export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 
   const g = new THREE.Group();
   const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)]
     : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
-  const parts = geos.map(part => withEdges(part, GRADE_TINT[el.grade], el.grade));
+  const topFace = KINDS[el.kind].category === 'roof' ? 'roof' : 'top';
+  const parts = geos.map(part => gradeMesh(part, el.grade, topFace));
   if (el.bunker) {
     // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору
     const drop = new THREE.Group();
@@ -529,7 +606,10 @@ const DROP_D = WALL_T + 2 * 0.3;
 /** Дроп-бокс: синий ящик сквозь стену и короткая стрелка направления передачи, начинающаяся внутри ящика. */
 function buildDropBox(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
-  g.add(withEdges(box(DROP_D, DROP_H, DROP_W, 0, 0, 0), DOOR_COLORS['drop-box']));
+  const front = objectMaterial('drop-box', 'front'), back = objectMaterial('drop-box', 'back');
+  const side = objectMaterial('drop-box', 'side'), top = objectMaterial('drop-box', 'top');
+  const loadOutside = d.direction === 'in';
+  g.add(faceBox(DROP_D, DROP_H, DROP_W, 0, 0, 0, [loadOutside ? front : back, loadOutside ? back : front, top, top, side, side]));
   // out: из −x (внутри) в +x (снаружи); in — наоборот. Стрелка от середины ящика чуть за его грань
   const toward = d.direction === 'in' ? -1 : 1;
   const arrowLen = DROP_D / 2 + 0.12;
@@ -556,9 +636,8 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   } else if (d.kind === 'tool-cupboard') {
     g = new THREE.Group();
     // Шкаф: TC_W вдоль стены, TC_D в глубину, TC_H высотой; спинка — локальный −x
-    g.add(withEdges(box(TC_D, TC_H, TC_W, 0, TC_H / 2, 0), DOOR_TINT['tool-cupboard']!, 'wood'));
-    g.add(withEdges(box(0.04, TC_H - 0.3, TC_W - 0.2, TC_D / 2 + 0.01, TC_H / 2 + 0.05, 0), 0x5b3716));
-    g.add(withEdges(box(0.05, 0.08, TC_W - 0.2, TC_D / 2 + 0.03, TC_H * 0.55, 0), 0x3a2410));
+    const side = objectMaterial('tool-cupboard', 'side'), top = objectMaterial('tool-cupboard', 'top');
+    g.add(faceBox(TC_D, TC_H, TC_W, 0, TC_H / 2, 0, [objectMaterial('tool-cupboard', 'front'), objectMaterial('tool-cupboard', 'back'), top, top, side, side]));
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
   } else {

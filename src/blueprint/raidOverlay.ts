@@ -29,12 +29,14 @@ function dimObject(o: THREE.Object3D) {
     if (!(n instanceof THREE.Mesh) && !(n instanceof THREE.LineSegments)) return;
     const saved: Saved = { material: n.material };
     n.userData.raidSaved = saved;
-    const src = n.material as THREE.Material;
-    const m = src.clone();
-    m.transparent = true;
-    m.opacity = n instanceof THREE.LineSegments ? DIM_OPACITY * 0.6 : DIM_OPACITY;
-    m.depthWrite = false;
-    n.material = m;
+    const dim = (src: THREE.Material) => {
+      const m = src.clone();
+      m.transparent = true;
+      m.opacity = n instanceof THREE.LineSegments ? DIM_OPACITY * 0.6 : DIM_OPACITY;
+      m.depthWrite = false;
+      return m;
+    };
+    n.material = Array.isArray(n.material) ? n.material.map(dim) : dim(n.material);
   });
 }
 
@@ -50,7 +52,7 @@ function restoreObject(o: THREE.Object3D) {
   o.traverse(n => {
     const saved = n.userData.raidSaved as Saved | undefined;
     if (saved && (n instanceof THREE.Mesh || n instanceof THREE.LineSegments)) {
-      (n.material as THREE.Material).dispose?.();
+      for (const m of [n.material].flat()) m.dispose();
       n.material = saved.material;
       delete n.userData.raidSaved;
     }

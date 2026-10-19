@@ -48,6 +48,12 @@ ilspycmd rustsrv/RustDedicated_Data/Managed/Assembly-CSharp.dll \
 #    блоки строительства — спрайты Construction.info.icon из content.bundle + textures.0/2
 venv/bin/python -I tools/game-data/icons.py \
   ~/Library/Application\ Support/Steam/steamapps/common/Rust docs/game public/icons
+
+# 7. Текстуры 3D-просмотра: плитки атласов грейдов и запечённые виды дверей, шкафа, дроп-бокса.
+#    Бандлы читаются потоково (lazybundle.py): в клиенте они не сжаты, нужные байты берутся
+#    по смещению, весь бандл в память не грузится
+venv/bin/python -I tools/game-data/textures.py \
+  ~/Library/Application\ Support/Steam/steamapps/common/Rust public/textures/game
 ```
 
 Русские описания настроек лежат в `docs/game/convars.ru.json` и пишутся вручную. Новые настройки,
