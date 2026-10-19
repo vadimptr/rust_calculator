@@ -7,6 +7,7 @@ export const DOC_GROUPS = [
   'Двери и замки',
   'Защита базы',
   'Электричество',
+  'Схемы',
   'Индустрия',
   'Вода и фермерство',
   'Игрок',
@@ -24,9 +25,9 @@ export const DOC_GROUPS = [
 export const VIRTUAL_PAGE_IDS: readonly string[] = ['data-server-settings'];
 
 export type DocGroup = (typeof DOC_GROUPS)[number];
-export type DocKind = 'mechanic' | 'object' | 'data';
+export type DocKind = 'mechanic' | 'object' | 'scheme' | 'data';
 
-export const DOC_KINDS: readonly DocKind[] = ['mechanic', 'object', 'data'];
+export const DOC_KINDS: readonly DocKind[] = ['mechanic', 'object', 'scheme', 'data'];
 
 export interface DocPage {
   id: string;
@@ -42,6 +43,7 @@ export interface DocPage {
 export const KIND_LABEL: Record<DocKind, string> = {
   mechanic: 'Механика',
   object: 'Объект',
+  scheme: 'Схема',
   data: 'Таблица',
 };
 

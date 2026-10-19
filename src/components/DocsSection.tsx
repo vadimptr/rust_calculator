@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import { CONVAR_PAGES, DOC_BY_ID, DOC_PAGES, PAGE_CONVARS, conVarDescription } from '../docs/content';
+import { schemeToHtml } from '../docs/scheme';
 import { DOC_GROUPS, KIND_LABEL, backlinks, resolveWikiLinks, searchPages, type DocKind, type DocPage } from '../docs/parse';
 
 type KindFilter = 'all' | DocKind;
@@ -9,12 +10,21 @@ const FILTERS: { id: KindFilter; label: string }[] = [
   { id: 'all', label: 'Всё' },
   { id: 'mechanic', label: 'Механики' },
   { id: 'object', label: 'Объекты' },
+  { id: 'scheme', label: 'Схемы' },
   { id: 'data', label: 'Таблицы' },
 ];
 
-const KIND_LETTER: Record<DocKind, string> = { mechanic: 'М', object: 'О', data: 'Т' };
+const KIND_LETTER: Record<DocKind, string> = { mechanic: 'М', object: 'О', scheme: 'С', data: 'Т' };
 
 const TITLES: ReadonlyMap<string, string> = new Map(DOC_PAGES.map(p => [p.id, p.title]));
+
+const marked = new Marked({
+  renderer: {
+    code({ text, lang }) {
+      return lang === 'scheme' ? schemeToHtml(text) : false;
+    },
+  },
+});
 
 function renderMarkdown(md: string): string {
   return marked.parse(resolveWikiLinks(md, TITLES), { async: false, gfm: true }) as string;
@@ -42,7 +52,7 @@ function Overview() {
         в которых участвуют. Таблицы собраны автоматически из ассетов игры: HP, защита, урон, рецепты.
       </p>
       <p className="docs-page__meta">
-        Механик: {count('mechanic')}, объектов: {count('object')}, таблиц: {count('data')}.
+        Механик: {count('mechanic')}, объектов: {count('object')}, схем: {count('scheme')}, таблиц: {count('data')}.
         Код и ассеты сервера от 16 октября 2026.
       </p>
       <div className="docs-groups">
