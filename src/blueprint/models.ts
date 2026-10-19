@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { PieceManifest } from './pieces.ts';
 
 const DIR = '/models/';
 const loaded = new Map<string, THREE.Object3D>();
@@ -54,4 +55,15 @@ export function gameModel(name: string): THREE.Object3D | null {
   const copy = model.clone();
   noRaycast(copy);
   return copy;
+}
+
+let manifest: PieceManifest | null = null;
+let manifestRequested = false;
+
+export function pieceManifest(): PieceManifest | null {
+  if (!manifest && !manifestRequested && typeof document !== 'undefined') {
+    manifestRequested = true;
+    fetch(`${DIR}conditionals.json`).then(r => r.json()).then((m: PieceManifest) => { manifest = m; notify(); }).catch(() => {});
+  }
+  return manifest;
 }

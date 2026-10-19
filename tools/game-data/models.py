@@ -35,6 +35,18 @@ BLOCKS = {
     'ramp': 'ramp/ramp.{g}.prefab',
     'foundation-steps': 'foundation.steps/foundation.steps.{g}.prefab',
 }
+BASES = {
+    'square-foundation': 'foundation/foundation.prefab', 'triangle-foundation': 'foundation.triangle/foundation.triangle.prefab',
+    'square-floor': 'floor/floor.prefab', 'triangle-floor': 'floor.triangle/floor.triangle.prefab',
+    'floor-frame': 'floor.frame/floor.frame.prefab', 'triangle-floor-frame': 'floor.triangle.frame/floor.triangle.frame.prefab',
+    'wall': 'wall/wall.prefab', 'half-wall': 'wall.half/wall.half.prefab', 'low-wall': 'wall.low/wall.low.prefab',
+    'doorway': 'wall.doorway/wall.doorway.prefab', 'window-frame': 'wall.window/wall.window.prefab', 'wall-frame': 'wall.frame/wall.frame.prefab',
+    'stairs-l-shape': 'stairs.l/block.stair.lshape.prefab', 'u-shaped-stairs': 'stairs.u/block.stair.ushape.prefab',
+    'spiral-stairs': 'stairs.spiral/block.stair.spiral.prefab', 'roof': 'roof/roof.prefab', 'roof-triangle': 'roof.triangle/roof.triangle.prefab',
+    'ramp': 'ramp/ramp.prefab', 'foundation-steps': 'foundation.steps/foundation.steps.prefab',
+}
+TOKENS = {'square-foundation': 'foundation', 'triangle-foundation': 'foundation_triangle', 'foundation-steps': 'foundation_steps',
+          'roof': 'roof', 'roof-triangle': 'roof_triangle'}
 OBJECTS = {
     'wooden-door': ('assets/prefabs/building/door.hinged/door.hinged.wood.prefab', None),
     'sheet-metal-door': ('assets/prefabs/building/door.hinged/door.hinged.metal.prefab', None),
@@ -80,6 +92,8 @@ def normal_from_dxt5nm(im):
 class Exporter:
     def __init__(self, env, scene, out, guids):
         self.env, self.scene, self.out, self.guids = env, scene, out, guids
+        self.conditionals = True
+        self.classes = {}
         self.textures = {}
         self.roots = {}
         for o in scene.objects.values():
@@ -156,7 +170,7 @@ class Exporter:
         ref = None if root else self.prefab_ref(comps)
         if ref is not None:
             target = self.roots.get(ref.lower())
-            if name in CONDITIONAL and target is not None:
+            if self.conditionals and name in CONDITIONAL and target is not None:
                 self.collect(target, world, items, excluded, root=True)
             return
         mf = next((c for c in comps if c.type.name == 'MeshFilter'), None)
@@ -176,6 +190,111 @@ class Exporter:
                 g = self.scene.objects.get(child.read_typetree()['m_GameObject']['m_PathID'])
                 if g is not None:
                     self.collect(g, world, items, excluded)
+
+    def cls(self, o):
+        d = o.read()
+        s = d.m_Script
+        key = (o.assets_file.name, s.file_id, s.path_id)
+        if key not in self.classes:
+            try:
+                self.classes[key] = s.read().m_ClassName
+            except Exception:
+                self.classes[key] = '?'
+        return self.classes[key]
+
+    def children(self, go):
+        tt = go.read_typetree()
+        comps = [self.scene.objects.get(c['component']['m_PathID']) for c in tt['m_Component']]
+        tr = next(c for c in comps if c is not None and c.type.name == 'Transform')
+        out = []
+        for ch in tr.read_typetree()['m_Children']:
+            c = self.scene.objects.get(ch['m_PathID'])
+            if c is not None:
+                g = self.scene.objects.get(c.read_typetree()['m_GameObject']['m_PathID'])
+                if g is not None:
+                    out.append(g)
+        return out
+
+    def behaviours(self, go):
+        out = []
+        for c in go.read_typetree()['m_Component']:
+            o = self.scene.objects.get(c['component']['m_PathID'])
+            if o is not None and o.type.name == 'MonoBehaviour':
+                try:
+                    out.append((o, self.cls(o), o.read_typetree()))
+                except Exception:
+                    pass
+        return out
+
+    def transform(self, go):
+        for c in go.read_typetree()['m_Component']:
+            o = self.scene.objects.get(c['component']['m_PathID'])
+            if o is not None and o.type.name == 'Transform':
+                return trs(o.read_typetree())
+        return np.eye(4)
+
+    def pieces(self, prefab):
+        root = self.roots.get(prefab.lower())
+        if root is None:
+            return []
+        models, owner = [], {}
+        for go in self.children(root):
+            name = go.read_typetree()['m_Name']
+            bs = self.behaviours(go)
+            model = next(((o, t) for o, c, t in bs if c == 'ConditionalModel'), None)
+            if model is None:
+                continue
+            owner[model[0].path_id] = name
+            tests = []
+            skip = False
+            for o, c, t in bs:
+                if not c.startswith('ModelConditionTest_'):
+                    continue
+                kind = c[len('ModelConditionTest_'):]
+                if kind == 'Wallpaper':
+                    if t.get('wantsWallpaper'):
+                        skip = True
+                    continue
+                test = {'type': kind}
+                for k in ('angle', 'shape', 'VariantSeed', 'VariantIndex', 'VariantCount'):
+                    if k in t:
+                        test[k] = t[k]
+                if 'reference' in t:
+                    test['ref'] = t['reference']['m_PathID']
+                if kind in ('FoundationSide', 'FoundationCornerLeft', 'FoundationCornerRight'):
+                    m = self.transform(go)
+                    test['right'] = [round(float(v), 3) for v in m[:3, 0]]
+                tests.append(test)
+            ref = self.guids.get(model[1]['prefab'].get('guid'))
+            if skip or ref is None:
+                continue
+            models.append({'name': name, 'prefab': ref, 'matrix': [round(float(v), 5) for v in self.transform(go).T.reshape(-1)], 'tests': tests})
+        for m in models:
+            for t in m['tests']:
+                if 'ref' in t:
+                    t['ref'] = owner.get(t['ref'], '?')
+        return models
+
+    def sockets(self, prefab):
+        root = self.roots.get(prefab.lower())
+        out = []
+        def walk(go, parent, path):
+            name = go.read_typetree()['m_Name']
+            world = parent @ self.transform(go)
+            here = '' if path is None else (f'{path}/{name}' if path else name)
+            for o, c, t in self.behaviours(go):
+                if c in ('ConstructionSocket', 'NeighbourSocket', 'StabilitySocket', 'CornerSocket'):
+                    s = {'name': here, 'cls': c, 'pos': [round(float(v), 4) for v in world[:3, 3]],
+                         'rot': [round(float(v), 5) for v in world[:3, :3].T.reshape(-1)],
+                         'size': [t['selectSize'][k] for k in 'xyz'], 'center': [t['selectCenter'][k] for k in 'xyz'],
+                         'male': bool(t.get('male')), 'female': bool(t.get('female'))}
+                    if c == 'ConstructionSocket':
+                        s['type'] = t['socketType']
+                    out.append(s)
+            for ch in self.children(go):
+                walk(ch, world, here)
+        walk(root, np.eye(4), None)
+        return out
 
     def find(self, go, name):
         tt = go.read_typetree()
@@ -345,13 +464,42 @@ for kind, paths in BLOCKS.items():
         options = [CORE + p.format(g=gname) for p in ([paths] if isinstance(paths, str) else paths)]
         jobs.append((f'{kind}.{grade}', next((p for p in options if p.lower() in ex.roots), options[0]), None))
 jobs += [(kind, prefab, sub) for kind, (prefab, sub) in OBJECTS.items()]
-jobs += [(f'roof-triangle-down.{grade}', [CORE + f'roof.triangle/roof.triangle.{gname}.down.prefab', CORE + f'roof.triangle/roof.triangle.{gname}.down.top.line.prefab'], None)
-         for grade, gname in GRADE_NAMES.items()]
+bases = set()
 for name, prefab, sub in jobs:
     if only and not any(name.startswith(o) for o in only):
         continue
+    ex.conditionals = name.split('.')[0] not in BLOCKS
     info = ex.export(prefab, sub, name)
-    print(name, info if info else 'НЕТ', file=sys.stderr)
+    if info:
+        bases.add(name)
+    print(name, info if info else 'нет основной части', file=sys.stderr)
+
+ex.conditionals = False
+manifest = {}
+exported = set()
+for kind, base in BASES.items():
+    if only and not any(kind.startswith(o) for o in only):
+        continue
+    entry = {'prefix': base.split('/')[-1][:-len('.prefab')], 'token': TOKENS.get(kind, kind), 'sockets': ex.sockets(CORE + base),
+             'base': {}, 'pieces': []}
+    byname = {}
+    for job, prefab, _ in jobs:
+        if not job.startswith(kind + '.') or job.count('.') != 1:
+            continue
+        grade = job.split('.')[1]
+        entry['base'][grade] = job in bases
+        for piece in ex.pieces(prefab):
+            stem = 'piece.' + piece['prefab'].split('/')[-1][:-len('.prefab')]
+            if stem not in exported:
+                exported.add(stem)
+                print(stem, ex.export(piece['prefab'], None, stem) or 'пусто', file=sys.stderr)
+            slot = byname.setdefault(piece['name'], {'name': piece['name'], 'matrix': piece['matrix'], 'tests': piece['tests'], 'model': {}})
+            slot['model'][grade] = stem
+    entry['pieces'] = list(byname.values())
+    manifest[kind] = entry
+if manifest:
+    with open(os.path.join(out, 'conditionals.json'), 'w') as f:
+        json.dump(manifest, f, ensure_ascii=False, separators=(',', ':'))
 if not only:
     used = set(ex.textures.values())
     for name in os.listdir(os.path.join(out, 'tex')):

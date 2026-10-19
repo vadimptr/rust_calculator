@@ -57,8 +57,11 @@ venv/bin/python -I tools/game-data/textures.py \
 
 # 8. Модели 3D-просмотра: блоки всех грейдов, двери, гаражная дверь, шкаф, дроп-бокс, решётки
 #    и укреплённое стекло в glTF (public/models/*.glb, текстуры в public/models/tex).
-#    Условные части блоков разрешаются по GUID из assets/manifest.asset; берутся варианты для
-#    отдельно стоящего блока (full, боковины фундамента, окантовка крыши)
+#    У блоков в glb только неусловная часть; условные куски скина (ConditionalModel: окантовка и
+#    углы крыш, треугольники и углы стен, боковины фундамента, площадка винтовой лестницы, высота
+#    пандуса) выгружаются отдельными piece.*.glb, а public/models/conditionals.json хранит для каждого
+#    вида блока куски с их тестами ModelConditionTest_* и сокеты базового префаба. Редактор считает
+#    связи сокетов и тесты так же, как сервер (src/blueprint/pieces.ts), и включает нужные куски
 venv/bin/python -I tools/game-data/models.py \
   ~/Library/Application\ Support/Steam/steamapps/common/Rust public/models
 ```

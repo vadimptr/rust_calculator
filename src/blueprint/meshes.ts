@@ -7,7 +7,7 @@ import { FLOOR_T, KINDS, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_IN
 import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
 import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
-import { gameModel } from './models.ts';
+import { gameModel, pieceManifest } from './models.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
 export const GRADE_COLORS: Record<Grade, number> = {
@@ -72,10 +72,45 @@ const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
   'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
   'ramp': { yaw: 0, offset: [-1.5, -RAMP_MALE_H.ramp!, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -RAMP_MALE_H['foundation-steps']!, 0] },
 };
-const INVERTED_TRIANGLE_ROOF: Placement = { yaw: -90 * DEG };
 const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
 };
+
+export function entityMatrix(el: ResolvedElement): number[] | null {
+  const p = BLOCK_MODELS[el.kind];
+  if (!p || el.inverted) return null;
+  const m = new THREE.Matrix4().compose(new THREE.Vector3(...el.position), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -el.rotation * DEG), new THREE.Vector3(1, 1, 1));
+  m.multiply(new THREE.Matrix4().makeTranslation(...(p.offset ?? [0, 0, 0])));
+  m.multiply(new THREE.Matrix4().makeRotationY(p.yaw));
+  return Array.from(m.elements);
+}
+
+function piecesModel(el: ResolvedElement, active: string[]): THREE.Group | null {
+  const def = pieceManifest()?.[el.kind];
+  if (!def) return null;
+  const parts: THREE.Object3D[] = [];
+  let missing = false;
+  if (def.base[el.grade]) {
+    const m = gameModel(`${el.kind}.${el.grade}`);
+    if (m) parts.push(m); else missing = true;
+  }
+  for (const name of active) {
+    const piece = def.pieces.find(p => p.name === name);
+    const stem = piece?.model[el.grade];
+    if (!piece || !stem) continue;
+    const m = gameModel(stem);
+    if (!m) { missing = true; continue; }
+    const holder = new THREE.Group();
+    holder.matrixAutoUpdate = false;
+    holder.matrix.fromArray(piece.matrix);
+    holder.add(m);
+    parts.push(holder);
+  }
+  if (missing) return null;
+  const g = new THREE.Group();
+  for (const p of parts) g.add(p);
+  return g;
+}
 
 function hideProxy(root: THREE.Object3D): void {
   root.traverse(n => { if ((n as THREE.Mesh).isMesh || (n as THREE.LineSegments).isLineSegments) n.visible = false; });
@@ -636,18 +671,21 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 }
 
 /** Построить блок; gable — фронтон для полной стены, hips — вальмы крыши (conditional.ts). */
-export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[]): THREE.Object3D {
+export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[], pieces?: string[]): THREE.Object3D {
   const g = new THREE.Group();
   const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)]
     : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
   const topFace = KINDS[el.kind].category === 'roof' ? 'roof' : 'top';
   const parts: THREE.Object3D[] = geos.map(part => gradeMesh(part, el.grade, topFace));
-  const placement = el.inverted ? (el.kind === 'roof-triangle' ? INVERTED_TRIANGLE_ROOF : undefined) : BLOCK_MODELS[el.kind];
-  const name = el.inverted ? `roof-triangle-down.${el.grade}` : `${el.kind}.${el.grade}`;
-  const model = placement && !gable && !hips?.length ? gameModel(name) : null;
-  if (model) {
+  const manifest = pieceManifest();
+  if (manifest && el.inverted) {
     for (const p of parts) hideProxy(p);
-    parts.push(placeModel(model, placement!));
+  } else if (manifest?.[el.kind] && pieces) {
+    const model = piecesModel(el, pieces);
+    if (model) {
+      for (const p of parts) hideProxy(p);
+      parts.push(placeModel(model, BLOCK_MODELS[el.kind]!));
+    }
   }
   if (el.bunker) {
     // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору

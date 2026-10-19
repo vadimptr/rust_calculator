@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
+import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
 import type { DoorAnim } from '../blueprint/meshes.ts';
-import { onModelLoaded } from '../blueprint/models.ts';
+import { onModelLoaded, pieceManifest } from '../blueprint/models.ts';
+import { activePieces } from '../blueprint/pieces.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
@@ -96,6 +97,7 @@ interface SceneRefs {
   ghostKey: string;
   /** Стабильность блоков текущей сцены (0..1). */
   stability: Map<string, number>;
+  pieces: Map<string, string[]>;
   ghostStab: number;
   /** Подпись в углу сцены: стабильность наведённого блока или призрака. */
   label: HTMLDivElement;
@@ -120,6 +122,14 @@ function ghostify(o: THREE.Object3D, mat: THREE.Material): THREE.Object3D {
   });
   return o;
 }
+
+function piecesWith(resolved: Resolved, extra: ResolvedElement): string[] | undefined {
+  const m = pieceManifest();
+  if (!m) return undefined;
+  return activePieces(m, { elements: [...resolved.elements.filter(e => e.id !== extra.id), extra], deployables: [] }, entityMatrix).get(extra.id);
+}
+
+const EMPTY: Resolved = { elements: [], deployables: [] };
 
 function doorOwner(door: THREE.Object3D): THREE.Object3D | null {
   let owner: THREE.Object3D | null = door;
@@ -228,7 +238,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
       raid: new RaidOverlay(content, scene), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
-      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), ghostStab: 1, label,
+      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
 
@@ -298,7 +308,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const st = state.ghostStab;
       label.textContent = st < COLLAPSE ? `Обрушится: стабильность ${Math.round(st * 100)}%` : `Стабильность ${Math.round(st * 100)}%`;
       if (st < COLLAPSE) label.className = 'viewer3d__label viewer3d__label--bad';
-      showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
+      showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable, undefined, piecesWith(cur ?? EMPTY, el)), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
       return true;
     };
 
@@ -336,7 +346,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (ed.tool !== 'build' || !KINDS[ed.kind].isFoundation) return none();
         const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };
         host.dataset.hover = 'ground';
-        return showGhost(`root|${ed.kind}`, { type: 'root', kind: ed.kind }, () => ghostify(buildElement(el), GHOST_MAT));
+        return showGhost(`root|${ed.kind}`, { type: 'root', kind: ed.kind }, () => ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), GHOST_MAT));
       }
       const hit = pick();
       // Фундаменты, съезды и ступени ставятся как в игре — прицелом в землю рядом с постройкой: хозяином
@@ -360,7 +370,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (st !== undefined) label.textContent = `${hit.id}: стабильность ${Math.round(st * 100)}%`;
         const mat = HAMMER_MAT;
         return showGhost(`hammer|${hit.id}`, { type: 'hammer', id: hit.id, deployable: hit.deployable }, () => ghostify(
-          hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!, gableWalls(res).get(hit.id)), mat));
+          hit.deployable ? buildDeployable(res.deployables.find(d => d.id === hit.id)!) : buildElement(res.elements.find(e => e.id === hit.id)!, gableWalls(res).get(hit.id), undefined, state.pieces.get(hit.id)), mat));
       }
       if (hit.deployable) return none();
       const hostEl = res.elements.find(e => e.id === hit.id);
@@ -605,9 +615,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     s.stability = computeStability(resolved);
     const gables = gableWalls(resolved);
     const hips = hipRoofs(resolved);
-    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id)));
+    const manifest = pieceManifest();
+    s.pieces = manifest ? activePieces(manifest, resolved, entityMatrix) : new Map();
+    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id), s.pieces.get(el.id)));
     // угловые стойки стен: без id, клик проходит сквозь них к стенам
-    for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
+    if (!manifest) for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
     // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
