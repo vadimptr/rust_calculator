@@ -1,55 +1,18 @@
 /**
- * Радиальное меню стройки: кольцо сегментов с крупными картинками, выбранный сегмент подсвечен,
- * его подпись — мелко у картинки и в центре.
+ * Радиальное меню стройки как PieMenu игры: тёмное кольцо с иконками, выбранный сегмент светлее,
+ * в центре название и описание.
  */
 import React from 'react';
 
-export interface RadialMenuItem { id: string; label: string; short?: string }
+export interface RadialMenuItem { id: string; label: string; short?: string; img?: string; desc?: string; mono?: boolean }
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
-const F = (o = 0.25) => ({ fill: 'currentColor', fillOpacity: o });
 
-const DOOR_FILL: Record<string, string> = { wooden: '#c79a64', 'sheet-metal': '#b0643a', armored: '#6f757d', garage: '#b0643a' };
-
-/** Пиктограммы 24×24 для конструкций, объектов и действий киянки. */
 function Pict({ id }: { id: string }) {
   switch (id) {
-    case 'square-foundation': return <g {...S}><path d="M3 10l9-4 9 4-9 4z" {...F()} /><path d="M3 10v4l9 4 9-4v-4M12 14v4" /></g>;
-    case 'triangle-foundation': return <g {...S}><path d="M4 11l14-4-4 8z" {...F()} /><path d="M4 11v3l10 4v-3M18 7v3l-4 8" /></g>;
-    case 'foundation-steps': return <g {...S}><path d="M3 20h18V8h-5v4h-5v4H6v4" {...F()} /></g>;
-    case 'ramp': return <g {...S}><path d="M3 19h18V9z" {...F()} /></g>;
-    case 'wall': return <g {...S}><rect x="4" y="4" width="16" height="16" {...F()} /><path d="M4 9h16M4 14h16M10 4v5M15 9v5M10 14v6" opacity="0.6" /></g>;
-    case 'half-wall': return <g {...S}><rect x="4" y="12" width="16" height="8" {...F()} /><path d="M4 16h16M10 12v4M15 16v4" opacity="0.6" /><path d="M4 4v8M20 4v8" opacity="0.3" /></g>;
-    case 'low-wall': return <g {...S}><rect x="4" y="15" width="16" height="5" {...F()} /><path d="M4 4v11M20 4v11" opacity="0.3" /></g>;
-    case 'doorway': return <g {...S}><path d="M4 20V4h16v16h-5V9H9v11z" {...F()} /></g>;
-    case 'window-frame': return <g {...S}><path d="M4 4h16v16H4z" {...F()} /><rect x="7.5" y="8" width="9" height="6" fill="#161412" /></g>;
-    case 'wall-frame': return <g {...S}><path d="M4 20V4h16v16h-2V6H6v14z" {...F()} /></g>;
-    case 'square-floor': return <g {...S}><path d="M3 12l9-5 9 5-9 5z" {...F()} /></g>;
-    case 'triangle-floor': return <g {...S}><path d="M3 14l16-5-5 9z" {...F()} /></g>;
-    case 'floor-frame': return <g {...S}><path d="M3 12l9-5 9 5-9 5z" {...F()} /><path d="M8 12l4-2.2 4 2.2-4 2.2z" fill="#161412" /></g>;
-    case 'triangle-floor-frame': return <g {...S}><path d="M3 14l16-5-5 9z" {...F()} /><path d="M9 13.5l5-1.5-1.5 2.8z" fill="#161412" /></g>;
-    case 'stairs-l-shape': return <g {...S}><path d="M4 20h7v-4h3v-4h3V8h3V4" /><path d="M4 20V14h3" opacity="0.6" /></g>;
-    case 'u-shaped-stairs': return <g {...S}><path d="M3 20h5v-4h3v-4" /><path d="M21 4h-5v4h-3v4" /><path d="M11 12h2" /></g>;
-    case 'spiral-stairs': return <g {...S}><circle cx="12" cy="12" r="1.5" {...F(0.6)} /><path d="M12 12c0-4 6-4 6 0s-5 7-9 4-2-10 3-11" /></g>;
-    case 'roof': return <g {...S}><path d="M3 19l12-12h4L7 19z" {...F()} /><path d="M3 19h4" /></g>;
-    case 'roof-triangle': return <g {...S}><path d="M4 18l8-12 8 12z" {...F()} /><path d="M12 6v12" opacity="0.5" /></g>;
-    case 'tool-cupboard': return <g {...S}><rect x="6" y="3" width="12" height="18" rx="1" {...F()} /><path d="M6 12h12M10 7.5h4M10 16h4" /></g>;
-    case 'drop-box': return <g {...S}><rect x="5" y="9" width="14" height="9" fill="#2f6fd6" fillOpacity="0.6" /><path d="M12 3v8M9 8l3 3 3-3" /></g>;
-    case 'strengthened-glass-window': return <g {...S}><rect x="4" y="6" width="16" height="12" fill="#9fd3e6" fillOpacity="0.35" /><path d="M8 15l5-6M12 16l4-5" opacity="0.7" /></g>;
-    case 'reinforced-glass-window': return <g {...S}><rect x="4" y="6" width="16" height="12" fill="#7fb6cc" fillOpacity="0.5" /><path d="M4 12h16M12 6v12" /></g>;
-    case 'metal-window-bars': return <g {...S}><rect x="4" y="6" width="16" height="12" /><path d="M8 6v12M12 6v12M16 6v12" /></g>;
     case 'twig': return <g {...S}><path d="M5 19L18 6M9 15l-3-5M13 11l5 2M15 9l-1-5" /></g>;
     case 'remove': return <g {...S} stroke="#ff7a6b" strokeWidth={2.2}><path d="M6 6l12 12M18 6L6 18" /></g>;
-    default: {
-      const m = /^(wooden|sheet-metal|armored)-(double-)?door$|^garage-door$/.exec(id);
-      if (m) {
-        const fill = id === 'garage-door' ? DOOR_FILL.garage : DOOR_FILL[m[1]];
-        if (id === 'garage-door') return <g {...S}><rect x="4" y="4" width="16" height="16" fill={fill} fillOpacity="0.8" /><path d="M4 8h16M4 12h16M4 16h16" opacity="0.7" /></g>;
-        if (m[2]) return <g {...S}><rect x="4" y="3" width="8" height="18" fill={fill} fillOpacity="0.8" /><rect x="12" y="3" width="8" height="18" fill={fill} fillOpacity="0.8" /><circle cx="10.5" cy="12" r="0.8" fill="currentColor" /><circle cx="13.5" cy="12" r="0.8" fill="currentColor" /></g>;
-        return <g {...S}><rect x="7" y="3" width="10" height="18" fill={fill} fillOpacity="0.8" /><circle cx="14.5" cy="12" r="0.9" fill="currentColor" /></g>;
-      }
-      return <g {...S}><rect x="5" y="5" width="14" height="14" /></g>;
-    }
+    default: return <g {...S}><rect x="5" y="5" width="14" height="14" /></g>;
   }
 }
 
@@ -86,18 +49,21 @@ const RadialMenu: React.FC<Props> = ({ x, y, items, sel, title, outer }) => {
       </svg>
       {items.map((it, i) => {
         const a = i * step;
-        const img = GRADE_IMG[it.id];
+        const img = it.img ?? GRADE_IMG[it.id];
         return (
           <div key={it.id} className={`radial__icon${i === sel ? ' radial__icon--sel' : ''}`}
             style={{ transform: `translate(-50%, -50%) translate(${Math.sin(a) * mid}px, ${-Math.cos(a) * mid}px)` }}>
             {img
-              ? <img src={img} alt="" width={icon} height={icon} />
+              ? <img src={img} alt="" width={icon} height={icon} className={it.mono ? 'radial__mono' : undefined} />
               : <svg width={icon} height={icon} viewBox="0 0 24 24"><Pict id={it.id} /></svg>}
             {i === sel && <span className="radial__caption">{it.short ?? it.label}</span>}
           </div>
         );
       })}
-      <div className="radial__center">{sel >= 0 ? items[sel].label : title}</div>
+      <div className="radial__center">
+        <div className="radial__title">{sel >= 0 ? items[sel].label : title}</div>
+        {sel >= 0 && items[sel].desc && <div className="radial__desc">{items[sel].desc}</div>}
+      </div>
     </div>
   );
 };

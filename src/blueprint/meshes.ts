@@ -3,7 +3,7 @@
  * Локальный +x стены — её внешняя нормаль; ячейка центрирована в начале координат.
  */
 import * as THREE from 'three';
-import { FLOOR_T, KINDS, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, KINDS, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
 import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
@@ -70,7 +70,7 @@ const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
   'wall': WALL, 'half-wall': WALL, 'low-wall': WALL, 'doorway': WALL, 'window-frame': WALL, 'wall-frame': WALL,
   'stairs-l-shape': { yaw: 0 }, 'u-shaped-stairs': { yaw: 0 }, 'spiral-stairs': { yaw: 0 },
   'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
-  'ramp': { yaw: 0, offset: [-1.5, -0.77, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -1.54, 0] },
+  'ramp': { yaw: 0, offset: [-1.5, -RAMP_MALE_H.ramp!, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -RAMP_MALE_H['foundation-steps']!, 0] },
 };
 const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
@@ -661,13 +661,12 @@ export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 
   return place(g, el.position, el.rotation);
 }
 
-/** Дроп-бокс на стене: синий ящик на стороне загрузки и стрелка направления передачи сквозь стену. */
 /** Дроп-бокс: сквозь стену, выступает с обеих сторон. Размеры: вдоль стены × высота × глубина. */
 const DROP_W = 0.8;
 const DROP_H = 0.6;
 const DROP_D = WALL_T + 2 * 0.3;
 
-/** Дроп-бокс: синий ящик сквозь стену и короткая стрелка направления передачи, начинающаяся внутри ящика. */
+/** Дроп-бокс: ящик сквозь стену, щелью к стороне загрузки. */
 function buildDropBox(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
   const front = objectMaterial('drop-box', 'front'), back = objectMaterial('drop-box', 'back');
@@ -680,22 +679,6 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
     g.add(placeModel(model, { yaw: (loadOutside ? 1 : -1) * OBJECT_YAW['drop-box']! }));
   }
   g.add(proxy);
-  // out: из −x (внутри) в +x (снаружи); in — наоборот. Стрелка от середины ящика чуть за его грань
-  const toward = d.direction === 'in' ? -1 : 1;
-  const arrowLen = DROP_D / 2 + 0.12;
-  const arrowMat = new THREE.MeshBasicMaterial({ color: 0x8fc2ff, depthTest: false, transparent: true, opacity: 0.95 });
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, arrowLen, 10), arrowMat);
-  shaft.rotation.z = Math.PI / 2;
-  shaft.position.set(toward * arrowLen / 2, 0, 0);
-  shaft.renderOrder = 12;
-  shaft.userData.keepMaterial = true; // у призрака стрелка остаётся своей, видно направление
-  g.add(shaft);
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 12), arrowMat);
-  tip.rotation.z = toward === 1 ? -Math.PI / 2 : Math.PI / 2;
-  tip.position.set(toward * (arrowLen + 0.1), 0, 0);
-  tip.renderOrder = 12;
-  tip.userData.keepMaterial = true;
-  g.add(tip);
   return g;
 }
 
@@ -716,7 +699,7 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
     g.add(proxy);
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
-    if (d.kind !== 'strengthened-glass-window') g = withModel(g, d.kind, 0);
+    g = withModel(g, d.kind, 0);
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);

@@ -11,7 +11,7 @@
  * каждое ребро (верх стены, соседний пол, конёк крыши); крыши — её низкое ребро; лестницы — ячейка
  * под ней.
  */
-import { KINDS, RAMP_DROP, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
+import { BLOCK_FEMALE_Y, KINDS, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedElement } from './types.ts';
 
 /** Коэффициенты `support` из префабов игры (2026-09). */
@@ -75,7 +75,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
     const info = KINDS[e.kind];
     if (info.isFoundation) { out.set(e.id, null); continue; }
     if (info.category === 'ramp') {
-      const under = cellAt.get(key([e.position[0], e.position[1] - RAMP_DROP[e.kind]!, e.position[2]]));
+      const under = cellAt.get(key([e.position[0], e.position[1] - BLOCK_FEMALE_Y - RAMP_MALE_H[e.kind]!, e.position[2]]));
       out.set(e.id, under?.length ? [{ factor: SUPPORT.stairs, candidates: under }] : null);
       continue;
     }

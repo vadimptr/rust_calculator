@@ -14,7 +14,7 @@ test('new blueprint: one twig foundation; walls snap to its four edges, nearest 
   const bp = newBlueprint();
   const resolved = resolveBlueprint(bp).resolved;
   const walls = candidatePlacements(bp, resolved, 'wall', 'f1');
-  assert.equal(walls.length, 4);
+  assert.equal(walls.length, 8); // 4 ребра × две стороны (rotationDegrees 180 у wall-male)
   const near = placementsNear(bp, resolved, 'wall', 'f1', [1.4, 1, 0.2]);
   assert.deepEqual(near[0].attach, { to: 'f1', socket: 'edge:0' });
   // соседний фундамент — тоже четыре варианта, съезд — четыре, лестница на top — четыре поворота
@@ -25,13 +25,13 @@ test('new blueprint: one twig foundation; walls snap to its four edges, nearest 
   assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'f1').length, 0);
 });
 
-test('placing a wall occupies the edge: the next wall has three options; floors on a wall top come on both sides', () => {
+test('placing a wall occupies the edge: the next wall has three edges, two sides each; floors on a wall top come on both sides', () => {
   let bp = newBlueprint();
   let resolved = resolveBlueprint(bp).resolved;
   const w = placementsNear(bp, resolved, 'wall', 'f1', [1.5, 1, 0])[0];
   bp = addElement(bp, 'wall', w.attach, 'stone');
   resolved = resolveBlueprint(bp).resolved;
-  assert.equal(candidatePlacements(bp, resolved, 'wall', 'f1').length, 3);
+  assert.equal(candidatePlacements(bp, resolved, 'wall', 'f1').length, 6); // 3 свободных ребра × две стороны
   assert.equal(bp.elements[1].id, 'w1');
   assert.equal(bp.elements[1].grade, 'stone');
   const floors = candidatePlacements(bp, resolved, 'square-floor', 'w1');
@@ -119,16 +119,15 @@ test('removing a foundation keeps a doorway on the shared edge: it re-attaches t
     const a = before.elements.find(e => e.id === id)!, b = r.resolved.elements.find(e => e.id === id)!;
     assert.deepEqual(b.position, a.position, id);
   }
-  // пол: та же плита, тот же поворот; проём и стена над ним развёрнуты на 180°
+  // проём переподключается той же стороной (вариант с flip), поэтому пол, проём, дверь и дроп-бокс не меняются
   assert.equal(r.resolved.elements.find(e => e.id === 'c1')!.rotation, before.elements.find(e => e.id === 'c1')!.rotation);
-  assert.equal((r.resolved.elements.find(e => e.id === 'dw1')!.rotation + 180) % 360, before.elements.find(e => e.id === 'dw1')!.rotation);
-  // дверь на месте, петли и открывание компенсированы (в мире открывается в ту же сторону)
+  assert.equal(((r.resolved.elements.find(e => e.id === 'dw1')!.rotation % 360) + 360) % 360, ((before.elements.find(e => e.id === 'dw1')!.rotation % 360) + 360) % 360);
   const door = after.deployables!.find(d => d.id === 'd1')!;
-  assert.equal(door.hinge, 'right');
-  assert.equal(door.opens, 'inward');
+  assert.equal(door.hinge, 'left');
+  assert.equal(door.opens, 'outward');
   const box = after.deployables!.find(d => d.id === 'box1')!;
-  assert.equal(box.direction, 'in');
-  assert.deepEqual(box.offset, [-0.8, 1.3]);
+  assert.equal(box.direction, 'out');
+  assert.deepEqual(box.offset, [0.8, 1.3]);
   assert.deepEqual(r.resolved.deployables.find(d => d.id === 'box1')!.position, before.deployables.find(d => d.id === 'box1')!.position);
 });
 

@@ -855,10 +855,23 @@
 ],
 "build": [
 "floor",
+"floor.frame",
+"floor.triangle",
+"floor.triangle.frame",
 "foundation",
+"foundation.steps",
+"foundation.triangle",
 "ramp",
 "roof",
+"roof.triangle",
+"stairs_l",
 "stairs_spiral",
-"wall"
+"stairs_u",
+"wall",
+"wall.doorway",
+"wall.frame",
+"wall.half",
+"wall.low",
+"wall.window"
 ]
 }

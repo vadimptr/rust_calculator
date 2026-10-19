@@ -3,7 +3,7 @@
  * Попутно проверяет структурные правила V01–V05 и V11; без них геометрия не считается.
  */
 import {
-  KINDS, RAMP_DROP, ROOF_RISE, SPIRAL_H, apothem, canAttach, defaultSelfSocket, edgeAngle,
+  BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, defaultSelfSocket, edgeAngle,
   edgeIndex, openingAccepts, socketsOf, wallHeight,
 } from './catalog.ts';
 import type {
@@ -81,10 +81,10 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
   // Стена-тип на ребро ячейки
   if (p.category === 'cell' && edgeIndex(a.socket) !== null && c.category === 'wallType') {
     const k = edgeIndex(a.socket)!;
-    const rot = parent.rotation + edgeAngle(p.shape!, k);
-    const [nx, nz] = dir(rot);
+    const normal = parent.rotation + edgeAngle(p.shape!, k);
+    const [nx, nz] = dir(normal);
     const d = apothem(p.shape!);
-    return { position: [px + d * nx, py, pz + d * nz], rotation: rot, level: parent.level };
+    return { position: [px + d * nx, py, pz + d * nz], rotation: normal + (a.flip ? 180 : 0), level: parent.level };
   }
 
   // Высокий край крыши — как верх стены высотой ROOF_RISE, развёрнутой от ската
@@ -96,7 +96,7 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
 
   // Съезд или ступени в саму ячейку (сокет Block у пола и фундамента): поднимаются от её верха
   if (p.category === 'cell' && a.socket === 'top' && c.category === 'ramp') {
-    return { position: [px, py + RAMP_DROP[child.kind]!, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
+    return { position: [px, py + BLOCK_FEMALE_Y + RAMP_MALE_H[child.kind]!, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
   }
 
   // Следующий съезд от нижнего края съезда или ступеней
@@ -138,7 +138,7 @@ function onTop(parent: Placed, h: number, child: Element, selfSocket: Socket): T
 
   // Стена-тип на верх стены-типа
   if (c.category === 'wallType') {
-    return { position: [px, py + h, pz], rotation: parent.rotation, level: parent.level + h / 3 };
+    return { position: [px, py + h, pz], rotation: parent.rotation + (a.flip ? 180 : 0), level: parent.level + h / 3 };
   }
 
   // Пол / крыша ребром на верх стены

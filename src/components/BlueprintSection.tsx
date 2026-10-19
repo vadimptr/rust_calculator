@@ -118,10 +118,36 @@ const SHORT_LABELS: Record<string, string> = {
   'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
 };
 
+const BUILD_ICONS: Record<ElementKind, string> = {
+  'square-foundation': 'foundation', 'triangle-foundation': 'foundation.triangle', 'foundation-steps': 'foundation.steps', 'ramp': 'ramp',
+  'square-floor': 'floor', 'triangle-floor': 'floor.triangle', 'floor-frame': 'floor.frame', 'triangle-floor-frame': 'floor.triangle.frame',
+  'wall': 'wall', 'doorway': 'wall.doorway', 'window-frame': 'wall.window', 'wall-frame': 'wall.frame', 'half-wall': 'wall.half', 'low-wall': 'wall.low',
+  'stairs-l-shape': 'stairs_l', 'u-shaped-stairs': 'stairs_u', 'spiral-stairs': 'stairs_spiral', 'roof': 'roof', 'roof-triangle': 'roof.triangle',
+};
+
+const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
+  'square-foundation': 'Каждому дому нужен фундамент', 'triangle-foundation': 'Каждому дому нужен фундамент',
+  'foundation-steps': 'Пристраиваются к фундаменту или ставятся на пол: подъём на уровень выше', 'ramp': 'Пандус для техники',
+  'square-floor': 'Пол или потолок — смотря где стоишь', 'triangle-floor': 'Пол или потолок — смотря где стоишь',
+  'floor-frame': 'Рама, в которую ставятся люки и решётки', 'triangle-floor-frame': 'Треугольная рама для люков и решёток',
+  'wall': 'Защити базу, обнеся её стенами', 'doorway': 'Проход в комнату через дверь',
+  'window-frame': 'Проём в стене для оконных решёток и стекла', 'wall-frame': 'Рама для гаражной и двойных дверей',
+  'half-wall': 'Половина высоты обычной стены', 'low-wall': 'Треть высоты обычной стены',
+  'stairs-l-shape': 'Лестница буквой Г', 'u-shaped-stairs': 'Лестница буквой П',
+  'spiral-stairs': 'Винтовая лестница на половину высоты блока', 'roof': 'Шапка для твоего дома', 'roof-triangle': 'Шапка для твоего дома',
+};
+
+const DEPLOY_ICONS: Record<DeployableKind, string> = {
+  'wooden-door': 'door.hinged.wood', 'sheet-metal-door': 'door.hinged.metal', 'armored-door': 'door.hinged.toptier',
+  'wooden-double-door': 'door.double.hinged.wood', 'sheet-metal-double-door': 'door.double.hinged.metal', 'armored-double-door': 'door.double.hinged.toptier',
+  'garage-door': 'wall.frame.garagedoor', 'strengthened-glass-window': 'wall.window.glass.reinforced', 'reinforced-glass-window': 'wall.window.bars.toptier',
+  'metal-window-bars': 'wall.window.bars.metal', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
+};
+
 /** Радиальные меню: блоки строительного плана, объекты, апгрейд и снос киянкой. */
 const RADIAL: Record<EditorTool, RadialItem[]> = {
-  build: BUILD_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
-  deploy: DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
+  build: BUILD_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/build/${BUILD_ICONS[k]}.webp`, desc: BUILD_DESCRIPTIONS[k], mono: true })),
+  deploy: DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/items/${DEPLOY_ICONS[k]}.webp` })),
   hammer: [
     { id: 'twig', label: 'Ветки' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
     { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'remove', label: 'Снести' },

@@ -1,6 +1,7 @@
 """Copy game icons used by the docs from a Rust client install. Usage: icons.py <Rust client dir> <docs/game dir> <public/icons dir>"""
 import sys, os, re, json, glob
-import UnityPy
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lazybundle
 from PIL import Image, ImageChops
 
 SIZE = 96
@@ -15,8 +16,13 @@ bundles = os.path.join(client, 'Bundles')
 items_dir = os.path.join(bundles, 'items')
 available_items = {f[:-4] for f in os.listdir(items_dir) if f.endswith('.png') and ' ' not in f}
 
-UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined'}
-wanted = {'items': set(UI_ITEMS), 'ui': set(), 'build': set()}
+UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined', 'door.hinged.wood', 'door.hinged.metal', 'door.hinged.toptier',
+            'door.double.hinged.wood', 'door.double.hinged.metal', 'door.double.hinged.toptier', 'wall.frame.garagedoor',
+            'wall.window.glass.reinforced', 'wall.window.bars.toptier', 'wall.window.bars.metal', 'cupboard.tool', 'dropbox'}
+UI_BUILD = {'foundation', 'foundation.triangle', 'foundation.steps', 'ramp', 'floor', 'floor.triangle', 'floor.frame',
+            'floor.triangle.frame', 'wall', 'wall.doorway', 'wall.window', 'wall.frame', 'wall.half', 'wall.low',
+            'stairs_l', 'stairs_u', 'stairs_spiral', 'roof', 'roof.triangle'}
+wanted = {'items': set(UI_ITEMS), 'ui': set(), 'build': set(UI_BUILD)}
 for path in glob.glob(os.path.join(docs, 'pages', '*.md')):
     text = open(path, encoding='utf8').read()
     explicit = ICON_FIELD_RE.findall(text) + SCHEME_ICON_RE.findall(text)
@@ -69,7 +75,7 @@ for name in sorted(wanted['items']):
 shared = os.path.join(bundles, 'shared')
 
 if wanted['ui']:
-    env = UnityPy.load(os.path.join(shared, 'textures.0.bundle'))
+    env = lazybundle.load(os.path.join(shared, 'textures.0.bundle'))
     bundle = next(o for o in env.objects if o.type.name == 'AssetBundle')
     by_id = {}
     for path, info in bundle.read_typetree()['m_Container']:
@@ -81,11 +87,13 @@ if wanted['ui']:
             save(o.read().image, 'ui', by_id[o.path_id], tint=True)
 
 if wanted['build']:
-    env = UnityPy.load(*[os.path.join(shared, f) for f in ('content.bundle', 'textures.0.bundle', 'textures.2.bundle')])
+    env = lazybundle.load(*[os.path.join(shared, f) for f in ('assetscenes.bundle', 'content.bundle', 'textures.0.bundle', 'textures.2.bundle')])
     classes = {}
     done = set()
     for o in env.objects:
         if o.type.name != 'MonoBehaviour':
+            continue
+        if 'AssetScene-' in o.assets_file.name and not o.assets_file.name.endswith('AssetScene-prefabs'):
             continue
         try:
             d = o.read()

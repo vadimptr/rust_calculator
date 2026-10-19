@@ -11,11 +11,11 @@ import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKin
 
 export const GRADES: Grade[] = ['twig', 'wood', 'stone', 'metal', 'armored'];
 
-/** Строительный план Rust: все конструкции, по группам, как в игровом меню. */
+/** Строительный план Rust: все конструкции в порядке игрового меню (Construction.info.order). */
 export const BUILD_PLAN: { group: string; kinds: ElementKind[] }[] = [
   { group: 'Фундаменты', kinds: ['square-foundation', 'triangle-foundation', 'foundation-steps', 'ramp'] },
-  { group: 'Стены', kinds: ['wall', 'half-wall', 'low-wall', 'doorway', 'window-frame', 'wall-frame'] },
   { group: 'Полы', kinds: ['square-floor', 'triangle-floor', 'floor-frame', 'triangle-floor-frame'] },
+  { group: 'Стены', kinds: ['wall', 'doorway', 'window-frame', 'wall-frame', 'half-wall', 'low-wall'] },
   { group: 'Лестницы', kinds: ['stairs-l-shape', 'u-shaped-stairs', 'spiral-stairs'] },
   { group: 'Крыши', kinds: ['roof', 'roof-triangle'] },
 ];
@@ -168,7 +168,7 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
       // две стороны: пол или крыша на верху стены — по обе стороны; крыша на ребре ячейки — наружу и внутрь
       const twoSided = (((KINDS[host.kind].category === 'wallType' && socket === 'top') || (KINDS[host.kind].category === 'roof' && socket === 'edge:2')) && KINDS[kind].category !== 'wallType')
         || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
-      const flips = twoSided ? [false, true] : [false];
+      const flips = twoSided || KINDS[kind].category === 'wallType' ? [false, true] : [false];
       const turnsList = KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;

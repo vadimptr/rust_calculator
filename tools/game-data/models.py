@@ -46,7 +46,8 @@ OBJECTS = {
     'tool-cupboard': ('assets/prefabs/deployable/tool cupboard/cupboard.tool.deployed.prefab', None),
     'drop-box': ('assets/prefabs/deployable/dropbox/dropbox.deployed.prefab', None),
     'metal-window-bars': ('assets/prefabs/building/wall.window.bars/wall.window.bars.metal.prefab', None),
-    'reinforced-glass-window': ('assets/prefabs/building/wall.window.reinforcedglass/wall.window.glass.reinforced.prefab', None),
+    'strengthened-glass-window': ('assets/prefabs/building/wall.window.reinforcedglass/wall.window.glass.reinforced.prefab', None),
+    'reinforced-glass-window': ('assets/prefabs/building/wall.window.bars/wall.window.bars.toptier.prefab', None),
 }
 SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3', 'destruct', 'debris', 'fade', 'wallpaper')
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',
@@ -119,10 +120,13 @@ class Exporter:
         elif '_ALPHATEST_ON' in keywords or 'cutout' in shader.lower() or 'twig' in mat.m_Name.lower():
             out['cutoff'] = float(floats.get('_Cutoff', 0.5))
         alpha = 'blend' in out or 'cutoff' in out
-        if main is not None and main.m_Texture.path_id:
-            out['map'] = self.texture(main.m_Texture, 'color', alpha)
-        if bump is not None and bump.m_Texture.path_id:
-            out['normal'] = self.texture(bump.m_Texture, 'normal')
+        for key, ptr, kind in (('map', main, 'color'), ('normal', bump, 'normal')):
+            if ptr is None or not ptr.m_Texture.path_id:
+                continue
+            try:
+                out[key] = self.texture(ptr.m_Texture, kind, alpha and kind == 'color')
+            except FileNotFoundError:
+                pass
         return out
 
     def prefab_ref(self, comps):
@@ -206,7 +210,10 @@ class Exporter:
         for world, mf, mr in items:
             if mr.path_id in excluded:
                 continue
-            mesh = mf.read().m_Mesh.read()
+            try:
+                mesh = mf.read().m_Mesh.read()
+            except FileNotFoundError:
+                continue
             h = MeshHandler(mesh)
             h.process()
             if not h.m_Vertices or not h.m_UV0:
