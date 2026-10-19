@@ -245,6 +245,23 @@
         "root": {
           "const": true,
           "description": "Корневой фундамент: ячейка, на которой стоит шкаф. Ровно один на документ (единственность проверяет валидатор, V02)."
+        },
+        "origin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "position",
+            "rotation"
+          ],
+          "description": "Только для корня: положение и поворот корневого фундамента в мире. Без поля корень стоит в начале координат без поворота.",
+          "properties": {
+            "position": {
+              "$ref": "#/$defs/Vec3"
+            },
+            "rotation": {
+              "type": "number"
+            }
+          }
         }
       },
       "oneOf": [
@@ -261,7 +278,8 @@
             "attach"
           ],
           "properties": {
-            "root": false
+            "root": false,
+            "origin": false
           }
         }
       ],

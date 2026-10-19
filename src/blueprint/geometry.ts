@@ -273,7 +273,8 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   // Обход от корня
   const placed = new Map<string, Placed>();
   const root = roots[0];
-  const queue: Placed[] = [{ el: root, position: [0, 0, 0], rotation: 0, level: 0 }];
+  const origin = root.origin ?? { position: [0, 0, 0] as [number, number, number], rotation: 0 };
+  const queue: Placed[] = [{ el: root, position: [...origin.position], rotation: origin.rotation, level: origin.position[1] / 3 }];
   placed.set(root.id, queue[0]);
   while (queue.length > 0) {
     const cur = queue.shift()!;

@@ -59,6 +59,7 @@ export interface Element {
   kind: ElementKind;
   grade?: Grade;
   root?: true;
+  origin?: { position: [number, number, number]; rotation: number };
   attach?: Attach;
   /** Крыша-затвор роф-бункера: хозяин убирает её, ломая опору. Только для крыш. */
   bunker?: boolean;

@@ -11,18 +11,19 @@ import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolv
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { aimDistance, deployPlacement, placementAnchor, placementsNear } from '../blueprint/editor.ts';
+import { aimDistance, deployPlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
+import type { RadialMenuItem } from './RadialMenu';
 
 export type CameraMode = 'orbit' | 'fly';
 
 export type EditorTool = 'build' | 'deploy' | 'hammer' | 'view';
 
 /** Пункт радиального меню. */
-export interface RadialItem { id: string; label: string; /** Короткая подпись в кольце; полная — в центре. */ short?: string }
+export type RadialItem = RadialMenuItem;
 
 /** Режим стройки: что в руках и куда сообщать о действиях. blueprint = null — пустой участок. */
 export interface EditorState {
@@ -224,10 +225,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     grid.position.y = -0.59;
     scene.add(grid);
 
+    const world = new THREE.Group();
+    world.scale.z = -1;
+    scene.add(world);
     const content = new THREE.Group();
-    scene.add(content);
+    world.add(content);
     const ghost = new THREE.Group();
-    scene.add(ghost);
+    world.add(ghost);
     const label = document.createElement('div');
     label.className = 'viewer3d__label';
     host.appendChild(label);
@@ -237,7 +241,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
 
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
-      raid: new RaidOverlay(content, scene), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
+      raid: new RaidOverlay(content, world), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
@@ -247,7 +251,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const ndc = fly.isLocked ? new THREE.Vector2(0, 0) : state.pointer;
       if (!ndc) return null;
       // сцена могла быть только что перестроена: мировые матрицы новых мешей ещё не посчитаны
-      content.updateMatrixWorld(true);
+      world.updateMatrixWorld(true);
       state.raycaster.setFromCamera(ndc, camera);
       const hits = state.raycaster.intersectObjects(content.children, true);
       for (const h of hits) {
@@ -257,7 +261,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         while (o && o.userData.id === undefined) o = o.parent;
         if (!o || !(o as THREE.Mesh).visible) continue;
         const deployable = o.userData.open !== undefined || !(o.userData.kind in KINDS);
-        return { id: o.userData.id as string, deployable, point: h.point };
+        return { id: o.userData.id as string, deployable, point: world.worldToLocal(h.point.clone()) };
       }
       return null;
     };
@@ -277,7 +281,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (!ndc) return null;
       state.raycaster.setFromCamera(ndc, camera);
       const p = new THREE.Vector3();
-      return state.raycaster.ray.intersectPlane(GROUND_PLANE, p) ? p : null;
+      return state.raycaster.ray.intersectPlane(GROUND_PLANE, p) ? world.worldToLocal(p) : null;
     };
 
     /** Выбрать размещение, ближайшее к точке прицела (с гистерезисом и перебором по R), и показать призрак. */
@@ -426,9 +430,10 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const ed = editorRef.current;
       if (!ed) return;
       if (ed.tool === 'view') return;
-      const items = ed.radial[ed.tool];
       if (ed.tool === 'hammer') { refreshGhost(); if (state.pending?.type !== 'hammer') return; }
       const p = state.pending;
+      const target = p?.type === 'hammer' && !p.deployable ? ed.blueprint?.elements.find(e => e.id === p.id) : undefined;
+      const items = ed.radial[ed.tool].filter(it => it.id !== 'rotate' || (target && !target.root && rotatable(target.kind)));
       const r: RadialState = { x, y, items, sel: -1, tool: ed.tool, targetId: p?.type === 'hammer' ? p.id : null, targetDeployable: p?.type === 'hammer' ? p.deployable : false };
       radialRef.current = r; setRadial(r);
       fly.pointerSpeed = 0;
@@ -446,10 +451,21 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (sel !== r.sel) { const next = { ...r, sel }; radialRef.current = next; setRadial(next); }
     };
     const radialDelta = { x: 0, y: 0 };
+    const RADIAL_REACH = 90;
+    const radialMove = (mx: number, my: number) => {
+      radialDelta.x += mx; radialDelta.y += my;
+      const d = Math.hypot(radialDelta.x, radialDelta.y);
+      if (d > RADIAL_REACH) { radialDelta.x *= RADIAL_REACH / d; radialDelta.y *= RADIAL_REACH / d; }
+      moveRadial(radialDelta.x, radialDelta.y);
+    };
+    let radialPointer = -1;
     const closeRadial = () => {
       const r = radialRef.current;
       radialRef.current = null; setRadial(null);
       fly.pointerSpeed = 1;
+      if (radialPointer >= 0 && renderer.domElement.hasPointerCapture(radialPointer)) renderer.domElement.releasePointerCapture(radialPointer);
+      radialPointer = -1;
+      renderer.domElement.style.cursor = '';
       const ed = editorRef.current;
       if (r && ed && r.sel >= 0) ed.onRadial(r.tool, r.items[r.sel].id, r.targetId, r.targetDeployable);
       state.candCache.clear();
@@ -457,14 +473,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     };
     const onLockedMove = (e: MouseEvent) => {
       if (!fly.isLocked || !radialRef.current) return;
-      radialDelta.x = Math.max(-200, Math.min(200, radialDelta.x + e.movementX));
-      radialDelta.y = Math.max(-200, Math.min(200, radialDelta.y + e.movementY));
-      moveRadial(radialDelta.x, radialDelta.y);
+      radialMove(e.movementX, e.movementY);
     };
     document.addEventListener('mousemove', onLockedMove);
     const onPointerMove = (e: PointerEvent) => {
       if (fly.isLocked) return;
-      if (radialRef.current) { moveRadial(e.clientX - down.x, e.clientY - down.y); return; }
+      if (radialRef.current) { radialMove(e.movementX, e.movementY); return; }
       const r = renderer.domElement.getBoundingClientRect();
       state.pointer = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       state.hoverDirty = true;
@@ -476,6 +490,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         radialDelta.x = 0; radialDelta.y = 0;
         if (fly.isLocked) openRadial(r.width / 2, r.height / 2);
         else openRadial(e.clientX - r.left, e.clientY - r.top);
+        if (radialRef.current && !fly.isLocked) {
+          renderer.domElement.setPointerCapture(e.pointerId);
+          radialPointer = e.pointerId;
+          renderer.domElement.style.cursor = 'none';
+        }
         return;
       }
       // в полёте курсор захвачен: действие сразу, прицел в центре

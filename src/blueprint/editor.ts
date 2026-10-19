@@ -262,6 +262,32 @@ export function upgradeElement(bp: Blueprint, id: string, grade: Grade): Bluepri
   return { ...bp, elements: bp.elements.map(e => (e.id === id ? { ...e, grade } : e)) };
 }
 
+export function rotatable(kind: ElementKind): boolean {
+  const cat = KINDS[kind].category;
+  return cat === 'wallType' || cat === 'stairs' || cat === 'ramp';
+}
+
+export function rotateElement(bp: Blueprint, id: string): Blueprint {
+  const el = bp.elements.find(e => e.id === id);
+  if (!el?.attach || el.root || !rotatable(el.kind)) return bp;
+  const wall = KINDS[el.kind].category === 'wallType';
+  let attach: Attach;
+  if (el.attach.socket === 'offset') attach = { ...el.attach, rotation: ((el.attach.rotation ?? 0) + (wall ? 180 : 90)) % 360 };
+  else if (wall) attach = { ...el.attach, flip: !el.attach.flip };
+  else attach = { ...el.attach, turns: (((el.attach.turns ?? 0) + 1) % 4) as 0 | 1 | 2 | 3 };
+  if (!attach.flip) delete attach.flip;
+  if (!attach.turns) delete attach.turns;
+  let next: Blueprint = { ...bp, elements: bp.elements.map(e => (e.id === id ? { ...e, attach } : e)) };
+  if (wall) next = { ...next, ...flipWall(next, id) };
+  const r = resolveBlueprint(next);
+  if (r.issues.some(i => i.level === 'error')) return bp;
+  const t = r.resolved.elements.find(e => e.id === id);
+  if (!t) return bp;
+  const others = { ...r.resolved, elements: r.resolved.elements.filter(e => e.id !== id) };
+  if (!wall && overlaps(el.kind, t, others)) return bp;
+  return next;
+}
+
 /** Элемент, в который рейкастом попал курсор, и доступные ему размещения с учётом текущего чертежа. */
 export function transformOf(resolved: Resolved, id: string): ResolvedElement | undefined {
   return resolved.elements.find(e => e.id === id);
@@ -269,20 +295,44 @@ export function transformOf(resolved: Resolved, id: string): ResolvedElement | u
 
 /**
  * Снос элемента. Дети, висевшие на нём, перецепляются к любому другому элементу, дающему ту же
- * позицию (как в игре, где блок держится на всех соседях); кому перецепиться не к кому — сносятся
- * тоже, вместе со своими объектами. Корень снести нельзя.
+ * позицию (как в игре, где блок держится на всех соседях); кому перецепиться не к кому — закрепляются
+ * смещением от корня, а что упадёт, решает стабильность (settle). Снос корня делает корнем ближайший
+ * фундамент на том же месте в мире; без других фундаментов уходит вся постройка.
  */
 export function removeElement(bp: Blueprint, id: string): Blueprint {
   const target = bp.elements.find(e => e.id === id);
   if (!target) return bp;
-  if (target.root) return bp.elements.length === 1 ? { ...bp, elements: [], deployables: [] } : bp;
   const before = resolveBlueprint(bp).resolved;
-  const root = bp.elements.find(e => e.root)!;
   let elements = bp.elements.filter(e => e.id !== id);
   let deployables = (bp.deployables ?? []).filter(d => d.attach.to !== id);
-  // Снос не тянет за собой поддерево: блоки, висевшие на снесённом, перецепляются к соседу с той же
-  // позицией, а кому не к кому — закрепляются смещением от корня. Что упадёт, решает стабильность (settle).
-  for (const orphan of elements.filter(e => e.attach?.to === id)) {
+  let root = bp.elements.find(e => e.root)!;
+  if (target.root) {
+    const at = (eid: string) => before.elements.find(e => e.id === eid);
+    const t0 = at(id);
+    const next = elements
+      .filter(e => e.kind === 'square-foundation' || e.kind === 'triangle-foundation')
+      .map(e => ({ e, t: at(e.id) }))
+      .filter((c): c is { e: Element; t: ResolvedElement } => !!c.t)
+      .sort((a, b) => Number(b.e.attach?.to === id) - Number(a.e.attach?.to === id)
+        || Math.abs(a.t.position[1]) - Math.abs(b.t.position[1])
+        || (t0 ? Math.hypot(a.t.position[0] - t0.position[0], a.t.position[2] - t0.position[2]) - Math.hypot(b.t.position[0] - t0.position[0], b.t.position[2] - t0.position[2]) : 0))[0];
+    if (!next) return { ...bp, elements: [], deployables: [] };
+    const origin = { position: next.t.position.map(v => Math.round(v * 1000) / 1000) as [number, number, number], rotation: Math.round(next.t.rotation * 1000) / 1000 };
+    root = { id: next.e.id, kind: next.e.kind, root: true, ...(origin.position.some(v => v !== 0) || origin.rotation ? { origin } : {}) };
+    for (const k of ['grade', 'label', 'notes'] as const) if (next.e[k] !== undefined) (root as unknown as Record<string, unknown>)[k] = next.e[k];
+    elements = elements.map(e => (e.id === root.id ? root : e));
+  }
+  const ids = new Set(elements.map(e => e.id));
+  const rootT = before.elements.find(e => e.id === root.id)!;
+  const dist = (eid: string) => {
+    const t = before.elements.find(e => e.id === eid);
+    return t ? Math.hypot(t.position[0] - rootT.position[0], t.position[1] - rootT.position[1], t.position[2] - rootT.position[2]) : Infinity;
+  };
+  // Снос не тянет за собой поддерево: блоки, висевшие на снесённом (и цепочка от старого корня к новому),
+  // перецепляются к соседу с той же позицией, а кому не к кому — закрепляются смещением от корня.
+  const heads = elements.filter(e => e.attach && !ids.has(e.attach.to)).sort((a, b) => dist(a.id) - dist(b.id));
+  for (const head of heads) {
+    const orphan = elements.find(e => e.id === head.id)!;
     const want = before.elements.find(e => e.id === orphan.id);
     if (!want) continue;
     const rest = elements.filter(e => e.id !== orphan.id);
@@ -293,9 +343,12 @@ export function removeElement(bp: Blueprint, id: string): Blueprint {
       elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach: re.attach } : e));
       if (re.flipped) ({ elements, deployables } = flipWall({ ...bp, elements, deployables }, orphan.id));
     } else {
-      // корень стоит в начале координат без поворота: смещение — мировое положение блока
-      const attach: Attach = { to: root.id, socket: 'offset', offset: want.position.map(v => Math.round(v * 1000) / 1000) as [number, number, number] };
-      if (want.rotation) attach.rotation = want.rotation;
+      const a = (rootT.rotation * Math.PI) / 180;
+      const dx = want.position[0] - rootT.position[0], dz = want.position[2] - rootT.position[2];
+      const local: [number, number, number] = [dx * Math.cos(a) + dz * Math.sin(a), want.position[1] - rootT.position[1], -dx * Math.sin(a) + dz * Math.cos(a)];
+      const attach: Attach = { to: root.id, socket: 'offset', offset: local.map(v => Math.round(v * 1000) / 1000) as [number, number, number] };
+      const rot = Math.round((((want.rotation - rootT.rotation) % 360) + 360) % 360 * 1000) / 1000;
+      if (rot) attach.rotation = rot;
       elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach } : e));
     }
   }
@@ -381,12 +434,10 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   if (kind === 'tool-cupboard') {
     if (info.category !== 'cell' || info.isFrame) return null;
     if (taken.some(d => d.kind === 'tool-cupboard')) return null;
-    // свободная точка в пределах ячейки: шкаф (1.1 × 0.6 м) целиком на ней, с учётом поворота
-    const side = Math.abs(Math.round(rotation / 90)) % 2 === 1;
-    const [hx, hz] = side ? [0.55, 0.3] : [0.3, 0.55];
-    const edge = info.shape === 'square' ? 1.5 : 0.866;
-    const clamp = (v: number, h: number) => { const r = Math.max(0, edge - h); return Math.max(-r, Math.min(r, v)); };
-    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0], hx) * 100) / 100, Math.round(clamp(local[2], hz) * 100) / 100], rotation };
+    if (bp.elements.some(e => e.attach?.to === hostId && e.attach.socket === 'top' && KINDS[e.kind].category === 'stairs')) return null;
+    const spot = cupboardSpot(info.shape ?? 'square', local[0], local[2], rotation);
+    if (!spot) return null;
+    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation };
   } else if (kind === 'drop-box') {
     if (info.category !== 'wallType' || info.opening || host.kind === 'low-wall') return null;
     const h = wallHeight(host.kind);
@@ -411,6 +462,39 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   const t = r.resolved.deployables.find(d => d.id === GHOST);
   if (!t) return null;
   return { deployable, transform: { position: t.position, rotation: t.rotation, level: t.level } };
+}
+
+const CUPBOARD_HALF: [number, number] = [0.3, 0.55];
+const CUPBOARD_MARGIN = 0.13;
+
+function cupboardSpot(shape: 'square' | 'triangle', x: number, z: number, rotation: number): [number, number] | null {
+  const verts = cellVertices(shape);
+  const a = (rotation * Math.PI) / 180;
+  const corners = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => {
+    const cx = sx * CUPBOARD_HALF[0], cz = sz * CUPBOARD_HALF[1];
+    return [cx * Math.cos(a) - cz * Math.sin(a), cx * Math.sin(a) + cz * Math.cos(a)];
+  });
+  const edges = verts.map(([x1, z1], i) => {
+    const [x2, z2] = verts[(i + 1) % verts.length];
+    const len = Math.hypot(x2 - x1, z2 - z1);
+    return { x1, z1, nx: -(z2 - z1) / len, nz: (x2 - x1) / len };
+  });
+  const slack = (px: number, pz: number) => Math.min(...edges.flatMap(e => corners.map(([cx, cz]) => (px + cx - e.x1) * e.nx + (pz + cz - e.z1) * e.nz - CUPBOARD_MARGIN)));
+  if (slack(0, 0) < 0) return null;
+  let px = x, pz = z;
+  for (let iter = 0; iter < 8; iter++) {
+    for (const e of edges) {
+      const d = Math.min(...corners.map(([cx, cz]) => (px + cx - e.x1) * e.nx + (pz + cz - e.z1) * e.nz)) - CUPBOARD_MARGIN;
+      if (d < 0) { px -= d * e.nx; pz -= d * e.nz; }
+    }
+  }
+  if (slack(px, pz) < -1e-6) {
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (slack(px * m, pz * m) >= 0) lo = m; else hi = m; }
+    px *= lo; pz *= lo;
+  }
+  const round = (v: number) => Math.trunc(v * 100) / 100;
+  return [round(px), round(pz)];
 }
 
 export function addDeployable(bp: Blueprint, d: Omit<Deployable, 'id'>): Blueprint {

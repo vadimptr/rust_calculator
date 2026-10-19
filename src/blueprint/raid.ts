@@ -24,7 +24,7 @@ export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | '
 };
 
 /** Ветки ломаются инструментом: взрывчатки 0. */
-const TWIG_RULE: RaidCostRule = { blockId: 'twig', blockName: 'Ветки', satchel: 0, rocket: 0, c4: 0, explosiveAmmo: 0, optimal: {} };
+const TWIG_RULE: RaidCostRule = { blockId: 'twig', blockName: 'Солома', satchel: 0, rocket: 0, c4: 0, explosiveAmmo: 0, optimal: {} };
 
 export interface RaidStep {
   id: string;

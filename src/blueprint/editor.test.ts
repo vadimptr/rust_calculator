@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, settle, upgradeElement } from './editor.ts';
+import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, rotateElement, settle, upgradeElement } from './editor.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -54,8 +54,7 @@ test('removing a wall re-attaches the floor to another wall under it; removing t
   const bare = settle(removeElement(removeElement(after, 'w2'), 'w3')).blueprint;
   assert.ok(!bare.elements.some(e => e.id === 'c1'));
   assert.deepEqual(resolveBlueprint(bare).issues.filter(i => i.level === 'error'), []);
-  // корень снести нельзя
-  assert.equal(removeElement(bp, 'f1'), bp);
+  assert.equal(removeElement(bp, 'f1').elements.length, 0);
 });
 
 test('removing a doorway removes its door; upgrade sets the grade', () => {
@@ -82,7 +81,7 @@ test('deployables: a single door into a doorway with hinge by cursor side, nothi
   assert.equal(bp.deployables![0].id, 'd1');
   assert.equal(deployPlacement(bp, resolved, 'wooden-door', 'dw1', [0.1, 1, 0.5]), null);
   const tc = deployPlacement(bp, resolved, 'tool-cupboard', 'f1', [-0.9, 0, 0.9])!;
-  assert.deepEqual(tc.deployable.offset, [-0.9, 0.9]);
+  assert.deepEqual(tc.deployable.offset, [-0.9, 0.82]);
   assert.deepEqual(resolveBlueprint(addDeployable(bp, tc.deployable)).issues.filter(i => i.level === 'error'), []);
 });
 
@@ -380,7 +379,21 @@ test('the last block can be removed: the root foundation goes when nothing else 
   assert.equal(single.deployables!.length, 0);
   let bp = newBlueprint();
   bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
-  assert.equal(removeElement(bp, 'f1').elements.length, 2);
+  assert.equal(removeElement(bp, 'f1').elements.length, 0);
+});
+
+test('removing the root foundation hands the root to a neighbour foundation; nothing moves in the world', () => {
+  const { bp } = load('house-2x2');
+  const before = resolveBlueprint(bp).resolved;
+  const after = removeElement(bp, 'f1');
+  const r = resolveBlueprint(after);
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  assert.equal(after.elements.filter(e => e.root).length, 1);
+  assert.ok(!after.elements.some(e => e.id === 'f1'));
+  for (const e of r.resolved.elements) {
+    const was = before.elements.find(b => b.id === e.id)!;
+    assert.ok(was.position.every((v, i) => Math.abs(v - e.position[i]) < 1e-3), e.id);
+  }
 });
 
 test('a spiral stair stacked on a spiral stair continues the spiral: the first offer is turned by half a turn', () => {
@@ -390,4 +403,37 @@ test('a spiral stair stacked on a spiral stair continues the spiral: the first o
   const up = candidatePlacements(bp, resolved, 'spiral-stairs', 'ss1');
   assert.equal(up[0].attach.turns, 2);
   assert.equal(up.length, 4);
+});
+
+test('hammer rotate: a wall turns by 180 degrees in place, stairs by 90, a foundation does not turn', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'u-shaped-stairs', { to: 'f1', socket: 'top' });
+  const before = resolveBlueprint(bp).resolved;
+  const turned = rotateElement(bp, 'w1');
+  const after = resolveBlueprint(turned);
+  assert.deepEqual(after.issues.filter(i => i.level === 'error'), []);
+  const w0 = before.elements.find(e => e.id === 'w1')!;
+  const w1 = after.resolved.elements.find(e => e.id === 'w1')!;
+  assert.ok(w0.position.every((v, i) => Math.abs(v - w1.position[i]) < 1e-6));
+  assert.equal((((w1.rotation - w0.rotation) % 360) + 360) % 360, 180);
+  const s0 = before.elements.find(e => e.id === 'us1')!;
+  const s1 = resolveBlueprint(rotateElement(bp, 'us1')).resolved.elements.find(e => e.id === 'us1')!;
+  assert.equal((((s1.rotation - s0.rotation) % 360) + 360) % 360 % 180, 90);
+  assert.equal(rotateElement(bp, 'f1'), bp);
+});
+
+test('a tool cupboard stays clear of the cell edges and the wall thickness: aimed at a corner it slides inward, on stairs it does not go', () => {
+  let bp = newBlueprint('t', 'triangle-foundation');
+  let resolved = resolveBlueprint(bp).resolved;
+  const p = deployPlacement(bp, resolved, 'tool-cupboard', 'f1', [1.7, 0, 0])!;
+  assert.ok(p, 'fits into a triangle');
+  const [x, z] = p.deployable.offset!;
+  assert.ok(Math.hypot(x, z) < 0.5, `${x},${z}`);
+  bp = newBlueprint();
+  resolved = resolveBlueprint(bp).resolved;
+  const q = deployPlacement(bp, resolved, 'tool-cupboard', 'f1', [1.5, 0, 1.5])!;
+  assert.ok(q.deployable.offset![0] <= 1.5 - 0.3 - 0.13 + 1e-6 && q.deployable.offset![1] <= 1.5 - 0.55 - 0.13 + 1e-6, q.deployable.offset!.join(','));
+  bp = addElement(bp, 'u-shaped-stairs', { to: 'f1', socket: 'top' });
+  assert.equal(deployPlacement(bp, resolveBlueprint(bp).resolved, 'tool-cupboard', 'f1', [0, 0, 0]), null);
 });

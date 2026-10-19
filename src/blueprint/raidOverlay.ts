@@ -91,7 +91,7 @@ export class RaidOverlay {
   private play: { start: number } | null = null;
   private static STEP_MS = 1300;
 
-  constructor(private content: THREE.Group, scene: THREE.Scene) {
+  constructor(private content: THREE.Group, scene: THREE.Object3D) {
     scene.add(this.group);
   }
 

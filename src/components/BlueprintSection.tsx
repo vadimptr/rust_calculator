@@ -7,7 +7,7 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, newBlueprint, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -61,7 +61,7 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 const GRADE_LABELS: Record<string, string> = {
-  twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
+  twig: 'солома', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
 
 /** Короткие подписи для кольца радиального меню. */
@@ -107,8 +107,8 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
   build: BUILD_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/build/${BUILD_ICONS[k]}.webp`, desc: BUILD_DESCRIPTIONS[k], mono: true })),
   deploy: DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/items/${DEPLOY_ICONS[k]}.webp` })),
   hammer: [
-    { id: 'twig', label: 'Ветки' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
-    { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'remove', label: 'Снести' },
+    { id: 'twig', label: 'Солома', img: '/icons/grade/straw.webp' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
+    { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'rotate', label: 'Повернуть', img: '/icons/grade/rotate.webp', mono: true }, { id: 'remove', label: 'Снести' },
   ],  view: [],
 };
 
@@ -246,7 +246,8 @@ const BlueprintSection: React.FC = () => {
         if (t === 'build') setBuildKind(itemId as ElementKind);
         else if (t === 'deploy') setDeployKind(itemId as DeployableKind);
         else if (blueprint && targetId) {
-          if (itemId === 'remove') applyDoc(targetDeployable ? removeDeployable(blueprint, targetId) : removeElement(blueprint, targetId));
+          if (itemId === 'rotate') { if (!targetDeployable) applyDoc(rotateElement(blueprint, targetId)); }
+          else if (itemId === 'remove') applyDoc(targetDeployable ? removeDeployable(blueprint, targetId) : removeElement(blueprint, targetId));
           else if (!targetDeployable) applyDoc(upgradeElement(blueprint, targetId, itemId as Grade));
         }
       },
