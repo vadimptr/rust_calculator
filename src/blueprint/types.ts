@@ -48,7 +48,7 @@ export interface Attach {
   flip?: boolean;
   turns?: 0 | 1 | 2 | 3;
   /** Только фундамент к фундаменту: сдвиг по высоте в метрах (ряды сокетов foundation-top/mid/bot в игре). */
-  rise?: -3 | -1.5 | 0 | 1.5 | 3;
+  rise?: -3 | -1.5 | 0 | 0.75 | 1.5 | 3;
   /** Только socket 'offset': положение и поворот в системе элемента `to` — блок, оставшийся без сокета-опоры (например, после сноса соседа). */
   offset?: [number, number, number];
   rotation?: number;

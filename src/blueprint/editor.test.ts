@@ -19,7 +19,7 @@ test('new blueprint: one twig foundation; walls snap to its four edges, nearest 
   assert.deepEqual(near[0].attach, { to: 'f1', socket: 'edge:0' });
   // соседний фундамент — тоже четыре варианта, съезд — четыре, лестница на top — четыре поворота
   assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'f1').length, 12); // 4 ребра × 3 высоты
-  assert.equal(candidatePlacements(bp, resolved, 'ramp', 'f1').length, 8); // 4 ребра + 4 поворота сверху (Block)
+  assert.equal(candidatePlacements(bp, resolved, 'ramp', 'f1').length, 12); // 4 ребра + сверху 4 поворота × 2 высоты (Block и Misc)
   assert.equal(candidatePlacements(bp, resolved, 'stairs-l-shape', 'f1').length, 4);
   // пол на фундамент ребром к ребру нельзя (фундамент к фундаменту, пол к полу)
   assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'f1').length, 0);
@@ -329,9 +329,10 @@ test('game sockets: ramp on a floor, ramps chain down, spiral stairs stack, noth
   const floorId = bp.elements[2].id;
   let resolved = resolveBlueprint(bp).resolved;
   const onFloor = candidatePlacements(bp, resolved, 'ramp', floorId).filter(p => p.attach.socket === 'top');
-  assert.equal(onFloor.length, 4);
+  assert.equal(onFloor.length, 8);
   const floorY = resolved.elements.find(e => e.id === floorId)!.position[1];
-  assert.ok(Math.abs(onFloor[0].transform.position[1] - (floorY + 0.75)) < 1e-6);
+  const heights = [...new Set(onFloor.map(p => Math.round((p.transform.position[1] - floorY) * 100) / 100))].sort();
+  assert.deepEqual(heights, [0.75, 1.5]);
 
   bp = addElement(bp, 'ramp', { to: 'f1', socket: 'edge:2', selfSocket: 'edge:0' });
   const rampId = bp.elements[3].id;

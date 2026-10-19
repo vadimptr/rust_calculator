@@ -3,7 +3,7 @@
  * Попутно проверяет структурные правила V01–V05 и V11; без них геометрия не считается.
  */
 import {
-  BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, defaultSelfSocket, edgeAngle,
+  BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, defaultSelfSocket, edgeAngle,
   edgeIndex, openingAccepts, socketsOf, wallHeight,
 } from './catalog.ts';
 import type {
@@ -96,7 +96,7 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
 
   // Съезд или ступени в саму ячейку (сокет Block у пола и фундамента): поднимаются от её верха
   if (p.category === 'cell' && a.socket === 'top' && c.category === 'ramp') {
-    return { position: [px, py + BLOCK_FEMALE_Y + RAMP_MALE_H[child.kind]!, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
+    return { position: [px, py + BLOCK_FEMALE_Y + (a.rise ?? 0) + RAMP_MALE_H[child.kind]!, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
   }
 
   // Следующий съезд от нижнего края съезда или ступеней
@@ -242,8 +242,9 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       issues.push(err('V04', e.id, `${e.kind}.${self} нельзя крепить к ${parent.kind}.${e.attach.socket}`));
       continue;
     }
-    if (e.attach.rise && !(KINDS[parent.kind].isFoundation && KINDS[e.kind].isFoundation && edgeIndex(e.attach.socket) !== null)) {
-      issues.push(err('V04', e.id, 'rise допустим только у фундамента, приставленного к ребру фундамента'));
+    const rampHigh = e.kind === 'ramp' && e.attach.socket === 'top' && e.attach.rise === RAMP_HIGH_RISE;
+    if (e.attach.rise && !rampHigh && !(KINDS[parent.kind].isFoundation && KINDS[e.kind].isFoundation && edgeIndex(e.attach.socket) !== null)) {
+      issues.push(err('V04', e.id, 'rise допустим только у фундамента, приставленного к ребру фундамента, и у съезда на верху ячейки (0.75)'));
       continue;
     }
     const list = children.get(parent.id) ?? [];

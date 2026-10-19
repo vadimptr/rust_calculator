@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { KINDS, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
+import { KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { resolveBlueprint } from './geometry.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -173,7 +173,7 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;
       const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
-        ? [0, 1.5, 3].map(y => y - hostY) : [0];
+        ? [0, 1.5, 3].map(y => y - hostY) : kind === 'ramp' && socket === 'top' ? [0, RAMP_HIGH_RISE] : [0];
       for (const flip of flips) for (const turns of turnsList) for (const rise of rises) {
         const attach: Attach = { to: hostId, socket };
         if (defaultSelfSocket(kind) !== self) attach.selfSocket = self;

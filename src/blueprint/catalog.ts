@@ -16,6 +16,7 @@ export const SPIRAL_H = 1.5;
 export const RAMP_DROP: Partial<Record<ElementKind, number>> = { 'ramp': 0.75, 'foundation-steps': 1.5 };
 export const RAMP_MALE_H: Partial<Record<ElementKind, number>> = { 'ramp': 0.65, 'foundation-steps': 1.4 };
 export const BLOCK_FEMALE_Y = 0.1;
+export const RAMP_HIGH_RISE = 0.75;
 
 export type Shape = 'square' | 'triangle';
 export type Category = 'cell' | 'wallType' | 'stairs' | 'roof' | 'ramp';

@@ -43,3 +43,12 @@ test('a wall beside a roof slope at roof level turns into a gable triangle; wall
   assert.ok(gable.includes('left') || gable.includes('right'), gable.join(','));
   assert.ok(!gable.includes('full'));
 });
+
+test('a ramp on a floor is low on the block socket and high on the misc socket (RampLow / RampHigh)', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'ramp', { to: 'f1', socket: 'top', selfSocket: 'bottom' });
+  assert.deepEqual(pieces(bp).get('rp1'), ['ramp.75']);
+  let high = newBlueprint();
+  high = addElement(high, 'ramp', { to: 'f1', socket: 'top', selfSocket: 'bottom', rise: 0.75 });
+  assert.deepEqual(pieces(high).get('rp1'), ['ramp.150']);
+});
