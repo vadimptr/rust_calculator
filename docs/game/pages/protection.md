@@ -25,13 +25,9 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
 
 ### ProtectionProperties
 
-```csharp
-public void Scale(DamageTypeList damageList, float ProtectionAmount = 1f)
-{
-    for (int i = 0; i < amounts.Length; i++)
-        if (amounts[i] != 0f)
-            damageList.Scale((DamageType)i, 1f - Mathf.Clamp(amounts[i] * ProtectionAmount, -1f, 1f));
-}
+```
+для каждого типа урона с ненулевой защитой:
+    урон[тип] ×= 1 − Clamp(защита[тип] × сила_защиты, −1, 1)      // сила_защиты обычно 1
 ```
 
 - Коэффициенты **не складываются** между слоями, а перемножаются. Если базовая защита 0.5,
@@ -46,11 +42,7 @@ public void Scale(DamageTypeList damageList, float ProtectionAmount = 1f)
 
 ### Где берётся защита строительного блока
 
-`BuildingBlock.UpdateGrade`:
-
-```csharp
-baseProtection = currentGrade.gradeBase.damageProtecton;
-```
+`BuildingBlock.UpdateGrade` берёт базовую защиту блока из `damageProtecton` его текущего грейда.
 
 `currentGrade` — это `ConstructionGrade` для пары (грейд, скин) из `blockDefinition.GetGrade(grade, skinID)`.
 У каждого `BuildingGrade` свои `baseHealth`, `baseCost` и `damageProtecton`.
@@ -79,8 +71,8 @@ baseProtection = currentGrade.gradeBase.damageProtecton;
 - положение и направление `worldForward` внутри префаба.
 
 У всех строительных блоков, дверей, люков, внешних стен, решёток и шкафа `extraProtection` —
-один и тот же ассет **`BuildingShell`** («This is used to make the outside of building blocks
-tougher»):
+один и тот же ассет **`BuildingShell`** — по описанию в самом ассете, он делает внешнюю сторону
+строительных блоков прочнее:
 
 | Тип урона | Generic | Bullet | Arrow | Slash | Blunt | Stab | Bite | Explosion | Heat |
 |-----------|---------|--------|-------|-------|-------|------|------|-----------|------|
@@ -104,11 +96,10 @@ tougher»):
 
 В `BaseCombatEntity.Hurt`, после базовой защиты:
 
-```csharp
-if (info.PointStart != Vector3.zero)
-    foreach (var dp in propDirection)
-        if (dp.extraProtection != null && !dp.IsWeakspot(transform, info))
-            dp.extraProtection.Scale(info.damageTypes);
+```
+если у удара известна точка начала (PointStart):
+    для каждого атрибута DirectionProperties на префабе:
+        есть extraProtection и удар НЕ попал в слабое место → урон уменьшается ещё и на extraProtection
 ```
 
 То есть **дополнительная защита действует по умолчанию**. Снимается она, только если

@@ -28,11 +28,11 @@ code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable
 
 `BasePlayer.ScaleDamage`, если у попадания есть зона ([[hit-zones]]):
 
-```csharp
-cachedProtection.Clear();
-cachedProtection.Add(inventory.containerWear.itemList, boneArea); // только вещи с этой зоной
-cachedProtection.Multiply(DamageType.Bullet, server.bulletarmor);  // и т. д. по ConVar
-cachedProtection.Scale(info.damageTypes);
+```
+защита = 0 по всем типам
+защита += защита всех надетых вещей, которые закрывают эту зону
+защита[Bullet] ×= server.bulletarmor   (и так же для остальных типов со своим ConVar)
+урон попадания уменьшается на эту защиту (формула ниже)
 ```
 
 Для каждой надетой вещи с `ArmorProperties.Contains(зона)` (`ItemModWearable.CollectProtection`):

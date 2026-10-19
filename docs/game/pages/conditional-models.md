@@ -51,10 +51,10 @@ code: [ConditionalModel.cs, ConstructionSkin.cs, ModelConditionTest_RoofLeft.cs,
 `ConstructionSkin.DetermineConditionalModelState` прогоняет все куски и собирает 64-битную маску:
 бит `i` поднят, если кусок `i` прошёл тесты.
 
-```csharp
-for (int i = 0; i < array.Length && i < 64; i++)
-    if (array[i].RunTests(parent))
-        num |= 1UL << i;
+```
+маска = 0
+для каждого куска i из первых 64:
+    если все тесты куска прошли → поднять бит i в маске
 ```
 
 Маска хранится в `BuildingBlock.modelState` и уходит клиентам в сетевом сообщении

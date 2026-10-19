@@ -68,10 +68,10 @@ code: [DudTimedExplosive.cs, TimedExplosive.cs, ThrownWeapon.cs, Igniter.cs]
 
 `GetRandomTimerTime`:
 
-```csharp
-float t = base.GetRandomTimerTime();          // Random(timerAmountMin, timerAmountMax)
-if (Random.Range(0f,1f) <= 0.15f) t *= 0.334f; // 15 %: в три раза быстрее
-else if (Random.Range(0f,1f) <= 0.15f) t *= 3f; // 0.85 × 0.15 = 12.75 %: в три раза дольше
+```
+t = случайное от timerAmountMin до timerAmountMax
+с шансом 15 %                     → t × 0.334   (в три раза быстрее)
+иначе ещё с шансом 15 % (12.75 %)  → t × 3       (в три раза дольше)
 ```
 
 Итого: 15 % — короткий фитиль, 12.75 % — длинный, 72.25 % — обычный.

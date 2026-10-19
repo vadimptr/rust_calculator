@@ -31,9 +31,8 @@ code: [EventSchedule.cs, TriggeredEvent.cs, TriggeredEventPrefab.cs, EventSchedu
 времени, зависит от длины суток на сервере. Если админ перематывает время (`env.time`),
 таймеры ивентов тоже прыгают.
 
-```csharp
-hoursRemaining -= (float)TOD_Sky.Instance.Cycle.DateTime
-    .Subtract(DateTime.FromBinary(lastRun)).TotalSeconds / 60f / 60f;
+```
+hoursRemaining −= (игровое время сейчас − игровое время прошлого вызова) в часах
 ```
 
 При включении расписания и после каждого срабатывания таймер заново берётся как

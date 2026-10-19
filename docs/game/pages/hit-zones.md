@@ -27,10 +27,17 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 
 ### 1. Зоны
 
-```csharp
-[Flags] public enum HitArea
-{ Head = 1, Chest = 2, Stomach = 4, Arm = 8, Hand = 16, Leg = 32, Foot = 64 }
-```
+Зоны — битовые флаги `HitArea`:
+
+| Зона | Значение |
+|------|----------|
+| Head — голова | 1 |
+| Chest — грудь | 2 |
+| Stomach — живот | 4 |
+| Arm — рука | 8 |
+| Hand — кисть | 16 |
+| Leg — нога | 32 |
+| Foot — ступня | 64 |
 
 Помимо них есть два служебных значения (`HitAreaUtil.Format`): `0` — «None» и `-1` — «Generic»
 («без зоны»). Generic получается, когда у цели нет скелета или кость не найдена: взрывы,
@@ -47,11 +54,11 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 `DamageProperties` — ассет со списком `HitAreaProperty { area, damage }` и ссылкой
 `fallback` на другой такой же ассет:
 
-```csharp
-public float GetMultiplier(HitArea area) {
-    foreach (var p in bones) if (p.area == area) return p.damage;
-    return fallback ? fallback.GetMultiplier(area) : 1f;
-}
+```
+множитель(зона):
+    есть запись с этой зоной в ассете → её damage
+    иначе есть fallback               → множитель(зона) у fallback
+    иначе                             → 1
 ```
 
 - Если зона не указана ни в ассете, ни в цепочке `fallback` — множитель `1`.
