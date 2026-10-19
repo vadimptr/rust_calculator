@@ -3,7 +3,7 @@
  * Попутно проверяет структурные правила V01–V05 и V11; без них геометрия не считается.
  */
 import {
-  KINDS, apothem, canAttach, defaultSelfSocket, edgeAngle,
+  KINDS, RAMP_DROP, ROOF_RISE, SPIRAL_H, apothem, canAttach, defaultSelfSocket, edgeAngle,
   edgeIndex, openingAccepts, socketsOf, wallHeight,
 } from './catalog.ts';
 import type {
@@ -37,10 +37,10 @@ function slotKey(parent: Element, socket: Socket, child: Element, flip: boolean)
     // сосед-ячейка, крыша над соседней позицией и стена-тип — три разных слота одного ребра
     return `${parent.id}/${socket}/${c.category === 'wallType' ? 'wall' : c.category === 'roof' ? 'roof' : 'neighbor'}`;
   }
-  if (p.category === 'wallType' && socket === 'top') {
-    if (c.category === 'wallType') return `${parent.id}/top/wall`;
+  if ((p.category === 'wallType' && socket === 'top') || (p.category === 'roof' && socket === 'edge:2')) {
+    if (c.category === 'wallType') return `${parent.id}/${socket}/wall`;
     // с каждой стороны верха стены — один пол и одна крыша: крыша над полом (чердак) допустима
-    return `${parent.id}/top/${flip ? 'back' : 'front'}/${c.category === 'roof' ? 'roof' : 'cell'}`;
+    return `${parent.id}/${socket}/${flip ? 'back' : 'front'}/${c.category === 'roof' ? 'roof' : 'cell'}`;
   }
   if (p.category === 'cell' && socket === 'top') return `${parent.id}/top/stairs`;
   return `${parent.id}/${socket}`;
@@ -87,24 +87,27 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
     return { position: [px + d * nx, py, pz + d * nz], rotation: rot, level: parent.level };
   }
 
-  // Стена-тип на верх стены-типа
-  if (p.category === 'wallType' && a.socket === 'top' && c.category === 'wallType') {
-    const h = wallHeight(parent.el.kind);
-    return { position: [px, py + h, pz], rotation: parent.rotation, level: parent.level + h / 3 };
+  // Высокий край крыши — как верх стены высотой ROOF_RISE, развёрнутой от ската
+  if (p.category === 'roof' && a.socket === 'edge:2') {
+    const [hx, hz] = dir(parent.rotation + edgeAngle(p.shape!, 2));
+    const base: Placed = { el: parent.el, position: [px + hx * apothem(p.shape!), py, pz + hz * apothem(p.shape!)], rotation: parent.rotation + 180, level: parent.level };
+    return onTop(base, ROOF_RISE, child, selfSocket);
   }
 
-  // Пол / крыша ребром на верх стены
-  if (p.category === 'wallType' && a.socket === 'top' && (c.category === 'cell' || c.category === 'roof')) {
-    const m = edgeIndex(selfSocket)!;
-    const h = wallHeight(parent.el.kind);
-    const [nx, nz] = dir(parent.rotation);
-    const ac = apothem(c.shape!);
-    const flip = a.flip === true;
-    const rot = flip
-      ? parent.rotation + 180 - edgeAngle(c.shape!, m)
-      : parent.rotation - edgeAngle(c.shape!, m);
-    const s = flip ? 1 : -1;
-    return { position: [px + s * ac * nx, py + h, pz + s * ac * nz], rotation: rot, level: parent.level + h / 3 };
+  // Съезд или ступени в саму ячейку (сокет Block у пола и фундамента): поднимаются от её верха
+  if (p.category === 'cell' && a.socket === 'top' && c.category === 'ramp') {
+    return { position: [px, py + RAMP_DROP[child.kind]!, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
+  }
+
+  // Следующий съезд от нижнего края съезда или ступеней
+  if (p.category === 'ramp' && a.socket === 'edge:2') {
+    const [bx, bz] = dir(parent.rotation + 180);
+    return { position: [px + 3 * bx, py - RAMP_DROP[parent.el.kind]!, pz + 3 * bz], rotation: parent.rotation, level: parent.level };
+  }
+
+  // Винтовая лестница на винтовую
+  if (p.category === 'stairs' && a.socket === 'top') {
+    return { position: [px, py + SPIRAL_H, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level + SPIRAL_H / 3 };
   }
 
   // Лестница на ячейку
@@ -121,6 +124,34 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
     const [nx, nz] = dir(normal);
     const d = apothem(p.shape!) + apothem(c.shape!);
     return { position: [px + d * nx, py, pz + d * nz], rotation: rot, level: parent.level };
+  }
+
+  if (p.category === 'wallType' && a.socket === 'top') return onTop(parent, wallHeight(parent.el.kind), child, selfSocket);
+
+  throw new Error(`unsupported attachment ${parent.el.kind}.${a.socket} <- ${child.kind}.${selfSocket}`);
+}
+
+function onTop(parent: Placed, h: number, child: Element, selfSocket: Socket): Transform {
+  const a = child.attach!;
+  const c = KINDS[child.kind];
+  const [px, py, pz] = parent.position;
+
+  // Стена-тип на верх стены-типа
+  if (c.category === 'wallType') {
+    return { position: [px, py + h, pz], rotation: parent.rotation, level: parent.level + h / 3 };
+  }
+
+  // Пол / крыша ребром на верх стены
+  if (c.category === 'cell' || c.category === 'roof') {
+    const m = edgeIndex(selfSocket)!;
+    const [nx, nz] = dir(parent.rotation);
+    const ac = apothem(c.shape!);
+    const flip = a.flip === true;
+    const rot = flip
+      ? parent.rotation + 180 - edgeAngle(c.shape!, m)
+      : parent.rotation - edgeAngle(c.shape!, m);
+    const s = flip ? 1 : -1;
+    return { position: [px + s * ac * nx, py + h, pz + s * ac * nz], rotation: rot, level: parent.level + h / 3 };
   }
 
   throw new Error(`unsupported attachment ${parent.el.kind}.${a.socket} <- ${child.kind}.${selfSocket}`);

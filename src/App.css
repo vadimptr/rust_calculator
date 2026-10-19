@@ -1740,10 +1740,6 @@
   flex-wrap: wrap;
 }
 
-.bp__doors-toggle {
-  margin-left: 0.9rem;
-  color: var(--text-primary);
-}
 
 .bp__center .bp__viewer {
   flex: 1;

@@ -11,7 +11,7 @@
  * каждое ребро (верх стены, соседний пол, конёк крыши); крыши — её низкое ребро; лестницы — ячейка
  * под ней.
  */
-import { KINDS, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
+import { KINDS, RAMP_DROP, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedElement } from './types.ts';
 
 /** Коэффициенты `support` из префабов игры (2026-09). */
@@ -73,7 +73,12 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
   const out = new Map<string, Support[] | null>();
   for (const e of els) {
     const info = KINDS[e.kind];
-    if (info.isFoundation || info.category === 'ramp') { out.set(e.id, null); continue; }
+    if (info.isFoundation) { out.set(e.id, null); continue; }
+    if (info.category === 'ramp') {
+      const under = cellAt.get(key([e.position[0], e.position[1] - RAMP_DROP[e.kind]!, e.position[2]]));
+      out.set(e.id, under?.length ? [{ factor: SUPPORT.stairs, candidates: under }] : null);
+      continue;
+    }
     const not = (ids: string[] | undefined) => (ids ?? []).filter(id => id !== e.id);
     const s: Support[] = [];
     if (info.category === 'wallType') {
@@ -104,9 +109,11 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
       }
     } else if (info.category === 'roof') {
       const p = key(edgeMid(e, 0));
-      s.push({ factor: SUPPORT.roofLowEdge, candidates: [...not(wallTop.get(p)), ...not(cellEdge.get(p))] });
+      s.push({ factor: SUPPORT.roofLowEdge, candidates: [...not(wallTop.get(p)), ...not(cellEdge.get(p)), ...not(roofHigh.get(p))] });
     } else if (info.category === 'stairs') {
-      s.push({ factor: SUPPORT.stairs, candidates: not(cellAt.get(key(e.position))) });
+      const below = els.filter(o => o.id !== e.id && o.kind === 'spiral-stairs' && e.kind === 'spiral-stairs'
+        && key([o.position[0], o.position[1] + SPIRAL_H, o.position[2]]) === key(e.position)).map(o => o.id);
+      s.push({ factor: SUPPORT.stairs, candidates: [...not(cellAt.get(key(e.position))), ...below] });
     }
     out.set(e.id, s);
   }

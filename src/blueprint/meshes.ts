@@ -3,7 +3,7 @@
  * Локальный +x стены — её внешняя нормаль; ячейка центрирована в начале координат.
  */
 import * as THREE from 'three';
-import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, KINDS, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
 import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
@@ -481,11 +481,11 @@ function stepsParts(): THREE.BufferGeometry[] {
 
 /** Винтовая лестница: столб и клиновидные ступени по кругу на высоту этажа. */
 function spiralParts(): THREE.BufferGeometry[] {
-  const parts: THREE.BufferGeometry[] = [new THREE.CylinderGeometry(0.18, 0.18, 3, 12).translate(0, 1.5, 0)];
-  const steps = 12;
+  const parts: THREE.BufferGeometry[] = [new THREE.CylinderGeometry(0.18, 0.18, SPIRAL_H, 12).translate(0, SPIRAL_H / 2, 0)];
+  const steps = 9;
   for (let i = 0; i < steps; i++) {
-    const a0 = (i / steps) * Math.PI * 2, a1 = ((i + 1) / steps) * Math.PI * 2;
-    const y = ((i + 1) / steps) * 3;
+    const a0 = (i / steps) * Math.PI * 1.5, a1 = ((i + 1) / steps) * Math.PI * 1.5;
+    const y = ((i + 1) / steps) * SPIRAL_H;
     const shape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(1.3 * Math.cos(a0), 1.3 * Math.sin(a0)), new THREE.Vector2(1.3 * Math.cos(a1), 1.3 * Math.sin(a1))]);
     parts.push(new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, y, 0));
   }
@@ -585,8 +585,8 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, doorFaces(kind), kind, true));
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, doorFaces(kind, true), kind));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, doorFaces(kind), kind));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, doorFaces(kind, true), kind, true));
       g.add(gradeMesh(box(DOOR_T, FRAME_H - DOUBLE_LEAF_H, FRAME_W, 0, DOUBLE_LEAF_H + (FRAME_H - DOUBLE_LEAF_H) / 2, 0), DOOR_GRADE[d.kind]!));
       return g;
     default:
@@ -673,7 +673,13 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
   const front = objectMaterial('drop-box', 'front'), back = objectMaterial('drop-box', 'back');
   const side = objectMaterial('drop-box', 'side'), top = objectMaterial('drop-box', 'top');
   const loadOutside = d.direction === 'in';
-  g.add(withModel(faceBox(DROP_D, DROP_H, DROP_W, 0, 0, 0, [loadOutside ? front : back, loadOutside ? back : front, top, top, side, side]), 'drop-box', (loadOutside ? -1 : 1) * OBJECT_YAW['drop-box']!));
+  const proxy = faceBox(DROP_D, DROP_H, DROP_W, 0, 0, 0, [loadOutside ? front : back, loadOutside ? back : front, top, top, side, side]);
+  const model = gameModel('drop-box');
+  if (model) {
+    hideProxy(proxy);
+    g.add(placeModel(model, { yaw: (loadOutside ? 1 : -1) * OBJECT_YAW['drop-box']! }));
+  }
+  g.add(proxy);
   // out: из −x (внутри) в +x (снаружи); in — наоборот. Стрелка от середины ящика чуть за его грань
   const toward = d.direction === 'in' ? -1 : 1;
   const arrowLen = DROP_D / 2 + 0.12;

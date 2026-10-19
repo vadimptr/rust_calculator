@@ -12,6 +12,8 @@ export const HALF_WALL_H = 1.5;
 export const LOW_WALL_H = 1;
 export const ROOF_RISE = 3;
 export const FLOOR_T = 0.2;
+export const SPIRAL_H = 1.5;
+export const RAMP_DROP: Partial<Record<ElementKind, number>> = { 'ramp': 0.75, 'foundation-steps': 1.5 };
 
 export type Shape = 'square' | 'triangle';
 export type Category = 'cell' | 'wallType' | 'stairs' | 'roof' | 'ramp';
@@ -103,11 +105,11 @@ export function socketsOf(kind: ElementKind): Socket[] {
     case 'wallType':
       return info.opening ? ['bottom', 'top', 'opening'] : ['bottom', 'top', 'face'];
     case 'stairs':
-      return ['bottom'];
+      return kind === 'spiral-stairs' ? ['bottom', 'top'] : ['bottom'];
     case 'roof':
       return Array.from({ length: edgeCount(info.shape!) }, (_, i) => `edge:${i}` as Socket);
     case 'ramp':
-      return ['edge:0'];
+      return ['edge:0', 'edge:2', 'bottom'];
   }
 }
 
@@ -131,9 +133,23 @@ export function canAttach(
     return false;
   }
   if (p.category === 'cell' && socket === 'top') {
-    return c.category === 'stairs' && selfSocket === 'bottom' && p.shape === 'square';
+    return (c.category === 'stairs' || c.category === 'ramp') && selfSocket === 'bottom' && p.shape === 'square' && !p.isFrame;
+  }
+  if (p.category === 'stairs' && socket === 'top') {
+    return parent === 'spiral-stairs' && child === 'spiral-stairs' && selfSocket === 'bottom';
+  }
+  if (p.category === 'ramp' && socket === 'edge:2') {
+    return c.category === 'ramp' && selfSocket === 'edge:0';
+  }
+  if (p.category === 'roof' && socket === 'edge:2') {
+    if (p.shape !== 'square') return false;
+    if (c.category === 'cell' && cEdge) return !c.isFoundation;
+    if (c.category === 'wallType' && selfSocket === 'bottom') return true;
+    if (c.category === 'roof' && selfSocket === 'edge:0') return true;
+    return false;
   }
   if (p.category === 'wallType' && socket === 'top') {
+    if (parent === 'low-wall') return false;
     // на верх стены — только полы и рамы: фундаменты стоят на земле (уровни полустены и стены из игры пока не моделируются)
     if (c.category === 'cell' && cEdge) return !c.isFoundation;
     if (c.category === 'wallType' && selfSocket === 'bottom') return true;

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
+import type { DoorAnim } from '../blueprint/meshes.ts';
 import { onModelLoaded } from '../blueprint/models.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
@@ -17,7 +18,7 @@ import RadialMenu, { radialOuter } from './RadialMenu';
 
 export type CameraMode = 'orbit' | 'fly';
 
-export type EditorTool = 'build' | 'deploy' | 'hammer';
+export type EditorTool = 'build' | 'deploy' | 'hammer' | 'view';
 
 /** Пункт радиального меню. */
 export interface RadialItem { id: string; label: string; /** Короткая подпись в кольце; полная — в центре. */ short?: string }
@@ -45,7 +46,6 @@ interface Viewer3DProps {
   resolved: Resolved | null;
   mode: CameraMode;
   /** Открыть все двери (поверх собственного open у каждой двери). */
-  doorsOpen: boolean;
   /** Подсветка пути рейда; null — выключена. */
   raid: RaidView | null;
   /** Счётчик запусков воспроизведения рейда: изменение на >0 запускает, 0 — сбрасывает. */
@@ -79,6 +79,7 @@ interface SceneRefs {
   clock: THREE.Clock;
   content: THREE.Group;
   doors: THREE.Object3D[];
+  doorState: Map<string, boolean>;
   raid: RaidOverlay;
   frame: number;
   ghost: THREE.Group;
@@ -120,13 +121,28 @@ function ghostify(o: THREE.Object3D, mat: THREE.Material): THREE.Object3D {
   return o;
 }
 
-/** Цель каждой двери: общий переключатель либо собственное open из документа. */
-function applyDoorsOpen(s: SceneRefs, doorsOpen: boolean) {
+function doorOwner(door: THREE.Object3D): THREE.Object3D | null {
+  let owner: THREE.Object3D | null = door;
+  while (owner && owner.userData.id === undefined) owner = owner.parent;
+  return owner;
+}
+
+function applyDoorsOpen(s: SceneRefs) {
   for (const door of s.doors) {
-    let owner: THREE.Object3D | null = door;
-    while (owner && owner.userData.open === undefined) owner = owner.parent;
-    setDoorOpen(door, doorsOpen || owner?.userData.open === true);
+    const owner = doorOwner(door);
+    const id = owner?.userData.id as string | undefined;
+    const own = id !== undefined ? s.doorState.get(id) : undefined;
+    setDoorOpen(door, own ?? owner?.userData.open === true);
   }
+}
+
+function toggleDoorsOf(s: SceneRefs, id: string): boolean {
+  const doors = s.doors.filter(d => doorOwner(d)?.userData.id === id);
+  if (!doors.length) return false;
+  const open = !(doors[0].userData.door as DoorAnim).target;
+  s.doorState.set(id, open);
+  for (const d of doors) setDoorOpen(d, open);
+  return true;
 }
 
 /** Точка в локальных осях элемента (x по нормали, y вверх, z вдоль). */
@@ -136,7 +152,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, raidPlay, frameKey, editor }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -210,7 +226,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     const keys = new Set<string>();
 
     const state: SceneRefs = {
-      renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [],
+      renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
       raid: new RaidOverlay(content, scene), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), ghostStab: 1, label,
     };
@@ -314,7 +330,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       host.dataset.pending = '';
       label.textContent = '';
       label.className = 'viewer3d__label';
-      if (!ed || !res) return none();
+      if (!ed || !res || ed.tool === 'view') return none();
       // пустой участок: первый фундамент — корень постройки в начале координат
       if (res.elements.length === 0) {
         if (ed.tool !== 'build' || !KINDS[ed.kind].isFoundation) return none();
@@ -382,9 +398,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
 
     const act = (button: number) => {
       const ed = editorRef.current;
+      if (!ed || button !== 0) return;
+      const hit = pick();
       const p = state.pending;
-      if (!ed || !p) return;
-      if (button !== 0) return;
+      if (hit && (hit.deployable || !p) && toggleDoorsOf(state, hit.id)) return;
+      if (!p) return;
       if (p.type === 'element') ed.onPlace(p.kind, p.attach);
       else if (p.type === 'root') ed.onPlaceRoot(p.kind);
       else if (p.type === 'deploy') ed.onDeploy(p.d);
@@ -397,6 +415,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     const openRadial = (x: number, y: number) => {
       const ed = editorRef.current;
       if (!ed) return;
+      if (ed.tool === 'view') return;
       const items = ed.radial[ed.tool];
       if (ed.tool === 'hammer') { refreshGhost(); if (state.pending?.type !== 'hammer') return; }
       const p = state.pending;
@@ -582,6 +601,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     s.hoverDirty = true;
     if (!resolved) return;
 
+    if (framedKey.current !== frameKey) s.doorState.clear();
     s.stability = computeStability(resolved);
     const gables = gableWalls(resolved);
     const hips = hipRoofs(resolved);
@@ -592,7 +612,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
     s.doors = collectDoors(s.content);
-    applyDoorsOpen(s, doorsOpen);
+    applyDoorsOpen(s);
     s.raid.apply(raid);
 
     // Смена материала или дверей перестраивает меши, но камеру не трогает
@@ -641,12 +661,6 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     if (raidPlay > 0) s.raid.start(performance.now());
     else s.raid.stop();
   }, [raidPlay]);
-
-  // Переключатель дверей: только цель анимации, сцена и камера не трогаются
-  useEffect(() => {
-    const s = refs.current;
-    if (s) applyDoorsOpen(s, doorsOpen);
-  }, [doorsOpen]);
 
   const outer = radialOuter(radial?.items.length ?? 0);
   // меню целиком внутри сцены: центр сдвигается от краёв

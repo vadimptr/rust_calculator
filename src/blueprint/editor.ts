@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { KINDS, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
+import { KINDS, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { resolveBlueprint } from './geometry.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -146,6 +146,10 @@ function roofSupported(kind: ElementKind, t: Transform, resolved: Resolved): boo
     const info = KINDS[e.kind];
     if (info.category === 'wallType') return near([e.position[0], e.position[1] + wallHeight(e.kind), e.position[2]], low);
     if (info.category === 'cell') return edgeMids(e.kind, e).some(m => near(m, low));
+    if (info.category === 'roof' && info.shape === 'square' && !e.inverted) {
+      const high = edgeMids(e.kind, e)[2];
+      return near([high[0], high[1] + ROOF_RISE, high[2]], low);
+    }
     return false;
   });
 }
@@ -162,10 +166,10 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
     for (const self of selfSockets) {
       if (!canAttach(host.kind, socket, kind, self)) continue;
       // две стороны: пол или крыша на верху стены — по обе стороны; крыша на ребре ячейки — наружу и внутрь
-      const twoSided = (KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType')
+      const twoSided = (((KINDS[host.kind].category === 'wallType' && socket === 'top') || (KINDS[host.kind].category === 'roof' && socket === 'edge:2')) && KINDS[kind].category !== 'wallType')
         || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
       const flips = twoSided ? [false, true] : [false];
-      const turnsList = KINDS[kind].category === 'stairs' ? [0, 1, 2, 3] : [0];
+      const turnsList = KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;
       const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation

@@ -102,16 +102,6 @@ function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): un
   return doc;
 }
 
-/** Иконка двери: закрытая — полотно в проёме, открытая — полотно повёрнуто наружу. */
-const DoorIcon: React.FC<{ open: boolean }> = ({ open }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-    <path d="M4 21h16M6 21V3h12v18" />
-    {open
-      ? <><path d="M6 3l7 3v15l-7-0" fill="currentColor" fillOpacity="0.25" /><circle cx="11" cy="13" r="0.9" fill="currentColor" /></>
-      : <><rect x="7.5" y="4.5" width="9" height="16.5" fill="currentColor" fillOpacity="0.25" /><circle cx="14.5" cy="13" r="0.9" fill="currentColor" /></>}
-  </svg>
-);
-
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
@@ -135,7 +125,7 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
   hammer: [
     { id: 'twig', label: 'Ветки' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
     { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'remove', label: 'Снести' },
-  ],
+  ],  view: [],
 };
 
 const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
@@ -184,7 +174,6 @@ const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const fileRef = useRef<HTMLInputElement>(null);
-  const [doorsOpen, setDoorsOpen] = useState(() => new URLSearchParams(window.location.search).get('doors') === 'open');
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
@@ -226,7 +215,7 @@ const BlueprintSection: React.FC = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
-      if (t) { setTool(t); e.preventDefault(); }
+      if (t) { setTool(cur => (cur === t ? 'view' : t)); e.preventDefault(); }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -378,13 +367,9 @@ const BlueprintSection: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button type="button" className={`bp__icon-btn bp__doors-toggle${doorsOpen ? ' bp__icon-btn--active' : ''}`} onClick={() => setDoorsOpen(o => !o)} aria-pressed={doorsOpen}
-              aria-label={doorsOpen ? 'Закрыть двери' : 'Открыть двери'} data-tip={doorsOpen ? 'Двери открыты — нажми, чтобы закрыть все двери' : 'Двери закрыты — нажми, чтобы открыть все двери и крыши-затворы'}>
-              <DoorIcon open={doorsOpen} />
-            </button>
           </div>
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
             <div className="bp__camera" role="group" aria-label="Камера">
               <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
@@ -395,7 +380,7 @@ const BlueprintSection: React.FC = () => {
             </div>
             <div className="hotbar" role="group" aria-label="Инструменты">
               {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
-                <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id} aria-label={label}>
+                <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(cur => (cur === id ? 'view' : id))} aria-pressed={tool === id} aria-label={label}>
                   <span className="hotbar__key">{i + 1}</span>
                   <ToolIcon tool={id} />
                   <span className="hotbar__sub">{sub}</span>
@@ -405,6 +390,7 @@ const BlueprintSection: React.FC = () => {
             <div className="bp__hint">
               {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
               {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · R — снести · средняя кнопка — сдвиг камеры'}
+              {tool === 'view' && 'Просмотр: ЛКМ по двери — открыть или закрыть · 1 / 2 / 3 — взять инструмент · средняя кнопка — сдвиг камеры'}
               {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры'}
             </div>
           </div>

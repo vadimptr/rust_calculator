@@ -19,7 +19,7 @@ test('new blueprint: one twig foundation; walls snap to its four edges, nearest 
   assert.deepEqual(near[0].attach, { to: 'f1', socket: 'edge:0' });
   // соседний фундамент — тоже четыре варианта, съезд — четыре, лестница на top — четыре поворота
   assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'f1').length, 12); // 4 ребра × 3 высоты
-  assert.equal(candidatePlacements(bp, resolved, 'ramp', 'f1').length, 4);
+  assert.equal(candidatePlacements(bp, resolved, 'ramp', 'f1').length, 8); // 4 ребра + 4 поворота сверху (Block)
   assert.equal(candidatePlacements(bp, resolved, 'stairs-l-shape', 'f1').length, 4);
   // пол на фундамент ребром к ребру нельзя (фундамент к фундаменту, пол к полу)
   assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'f1').length, 0);
@@ -171,12 +171,12 @@ test('roof needs support under its low edge: both sides of a wall top are fine, 
   bp = addElement(bp, 'roof', onWall[0].attach);
   resolved = resolveBlueprint(bp).resolved;
   // сбоку от крыши стены нет — крыша висела бы в воздухе
-  assert.equal(candidatePlacements(bp, resolved, 'roof', 'r1').length, 0);
+  assert.equal(candidatePlacements(bp, resolved, 'roof', 'r1').filter(p => p.attach.socket !== 'edge:2').length, 0);
   // появился соседний фундамент со стеной на той же линии — боковая крыша получает опору
   bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
   bp = addElement(bp, 'wall', { to: 'f2', socket: 'edge:0' });
   resolved = resolveBlueprint(bp).resolved;
-  const beside = candidatePlacements(bp, resolved, 'roof', 'r1');
+  const beside = candidatePlacements(bp, resolved, 'roof', 'r1').filter(p => p.attach.socket !== 'edge:2');
   assert.equal(beside.length, 1);
   // крыша низким ребром на ребро фундамента (съезд-крыша) опирается на само ребро; над соседним
   // фундаментом тоже можно — крыша лежит выше плоскости уровня и с плитой не спорит
@@ -321,4 +321,55 @@ test('removing a middle foundation keeps everything else: the far foundation is 
   for (const id of ['f3', 'w1']) assert.deepEqual(r.resolved.elements.find(e => e.id === id)!.position, before.elements.find(e => e.id === id)!.position);
   // к закреплённому смещением фундаменту можно строить дальше
   assert.ok(candidatePlacements(blueprint, r.resolved, 'wall', 'f3').length > 0);
+});
+
+test('game sockets: ramp on a floor, ramps chain down, spiral stairs stack, nothing on a low wall, frames take no stairs', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'square-floor', { to: bp.elements[1].id, socket: 'top', selfSocket: 'edge:0' });
+  const floorId = bp.elements[2].id;
+  let resolved = resolveBlueprint(bp).resolved;
+  const onFloor = candidatePlacements(bp, resolved, 'ramp', floorId).filter(p => p.attach.socket === 'top');
+  assert.equal(onFloor.length, 4);
+  const floorY = resolved.elements.find(e => e.id === floorId)!.position[1];
+  assert.ok(Math.abs(onFloor[0].transform.position[1] - (floorY + 0.75)) < 1e-6);
+
+  bp = addElement(bp, 'ramp', { to: 'f1', socket: 'edge:2', selfSocket: 'edge:0' });
+  const rampId = bp.elements[3].id;
+  resolved = resolveBlueprint(bp).resolved;
+  const chain = candidatePlacements(bp, resolved, 'ramp', rampId);
+  assert.equal(chain.length, 1);
+  assert.equal(chain[0].attach.socket, 'edge:2');
+
+  bp = addElement(bp, 'spiral-stairs', { to: 'f1', socket: 'top' });
+  const spiralId = bp.elements[4].id;
+  resolved = resolveBlueprint(bp).resolved;
+  const up = candidatePlacements(bp, resolved, 'spiral-stairs', spiralId);
+  assert.ok(up.length > 0 && up.every(p => p.attach.socket === 'top'));
+
+  let low = newBlueprint();
+  low = addElement(low, 'low-wall', { to: 'f1', socket: 'edge:0' });
+  const lowRes = resolveBlueprint(low).resolved;
+  for (const k of ['wall', 'square-floor', 'roof'] as const) assert.equal(candidatePlacements(low, lowRes, k, low.elements[1].id).length, 0);
+
+  let frame = newBlueprint();
+  frame = addElement(frame, 'wall', { to: 'f1', socket: 'edge:0' });
+  frame = addElement(frame, 'floor-frame', { to: frame.elements[1].id, socket: 'top', selfSocket: 'edge:0' });
+  const frameRes = resolveBlueprint(frame).resolved;
+  assert.equal(candidatePlacements(frame, frameRes, 'stairs-l-shape', frame.elements[2].id).length, 0);
+  assert.equal(candidatePlacements(frame, frameRes, 'ramp', frame.elements[2].id).length, 0);
+});
+
+test('game sockets: the high edge of a roof takes a wall, a floor and another roof', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'roof', { to: bp.elements[1].id, socket: 'top', selfSocket: 'edge:0' });
+  const roofId = bp.elements[2].id;
+  const resolved = resolveBlueprint(bp).resolved;
+  const roof = resolved.elements.find(e => e.id === roofId)!;
+  for (const k of ['wall', 'square-floor', 'roof'] as const) {
+    const c = candidatePlacements(bp, resolved, k, roofId).filter(p => p.attach.socket === 'edge:2');
+    assert.ok(c.length > 0, k);
+    assert.ok(c.every(p => Math.abs(p.transform.position[1] - (roof.position[1] + 3)) < 1e-6), k);
+  }
 });
