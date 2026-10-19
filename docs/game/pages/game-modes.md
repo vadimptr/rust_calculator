@@ -3,6 +3,7 @@ id: game-modes
 title: Режимы игры (vanilla, softcore, hardcore)
 kind: mechanic
 group: Сервер и режимы
+icon: ui/gear
 summary: Режим сервера — это сущность BaseGameMode с флагами (карта, команды, чат, спальники) и ConVar; softcore удваивает добычу, возвращает половину пояса и инвентаря после смерти (одежду из-за перевёрнутого ConVar — нет) и ограничивает рейды окном по часам.
 related: [raid-window, teams, death-drop, respawn, sleeping-bag, wounded, gathering, safe-zones, server-convars, wipe-and-saves, tool-cupboard, building-privilege]
 code: [BaseGameMode.cs, GameModeVanilla.cs, GameModeSoftcore.cs, GameModeHardcore.cs, EraGameMode.cs, PrimitiveGameMode.cs, ReclaimManager.cs, ReclaimTerminal.cs, ConVar/gamemode.cs, ConVar/Softcore.cs, ConVar/Server.cs, GameSetup.cs, ItemContainer.cs, BaseCombatEntity.cs]

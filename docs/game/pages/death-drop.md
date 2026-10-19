@@ -3,6 +3,7 @@ id: death-drop
 title: Труп и сумка после смерти
 kind: mechanic
 group: Игрок
+icon: ui/skull
 summary: После смерти 5 минут лежит труп, потом вещи переезжают в сумку, которая живёт от 30 секунд до 2 часов в зависимости от самого редкого предмета внутри.
 related: [respawn, sleepers, wounded, storage-boxes, data-protection]
 code: [BasePlayer.cs, BaseCorpse.cs, LootableCorpse.cs, PlayerCorpse.cs, DroppedItemContainer.cs, Item.cs, ConVar/Server.cs]

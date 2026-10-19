@@ -3,6 +3,7 @@ id: protection
 title: Защита и «мягкая сторона»
 kind: mechanic
 group: Урон и рейд
+icon: ui/security
 summary: Защита — это 28 коэффициентов по типам урона из ассета ProtectionProperties; у блоков её задаёт грейд, а «мягкая сторона» — это дополнительная защита DirectionProperties, которая снимается, только если игрок бьёт в слабое место с обратной стороны.
 related: [damage-system, explosions, building-grades, wall, foundation, repair, armor-clothing, explosive-ammo, c4, rocket, data-protection, data-building-blocks, data-entity-health]
 code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, BaseCombatEntity.cs, BuildingBlock.cs, BuildingGrade.cs, ConstructionGrade.cs, Workbench.cs, ItemModWorkbenchReinforced.cs]

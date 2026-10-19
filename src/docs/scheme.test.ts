@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { ICON_DIR, parseScheme, renderScheme, schemeToHtml } from './scheme.ts';
+import { parseScheme, renderScheme, schemeToHtml } from './scheme.ts';
+import { iconUrl } from './icons.ts';
 
 const PAGES_DIR = new URL('../../docs/game/pages/', import.meta.url);
 const PUBLIC_DIR = new URL('../../public/', import.meta.url);
@@ -45,7 +46,7 @@ test('renderScheme draws every node, link and escapes text', () => {
   assert.equal(svg.match(/class="sch-node"/g)?.length, 2);
   assert.equal(svg.match(/class="sch-link sch-link--(wire|pipe)" d="M\d/g)?.length, 2);
   assert.ok(svg.includes('A&lt;B'));
-  assert.equal(svg.match(/<image class="sch-node__icon" href="\/icons\/scheme\/electric\.battery\.rechargable\.medium\.png"/g)?.length, 1);
+  assert.equal(svg.match(/<image class="sch-node__icon" href="\/icons\/items\/electric\.battery\.rechargable\.medium\.webp"/g)?.length, 1);
   assert.ok(svg.includes('>электричество<') && svg.includes('>вода<'), 'легенда по видам связей');
   assert.match(schemeToHtml('мусор'), /sch-error/);
   const width = Number(svg.match(/width="(\d+(?:\.\d+)?)"/)![1]);
@@ -62,7 +63,7 @@ test('all scheme blocks in documentation pages are valid', () => {
       try {
         for (const n of parseScheme(m[1]).nodes) {
           if (!n.icon) errors.push(`${f}: у узла «${n.id}» нет иконки`);
-          else if (!existsSync(new URL(`.${ICON_DIR}${n.icon}.png`, PUBLIC_DIR))) errors.push(`${f}: нет файла иконки ${n.icon}`);
+          else if (!existsSync(new URL(`.${iconUrl(n.icon)}`, PUBLIC_DIR))) errors.push(`${f}: нет файла иконки ${n.icon}`);
         }
       } catch (e) {
         errors.push(`${f}: ${(e as Error).message}`);

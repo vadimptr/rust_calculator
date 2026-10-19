@@ -3,6 +3,7 @@ id: industrial-conveyor
 title: Промышленный конвейер
 kind: object
 group: Индустрия
+icon: industrial.conveyor
 summary: Единственная сущность, которая двигает предметы по трубам. Раз в ~5 с конвейер перекладывает до 60 штук из каждой стопки, у него до 30 фильтров с режимами «Любой», «И» и «Не», минимумом, максимумом и буфером, а ещё сигналы Filter Pass и Filter Fail.
 related: [industrial-system, storage-adaptor, industrial-splitter-combiner, industrial-crafter, industrial-quirks, electricity, battery, building-privilege]
 code: [IndustrialConveyor.cs, IndustrialEntity.cs, IOEntity.cs, ItemContainer.cs, ConVar/Server.cs]

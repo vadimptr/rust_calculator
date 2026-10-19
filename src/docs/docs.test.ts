@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { VIRTUAL_PAGE_IDS, backlinks, parsePage, resolveWikiLinks, searchPages, sortPages, wikiTargets, type DocPage } from './parse.ts';
+import { hasIcon, iconUrl, splitIconRef, type IconManifest } from './icons.ts';
 
 const PAGES_DIR = new URL('../../docs/game/pages/', import.meta.url);
 
@@ -96,4 +97,27 @@ test('convars registry is valid and descriptions refer to known names', () => {
   const ru = JSON.parse(readFileSync(new URL('../../docs/game/convars.ru.json', import.meta.url), 'utf8')) as Record<string, string>;
   const names = new Set(registry.map(c => c.name));
   assert.deepEqual(Object.keys(ru).filter(n => !names.has(n)), []);
+});
+
+const ICONS: IconManifest = JSON.parse(readFileSync(new URL('../../docs/game/icons.json', import.meta.url), 'utf8'));
+const PUBLIC_DIR = new URL('../../public/', import.meta.url);
+
+test('icon refs split into kind and name', () => {
+  assert.deepEqual(splitIconRef('rocket.launcher'), { kind: 'items', name: 'rocket.launcher' });
+  assert.deepEqual(splitIconRef('ui/radiation'), { kind: 'ui', name: 'radiation' });
+  assert.deepEqual(splitIconRef('build/foundation'), { kind: 'build', name: 'foundation' });
+  assert.equal(iconUrl('ui/radiation'), '/icons/ui/radiation.webp');
+});
+
+test('every page icon is in the manifest and every manifest icon has a file', () => {
+  const errors: string[] = [];
+  for (const p of loadAll()) {
+    if (p.icon && !hasIcon(ICONS, p.icon)) errors.push(`${p.id}: нет иконки ${p.icon}, запустите tools/game-data/icons.py`);
+  }
+  for (const [kind, names] of Object.entries(ICONS)) {
+    for (const n of names) {
+      if (!existsSync(new URL(`.${iconUrl(`${kind}/${n}`)}`, PUBLIC_DIR))) errors.push(`нет файла ${kind}/${n}`);
+    }
+  }
+  assert.deepEqual(errors, []);
 });

@@ -3,6 +3,7 @@ id: water-containers
 title: Ёмкости для воды
 kind: object
 group: Вода и фермерство
+icon: water.barrel
 summary: Бочка на 20000, баки насоса и очистителей, колодец, фляги — сколько держат, как отдают воду в сеть и в руки, и как смешиваются типы воды.
 related: [water-system, water-pump, water-catcher, water-purifier, sprinkler, metabolism]
 code: [LiquidContainer.cs, BaseLiquidVessel.cs, WaterWell.cs, WaterResource.cs, WaterBall.cs]

@@ -34,6 +34,7 @@ export interface DocPage {
   title: string;
   kind: DocKind;
   group: DocGroup;
+  icon: string;
   summary: string;
   related: string[];
   code: string[];
@@ -87,6 +88,7 @@ export function parsePage(raw: string, fileId?: string): DocPage {
     title: need('title'),
     kind: kind as DocKind,
     group: group as DocGroup,
+    icon: fields.icon ?? '',
     summary: fields.summary ?? '',
     related: fields.related ? parseList(fields.related) : [],
     code: fields.code ? parseList(fields.code) : [],

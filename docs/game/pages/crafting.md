@@ -3,6 +3,7 @@ id: crafting
 title: Крафт
 kind: mechanic
 group: Предметы и производство
+icon: ui/blueprint
 summary: Очередь крафта игрока — ресурсы списываются сразу, время каждой единицы считается в момент её старта по уровню верстака рядом, а апгрейды верстака дают скорость и бонусные предметы.
 related: [workbench, research, item-condition, recycling, building-privilege, data-crafting]
 code: [ItemCrafter.cs, ItemBlueprint.cs, ItemCraftTask.cs, PlayerBlueprints.cs, ConVar/Craft.cs, Workbench.cs, ItemModWorkbenchAccelerated.cs, ItemModWorkbenchCraftSpeed.cs, ItemModWorkbenchEfficiency.cs, ItemModBlueprintCraft.cs, IndustrialCrafter.cs]

@@ -3,6 +3,7 @@ id: io-engine
 title: Движок электросети
 kind: mechanic
 group: Электричество
+icon: ui/cable
 summary: Как сервер распространяет сигнал по проводам — push-модель UpdateFromInput → GetPassthroughAmount → UpdateOutputs, очереди по типам с бюджетом кадра, троттлинг 0.1 с, корневые устройства и перезапуск схем после рестарта.
 related: [electricity, flicker, circuit-loops, electricity-quirks, battery, splitter, combiner, electric-consumers]
 code: [IOEntity.cs, ServerMgr.cs, ElectricBattery.cs, Splitter.cs, ElectricGenerator.cs, ConsoleGen.cs]

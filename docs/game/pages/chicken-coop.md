@@ -3,6 +3,7 @@ id: chicken-coop
 title: Курятник
 kind: object
 group: Вода и фермерство
+icon: chickencoop
 summary: В курятнике до 4 кур; у каждой 4 потребности (еда, вода, ласка, солнце), и только при среднем счастье выше 75 % и здоровье выше 75 % курица несёт яйцо раз в 4–5 минут; новые куры вылупляются голодными и без ухода умирают.
 related: [composter, beehive, planters, farming, water-containers]
 code: [ChickenCoop.cs, FarmableAnimal.cs, ItemModConsumable.cs, ConVar/Server.cs]

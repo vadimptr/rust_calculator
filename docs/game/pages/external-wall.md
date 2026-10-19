@@ -3,6 +3,7 @@ id: external-wall
 title: Высокая внешняя стена
 kind: object
 group: Двери и замки
+icon: wall.external.high.stone
 summary: Высокая деревянная или каменная стена вокруг базы — SimpleBuildingBlock, а не блок постройки; цепляется к самому старому зданию в радиусе 16 м и платит содержание по фиксированной ставке 20%.
 related: [external-gate, wall, decay, upkeep, tool-cupboard, building-privilege, stability, construction-placement, protection, damage-system, data-entity-health, data-protection, data-crafting]
 code: [SimpleBuildingBlock.cs, DecayEntity.cs, BuildingPrivlidge.cs, Upkeep.cs, ConVar/Decay.cs, SimpleUpgrade.cs, SimpleBuildingBlockModelVariant.cs]

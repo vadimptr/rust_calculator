@@ -3,6 +3,7 @@ id: data-entity-health
 title: Таблица: HP дверей и деплоев
 kind: data
 group: Урон и рейд
+icon: ui/health
 summary: Здоровье и таблица защиты дверей, внешних стен, турелей, ящиков и прочих деплоев из префабов игры.
 related: [door, external-wall, auto-turret, storage-boxes, tool-cupboard, data-protection]
 code: [BaseCombatEntity.cs]

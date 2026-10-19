@@ -3,6 +3,7 @@ id: combiner
 title: Сумматор (Root Combiner)
 kind: object
 group: Электричество
+icon: electrical.combiner
 summary: Сумматор складывает два входа, принимает провода только от корневых устройств (батарея, сплиттер, панель, генератор) и проверяет короткое замыкание на глубину 16, из-за чего бывают ложные срабатывания.
 related: [electricity, splitter, battery, circuit-loops, io-engine, electricity-quirks]
 code: [ElectricalCombiner.cs, WireTool.cs, IOEntity.cs]

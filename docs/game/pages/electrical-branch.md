@@ -3,6 +3,7 @@ id: electrical-branch
 title: Ветвитель
 kind: object
 group: Электричество
+icon: electrical.branch
 summary: Ветвитель (Electrical Branch) отдаёт на «Branch Out» фиксированную мощность branchAmount (1…10 000 000, по умолчанию 2), а остаток — на «Power Out»; сам ничего не потребляет.
 related: [electricity, splitter, battery, electricity-quirks]
 code: [ElectricalBranch.cs]

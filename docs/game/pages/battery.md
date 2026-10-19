@@ -3,6 +3,7 @@ id: battery
 title: Батарея
 kind: object
 group: Электричество
+icon: electric.battery.rechargable.large
 summary: Накопитель энергии — малая (15 rW, 24 000 rWs), средняя (50 rW, 540 000 rWs) и большая (100 rW, 1 440 000 rWs) батареи отдают фиксированный максимум, расходуют заряд по реальной нагрузке, заряжаются с КПД 80 % и не принимают больше 4× своего выхода.
 related: [electricity, io-engine, flicker, electricity-quirks, electric-consumers, splitter, combiner, solar-panel, wind-turbine, electric-generator, auto-turret, sam-site]
 code: [ElectricBattery.cs, IOEntity.cs]

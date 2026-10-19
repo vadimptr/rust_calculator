@@ -3,6 +3,7 @@ id: planters
 title: Грядки и горшки
 kind: object
 group: Вода и фермерство
+icon: planter.large
 summary: Грядки держат 1000–9000 воды, вмещают 1–9 растений и дают минимум 15 °C; полив только брызгами и дождём, удобрение — по одному на растение, а «дикие» грядки на карте сами выращивают удобренные растения с хорошими генами.
 related: [farming, sprinkler, water-system, composter, water-containers, chicken-coop]
 code: [PlanterBox.cs, PlanterBoxStatic.cs, GrowableEntity.cs, WaterBall.cs, ConVar/Server.cs]

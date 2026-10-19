@@ -3,6 +3,7 @@ id: animals
 title: Дикие животные — таблица
 kind: object
 group: NPC и животные
+icon: bearmeat
 summary: Все дикие звери Rust с HP, защитой, уроном, скоростями, зрением и слухом, численностью (ConVar на км²), биомом и тем, что падает с туши при разделке.
 related: [animal-behaviour, npc-perception, npc-ai, wolf, tiger, crocodile, shark, snake, gathering, data-protection]
 code: [Rust.Ai.Gen2/Bear.cs, Rust.Ai.Gen2/Wolf2.cs, Rust.Ai.Gen2/Boar.cs, Rust.Ai.Gen2/Stag.cs, Rust.Ai.Gen2/Chicken.cs, Rust.Ai.Gen2/PolarBear.cs, Rust.Ai.Gen2/Tiger.cs, Rust.Ai.Gen2/Panther.cs, Rust.Ai.Gen2/Crocodile.cs, SimpleShark.cs, SnakeHazard.cs, ConvarControlledSpawnPopulation.cs, DensitySpawnPopulation.cs]

@@ -3,6 +3,7 @@ id: power-counter
 title: Счётчик
 kind: object
 group: Электричество
+icon: electric.counter
 summary: Счётчик считает импульсы на Increment/Decrement (0…999), пропускает питание, когда счёт достиг цели, а в режиме «показывать мощность» работает как вольтметр.
 related: [electricity, memory-cell, timer, logic-gates, io-engine]
 code: [PowerCounter.cs]

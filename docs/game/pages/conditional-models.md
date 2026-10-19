@@ -3,6 +3,7 @@ id: conditional-models
 title: Сращивание моделей (крыши, стены, фундаменты)
 kind: mechanic
 group: Строительство
+icon: build/roof
 summary: Блок постройки собирает свой внешний вид из кусков модели, включая и выключая их по соседям — так крыши сливаются в скаты, а стены под крышей становятся треугольными.
 related: [roof, wall, foundation, stairs, ramp, construction-placement, building-grades]
 code: [ConditionalModel.cs, ConstructionSkin.cs, ModelConditionTest_RoofLeft.cs, ModelConditionTest_RoofTop.cs, ModelConditionTest_WallTriangleLeft.cs, ModelConditionTest_FoundationSide.cs, BuildingBlock.cs, NeighbourSocket.cs, EntityLink.cs]

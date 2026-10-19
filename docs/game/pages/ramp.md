@@ -3,6 +3,7 @@ id: ramp
 title: Пандус
 kind: object
 group: Строительство
+icon: build/ramp
 summary: Наклонный блок на секцию для подъёма на фундамент или между уровнями; бывает высоким и низким — модель выбирается сама по тому, занят ли его нижний сокет.
 related: [construction-placement, building-grades, conditional-models, foundation, stairs, floor, stability, data-building-blocks]
 code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_RampHigh.cs, ModelConditionTest_RampLow.cs]

@@ -3,6 +3,7 @@ id: flicker
 title: Мерцание (флик)
 kind: mechanic
 group: Электричество
+icon: ui/power
 summary: Что такое режим мерцания IsFlickering, какие устройства ведут себя в нём иначе, как собрать генератор колебаний и почему мерцающая батарея заряжается по пиковому входу без ограничения 4× (на многих серверах это считается абузом).
 related: [io-engine, battery, blocker, memory-cell, logic-gates, circuit-loops, electricity-quirks, solar-panel]
 code: [IOEntity.cs, ElectricBattery.cs, ElectricalBlocker.cs, ElectricalDFlipFlop.cs, ORSwitch.cs, SearchLight.cs]

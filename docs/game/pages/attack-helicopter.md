@@ -3,6 +3,7 @@ id: attack-helicopter
 title: Боевой вертолёт
 kind: object
 group: Транспорт
+icon: attackhelicopter
 summary: Двухместный боевой вертолёт на 850 HP. У пилота ракеты (HV или зажигательные, 6 за залп, перезарядка 8 с) и ловушки, у стрелка турель с обычным оружием игрока, которая бьёт только в передней полусфере и ниже горизонта.
 related: [vehicles, minicopter, scrap-helicopter, sam-site, rocket, auto-turret, explosions, protection, data-protection, data-explosives, repair, safe-zones]
 code: [AttackHelicopter.cs, AttackHelicopterRockets.cs, AttackHelicopterTurret.cs, AttackHeliGunnerSeat.cs, PlayerHelicopter.cs, BaseHelicopter.cs, BaseMountable.cs, BaseVehicle.cs, HeliPilotFlare.cs, SeekerTarget.cs, SeekingServerProjectile.cs]

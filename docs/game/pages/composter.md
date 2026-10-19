@@ -3,6 +3,7 @@ id: composter
 title: Компостер и удобрение
 kind: object
 group: Вода и фермерство
+icon: composter
 summary: Компостер без топлива перерабатывает еду и навоз в удобрение — суммарно 1 предмет в минуту, сколько бы стопок ни лежало; конский навоз даёт 10 удобрения, рыба 0,8, ягоды 0,01.
 related: [planters, farming, smelting, furnace, chicken-coop, beehive]
 code: [Composter.cs, ItemModCompostable.cs, CookableItemInfo.cs, ItemModCookable.cs, BaseOven.cs]

@@ -3,6 +3,7 @@ id: storage-boxes
 title: Ящики и хранилища
 kind: object
 group: Предметы и производство
+icon: box.wooden.large
 summary: Ящики, шкафчики, холодильник и тайник — потомки StorageContainer; маленький ящик 18 слотов, большой 48, шкафчик 42, при уничтожении содержимое выпадает мешком.
 related: [loot-spawns, decay, tool-cupboard, building-privilege, smelting, data-entity-health, data-protection]
 code: [StorageContainer.cs, BoxStorage.cs, StashContainer.cs, Fridge.cs, DroppedItemContainer.cs, ItemContainer.cs, BaseCombatEntity.cs]

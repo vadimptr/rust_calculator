@@ -3,6 +3,7 @@ id: snowmobile
 title: Снегоход
 kind: object
 group: Транспорт
+icon: snowmobile
 summary: Снегоход — двухместный транспорт на низкосортном топливе, быстрый на снегу, льду и песке и вязнущий на остальной земле; 300 HP, 12 слотов хранилища, не гниёт под крышей.
 related: [vehicles, bikes, modular-car, data-protection, repair, decay]
 code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs, VehicleEngineController.cs, TriggerHurtNotChild.cs]

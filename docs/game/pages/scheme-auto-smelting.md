@@ -3,6 +3,7 @@ id: scheme-auto-smelting
 title: Автоплавка
 kind: scheme
 group: Схемы
+icon: furnace.large
 summary: Руда и дерево из ящика сами расходятся по печам, а металл, сера и уголь сами уезжают в ящик выхода — два промышленных конвейера и адаптеры на печах, без сортировки и ручного дележа.
 related: [furnace, smelting, data-smelting, industrial-conveyor, storage-adaptor, industrial-splitter-combiner, industrial-system, industrial-quirks]
 code: [IndustrialConveyor.cs, IOEntity.cs, BaseOven.cs, IndustrialStorageAdaptor.cs, ElectricOven.cs, Igniter.cs]

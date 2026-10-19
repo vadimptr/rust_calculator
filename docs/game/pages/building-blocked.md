@@ -3,6 +3,7 @@ id: building-blocked
 title: Запрет строительства
 kind: mechanic
 group: Строительство
+icon: ui/no_spawn
 summary: Где и почему нельзя строить — зона чужого шкафа (16 м от блоков), монументы и динамические зоны запрета, дороги и рельсы, скалы, пещеры, глубокое море, вода и техника.
 related: [construction-placement, building-privilege, tool-cupboard, building-grades, building-structure, foundation]
 code: [BasePlayer.cs, BaseEntity.cs, Construction.cs, DeployVolume.cs, PreventBuildingMonumentTag.cs, DynamicPreventBuilding.cs, ConstructionErrors.cs, SocketMod_TerrainCheck.cs, SocketMod_EnvironmentVolume.cs, SocketMod_RoadCheck.cs, BuildingProximity.cs, Deployer.cs]

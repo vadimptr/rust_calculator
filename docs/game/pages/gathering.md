@@ -3,6 +3,7 @@ id: gathering
 title: Добыча ресурсов
 kind: mechanic
 group: Оружие и бой
+icon: pickaxe
 summary: Каждый удар инструментом по дереву, руде или туше выдаёт долю общего запаса узла, пропорциональную «урону добычи» инструмента, часть ресурса при этом сгорает впустую; попадания в «горячую точку» руды и крестик на дереве умножают выдачу до ×3 и ×2, а последний удар по дереву выдаёт второй такой же запас.
 related: [melee, metabolism, damage-system]
 code: [ResourceDispenser.cs, OreResourceEntity.cs, OreHotSpot.cs, TreeEntity.cs, ResourceEntity.cs, BaseMelee.cs, ResourceGatherItemConfig.cs, GameModeSoftcore.cs]

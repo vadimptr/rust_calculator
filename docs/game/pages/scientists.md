@@ -3,6 +3,7 @@ id: scientists
 title: Учёные и другие люди-NPC
 kind: object
 group: NPC и животные
+icon: scientistsuit_heavy
 summary: Все человекоподобные NPC — учёные монументов, карго, нефтевышек и Брэдли, тяжёлые учёные, жители туннелей и подводных станций, охрана аванпоста и бандитки, пугала, пряничные человечки и новые учёные Gen2 — с HP, оружием, итоговым множителем урона, дальностью боя, обзором и лутом.
 related: [npc-ai, npc-perception, bradley, cargo-ship, safe-zones, loot-spawns, armor-clothing, hit-zones, damage-system, weapon-attachments, projectile-ballistics]
 code: [HumanNPC.cs, NPCPlayer.cs, ScientistNPC.cs, ScientistBrain.cs, AIBrainSenses.cs, BaseProjectile.cs, AttackEntity.cs, ScarecrowNPC.cs, Rust.Ai.Gen2/ScientistNPC2.cs, Rust.Ai.Gen2/NpcShootingComponent.cs, Rust.Ai.Gen2/Scientist2FSM_Heavy.cs, Rust.Ai.Gen2/Scientist2FSM_Shotgun.cs, BasePlayer.cs]

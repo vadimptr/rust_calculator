@@ -3,6 +3,7 @@ id: boats
 title: Лодки и подлодки
 kind: object
 group: Транспорт
+icon: rowboat
 summary: Моторная лодка, RHIB, каяк, буксир, самодельные корабли с парусами и пушками, подлодки, подводный скутер и надувной круг — прочность, топливо, тяга, распад, затопление, торпеды и кислород, кто может сесть и угнать.
 related: [vehicles, decay, safe-zones, data-protection, data-crafting, repair, code-lock, building-privilege, cargo-ship, explosions, damage-system, protection]
 code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, PlayerBoat.cs, BoatBuildingStation.cs, BoatBuildingBlock.cs, Sail.cs, SmallEngine.cs, Anchor.cs, SteeringWheel.cs, PlayerBoatLock.cs, Cannon.cs, BaseSubmarine.cs, SubmarineDuo.cs, TorpedoServerProjectile.cs, DiverPropulsionVehicle.cs, WaterInflatable.cs, ConVar/vehicle.cs]

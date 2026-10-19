@@ -3,6 +3,7 @@ id: monument-puzzles
 title: Пазлы монументов: карты, предохранители, сброс
 kind: mechanic
 group: Монументы
+icon: keycard_red
 summary: Как работают ключ-карты и считыватели, щитки с предохранителем, кнопки и таймеры на монументах, и по каким правилам монумент «сбрасывается» — с выдавливанием игроков радиацией и убийством спящих.
 related: [monuments, monument-radiation, power-plant, electricity, item-condition, loot-spawns, sleepers, oil-rig]
 code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs, PressButton.cs, TimerSwitch.cs, ElectricGenerator.cs, PuzzleReset.cs, PuzzleResetObject.cs, TwoTierRadiationZone.cs, SpawnGroup.cs, ConVar/Server.cs, ConVar/Debugging.cs]

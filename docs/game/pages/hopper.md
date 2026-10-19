@@ -3,6 +3,7 @@ id: hopper
 title: Воронка
 kind: object
 group: Индустрия
+icon: hopper
 summary: Насадка на большой ящик или бочку. С питанием 8 воронка раз в 0,5 с затягивает в ящик один лежащий рядом предмет или всё содержимое трупа и подключается к трубам как хранилище.
 related: [industrial-system, storage-adaptor, industrial-conveyor, storage-boxes, electricity]
 code: [Hopper.cs, IndustrialEntity.cs, ItemContainer.cs, ConVar/Server.cs]

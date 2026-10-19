@@ -3,6 +3,7 @@ id: server-convars
 title: Настройки сервера (ConVar)
 kind: mechanic
 group: Сервер и режимы
+icon: ui/gear
 summary: Подборка ConVar, которые сильнее всего меняют игру — распад и содержание, урон, исчезновение предметов и трупов, ранение, спальники, погода, время, команды, ивенты — со значениями по умолчанию из кода и ссылками на страницы.
 related: [decay, upkeep, game-modes, raid-window, day-night-weather, teams, wipe-and-saves, deep-sea, world-events, respawn, sleeping-bag, wounded, death-drop, damage-system, building-grades, turret-targeting, farming, gathering, data-server-settings]
 code: [ConVar/Server.cs, ConVar/Decay.cs, ConVar/Env.cs, ConVar/Weather.cs, ConVar/Softcore.cs, ConVar/DeepSea.cs, ConVar/Player.cs, ConVar/Global.cs, ConVar/Spawn.cs, ConVar/Sentry.cs, ConVar/Bradley.cs, ConVar/PatrolHelicopter.cs, ConVar/Vehicle.cs, ConVar/Clan.cs, RelationshipManager.cs, GameModeSoftcore.cs, ConsoleGen.cs]

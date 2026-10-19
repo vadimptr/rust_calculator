@@ -3,6 +3,7 @@ id: water-system
 title: Водопровод
 kind: mechanic
 group: Вода и фермерство
+icon: hosetool
 summary: Как вода течёт по шлангам — «поток» как число в IO-сети, отдельный расход из бака раз в секунду, правило гравитации в 1 м, перелив между ёмкостями, сплиттер и почему одна ветка может остаться без воды.
 related: [water-pump, sprinkler, fluid-switch, water-containers, water-catcher, water-purifier, planters, farming, electricity]
 code: [IOEntity.cs, LiquidContainer.cs, WaterPump.cs, FluidSwitch.cs, Splitter.cs, Sprinkler.cs, WaterResource.cs, WaterTypes.cs, ConVar/Server.cs]

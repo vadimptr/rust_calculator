@@ -3,6 +3,7 @@ id: shark
 title: Акула
 kind: object
 group: NPC и животные
+icon: fish.smallshark
 summary: Простая акула на двух состояниях — патрулирует кольцо 20 м вокруг точки спавна, нападает на игрока в воде в 15 м, кусает на 30–70 раз в 7 с и не трогает тех, кто в лодке или на надувном круге.
 related: [animals, animal-behaviour, crocodile, npc-ai, gathering]
 code: [SimpleShark.cs]

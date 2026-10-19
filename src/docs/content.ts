@@ -2,6 +2,8 @@ import { parsePage, sortPages, type DocPage } from './parse';
 import { codeFileUsage, conVarsForPage, type ConVar } from './convars';
 import registryJson from '../../docs/game/convars.json';
 import ruJson from '../../docs/game/convars.ru.json';
+import iconsJson from '../../docs/game/icons.json';
+import type { IconManifest } from './icons';
 
 const files = import.meta.glob('../../docs/game/pages/*.md', {
   query: '?raw',
@@ -69,6 +71,7 @@ function settingsPage(): DocPage {
     title: 'Таблица: настройки сервера',
     kind: 'data',
     group: 'Сервер и режимы',
+    icon: 'ui/gear',
     summary: 'Все серверные настройки, влияющие на описанные механики: значение по умолчанию, что делают и где описаны.',
     related: ['server-convars', 'game-modes'],
     code: ['ConsoleGen.cs'],
@@ -80,3 +83,7 @@ function settingsPage(): DocPage {
 export const DOC_PAGES: DocPage[] = sortPages([...filePages, settingsPage()]);
 
 export const DOC_BY_ID: ReadonlyMap<string, DocPage> = new Map(DOC_PAGES.map(p => [p.id, p]));
+
+export const ICONS = iconsJson as IconManifest;
+
+export const ITEM_ICONS: ReadonlySet<string> = new Set(ICONS.items);

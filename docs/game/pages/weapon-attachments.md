@@ -3,6 +3,7 @@ id: weapon-attachments
 title: Модули оружия
 kind: mechanic
 group: Оружие и бой
+icon: weapon.mod.holosight
 summary: Модули огнестрела меняют урон, дистанцию, разброс, темп, отдачу и магазин через пары «множитель + смещение»; множители всех модулей перемножаются, смещения складываются, а глушитель, кроме чисел, меняет звук, трассер и индикатор урона у жертвы.
 related: [projectile-ballistics, hit-zones, melee, damage-system]
 code: [ProjectileWeaponMod.cs, BaseProjectile.cs, Projectile.cs, RecoilProperties.cs, BasePlayer.cs, Rust.Ai.Gen2/NpcNoiseManager.cs]

@@ -3,6 +3,7 @@ id: monument-radiation
 title: Радиация на монументах
 kind: mechanic
 group: Монументы
+icon: hazmatsuit
 summary: Какой уровень радиации и сколько зон у каждого монумента (по префабам), сколько защиты нужно, где броня не помогает (ракетная шахта, нефтевышки, радиация сброса пазла).
 related: [radiation, monuments, monument-puzzles, armor-clothing, oil-rig, missile-silo, locked-crate]
 code: [TriggerRadiation.cs, Radiation.cs, RadiationSphere.cs, PuzzleReset.cs, TwoTierRadiationZone.cs]

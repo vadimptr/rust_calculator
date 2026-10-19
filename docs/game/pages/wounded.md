@@ -3,6 +3,7 @@ id: wounded
 title: Ранение
 kind: mechanic
 group: Игрок
+icon: ui/bleeding
 summary: Смертельный урон от многих источников вместо смерти кладёт игрока «на пол» — сначала ползком на 40–50 секунд, потом бросок на выздоровление; выстрел в голову, взрыв, холод и радиация убивают сразу.
 related: [metabolism, damage-system, hit-zones, sleepers, respawn]
 code: [BasePlayer.cs, ConVar/Server.cs, ConVar/Player.cs, PlayerInventory.cs, MedicalTool.cs]

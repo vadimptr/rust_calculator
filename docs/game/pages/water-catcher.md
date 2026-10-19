@@ -3,6 +3,7 @@ id: water-catcher
 title: Водосборник
 kind: object
 group: Вода и фермерство
+icon: water.catcher.large
 summary: Водосборник раз в минуту добавляет воду по формуле «база + туман + дождь + снег»; дождь весит в 1000 раз больше снега, поэтому в арктике сборник почти бесполезен, а в ливень наполняется за минуты.
 related: [water-system, water-containers, water-purifier, sprinkler, world-events]
 code: [WaterCatcher.cs, WaterCatcherCollectRate.cs, Climate.cs, LiquidContainer.cs]

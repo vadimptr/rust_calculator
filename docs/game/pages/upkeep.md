@@ -3,6 +3,7 @@ id: upkeep
 title: Содержание (upkeep)
 kind: mechanic
 group: Здание и шкаф
+icon: ui/stopwatch
 summary: Шкаф раз в 10 минут списывает ресурсы за каждый блок, дверь и деплой здания; суточная цена — доля от стоимости постройки, растущая с размером базы и числом игроков в группе.
 related: [decay, tool-cupboard, building-privilege, building-structure, building-grades, door, code-lock, external-wall, data-building-blocks, data-crafting]
 code: [BuildingPrivlidge.cs, DecayEntity.cs, ConVar/Decay.cs, Upkeep.cs, ConstructionGrade.cs, BaseCombatEntity.cs, BuildingBlock.cs]

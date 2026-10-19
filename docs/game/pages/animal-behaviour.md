@@ -3,6 +3,7 @@ id: animal-behaviour
 title: Поведение животных
 kind: mechanic
 group: NPC и животные
+icon: ui/bite
 summary: Кто на кого нападает и кого боится (команды NPCTeam), когда зверь бросается в погоню, когда убегает (вода, безопасная зона, низкое HP, огонь, «терпение»), как работает простой автомат медведя/кабана/оленя/курицы и как звери едят и лечатся.
 related: [npc-ai, npc-perception, animals, wolf, tiger, crocodile, shark, snake, gathering, safe-zones]
 code: [Rust.Ai.Gen2/BasicAnimalFsm.cs, Rust.Ai.Gen2/NPCTeam.cs, Rust.Ai.Gen2/SenseComponent.cs, Rust.Ai.Gen2/NPCEncounterTimer.cs, Rust.Ai.Gen2/State_AnimalBite.cs, Rust.Ai.Gen2/State_Roam.cs, NpcFireManager.cs, NpcFoodManager.cs]

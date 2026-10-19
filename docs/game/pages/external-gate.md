@@ -3,6 +3,7 @@ id: external-gate
 title: Высокие внешние ворота
 kind: object
 group: Двери и замки
+icon: gates.external.high.stone
 summary: Ворота в линии высоких стен — класс Gate, наследник Door; открываются, запираются и апгрейдятся как дверь, а содержание платят как высокая стена.
 related: [external-wall, doors, door, locks, code-lock, upkeep, decay, protection, data-entity-health, data-protection, data-crafting]
 code: [Gate.cs, Door.cs, BuildingPrivlidge.cs, ConVar/Decay.cs]

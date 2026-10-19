@@ -3,6 +3,7 @@ id: explosive-ammo
 title: Разрывные патроны
 kind: object
 group: Урон и рейд
+icon: ammo.rifle.explosive
 summary: Разрывной патрон 5.56 наносит два вида урона — обычное попадание пули на 50 Bullet (зависит от оружия и дистанции) и мини-взрыв на 5 Explosion в радиусе 1.5 м, который бьёт и сам объект попадания, и его соседей.
 related: [explosions, damage-system, protection, projectile-ballistics, rocket, building-grades, data-explosives, data-protection, data-building-blocks, data-crafting]
 code: [ItemModProjectileRadialDamage.cs, ItemModProjectile.cs, Projectile.cs, BaseProjectile.cs, BasePlayer.cs, BaseEntity.cs, DamageUtil.cs]

@@ -3,6 +3,7 @@ id: floor
 title: Пол (перекрытие)
 kind: object
 group: Строительство
+icon: build/floor
 summary: Квадратный и треугольный пол и их рамы под люки — опираются на верх стен или край соседнего пола, держат следующий этаж; стоят дёшево, но стабильность падает с каждым пролётом.
 related: [construction-placement, building-grades, stability, wall, foundation, roof, stairs, ladder-hatch, conditional-models, building-blocked, data-building-blocks, data-protection]
 code: [BuildingBlock.cs, ConstructionSocket.cs, StabilityEntity.cs, ModelConditionTest_WallTriangleLeft.cs, ModelConditionTest_SpiralStairs.cs, WallpaperSettings.cs]

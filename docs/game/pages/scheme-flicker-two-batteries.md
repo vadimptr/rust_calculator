@@ -3,6 +3,7 @@ id: scheme-flicker-two-batteries
 title: Зарядка двух батарей от панели через флик
 kind: scheme
 group: Схемы
+icon: electric.battery.rechargable.medium
 summary: Солнечная панель заряжает две батареи сразу почти на полной скорости каждая — ячейка памяти переключает панель между ними несколько раз в секунду, а мерцающая батарея считает заряд по пику входа.
 related: [flicker, battery, solar-panel, memory-cell, blocker, splitter, electrical-branch, circuit-loops]
 code: [ElectricBattery.cs, IOEntity.cs, ElectricalDFlipFlop.cs, ElectricalBlocker.cs, ElectricalBranch.cs, Splitter.cs, SolarPanel.cs]

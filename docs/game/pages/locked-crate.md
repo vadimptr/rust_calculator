@@ -3,6 +3,7 @@ id: locked-crate
 title: Запертый ящик и чинук (CH47)
 kind: object
 group: Мир и события
+icon: ui/crate
 summary: Ящик с ноутбуком открывается взломом за 15 минут; стрельба по ноутбуку отматывает взлом назад. Чинук привозит такой ящик на монумент, карго и нефтевышки дают его по своим правилам.
 related: [world-events, cargo-ship, airdrop, loot-spawns]
 code: [HackableLockedCrate.cs, CH47HelicopterAIController.cs, CH47AIBrain.cs, CH47DropZone.cs, AirfieldCallChinookTerminal.cs, RadiationSphere.cs]

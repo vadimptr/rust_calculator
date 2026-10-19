@@ -3,6 +3,7 @@ id: industrial-splitter-combiner
 title: Промышленные сплиттер и объединитель
 kind: object
 group: Индустрия
+icon: industrial.splitter
 summary: Пассивные разветвители труб на 1→3 и 3→1. Сами ничего не делят — делит конвейер, поровну на все найденные за ними хранилища, независимо от того, как ветвится дерево.
 related: [industrial-system, industrial-conveyor, storage-adaptor, industrial-quirks, electricity]
 code: [IOEntity.cs, Splitter.cs, ElectricalCombiner.cs, IndustrialConveyor.cs]

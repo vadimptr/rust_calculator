@@ -3,6 +3,7 @@ id: door
 title: Дверь (одинарная и двойная)
 kind: object
 group: Двери и замки
+icon: door.hinged.wood
 summary: Распашная дверь любого материала — сущность класса Door в дверном проёме; держит замок, доводчик, молоток и контроллер, апгрейдится в дверь получше.
 related: [doors, locks, code-lock, key-lock, garage-door, ladder-hatch, external-gate, wall, construction-placement, stability, decay, upkeep, damage-system, protection, explosions, data-entity-health, data-protection, data-crafting, data-explosives]
 code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, SimpleUpgrade.cs, BaseMelee.cs]

@@ -3,6 +3,7 @@ id: wolf
 title: Волк
 kind: object
 group: NPC и животные
+icon: skull.wolf
 summary: Стайный хищник Gen2 — воет, созывая стаю, кружит, лает и бросается в атаку; боится огня (и, из-за особенности кода, голосового чата), убегает при HP ниже 25 % и от воды.
 related: [animals, animal-behaviour, npc-perception, npc-ai, tiger, gathering]
 code: [Rust.Ai.Gen2/Wolf2.cs, Rust.Ai.Gen2/Wolf2FSM.cs, Rust.Ai.Gen2/State_Howl.cs, Rust.Ai.Gen2/State_Bark.cs, Rust.Ai.Gen2/State_WolfHurt.cs, Rust.Ai.Gen2/Trans_TargetIsNearFire.cs, Rust.Ai.Gen2/NpcNoiseManager.cs]

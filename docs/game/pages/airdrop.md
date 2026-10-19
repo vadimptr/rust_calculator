@@ -3,6 +3,7 @@ id: airdrop
 title: Аирдроп (самолёт и ящик снабжения)
 kind: object
 group: Мир и события
+icon: supply.signal
 summary: Самолёт пролетает через всю карту и в середине пути сбрасывает ящик снабжения на парашюте; ящик открывается при касании земли или через 5 минут, сигнальная граната вызывает самолёт к себе.
 related: [world-events, locked-crate, loot-spawns]
 code: [CargoPlane.cs, SupplyDrop.cs, SupplySignal.cs, ConVar/Supply.cs]

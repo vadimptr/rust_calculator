@@ -3,6 +3,7 @@ id: npc-shops
 title: Магазины NPC
 kind: mechanic
 group: Торговля
+icon: ui/market
 summary: NPC-автоматы на Аванпосте, в Бандитском лагере, на конюшнях и в деревнях бесконечно пополняют запас из ассета NPCVendingOrder, а цены за скрап плавают от ×0,5 до ×2 по спросу и на свежем вайпе стартуют с ×2.
 related: [npc-shop-prices, vending-machines, drone-marketplace, travelling-vendor, gambling, safe-zones]
 code: [NPCVendingMachine.cs, NPCVendingOrder.cs, InvisibleVendingMachine.cs, NPCVendingOrderManifest.cs, VendingMachine.cs]

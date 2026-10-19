@@ -3,6 +3,7 @@ id: armor-clothing
 title: Броня и одежда
 kind: mechanic
 group: Оружие и бой
+icon: metal.facemask
 summary: Защита одежды складывается по всем вещам, покрывающим зону попадания, и режет урон множителем (1 − защита) с потолком 100 %; сломанная вещь защищает на 25 %, а слоты и конфликты определяются «занятыми» частями тела.
 related: [hit-zones, protection, damage-system, projectile-ballistics, melee, explosions, metabolism, data-protection]
 code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable.cs, BasePlayer.cs, ItemModContainerArmorSlot.cs, ItemModArmorInsert.cs, PlayerInventory.cs]

@@ -3,6 +3,7 @@ id: electric-generator
 title: Генераторы
 kind: object
 group: Электричество
+icon: electric.fuelgenerator.small
 summary: Малый топливный генератор (40 rW, 1 топливо на 14.4 с), тестовый генератор (100 rW на каждый из трёх выходов), водяное колесо (до 30 rW от воды, до 60 вручную) и монументные генераторы — формулы, входы и подводные камни.
 related: [electricity, solar-panel, wind-turbine, battery, io-engine, electricity-quirks, switches]
 code: [FuelGenerator.cs, ElectricGenerator.cs, ElectricWaterWheel.cs, FuelElectricGenerator.cs]

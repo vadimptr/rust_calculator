@@ -3,6 +3,7 @@ id: safe-zones
 title: Безопасные зоны
 kind: mechanic
 group: Мир и события
+icon: ui/peace
 summary: Как работают Outpost и Bandit Camp — зона, где нельзя доставать оружие и наносить урон, таймер враждебности, турели-миротворцы и убийство спящих.
 related: [turret-targeting, damage-system, patrol-helicopter, bradley, vehicles, world-events, sleepers, recycler, respawn]
 code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone.cs, BasePlayer.cs, BaseCombatEntity.cs, NPCAutoTurret.cs, AutoTurret.cs, BaseProjectile.cs, ConVar/Sentry.cs, PlayerStateManager.cs]

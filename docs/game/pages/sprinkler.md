@@ -3,6 +3,7 @@ id: sprinkler
 title: Разбрызгиватель
 kind: object
 group: Вода и фермерство
+icon: electric.sprinkler
 summary: Разбрызгиватель забирает из бака 2 воды в секунду и раз в 5 с разбрызгивает 15 воды поровну на всё, что видит в радиусе 3 м, — грядки, людей, костры; солёная вода сушит грядки, радиоактивная убивает растения.
 related: [water-system, water-pump, planters, farming, fluid-switch, beehive]
 code: [Sprinkler.cs, LiquidContainer.cs, PlanterBox.cs, ISplashable.cs, ConVar/Server.cs]

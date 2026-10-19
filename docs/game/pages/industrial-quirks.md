@@ -3,6 +3,7 @@ id: industrial-quirks
 title: Баги и неочевидное в индустрии
 kind: mechanic
 group: Индустрия
+icon: ui/warning
 summary: Что в промышленной автоматике работает не так, как кажется. Лимит стопок за тик не действует, Min по категории считается не по тем слотам, в режиме «Не» сигнал Pass может залипать, рестарт мгновенно заканчивает крафт, а переключать конвейеры может любой.
 related: [industrial-system, industrial-conveyor, industrial-crafter, storage-adaptor, industrial-splitter-combiner, hopper, building-blocked, electricity, battery]
 code: [IndustrialConveyor.cs, IndustrialCrafter.cs, IndustrialStorageAdaptor.cs, IOEntity.cs, ElectricFurnaceIO.cs, ElectricBattery.cs, WireTool.cs, BuildingBlock.cs]

@@ -3,6 +3,7 @@ id: npc-perception
 title: Зрение и слух NPC
 kind: mechanic
 group: NPC и животные
+icon: ui/examine
 summary: Как NPC замечают игрока — «ясность» видимости у зверей и учёных Gen2 (конус, дальнее зрение только днём, присед, бег, транспорт, дым) и шар с конусом у старых учёных; какие звуки они слышат и почему глушитель помогает только против Gen2.
 related: [npc-ai, animal-behaviour, scientists, animals, wolf, tiger, crocodile, weapon-attachments, safe-zones]
 code: [Rust.Ai.Gen2/SenseComponent.cs, Rust.Ai.Gen2/NpcNoiseManager.cs, AIBrainSenses.cs, BaseCombatEntity.cs, BaseProjectile.cs, ConVar/AI.cs]

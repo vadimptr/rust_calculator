@@ -3,6 +3,7 @@ id: recycler
 title: Переработчик
 kind: object
 group: Предметы и производство
+icon: scrap
 summary: Контейнер на 6 входных и 6 выходных слотов, который раз в тик разбирает часть одного стака; бывает зелёным, жёлтым (безопасная зона) и красным, а часть параметров зависит от энергосети.
 related: [recycling, safe-zones, crafting, item-condition]
 code: [Recycler.cs, RecyclerConfig.cs, Powergrid.cs]

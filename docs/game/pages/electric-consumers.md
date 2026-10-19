@@ -3,6 +3,7 @@ id: electric-consumers
 title: Потребление электроприборов
 kind: mechanic
 group: Электричество
+icon: ui/lightbulb
 summary: Таблица потребления (ConsumptionAmount) всех игровых электроприборов — из кода и из полей префабов, с пометкой источника и особенностей расчёта спроса для батареи.
 related: [electricity, battery, io-engine, electricity-quirks, auto-turret, sam-site, solar-panel, wind-turbine, electric-generator]
 code: [IOEntity.cs, AutoTurret.cs, SamSite.cs, SimpleLight.cs, CeilingLight.cs, TeslaCoil.cs, Elevator.cs, Hopper.cs, NeonSign.cs, DeployableBoomBox.cs]

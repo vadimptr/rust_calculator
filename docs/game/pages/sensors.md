@@ -3,6 +3,7 @@ id: sensors
 title: Датчики и беспроводные устройства
 kind: object
 group: Электричество
+icon: electric.hbhfsensor
 summary: HBHF-сенсор, лазерный детектор, сейсмодатчик, RF-передатчик и приёмник, умная сигнализация, монитор хранилища, цифровые часы и сигнальные выходы турелей — что они выдают на выход и как часто обновляются.
 related: [electricity, switches, logic-gates, power-counter, io-engine, electricity-quirks, auto-turret, sam-site, c4]
 code: [BaseDetector.cs, HBHFSensor.cs, LaserDetector.cs, SeismicSensor.cs, RFBroadcaster.cs, RFReceiver.cs, RFManager.cs, SmartAlarm.cs, StorageMonitor.cs, DigitalClock.cs, AutoTurret.cs, SamSite.cs]

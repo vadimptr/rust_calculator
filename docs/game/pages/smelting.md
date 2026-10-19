@@ -3,6 +3,7 @@ id: smelting
 title: Плавка и готовка
 kind: mechanic
 group: Предметы и производство
+icon: metal.ore
 summary: Печь раз в 0,5 с отдаёт всем стакам во входных слотах общий «бюджет» готовки, делённый поровну, а топливо горит со скоростью, зависящей только от температуры печи.
 related: [furnace, crafting, recycling, data-smelting]
 code: [BaseOven.cs, ItemModCookable.cs, CookableItemInfo.cs, ItemModBurnable.cs, ElectricOven.cs, ElectricFurnaceIO.cs, ConVar/Server.cs]

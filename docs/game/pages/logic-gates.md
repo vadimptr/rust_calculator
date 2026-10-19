@@ -3,6 +3,7 @@ id: logic-gates
 title: Логические элементы (AND, OR, XOR, RAND)
 kind: object
 group: Электричество
+icon: electric.andswitch
 summary: AND, OR и XOR выдают максимум из входов, а не сумму; OR и XOR обнуляют вход при петле; RAND пропускает питание с вероятностью 50 % после каждого сигнала Set.
 related: [electricity, blocker, memory-cell, combiner, circuit-loops, flicker, io-engine, electricity-quirks]
 code: [ANDSwitch.cs, ORSwitch.cs, XORSwitch.cs, RANDSwitch.cs, ElectricalBlocker.cs]

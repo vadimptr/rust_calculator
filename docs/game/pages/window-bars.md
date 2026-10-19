@@ -3,6 +3,7 @@ id: window-bars
 title: Решётки, амбразуры и ставни
 kind: object
 group: Двери и замки
+icon: wall.window.bars.metal
 summary: Вставки в оконный проём — решётки и стёкла (SimpleBuildingBlock), амбразуры (StabilityEntity) и ставни (Door); HP от 200 до 500, отдельных классов в коде нет, различия — в префабах.
 related: [wall, door, doors, upkeep, decay, protection, construction-placement, data-entity-health, data-protection, data-crafting]
 code: [SimpleBuildingBlock.cs, Door.cs, StabilityEntity.cs, SimpleUpgrade.cs, BaseMelee.cs]

@@ -3,6 +3,7 @@ id: world-events
 title: Ивенты
 kind: mechanic
 group: Мир и события
+icon: ui/icon-map
 summary: Как сервер планирует и запускает ивенты (патрульный вертолёт, аирдроп, карго, чинук, Брэдли) и что у них общего — таймеры, ConVar, ящики.
 related: [patrol-helicopter, bradley, cargo-ship, airdrop, locked-crate, safe-zones, loot-spawns, damage-system]
 code: [EventSchedule.cs, TriggeredEvent.cs, TriggeredEventPrefab.cs, EventScheduleWipeOffset.cs, ConVar/Events.cs, ConVar/Server.cs, BradleySpawner.cs, RoadBradleys.cs, AirfieldCallChinookTerminal.cs]

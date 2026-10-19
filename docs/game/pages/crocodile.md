@@ -3,6 +3,7 @@ id: crocodile
 title: Крокодил
 kind: object
 group: NPC и животные
+icon: crocodilemeat
 summary: Водный хищник джунглей — плавает на 9 м/с, на суше атакует броском-«плюхом», укусом и щелчком, разрушает соломенный фундамент под игроком и не трогает тех, кто сидит в лодке или машине.
 related: [animals, animal-behaviour, npc-perception, npc-ai, tiger, shark]
 code: [Rust.Ai.Gen2/Crocodile.cs, Rust.Ai.Gen2/CrocodileFSM.cs, Rust.Ai.Gen2/State_CrocBreakFoundation.cs, Rust.Ai.Gen2/Trans_IsTargetProtectedByMount.cs, Rust.Ai.Gen2/Trans_IsTargetTooFarFromWater.cs, BaseMountable.cs]

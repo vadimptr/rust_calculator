@@ -3,6 +3,7 @@ id: radiation
 title: Радиация
 kind: mechanic
 group: Игрок
+icon: ui/radiation
 summary: Зона радиации задаёт уровень облучения, защита одежды вычитается из него (максимум 50), облучение копится в радиационное отравление, а оно превращается в урон один к одному.
 related: [metabolism, armor-clothing, safe-zones, damage-system]
 code: [Radiation.cs, TriggerRadiation.cs, TwoTierRadiationZone.cs, PlayerMetabolism.cs, BaseEntity.cs, BasePlayer.cs]

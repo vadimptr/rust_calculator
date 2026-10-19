@@ -3,6 +3,7 @@ id: snake
 title: Змея
 kind: object
 group: NPC и животные
+icon: snakemeat
 summary: Змея джунглей — «опасность с реакцией»: шипит, когда вы подошли, и даёт 0,75 с (плюс пинг) нажать прыжок; не успели — укус 20 и замедление на 70 % на 6 с, после чего змея уползает на 10–15 м.
 related: [animals, animal-behaviour, gathering, npc-ai]
 code: [SnakeHazard.cs, WildlifeHazard.cs, TriggerQTE.cs, Modifier.cs]

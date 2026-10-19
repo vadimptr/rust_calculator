@@ -3,6 +3,7 @@ id: garage-door
 title: Гаражная дверь
 kind: object
 group: Двери и замки
+icon: wall.frame.garagedoor
 summary: Подъёмные ворота для широкого проёма — тот же класс Door, отличия только в префабе; 600 HP, анимация 3,4 с, транспорт под воротами останавливает закрытие.
 related: [doors, door, locks, code-lock, wall, upkeep, protection, data-entity-health, data-protection, data-crafting]
 code: [Door.cs, DoorCloser.cs, DoorManipulator.cs]

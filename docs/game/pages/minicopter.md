@@ -3,6 +3,7 @@ id: minicopter
 title: Миникоптер
 kind: object
 group: Транспорт
+icon: minicopter
 summary: Двухместный вертолёт игроков на 750 HP. Взрывной урон и огонь бьют его втрое сильнее, а пули почти не берут. Разбивается о землю уже на 7 м/с, а при уничтожении наносит сидящим 1000 урона взрывом.
 related: [vehicles, scrap-helicopter, attack-helicopter, sam-site, rocket, explosions, protection, data-protection, repair, decay, safe-zones]
 code: [Minicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicopter.cs, BaseHelicopter.cs, BaseVehicle.cs, VehicleEngineController.cs, HelicopterFlares.cs, HeliPilotFlare.cs, SeekerTarget.cs, SeekingServerProjectile.cs, LargeShredder.cs, TriggerHurtNotChild.cs]

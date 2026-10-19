@@ -3,6 +3,7 @@ id: data-crafting
 title: Таблица: рецепты крафта
 kind: data
 group: Предметы и производство
+icon: ui/blueprint
 summary: Ингредиенты, время и уровень верстака для каждого крафтового предмета из ассетов игры.
 related: [crafting, research, workbench, recycling]
 code: [ItemBlueprint.cs, ItemCrafter.cs]

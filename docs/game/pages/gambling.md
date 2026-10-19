@@ -3,6 +3,7 @@ id: gambling
 title: Азартные игры
 kind: mechanic
 group: Торговля
+icon: ui/dice
 summary: Колесо фортуны возвращает 96 % ставки на жёлтом, зелёном и синем и 84 % на красном, слот-машина — около 92 %, блэкджек играется 10 колодами с новым шузом каждую раздачу, а покер — без рейка.
 related: [npc-shops, npc-shop-prices, safe-zones]
 code: [BigWheelGame.cs, BigWheelBettingTerminal.cs, HitNumber.cs, SlotMachine.cs, SlotMachinePayoutSettings.cs, BlackjackController.cs, TexasHoldEmController.cs, CardGameController.cs, StackOfCards.cs]

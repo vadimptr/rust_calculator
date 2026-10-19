@@ -3,6 +3,7 @@ id: npc-shop-prices
 title: Цены в магазинах NPC
 kind: object
 group: Торговля
+icon: scrap
 summary: Полный список товаров всех NPC-магазинов (Аванпост, Бандитский лагерь, конюшни, рыбацкие деревни, колодцы, плавучий город) с базовыми ценами, запасом и скоростью пополнения из ассетов NPCVendingOrder.
 related: [npc-shops, vending-machines, drone-marketplace, travelling-vendor, gambling, safe-zones]
 code: [NPCVendingOrder.cs, NPCVendingMachine.cs, InvisibleVendingMachine.cs]

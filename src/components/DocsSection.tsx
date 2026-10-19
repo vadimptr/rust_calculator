@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Marked } from 'marked';
-import { CONVAR_PAGES, DOC_BY_ID, DOC_PAGES, PAGE_CONVARS, conVarDescription } from '../docs/content';
+import { CONVAR_PAGES, DOC_BY_ID, DOC_PAGES, ITEM_ICONS, PAGE_CONVARS, conVarDescription } from '../docs/content';
+import { iconUrl } from '../docs/icons';
 import { schemeToHtml } from '../docs/scheme';
 import { DOC_GROUPS, KIND_LABEL, backlinks, resolveWikiLinks, searchPages, type DocKind, type DocPage } from '../docs/parse';
 
@@ -23,11 +24,21 @@ const marked = new Marked({
     code({ text, lang }) {
       return lang === 'scheme' ? schemeToHtml(text) : false;
     },
+    codespan({ text }) {
+      if (!ITEM_ICONS.has(text)) return false;
+      return `<code class="docs-item"><img src="${iconUrl(text)}" alt="" loading="lazy">${text}</code>`;
+    },
   },
 });
 
 function renderMarkdown(md: string): string {
   return marked.parse(resolveWikiLinks(md, TITLES), { async: false, gfm: true }) as string;
+}
+
+function PageIcon({ page, className }: { page: DocPage; className: string }) {
+  return page.icon
+    ? <img className={className} src={iconUrl(page.icon)} alt="" loading="lazy" />
+    : <span className={className} aria-hidden="true" />;
 }
 
 function PageLink({ page, active }: { page: DocPage; active?: boolean }) {
@@ -36,6 +47,7 @@ function PageLink({ page, active }: { page: DocPage; active?: boolean }) {
       <span className={`docs-kind docs-kind--${page.kind}`} title={KIND_LABEL[page.kind]}>
         {KIND_LETTER[page.kind]}
       </span>
+      <PageIcon page={page} className="docs-nav__icon" />
       <span>{page.title}</span>
     </a>
   );
@@ -151,7 +163,10 @@ function Page({ page }: { page: DocPage }) {
       <nav className="docs-page__crumbs">
         <a href="#docs">Документация</a> · {page.group} · {KIND_LABEL[page.kind]}
       </nav>
-      <h2 className="docs-page__title">{page.title}</h2>
+      <h2 className="docs-page__title">
+        {page.icon && <img className="docs-page__icon" src={iconUrl(page.icon)} alt="" />}
+        {page.title}
+      </h2>
       {page.summary && <p className="docs-page__lead">{page.summary}</p>}
       <div className="docs-md" dangerouslySetInnerHTML={{ __html: html }} />
       {page.id !== 'data-server-settings' && <SettingsBlock key={page.id} pageId={page.id} />}

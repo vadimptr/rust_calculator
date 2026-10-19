@@ -3,6 +3,7 @@ id: hit-zones
 title: Зоны попадания
 kind: mechanic
 group: Оружие и бой
+icon: ui/bullet
 summary: Каждая кость скелета отнесена к зоне (голова, грудь, живот, руки, кисти, ноги, ступни); множитель урона по зоне берётся из ассета DamageProperties снаряда или оружия — у большинства пуль голова ×2, ноги ×0.75 — и работает только для игроков и человекоподобных NPC.
 related: [projectile-ballistics, armor-clothing, melee, damage-system, protection]
 code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BasePlayer.cs, BaseCombatEntity.cs, Rust.Ai.Gen2/ScientistNPC2.cs, ScarecrowNPC.cs]

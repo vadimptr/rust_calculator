@@ -3,6 +3,7 @@ id: cargo-ship
 title: Грузовой корабль (Cargo Ship)
 kind: object
 group: Мир и события
+icon: ui/ferry
 summary: Корабль идёт вдоль побережья, заходит в гавани, по таймеру добавляет ящики (включая запертый ящик для взлома), а в конце уходит в море с растущей радиацией.
 related: [world-events, locked-crate, loot-spawns, vehicles]
 code: [CargoShip.cs, HackableLockedCrate.cs, ConsoleGen.cs]

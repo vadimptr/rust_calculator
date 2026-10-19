@@ -3,6 +3,7 @@ id: data-protection
 title: Таблица: защита по типам урона
 kind: data
 group: Урон и рейд
+icon: ui/security
 summary: Сколько процентов урона каждого типа гасит защита блоков, дверей, деплоев и одежды.
 related: [protection, damage-system, data-building-blocks, data-entity-health, armor-clothing]
 code: [ProtectionProperties.cs, BaseCombatEntity.cs]

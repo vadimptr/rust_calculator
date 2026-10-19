@@ -3,6 +3,7 @@ id: ladder-hatch
 title: Люк с лестницей
 kind: object
 group: Двери и замки
+icon: floor.ladder.hatch
 summary: Люк в полу с приставной лестницей — это дверь класса Door в проёме пола; открывается и запирается по тем же правилам, что и обычная дверь.
 related: [doors, door, locks, code-lock, stability, upkeep, protection, floor, data-entity-health, data-protection, data-crafting]
 code: [Door.cs, TriggerLadder.cs]

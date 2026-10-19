@@ -3,6 +3,7 @@ id: water-purifier
 title: Очиститель воды
 kind: object
 group: Вода и фермерство
+icon: powered.water.purifier
 summary: Очиститель на костре превращает 1000 любой воды в минуту в 250 пресной (4:1), электрический на 5 ед. тока — ~4000 в ~2000 (2:1); выходной бак электрического качает вверх, как насос.
 related: [water-system, water-pump, water-containers, furnace, electricity]
 code: [WaterPurifier.cs, PoweredWaterPurifier.cs, BaseOven.cs, LiquidContainer.cs]

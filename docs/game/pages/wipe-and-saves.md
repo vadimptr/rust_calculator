@@ -3,6 +3,7 @@ id: wipe-and-saves
 title: Сохранение, рестарт и вайп
 kind: mechanic
 group: Сервер и режимы
+icon: ui/save
 summary: Мир пишется в файл .sav раз в 10 минут (server.saveinterval), чертежи — сразу в отдельную базу; многие таймеры (спальники, снос, блокировка замка, свежий шкаф в softcore) в сохранение не попадают и обнуляются при рестарте, а вайп карты и вайп чертежей — разные вещи.
 related: [respawn, sleeping-bag, building-grades, building-privilege, code-lock, key-lock, decay, upkeep, locked-crate, airdrop, world-events, vehicles, game-modes, raid-window, teams, day-night-weather, research, server-convars]
 code: [SaveRestore.cs, World.cs, UserPersistance.cs, PlayerBlueprints.cs, WipeTimer.cs, EnvSync.cs, DecayEntity.cs, SleepingBag.cs, CodeLock.cs, BaseGameMode.cs, ReclaimManager.cs, RelationshipManager.cs, ConVar/Server.cs]

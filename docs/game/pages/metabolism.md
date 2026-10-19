@@ -3,6 +3,7 @@ id: metabolism
 title: Метаболизм
 kind: mechanic
 group: Игрок
+icon: ui/fork_and_spoon
 summary: Раз в секунду сервер пересчитывает калории, воду, пульс, температуру, кровотечение, яд, радиацию, влажность и кислород — от них зависят пассивное лечение, урон и запрет на бег.
 related: [radiation, temperature-comfort, wounded, sleepers, damage-system, armor-clothing]
 code: [PlayerMetabolism.cs, BaseMetabolism.cs, MetabolismAttribute.cs, BasePlayer.cs, ItemModConsume.cs, ItemModConsumable.cs, ConVar/Server.cs]

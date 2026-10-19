@@ -3,6 +3,7 @@ id: satchel-charge
 title: Сачель (сумка с зарядом)
 kind: object
 group: Урон и рейд
+icon: explosive.satchel
 summary: Сачель — DudTimedExplosive с 20 % осечек и случайным фитилём 6–12 с (иногда втрое короче или длиннее); несработавший заряд можно поджечь снова или подобрать, но подбор с объекта в половине случаев перезапускает фитиль.
 related: [explosions, damage-system, protection, c4, beancan-grenade, repair, door, data-explosives, data-protection, data-building-blocks, data-entity-health]
 code: [DudTimedExplosive.cs, TimedExplosive.cs, ThrownWeapon.cs, Igniter.cs]

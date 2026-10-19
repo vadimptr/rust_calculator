@@ -3,6 +3,7 @@ id: water-pump
 title: Водяной насос
 kind: object
 group: Вода и фермерство
+icon: waterpump
 summary: Насос качает 85 воды раз в 10 с при питании 5, хранит до 2000, отдаёт поток до 12 и единственный из баков умеет гнать воду вверх — но только на первом шланге.
 related: [water-system, sprinkler, fluid-switch, water-containers, water-purifier, electricity]
 code: [WaterPump.cs, LiquidContainer.cs, WaterResource.cs, IOEntity.cs]

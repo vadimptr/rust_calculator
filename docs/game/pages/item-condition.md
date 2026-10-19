@@ -3,6 +3,7 @@ id: item-condition
 title: Прочность и ремонт предметов
 kind: mechanic
 group: Предметы и производство
+icon: box.repair.bench
 summary: У предмета есть текущая и максимальная прочность; ремонт на верстаке ремонта стоит до 20 % рецепта и срезает максимум тем сильнее, чем сильнее предмет был изношен.
 related: [crafting, recycling, research, loot-spawns, workbench, armor-clothing, weapon-attachments, gathering, repair]
 code: [Item.cs, ItemDefinition.cs, RepairBench.cs, ItemModRepair.cs, BaseProjectile.cs, BaseMelee.cs, ItemModWearable.cs, LootContainer.cs]

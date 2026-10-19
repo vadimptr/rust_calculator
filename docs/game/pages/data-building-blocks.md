@@ -3,6 +3,7 @@ id: data-building-blocks
 title: Таблица: HP и стоимость блоков
 kind: data
 group: Строительство
+icon: build/foundation
 summary: HP и стоимость каждого блока постройки по грейдам, посчитанные из ассетов игры.
 related: [building-grades, foundation, wall, floor, roof, stairs, data-protection, upkeep]
 code: [BuildingGrade.cs, ConstructionGrade.cs, Construction.cs]

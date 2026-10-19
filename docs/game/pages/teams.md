@@ -3,6 +3,7 @@ id: teams
 title: Команды, контакты и кланы
 kind: mechanic
 group: Сервер и режимы
+icon: ui/clan
 summary: Команда — до 8 игроков (relationshipmanager.maxteamsize); приглашают с 7 м или удалённо, она даёт общую карту, пинги, чат и метки спальников, но не даёт прав в шкафу и не отключает урон по своим; отдельно есть система кланов до 100 человек.
 related: [game-modes, sleeping-bag, respawn, building-privilege, tool-cupboard, auto-turret, wipe-and-saves, server-convars]
 code: [RelationshipManager.cs, BasePlayer.cs, SleepingBag.cs, BuildingPrivlidge.cs, SimplePrivilege.cs, AutoTurret.cs, ConVar/Chat.cs, ConVar/Clan.cs, ClanManager.cs, BaseGameMode.cs]

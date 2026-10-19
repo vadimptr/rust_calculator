@@ -3,6 +3,7 @@ id: industrial-crafter
 title: Промышленный крафтер
 kind: object
 group: Индустрия
+icon: industrial.crafter
 summary: Ставится на верстак и крафтит по бумажным чертежам из 4 слотов, пока есть ресурсы во входе. Бонуса за уровень верстака нет, проверка идёт раз в ~5 с, а после потери питания крафтер сам не включается.
 related: [industrial-system, industrial-conveyor, storage-adaptor, crafting, workbench, research, industrial-quirks, electricity]
 code: [IndustrialCrafter.cs, ItemBlueprint.cs, Workbench.cs, ItemCrafter.cs, ConVar/Server.cs]

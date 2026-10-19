@@ -3,6 +3,7 @@ id: storage-adaptor
 title: Адаптер хранилища
 kind: object
 group: Индустрия
+icon: storageadaptor
 summary: Насадка на ящик, печь, шкаф или автомат, через которую контейнер подключается к трубам. Питание ему для переноса не нужно, но с питанием он умеет автоматически сортировать ящик.
 related: [industrial-system, industrial-conveyor, industrial-splitter-combiner, storage-boxes, furnace, tool-cupboard, building-privilege, industrial-quirks]
 code: [IndustrialStorageAdaptor.cs, StorageContainer.cs, ContainerIOEntity.cs, Locker.cs, VendingMachine.cs, BuildingPrivlidge.cs]

@@ -3,6 +3,7 @@ id: sleepers
 title: Спящие игроки
 kind: mechanic
 group: Игрок
+icon: ui/sleeping
 summary: Вышедший из игры персонаж остаётся в мире лежачим «спящим» — со всем инвентарём, почти замороженным метаболизмом и без защиты ранением; в безопасной зоне через 20 минут его убивает сервер.
 related: [respawn, wounded, metabolism, radiation, safe-zones, sleeping-bag, turret-targeting]
 code: [BasePlayer.cs, PlayerMetabolism.cs, NPCAutoTurret.cs, AutoTurret.cs, GunTrap.cs, FlameTurret.cs, TriggerComfort.cs]

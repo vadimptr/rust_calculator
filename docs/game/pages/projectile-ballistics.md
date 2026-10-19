@@ -3,6 +3,7 @@ id: projectile-ballistics
 title: Баллистика
 kind: mechanic
 group: Оружие и бой
+icon: ammo.rifle
 summary: Пуля и стрела — это снаряд с начальной скоростью, гравитацией и сопротивлением воздуха; урон зависит от пройденной дистанции, модулей оружия и «целостности» снаряда, которая тратится на пробитие.
 related: [hit-zones, armor-clothing, weapon-attachments, melee, damage-system, protection, explosions]
 code: [Projectile.cs, ItemModProjectile.cs, BaseProjectile.cs, BasePlayer.cs, CompoundBowWeapon.cs, ItemModProjectileRadialDamage.cs, ItemModProjectileSpawn.cs, HitInfo.cs]

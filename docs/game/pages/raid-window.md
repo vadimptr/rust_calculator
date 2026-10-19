@@ -3,6 +3,7 @@ id: raid-window
 title: Окно рейдов (softcore)
 kind: mechanic
 group: Сервер и режимы
+icon: ui/stopwatch
 summary: В softcore взрывчатка и ближний бой по дверям работают по постройкам только в окно рейдов по реальным часам сервера (по умолчанию 18:00–21:00); высокие стены, ворота, солома и деплои не защищены, а «блок пуль» из-за ошибки в номере урона блокирует самоубийство, а не пули.
 related: [game-modes, data-protection, explosions, damage-system, c4, rocket, satchel-charge, door, external-wall, external-gate, tool-cupboard, building-privilege, melee, wipe-and-saves]
 code: [RaidWindow.cs, ConVar/Softcore.cs, GameModeSoftcore.cs, BuildingPrivlidge.cs, BaseCombatEntity.cs, MLRS.cs, Rust/DamageType.cs]

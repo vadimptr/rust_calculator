@@ -3,6 +3,7 @@ id: deep-sea
 title: Глубокое море
 kind: mechanic
 group: Сервер и режимы
+icon: ptboat
 summary: Глубокое море — отдельный квадрат 4×4 км за краем карты, куда попадают через порталы в 750 м от берега только на разрешённых лодках; оно открыто 3 часа, в последние 5 минут заливается радиацией, а при закрытии убивает всех, кто внутри, и стирает всё, затем закрыто 1.5 часа.
 related: [day-night-weather, cargo-ship, vehicles, patrol-helicopter, radiation, locked-crate, world-events, wipe-and-saves, server-convars]
 code: [DeepSeaManager.cs, ConVar/DeepSea.cs, TriggerDeepSeaPortal.cs, DeepSeaPortal.cs, Climate.cs, Construction.cs, PlayerBoat.cs, PatrolHelicopterAI.cs, BaseGameMode.cs]

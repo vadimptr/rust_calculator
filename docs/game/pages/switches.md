@@ -3,6 +3,7 @@ id: switches
 title: Выключатели, кнопки и дверной контроллер
 kind: object
 group: Электричество
+icon: electric.switch
 summary: Выключатель, умный выключатель, кнопка, нажимная плита и дверной контроллер — входы, кто может ими пользоваться, импульсы «из ничего» у кнопки и плиты и логика открытия двери.
 related: [electricity, timer, memory-cell, sensors, io-engine, electricity-quirks, door, building-privilege]
 code: [ElectricSwitch.cs, SmartSwitch.cs, PressButton.cs, PressurePad.cs, BaseDetector.cs, CustomDoorManipulator.cs, DoorManipulator.cs]

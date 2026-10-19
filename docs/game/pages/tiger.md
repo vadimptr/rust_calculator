@@ -3,6 +3,7 @@ id: tiger
 title: Тигр и пантера
 kind: object
 group: NPC и животные
+icon: bigcatmeat
 summary: Засадные кошки джунглей — подкрадываются, пока вы не смотрите, замирают под взглядом, бросаются с 20 м на 15 м/с и бьют на 60 с толчком; прицел на кошку вдали заставляет её убежать, вблизи — атаковать.
 related: [animals, animal-behaviour, npc-perception, npc-ai, wolf, crocodile]
 code: [Rust.Ai.Gen2/Tiger.cs, Rust.Ai.Gen2/Panther.cs, Rust.Ai.Gen2/TigerFSM.cs, Rust.Ai.Gen2/State_DeadlyAttack.cs, Rust.Ai.Gen2/State_FleeToHide.cs, Rust.Ai.Gen2/Trans_IsWatchedByTarget.cs, Rust.Ai.Gen2/Trans_IsInTargetViewCone.cs]

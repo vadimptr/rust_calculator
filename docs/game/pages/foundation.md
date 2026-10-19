@@ -3,6 +3,7 @@ id: foundation
 title: Фундамент
 kind: object
 group: Строительство
+icon: build/foundation
 summary: Основание постройки — квадратный, треугольный фундамент и ступени; ставится на землю, держит всё здание, гниёт даже без содержания и привлекает крокодилов, пока соломенный.
 related: [construction-placement, building-grades, building-blocked, stability, conditional-models, building-structure, upkeep, decay, wall, floor, stairs, ramp, data-building-blocks, data-protection]
 code: [BuildingBlock.cs, StabilityEntity.cs, BuildingBlockDecay.cs, SocketMod_TerrainCheck.cs, ModelConditionTest_FoundationSide.cs, ModelConditionTest_FoundationCornerLeft.cs, BuildingProximity.cs, State_CrocBreakFoundation.cs]

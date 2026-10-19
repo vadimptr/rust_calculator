@@ -3,6 +3,7 @@ id: stairs
 title: Лестницы
 kind: object
 group: Строительство
+icon: build/stairs_spiral
 summary: L- и U-образные, винтовая и треугольная винтовая лестницы — ставятся в свои сокеты на фундаменте или полу, автоматически разворачиваются, а винтовые стыкуются друг с другом по этажам.
 related: [construction-placement, building-grades, conditional-models, stability, foundation, floor, ramp, ladder-hatch, upkeep, decay, data-building-blocks]
 code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_SpiralStairs.cs, Construction.cs]

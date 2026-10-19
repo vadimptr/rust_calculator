@@ -3,6 +3,7 @@ id: explosions
 title: Взрывы и сплэш
 kind: mechanic
 group: Урон и рейд
+icon: ui/explosion
 summary: Взрыв бьёт всё в радиусе с линейным спадом по расстоянию до ближайшей точки цели и проверкой прямой видимости; заряд, поставленный вплотную, работает иначе — бьёт только свой блок в полную силу, а сплэшем задевает лишь деплои и игроков.
 related: [damage-system, protection, c4, rocket, satchel-charge, beancan-grenade, explosive-ammo, stability, door, building-grades, data-explosives, data-protection, data-building-blocks, data-entity-health]
 code: [TimedExplosive.cs, DamageUtil.cs, DudTimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, ThrownWeapon.cs, BaseEntity.cs, MLRSRocket.cs, MLRS.cs, MLRSServerProjectile.cs, FlameExplosive.cs, RFTimedExplosive.cs]

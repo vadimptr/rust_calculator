@@ -3,6 +3,7 @@ id: circuit-loops
 title: Петли и короткие замыкания
 kind: mechanic
 group: Электричество
+icon: ui/link
 summary: Какие элементы ищут петли (сумматор, OR, XOR, ячейка памяти), как работает обход на глубину ioentity.backtracking, где бывают ложные замыкания и какие петли сервер не замечает вовсе.
 related: [io-engine, flicker, combiner, logic-gates, memory-cell, blocker, battery, electricity-quirks]
 code: [IOEntity.cs, ElectricalCombiner.cs, ORSwitch.cs, XORSwitch.cs, ElectricalDFlipFlop.cs]

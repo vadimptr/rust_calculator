@@ -3,6 +3,7 @@ id: modular-car
 title: Модульная машина
 kind: object
 group: Транспорт
+icon: vehicle.chassis.4mod
 summary: Модульная машина — шасси на 2/3/4 сокета с модулями, у каждого модуля свои HP; мощность, разгон, максималка и расход зависят от деталей двигателя, урон растекается между модулями, а замок, код и модули меняются на подъёмнике.
 related: [vehicles, code-lock, locks, repair, decay, explosions, damage-system, protection, data-protection, crafting, workbench, electricity, scrap-helicopter]
 code: [ModularCar.cs, BaseModularVehicle.cs, BaseVehicleModule.cs, VehicleModuleEngine.cs, VehicleModuleSeating.cs, VehicleModuleStorage.cs, VehicleModuleCamper.cs, VehicleModuleTaxi.cs, Rust.Modular/EngineStorage.cs, Rust.Modular/EngineItemTypeEx.cs, Rust.Modular/ModularVehicleInventory.cs, ModularCarGarage.cs, ModularCarCodeLock.cs, GroundVehicle.cs, CarPhysics.cs, LiquidContainerCrude.cs, ConVar/vehicle.cs]

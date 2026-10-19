@@ -3,6 +3,7 @@ id: temperature-comfort
 title: Температура и комфорт
 kind: mechanic
 group: Игрок
+icon: ui/cold
 summary: Температура тела тянется к температуре окружения с поправкой на одежду, влажность, огонь и пульс; холод и жара наносят урон, а комфорт от костров, стульев и соседей в разы ускоряет лечение.
 related: [metabolism, armor-clothing, radiation, wounded]
 code: [PlayerMetabolism.cs, BaseEntity.cs, TriggerTemperature.cs, TriggerComfort.cs, Climate.cs, BasePlayer.cs, Workbench.cs, BaseChair.cs]

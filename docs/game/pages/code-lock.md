@@ -3,6 +3,7 @@ id: code-lock
 title: Кодовый замок
 kind: object
 group: Двери и замки
+icon: lock.code
 summary: Замок с основным и гостевым кодом из 4 цифр; допуск по списку Steam ID, удар током за ошибку и блокировка ввода на 15 минут после 8 ошибок.
 related: [locks, key-lock, doors, door, tool-cupboard, upkeep, data-crafting]
 code: [CodeLock.cs, BaseLock.cs, BuildingPrivlidge.cs, ConVar/Decay.cs]

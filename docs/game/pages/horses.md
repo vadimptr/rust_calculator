@@ -3,6 +3,7 @@ id: horses
 title: Лошади
 kind: object
 group: Транспорт
+icon: horse
 summary: Ездовая лошадь (RidableHorse) — 10 пород, 4 аллюра, выносливость с «ядром», которое пополняется только едой, снаряжение (сёдла, броня, подковы, сумки), коновязь, буксировка осадных орудий и покупка на конюшнях за сёдла.
 related: [vehicles, decay, siege-weapons, protection, data-protection, damage-system, metabolism, farming, crafting, armor-clothing]
 code: [RidableHorse.cs, HorseBreed.cs, HorseModifiers.cs, HorseSaddle.cs, HorseSpawner.cs, HorseCorpse.cs, HitchTrough.cs, ItemModAnimalEquipment.cs, TowingAttachment.cs, AIHorseInputProvider.cs, VehicleSpawner.cs, LivestockVendor.cs]

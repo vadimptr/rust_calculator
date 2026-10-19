@@ -3,6 +3,7 @@ id: flame-turret
 title: Огнемётная турель
 kind: object
 group: Защита базы
+icon: flameturret
 summary: Топливная ловушка без электричества — срабатывает на неавторизованных в шкафу, жжёт 4 секунды струёй на 8 м с уроном 40 Heat в секунду, ест 0.5 топлива в секунду работы.
 related: [turret-targeting, shotgun-trap, tool-cupboard, building-privilege, damage-system, data-entity-health, data-protection]
 code: [FlameTurret.cs]

@@ -3,6 +3,7 @@ id: npc-ai
 title: Как устроен ИИ NPC
 kind: mechanic
 group: NPC и животные
+icon: hazmatsuit_scientist
 summary: В Rust одновременно работают две системы ИИ — старая (учёные-«игроки» с AIDesign-состояниями) и новая Gen2 (все дикие животные и новые учёные на конечных автоматах); у них разное зрение, слух, стрельба и правила лечения.
 related: [npc-perception, animal-behaviour, scientists, animals, wolf, tiger, crocodile, shark, snake, bradley, cargo-ship, damage-system, safe-zones]
 code: [BaseAIBrain.cs, ScientistBrain.cs, AIBrainSenses.cs, HumanNPC.cs, NPCPlayer.cs, Rust.Ai.Gen2/BaseNPC2.cs, Rust.Ai.Gen2/FSMComponent.cs, Rust.Ai.Gen2/SenseComponent.cs, ConVar/AI.cs]

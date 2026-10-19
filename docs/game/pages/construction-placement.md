@@ -3,6 +3,7 @@ id: construction-placement
 title: Размещение и сокеты
 kind: mechanic
 group: Строительство
+icon: building.planner
 summary: Как план строительства решает, можно ли поставить блок — сокеты «папа/мама», проверки SocketMod, объёмы DeployVolume, близость к чужим блокам, дороги и права шкафа.
 related: [building-blocked, building-grades, conditional-models, stability, building-structure, building-privilege, tool-cupboard, foundation, wall, floor, roof, stairs, ramp, data-building-blocks]
 code: [Planner.cs, Construction.cs, Socket_Base.cs, ConstructionSocket.cs, Socket_Specific.cs, Socket_Free.cs, Socket_Terrain.cs, NeighbourSocket.cs, StabilitySocket.cs, CornerSocket.cs, SocketMod.cs, SocketMod_AreaCheck.cs, SocketMod_TerrainCheck.cs, DeployVolume.cs, BuildingProximity.cs, ConstructionErrors.cs, EntityLink.cs]

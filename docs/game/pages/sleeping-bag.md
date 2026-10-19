@@ -3,6 +3,7 @@ id: sleeping-bag
 title: Спальник, кровать, полотенце
 kind: object
 group: Игрок
+icon: sleepingbag
 summary: Личная точка возрождения — спальник, пляжное полотенце, кровать или койка кемпера; у каждой своя перезарядка, на игрока не больше 15 штук, их можно передать другу или сделать общими.
 related: [respawn, sleepers, wounded, building-privilege, data-entity-health, data-protection]
 code: [SleepingBag.cs, SleepingBagCamper.cs, StaticRespawnArea.cs, Planner.cs, Construction.cs, ConVar/Server.cs]

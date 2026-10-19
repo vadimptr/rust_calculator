@@ -3,6 +3,7 @@ id: key-lock
 title: Ключевой замок
 kind: object
 group: Двери и замки
+icon: lock.key
 summary: Простой замок со случайным числовым кодом; пускает владельца и любого, у кого есть ключ с тем же кодом.
 related: [locks, code-lock, doors, door, data-crafting]
 code: [KeyLock.cs, BaseLock.cs, Deployer.cs]

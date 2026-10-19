@@ -3,6 +3,7 @@ id: building-grades
 title: Грейды, улучшение, поворот и снос
 kind: mechanic
 group: Строительство
+icon: ui/upgrade
 summary: Пять грейдов блока (солома, дерево, камень, металл, МВК), как и за сколько блок улучшается, почему улучшение лечит, и окна в 10 минут на поворот и снос.
 related: [construction-placement, building-blocked, conditional-models, stability, upkeep, decay, repair, protection, damage-system, tool-cupboard, foundation, wall, floor, roof, stairs, ramp, data-building-blocks, data-protection]
 code: [BuildingGrade.cs, ConstructionGrade.cs, BuildingBlock.cs, DecayEntity.cs, ConVar/Decay.cs, Planner.cs]

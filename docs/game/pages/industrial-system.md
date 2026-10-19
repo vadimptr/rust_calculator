@@ -3,6 +3,7 @@ id: industrial-system
 title: Промышленная автоматизация
 kind: mechanic
 group: Индустрия
+icon: industrial.storage.vertical
 summary: Как работает индустрия — трубы между адаптерами, конвейер каждые ~5 с ищет источники и получатели по сети, перекладывает порцию каждой подходящей стопки и делит её поровну между всеми найденными получателями.
 related: [industrial-conveyor, storage-adaptor, industrial-splitter-combiner, industrial-crafter, hopper, industrial-quirks, electricity, battery, furnace, storage-boxes, tool-cupboard, building-blocked, construction-placement, crafting, workbench]
 code: [IndustrialEntity.cs, IndustrialConveyor.cs, IOEntity.cs, IIndustrialStorage.cs, IndustrialStorageAdaptor.cs, IndustrialCrafter.cs, ItemContainer.cs, BaseOven.cs, WireTool.cs, ConVar/Server.cs, ServerMgr.cs]

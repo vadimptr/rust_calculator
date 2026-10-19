@@ -48,8 +48,17 @@ def table(head, rows):
     out += ['| ' + ' | '.join(str(c).replace('|', '\\|') for c in r) + ' |' for r in rows]
     return '\n'.join(out)
 
+ICONS = {
+    'data-building-blocks': 'build/foundation',
+    'data-protection': 'ui/security',
+    'data-explosives': 'explosive.timed',
+    'data-entity-health': 'ui/health',
+    'data-crafting': 'ui/blueprint',
+    'data-smelting': 'furnace',
+}
+
 def page(pid, title, group, summary, related, code, body):
-    fm = (f'---\nid: {pid}\ntitle: {title}\nkind: data\ngroup: {group}\nsummary: {summary}\n'
+    fm = (f'---\nid: {pid}\ntitle: {title}\nkind: data\ngroup: {group}\nicon: {ICONS[pid]}\nsummary: {summary}\n'
           f'related: [{", ".join(related)}]\ncode: [{", ".join(code)}]\n---\n\n')
     note = (f'> Таблица собрана автоматически из ассетов сервера Rust от {DATE} '
             f'скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.\n\n')

@@ -3,6 +3,7 @@ id: day-night-weather
 title: День, ночь и погода
 kind: mechanic
 group: Сервер и режимы
+icon: ui/rain
 summary: Игровые сутки длятся 80 реальных минут, но из-за кривой времени день (06–18) занимает ~68 минут, а тёмная ночь — около 8; погода меняется блоками по 18 игровых часов, выбирается детерминированно из даты и сида карты, и ясно бывает ~80 % времени.
 related: [temperature-comfort, solar-panel, wind-turbine, farming, metabolism, deep-sea, server-convars, wipe-and-saves, world-events]
 code: [Climate.cs, WeatherPreset.cs, ConVar/Weather.cs, ConVar/Env.cs, EnvSync.cs, WaterCatcher.cs, PlanterBox.cs, PlayerMetabolism.cs, SprayCanSpray.cs, SolarPanel.cs, ElectricWindmill.cs, WaterSystem.cs]

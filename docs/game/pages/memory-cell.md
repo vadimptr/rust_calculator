@@ -3,6 +3,7 @@ id: memory-cell
 title: Ячейка памяти
 kind: object
 group: Электричество
+icon: electrical.memorycell
 summary: Ячейка памяти (D-триггер) запоминает состояние по входам Set/Reset/Toggle и отдаёт весь вход питания на Output или Inverted Output; Set сильнее Reset, Toggle реагирует на любое изменение, при мерцании батарея видит оба выхода.
 related: [electricity, logic-gates, flicker, circuit-loops, power-counter, io-engine, electricity-quirks]
 code: [ElectricalDFlipFlop.cs]

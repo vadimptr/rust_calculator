@@ -3,6 +3,7 @@ id: monuments
 title: Монументы — обзор
 kind: mechanic
 group: Монументы
+icon: ui/icon-map
 summary: Какие монументы есть на процедурной карте, что в каждом (ящики, карты, считыватели, предохранители, переработчики, радиация), как они расставляются по тирам карты и как устроен респаун лута.
 related: [monument-puzzles, monument-radiation, loot-spawns, building-blocked, safe-zones, radiation, recycler, oil-rig, launch-site, small-monuments]
 code: [MonumentInfo.cs, MonumentTier.cs, MonumentType.cs, PlaceMonuments.cs, SpawnGroup.cs, SpawnHandler.cs, PuzzleReset.cs, PreventBuildingMonumentTag.cs, ConVar/Spawn.cs]

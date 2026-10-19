@@ -3,6 +3,7 @@ id: scrap-helicopter
 title: Транспортный вертолёт (скрап-хели)
 kind: object
 group: Транспорт
+icon: scraptransportheli
 summary: Большой вертолёт на 1000 HP с двумя местами в кабине и отсеком, где пассажиры стоят; вдвое устойчивее к противотехническому урону, чем миникоптер, но при снижении давит насмерть всех, кто под ним.
 related: [vehicles, minicopter, attack-helicopter, sam-site, rocket, explosions, protection, data-protection, repair, decay]
 code: [ScrapTransportHelicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicopter.cs, BaseHelicopter.cs, BaseVehicle.cs, TriggerHurtNotChild.cs, TriggerParentEnclosed.cs, HelicopterFlares.cs, LargeShredder.cs]

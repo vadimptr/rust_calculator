@@ -3,6 +3,7 @@ id: electricity-quirks
 title: Баги и неочевидности электрики
 kind: mechanic
 group: Электричество
+icon: ui/warning
 summary: Сборник неочевидного поведения электросети по коду — деление сплиттера, расход батарей и двойной счёт в цепочках, OR и AND дают максимум, источники «энергии из ничего», DesiredPower, ячейка памяти, кабельный туннель, датчики и провода.
 related: [electricity, io-engine, flicker, circuit-loops, battery, splitter, electrical-branch, combiner, logic-gates, memory-cell, timer, switches, sensors, electric-generator, electric-consumers, solar-panel, wind-turbine]
 code: [IOEntity.cs, Splitter.cs, ElectricBattery.cs, ORSwitch.cs, ANDSwitch.cs, ElectricalDFlipFlop.cs, CableTunnel.cs, PressButton.cs, PressurePad.cs, SeismicSensor.cs, TeslaCoil.cs, ElectricGenerator.cs, WireTool.cs]

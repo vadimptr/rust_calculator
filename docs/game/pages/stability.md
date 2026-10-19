@@ -3,6 +3,7 @@ id: stability
 title: Стабильность
 kind: mechanic
 group: Здание и шкаф
+icon: build/foundation
 summary: Стабильность блока — сумма стабильностей опор, умноженных на коэффициент сокета; ниже 5% блок рушится, и обрушение цепочкой уходит вверх по постройке.
 related: [building-structure, foundation, wall, floor, roof, stairs, ramp, building-grades, explosions, construction-placement, data-building-blocks]
 code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Base.cs, ConVar/Stability.cs, ServerBuildingManager.cs, BuildingBlock.cs, DestroyOnGroundMissing.cs]

@@ -3,6 +3,7 @@ id: farming
 title: Фермерство
 kind: mechanic
 group: Вода и фермерство
+icon: seed.corn
 summary: Как растут растения — четыре условия (свет, вода, почва, температура), шесть генов G/Y/H/W/X, скрещивание соседей, стадии роста, урожай и клоны.
 related: [planters, sprinkler, water-system, composter, chicken-coop, beehive, electricity, world-events]
 code: [GrowableEntity.cs, GrowableGenes.cs, GrowableGenetics.cs, GrowableGene.cs, PlantProperties.cs, PlanterBox.cs, GrowableHeatSource.cs, PlanterBoxStatic.cs, ConVar/Server.cs]

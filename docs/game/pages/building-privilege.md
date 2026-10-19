@@ -3,6 +3,7 @@ id: building-privilege
 title: Шкаф и авторизация
 kind: mechanic
 group: Здание и шкаф
+icon: ui/authorize
 summary: Шкаф даёт привилегию всему своему зданию; зона — 16 м от любого блока постройки этого здания, а при пересечении зон побеждает здание с самым старым блоком.
 related: [tool-cupboard, building-structure, building-blocked, upkeep, construction-placement, code-lock, building-grades]
 code: [BuildingPrivlidge.cs, BaseEntity.cs, BasePlayer.cs, BuildingManager.cs, BuildingProximity.cs, Construction.cs, DecayEntity.cs, BuildingBlock.cs, StorageContainer.cs]

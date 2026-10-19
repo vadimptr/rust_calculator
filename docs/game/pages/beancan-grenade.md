@@ -3,6 +3,7 @@ id: beancan-grenade
 title: Бобовая граната (бобовка)
 kind: object
 group: Урон и рейд
+icon: grenade.beancan
 summary: Бобовка — дешёвый бросаемый DudTimedExplosive с той же механикой случайного фитиля и осечки, что у сачеля; брошенная, она взрывается радиально и задевает все видимые блоки рядом со спадом урона.
 related: [explosions, satchel-charge, damage-system, protection, door, c4, data-explosives, data-protection, data-entity-health]
 code: [DudTimedExplosive.cs, TimedExplosive.cs, ThrownWeapon.cs, DamageUtil.cs, ConVar/Halloween.cs, BasePlayer.cs]

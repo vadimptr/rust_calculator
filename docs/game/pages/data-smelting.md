@@ -3,6 +3,7 @@ id: data-smelting
 title: Таблица: плавка и готовка
 kind: data
 group: Предметы и производство
+icon: furnace
 summary: Что во что превращается в печах и на кострах, за сколько времени и при какой температуре.
 related: [smelting, furnace]
 code: [ItemModCookable.cs, BaseOven.cs]

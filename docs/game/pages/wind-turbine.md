@@ -3,6 +3,7 @@ id: wind-turbine
 title: Ветрогенератор
 kind: object
 group: Электричество
+icon: generator.wind.scrap
 summary: Малый ветрогенератор даёт до 150 rW; выход зависит от высоты над землёй (до +50% на 50 м) и шума Перлина по координатам и времени; нужен открытый обзор вверх и по ветру.
 related: [electricity, battery, solar-panel, electric-generator, electricity-quirks, flicker, data-entity-health]
 code: [ElectricWindmill.cs]

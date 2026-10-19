@@ -3,6 +3,7 @@ id: roof
 title: Крыша
 kind: object
 group: Строительство
+icon: build/roof
 summary: Квадратная и треугольная крыша — закрывают здание сверху, сливаются с соседями в скаты, делают помещение «внутренним» для гниения и деплоев и закрывают мягкую сторону блоков под собой.
 related: [construction-placement, building-grades, conditional-models, stability, wall, floor, decay, damage-system, building-blocked, data-building-blocks, data-protection]
 code: [BuildingBlock.cs, DirectionProperties.cs, WeakpointProperties.cs, ModelConditionTest_RoofLeft.cs, ModelConditionTest_RoofTop.cs, ModelConditionTest_WallTriangleLeft.cs, SocketMod_Inside.cs]

@@ -3,6 +3,7 @@ id: locks
 title: Замки
 kind: mechanic
 group: Двери и замки
+icon: ui/lock
 summary: Как устроены кодовый и ключевой замки, кто получает доступ, что бывает за неверный код, как замок ставится и снимается и как он влияет на содержание базы.
 related: [code-lock, key-lock, doors, door, external-gate, tool-cupboard, building-privilege, upkeep, garage-door, ladder-hatch, window-bars]
 code: [BaseLock.cs, CodeLock.cs, KeyLock.cs, Deployer.cs, Door.cs, StorageContainer.cs, BuildingPrivlidge.cs, ConVar/Decay.cs]

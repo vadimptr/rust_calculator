@@ -3,6 +3,7 @@ id: building-structure
 title: Что считается одним зданием
 kind: mechanic
 group: Здание и шкаф
+icon: building.planner
 summary: Сервер объединяет связанные блоки в «здание» с общим ID; к нему же привязываются шкаф, двери и деплои, и именно здание платит содержание и даёт зону шкафа.
 related: [building-privilege, upkeep, decay, stability, tool-cupboard, construction-placement, foundation, door]
 code: [BuildingManager.cs, ServerBuildingManager.cs, DecayEntity.cs, BuildingBlock.cs, BuildingProximity.cs, Construction.cs, Socket_Base.cs, CornerSocket.cs]

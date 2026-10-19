@@ -3,6 +3,7 @@ id: rocket
 title: Ракета
 kind: object
 group: Урон и рейд
+icon: ammo.rocket.basic
 summary: Ракета — TimedExplosive на ServerProjectile; при попадании она отступает на 10 см от поверхности и взрывается радиально, задевая все видимые блоки в радиусе со спадом от ближайшей точки, всегда как по «твёрдой» стороне.
 related: [explosions, damage-system, protection, c4, explosive-ammo, stability, building-grades, data-explosives, data-protection, data-building-blocks, data-entity-health]
 code: [TimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, DamageUtil.cs, BaseEntity.cs, FlameExplosive.cs, SeekingServerProjectile.cs, MLRSRocket.cs]

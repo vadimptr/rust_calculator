@@ -3,6 +3,7 @@ id: furnace
 title: Печи (печка, большая печь, электропечь, перегонный завод)
 kind: object
 group: Предметы и производство
+icon: furnace
 summary: Все печи — один класс BaseOven с разной температурой, скоростью плавки и числом слотов из префаба; электропечь работает от 3 ед. энергии и не тратит топливо.
 related: [smelting, crafting, recycling, electricity, data-smelting, data-entity-health, data-protection]
 code: [BaseOven.cs, ElectricOven.cs, ElectricFurnaceIO.cs, ItemModBurnable.cs, ItemModCookable.cs]

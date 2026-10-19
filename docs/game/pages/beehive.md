@@ -3,6 +3,7 @@ id: beehive
 title: Улей и пчёлы
 kind: object
 group: Вода и фермерство
+icon: beehive
 summary: Улей с маткой раз в 2 минуты копит прогресс сот по температуре; при 16–28 °C даёт соту раз в 10 мин, матка 1 сорта — раз в 4 мин; любое движение предметов обнуляет прогресс, а забравшего соты жалят.
 related: [composter, chicken-coop, sprinkler, temperature-comfort, farming]
 code: [Beehive.cs, NucleusGrading.cs, ItemModBeehiveNucleus.cs, NaturalBeehive.cs, BeeSwarmMaster.cs, BeeSwarmAI.cs, BeeGrenade.cs]

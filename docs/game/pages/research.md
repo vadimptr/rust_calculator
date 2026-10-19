@@ -3,6 +3,7 @@ id: research
 title: Изучение и дерево технологий
 kind: mechanic
 group: Предметы и производство
+icon: research.table
 summary: Рецепты открываются тремя путями — изучением чертежа-предмета, столом исследований и деревом технологий верстака; цена в скрапе зависит от редкости предмета.
 related: [crafting, workbench, recycling, loot-spawns, building-privilege, data-crafting]
 code: [ResearchTable.cs, Workbench.cs, TechTreeData.cs, PlayerBlueprints.cs, ItemModStudyBlueprint.cs, ItemBlueprint.cs, ItemModWorkbenchPrototype.cs, ItemModWorkbenchSalvage.cs, ConVar/Server.cs]

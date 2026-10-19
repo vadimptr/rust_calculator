@@ -3,6 +3,7 @@ id: wall
 title: Стена
 kind: object
 group: Строительство
+icon: build/wall
 summary: Стены всех видов — сплошная, дверной и оконный проёмы, половинная, низкая, рама; на что садятся, что держат, мягкая сторона, обои и превращение в треугольник под крышей.
 related: [construction-placement, building-grades, conditional-models, stability, damage-system, protection, foundation, floor, roof, door, garage-door, window-bars, data-building-blocks, data-protection]
 code: [BuildingBlock.cs, ConstructionSocket.cs, DirectionProperties.cs, WeakpointProperties.cs, ModelConditionTest_WallTriangleLeft.cs, ModelConditionTest_WallCornerLeft.cs, WallpaperSettings.cs]

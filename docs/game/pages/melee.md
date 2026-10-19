@@ -3,6 +3,7 @@ id: melee
 title: Ближний бой
 kind: mechanic
 group: Оружие и бой
+icon: salvaged.sword
 summary: Оружие ближнего боя бьёт набором типов урона из префаба с темпом repeatDelay, умножает урон по зоне попадания, изнашивается сильнее о бронированные цели, а инструменты дополнительно несут свои параметры добычи для деревьев, руды и туш.
 related: [gathering, hit-zones, armor-clothing, projectile-ballistics, damage-system, protection, metabolism]
 code: [BaseMelee.cs, AttackEntity.cs, ResourceDispenser.cs, ItemModEntityThrow.cs, DamageProperties.cs, BasePlayer.cs, Rust/DamageTypeEx.cs]

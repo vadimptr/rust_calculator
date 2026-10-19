@@ -3,6 +3,7 @@ id: trains
 title: Поезда
 kind: object
 group: Транспорт
+icon: locomotive
 summary: Дрезины, локомотив и вагоны — рельсовый транспорт, который не берут пули, зато взрывы бьют его втрое; разбирают сцепку, столкновения, давку игроков, распад за 30 минут без людей рядом и разгрузку вагонов на сортировочной станции.
 related: [vehicles, decay, damage-system, protection, data-protection, data-explosives, repair, c4, rocket, auto-turret, siege-weapons, modular-car]
 code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs, TrainCoupling.cs, TriggerTrainCollisions.cs, HittableByTrains.cs, TrainCarUnloadable.cs, TrainCarUnloadableLoot.cs, TrainWagonLootData.cs, CoalingTower.cs, TrainTrackSpline.cs, TrainSignal.cs, ConvarControlledSpawnPopulationRail.cs, EngineDamageOverTime.cs, ConVar/vehicle.cs]

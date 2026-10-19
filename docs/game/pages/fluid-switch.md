@@ -3,6 +3,7 @@ id: fluid-switch
 title: Жидкостный переключатель и разветвитель
 kind: object
 group: Вода и фермерство
+icon: fluid.switch
 summary: Жидкостный переключатель перекрывает воду и с питанием на Pump Power гонит её вверх без ограничения 1 м; жидкостный разветвитель делит поток на 3 выхода целочисленно, остаток уходит первым выходам.
 related: [water-system, water-pump, sprinkler, electricity]
 code: [FluidSwitch.cs, ElectricSwitch.cs, Splitter.cs, IOEntity.cs]

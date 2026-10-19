@@ -3,6 +3,7 @@ id: siege-weapons
 title: Осадные орудия
 kind: object
 group: Транспорт
+icon: catapult
 summary: Катапульта, баллиста, таран и осадная башня — колёсная «техника» без замков; собирается молотком из каркаса, катится руками или лошадью, гниёт за 10 ч снаружи; таран не берёт металл и МВК, а камни катапульты почти не бьют постройки.
 related: [vehicles, horses, decay, repair, damage-system, protection, data-protection, building-grades, data-building-blocks, data-entity-health, c4, explosions, door, external-wall, crafting, data-crafting, safe-zones, hit-zones]
 code: [BaseSiegeWeapon.cs, Catapult.cs, CatapultAmmoContainer.cs, ItemModCatapultBoulder.cs, Ballista.cs, BallistaGun.cs, BatteringRam.cs, BatteringRamHead.cs, SiegeTower.cs, SiegeTowerDoor.cs, DeployableSiegeExplosive.cs, ConstructableEntity.cs, RidableHorse.cs, TowingAttachment.cs, FireBall.cs, TimedExplosive.cs, FlameExplosive.cs, ItemModProjectileRadialDamage.cs]

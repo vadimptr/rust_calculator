@@ -42,6 +42,12 @@ venv/bin/python -I tools/game-data/build_convars.py src-decompiled docs/game/con
 # 5. Декомпиляция кода, если нужно перепроверить механики
 ilspycmd rustsrv/RustDedicated_Data/Managed/Assembly-CSharp.dll \
   -r rustsrv/RustDedicated_Data/Managed -p -o src-decompiled
+
+# 6. Иконки для документации из установленного клиента Rust (в серверной сборке их нет):
+#    предметы — Bundles/items/*.png, значки интерфейса — textures.0.bundle (assets/icons),
+#    блоки строительства — спрайты Construction.info.icon из content.bundle + textures.0/2
+venv/bin/python -I tools/game-data/icons.py \
+  ~/Library/Application\ Support/Steam/steamapps/common/Rust docs/game public/icons
 ```
 
 Русские описания настроек лежат в `docs/game/convars.ru.json` и пишутся вручную. Новые настройки,

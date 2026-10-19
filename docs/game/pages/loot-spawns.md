@@ -3,6 +3,7 @@ id: loot-spawns
 title: Лут и спавн
 kind: mechanic
 group: Предметы и производство
+icon: ui/loot
 summary: Ящики и бочки наполняются по взвешенным таблицам LootSpawn, а их количество на карте поддерживают популяции и спавн-группы, частота которых зависит от онлайна.
 related: [storage-boxes, recycling, research, item-condition, safe-zones, locked-crate]
 code: [LootContainer.cs, LootSpawn.cs, SpawnHandler.cs, SpawnPopulationBase.cs, DensitySpawnPopulation.cs, ConvarControlledSpawnPopulation.cs, SpawnGroup.cs, ConVar/Spawn.cs, ConVar/Server.cs]

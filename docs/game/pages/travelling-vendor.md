@@ -3,6 +3,7 @@ id: travelling-vendor
 title: Странствующий торговец
 kind: object
 group: Мир и события
+icon: ui/cart
 summary: Неуязвимый фургон с четырьмя турелями ездит по кольцевой дороге 30 минут, останавливается возле игроков и продаёт 7 случайных товаров по случайным ценам.
 related: [world-events, safe-zones, turret-targeting, building-blocked, npc-shops, npc-shop-prices]
 code: [TravellingVendor.cs, TravellingVendorEvent.cs, NPCVendingMachine.cs, NPCVendingOrder.cs, EventSchedule.cs]

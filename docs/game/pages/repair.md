@@ -3,6 +3,7 @@ id: repair
 title: Ремонт
 kind: mechanic
 group: Урон и рейд
+icon: hammer
 summary: Удар молотком чинит не больше 50 HP и стоит долю от полной цены постройки текущего грейда, пропорционально недостающему HP; 30 секунд после любой атаки чинить и улучшать нельзя.
 related: [damage-system, building-grades, decay, upkeep, door, protection, c4, data-building-blocks, data-entity-health]
 code: [BaseCombatEntity.cs, Hammer.cs, BuildingBlock.cs, ConstructionGrade.cs, RepairBench.cs, DecayEntity.cs, Planner.cs, ConVar/Decay.cs]

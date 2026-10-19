@@ -1,3 +1,5 @@
+import { iconUrl } from './icons.ts';
+
 export type LinkKind = 'wire' | 'pipe' | 'belt';
 
 export const LINK_KINDS: readonly LinkKind[] = ['wire', 'pipe', 'belt'];
@@ -51,7 +53,6 @@ const PORT_H = 22;
 const PAD_B = 8;
 const ICON = 40;
 const ICON_PAD = 6;
-export const ICON_DIR = '/icons/scheme/';
 
 const NODE_RE = /^node\s+([a-z0-9_-]+)\s+(-?\d+)\s*,\s*(-?\d+)(?:\s+w=(\d+))?(\s+flip)?(?:\s+icon=([a-z0-9._-]+))?\s+"([^"]*)"(?:\s+"([^"]*)")?(.*)$/i;
 const LINK_RE = /^(wire|pipe|belt)\s+([a-z0-9_-]+)\.(.+?)\s*->\s*([a-z0-9_-]+)\.(.+?)(?:\s+"([^"]*)")?$/i;
@@ -273,7 +274,7 @@ export function renderScheme(s: Scheme): string {
       const ty = n.y + (headHeight(n) - (n.sub ? SUB_H : 0)) / 2 + 5;
       parts.push(
         `<rect class="sch-node__icon-bg" x="${ix}" y="${iy}" width="${ICON}" height="${ICON}" rx="5"/>`,
-        `<image class="sch-node__icon" href="${ICON_DIR}${esc(n.icon)}.png" x="${ix + 2}" y="${iy + 2}" width="${ICON - 4}" height="${ICON - 4}"/>`,
+        `<image class="sch-node__icon" href="${esc(iconUrl(n.icon))}" x="${ix + 2}" y="${iy + 2}" width="${ICON - 4}" height="${ICON - 4}"/>`,
         `<text class="sch-node__title" x="${tx}" y="${ty}">${esc(n.title)}</text>`,
       );
       if (n.sub) parts.push(`<text class="sch-node__sub" x="${tx}" y="${ty + SUB_H}">${esc(n.sub)}</text>`);

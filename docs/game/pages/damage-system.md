@@ -3,6 +3,7 @@ id: damage-system
 title: Как наносится урон
 kind: mechanic
 group: Урон и рейд
+icon: ui/blunt
 summary: Любой урон в Rust — это HitInfo со списком из 28 типов урона, который проходит через BaseCombatEntity.Hurt — защиту, «мягкую сторону», серверные множители — и только потом вычитается из здоровья.
 related: [protection, explosions, repair, decay, stability, building-grades, projectile-ballistics, hit-zones, armor-clothing, data-protection, data-building-blocks, data-entity-health, data-explosives]
 code: [BaseCombatEntity.cs, HitInfo.cs, Rust/DamageType.cs, Rust/DamageTypeList.cs, Rust/DamageTypeEx.cs, ProtectionProperties.cs, DirectionProperties.cs, BuildingBlock.cs, ConVar/Server.cs, RaidWindow.cs]

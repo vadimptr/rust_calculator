@@ -3,6 +3,7 @@ id: workbench
 title: Верстак
 kind: object
 group: Предметы и производство
+icon: workbench2
 summary: Верстак 1–3 уровня задаёт уровень крафта в своей зоне, открывает дерево технологий и принимает апгрейды (у строимых верстаков 10 слотов — хватает на все 10 видов) — скорость, дальность, бонусные предметы, прочность и скидки.
 related: [crafting, research, item-condition, building-privilege, tool-cupboard, temperature-comfort, data-entity-health, data-crafting]
 code: [Workbench.cs, TriggerWorkbench.cs, ItemModWorkbenchUpgrade.cs, ItemModWorkbenchAccelerated.cs, ItemModWorkbenchCraftSpeed.cs, ItemModWorkbenchEfficiency.cs, ItemModWorkbenchRecycleBin.cs, ItemModWorkbenchSurplus.cs, ItemModWorkbenchDefensive.cs, ItemModWorkbenchReinforced.cs, ItemModWorkbenchRange.cs, ItemModWorkbenchComfort.cs, ItemModWorkbenchSalvage.cs, ItemModWorkbenchPrototype.cs, ConVar/Workbench.cs]

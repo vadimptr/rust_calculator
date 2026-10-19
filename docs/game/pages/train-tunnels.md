@@ -3,6 +3,7 @@ id: train-tunnels
 title: Железнодорожные туннели (метро)
 kind: object
 group: Монументы
+icon: ui/map-tunnel
 summary: Подземная сеть станций на сетке 216 м: входы с монументов и бункеров, станции с туннельными жителями, ящиками и дрезинами, баррикады на путях; сброс станций раз в 30 минут.
 related: [monuments, monument-puzzles, trains, scientists, military-tunnels]
 code: [GenerateDungeonGrid.cs, DungeonGridCell.cs, DungeonGridInfo.cs, TunnelDweller.cs, NPCDwelling.cs, PressButton_TrainTunnel.cs, ElevatorStatic.cs, HittableByTrains.cs, PuzzleReset.cs]

@@ -3,6 +3,7 @@ id: vehicles
 title: Транспорт (общее)
 kind: mechanic
 group: Транспорт
+icon: ui/handlebar
 summary: Общие правила транспорта — распад снаружи и под крышей, расход топлива, покупка у торговцев и защита купленного, урон от столкновений и наездов, толкание, спаун; обзор всех видов транспорта со ссылками.
 related: [minicopter, scrap-helicopter, attack-helicopter, hot-air-balloon, modular-car, bikes, snowmobile, boats, horses, trains, siege-weapons, decay, safe-zones, world-events, cargo-ship, data-protection, sam-site]
 code: [BaseVehicle.cs, GroundVehicle.cs, BaseMountable.cs, TriggerHurtNotChild.cs, VehicleVendor.cs, NPCTalking.cs, RepairableVehiclePad.cs, ConstructableEntity.cs, PlayerHelicopter.cs, ModularCar.cs, VehicleModuleEngine.cs, BaseBoat.cs, MotorRowboat.cs, RidableHorse.cs, HotAirBalloon.cs, Snowmobile.cs, Bike.cs, EntityFuelSystem.cs, VehicleSpawner.cs, VehicleSpawnPoint.cs, ModularCarCodeLock.cs, ConVar/vehicle.cs]

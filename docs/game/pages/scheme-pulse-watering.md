@@ -3,6 +3,7 @@ id: scheme-pulse-watering
 title: Прерывистый полив
 kind: scheme
 group: Схемы
+icon: electric.sprinkler
 summary: Поливалки включаются импульсами по циклу «X секунд полив, Y пауза» от двух таймеров и блокировщика — грядка получает ровно столько воды, сколько выпивают растения, а водосборник не пустеет за пару часов.
 related: [sprinkler, fluid-switch, timer, blocker, splitter, water-catcher, water-pump, water-containers, planters, farming, water-system]
 code: [Sprinkler.cs, FluidSwitch.cs, TimerSwitch.cs, ElectricalBlocker.cs, PlanterBox.cs, GrowableEntity.cs, WaterCatcher.cs, WaterPump.cs]

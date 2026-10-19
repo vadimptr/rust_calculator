@@ -3,6 +3,7 @@ id: drone-marketplace
 title: Дрон-маркетплейс
 kind: mechanic
 group: Торговля
+icon: drone
 summary: Терминалы на Аванпосте и в Бандитском лагере покупают в любом транслирующем автомате карты за 20 скрапа комиссии; товар попадает в терминал сразу, а неуязвимый дрон — только анимация с таймером до 300 с.
 related: [vending-machines, npc-shops, npc-shop-prices, safe-zones]
 code: [Marketplace.cs, MarketTerminal.cs, DeliveryDrone.cs, DeliveryDroneConfig.cs, Powergrid.cs]

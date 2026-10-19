@@ -3,6 +3,7 @@ id: doors
 title: Двери
 kind: mechanic
 group: Двери и замки
+icon: door.hinged.metal
 summary: Как сервер открывает и закрывает двери, кто может это делать, как работают доводчик, стук, электрический контроллер, апгрейд двери и что блокирует закрытие.
 related: [locks, door, garage-door, ladder-hatch, external-gate, code-lock, key-lock, building-privilege, tool-cupboard, upkeep, decay, stability, construction-placement, damage-system, data-entity-health, data-protection]
 code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, DoorManipulator.cs, CustomDoorManipulator.cs, DoorOneWayHandOpen.cs, SimpleUpgrade.cs, SprayCan.cs, BuildingPrivlidge.cs]

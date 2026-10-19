@@ -3,6 +3,7 @@ id: splitter
 title: Сплиттер
 kind: object
 group: Электричество
+icon: electric.splitter
 summary: Сплиттер делит вход поровну между подключёнными выходами, остаток по одной единице отдаёт первым выходам, сам ничего не потребляет и является корневым устройством.
 related: [electricity, electrical-branch, combiner, io-engine, electricity-quirks, battery]
 code: [Splitter.cs, IOEntity.cs]

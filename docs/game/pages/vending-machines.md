@@ -3,6 +3,7 @@ id: vending-machines
 title: Торговый автомат игрока
 kind: mechanic
 group: Торговля
+icon: vending.machine
 summary: Автомат на 30 слотов и до 7 заказов; управляет им любой, кто стоит сзади, покупка идёт 2,5 с, маркер на карте включён сразу, а запитанный автомат полностью останавливает порчу еды внутри.
 related: [npc-shops, drone-marketplace, npc-shop-prices, storage-boxes, building-privilege, protection, decay, upkeep, electricity]
 code: [VendingMachine.cs, VendingMachineMapMarker.cs, DeliveryDroneConfig.cs, ItemModFoodSpoiling.cs]

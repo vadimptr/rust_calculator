@@ -3,6 +3,7 @@ id: tool-cupboard
 title: Шкаф (TC)
 kind: object
 group: Здание и шкаф
+icon: cupboard.tool
 summary: Шкаф с инструментами — сундук на 24 слота ресурсов плюс полка для инструментов; хранит список авторизованных, платит содержание за всё здание и даёт ему зону запрета строительства.
 related: [building-privilege, upkeep, decay, building-structure, code-lock, building-blocked, data-entity-health, data-protection, data-crafting]
 code: [BuildingPrivlidge.cs, BuildingPrivilegeRetro.cs, LootPanelToolCupboard.cs, StorageContainer.cs, DecayEntity.cs, StorageMonitor.cs, ConVar/Decay.cs]

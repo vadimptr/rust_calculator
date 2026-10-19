@@ -3,6 +3,7 @@ id: decay
 title: Распад (decay)
 kind: mechanic
 group: Здание и шкаф
+icon: ui/isbroken
 summary: Без оплаченного содержания постройка теряет HP пропорционально максимальному здоровью — солома за 1 ч, дерево за 3 ч, камень за 5 ч, металл за 8 ч, МВК за 12 ч; внутри здания в 10 раз медленнее.
 related: [upkeep, tool-cupboard, building-structure, building-grades, building-privilege, repair, damage-system, protection, data-protection]
 code: [DecayEntity.cs, Decay.cs, BuildingBlockDecay.cs, BuildingGradeDecay.cs, DeployableDecay.cs, DecayPoint.cs, SprayDecay.cs, BoatBuildingBlockDecay.cs, ConVar/Decay.cs, ServerBuildingManager.cs, BuildingBlock.cs, BaseEntity.cs]

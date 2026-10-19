@@ -3,6 +3,7 @@ id: respawn
 title: Возрождение и спальники
 kind: mechanic
 group: Игрок
+icon: bed
 summary: После смерти можно возродиться на случайной точке («на пляже») или на своём спальнике или кровати; возрождение ставит перезарядку на все ваши спальники в радиусе 50 м, а таймеры живут только до перезапуска сервера.
 related: [sleeping-bag, sleepers, wounded, metabolism, safe-zones]
 code: [SleepingBag.cs, StaticRespawnArea.cs, SleepingBagCamper.cs, BasePlayer.cs, SpawnHandler.cs, ServerMgr.cs, ConVar/Server.cs, ConVar/Global.cs, ConVar/party.cs]

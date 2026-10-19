@@ -3,6 +3,7 @@ id: recycling
 title: Переработка
 kind: mechanic
 group: Предметы и производство
+icon: scrap
 summary: Переработчик раз в тик разбирает часть одного стака на ингредиенты рецепта с коэффициентом эффективности, а скрап считает отдельно; эффективность и длительность тика зависят от типа переработчика и энергосети.
 related: [recycler, crafting, item-condition, safe-zones, workbench]
 code: [Recycler.cs, RecyclerConfig.cs, ItemBlueprint.cs, ItemModRecycleInto.cs, Powergrid.cs]

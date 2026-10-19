@@ -3,6 +3,7 @@ id: bikes
 title: Велосипеды и мотоциклы
 kind: object
 group: Транспорт
+icon: motorbike
 summary: Велосипед, трёхколёсный велосипед, мотоцикл и мотоцикл с коляской — один класс Bike; педальные едут на сытости и воде водителя и умеют ускоряться и прыгать, мотоциклы — на низкосортном топливе; при сильных авариях седоки получают урон и падают.
 related: [vehicles, snowmobile, modular-car, horses, metabolism, data-protection, sam-site, repair]
 code: [Bike.cs, HumanFuelSystem.cs, GroundVehicle.cs, CarPhysics.cs, BikeDriverSeat.cs, BikeSeat.cs, Sled.cs, Parachute.cs]

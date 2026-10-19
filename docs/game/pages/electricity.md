@@ -3,6 +3,7 @@ id: electricity
 title: Электричество
 kind: mechanic
 group: Электричество
+icon: ui/electric
 summary: Как сервер считает электросеть — источники, проход мощности через устройства, потребление, сплиттеры, ветвители, блокировщики, батареи, генераторы и провода.
 related: [io-engine, flicker, circuit-loops, electricity-quirks, electric-consumers, battery, solar-panel, wind-turbine, electric-generator, splitter, electrical-branch, blocker, combiner, logic-gates, memory-cell, timer, power-counter, switches, sensors, auto-turret, sam-site, turret-targeting, building-privilege]
 code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, ElectricalCombiner.cs, ORSwitch.cs, ElectricBattery.cs, SolarPanel.cs, ElectricWindmill.cs, FuelGenerator.cs, ElectricGenerator.cs, WireTool.cs]

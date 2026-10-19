@@ -3,6 +3,7 @@ id: timer
 title: Таймер
 kind: object
 group: Электричество
+icon: electric.timer
 summary: Таймер по сигналу на Toggle On пропускает питание заданное время (по умолчанию 10 с, шаг отсчёта 0.1 с); не перезапускается, пока идёт, сбрасывается при потере питания и после рестарта сервера стартует заново.
 related: [electricity, switches, memory-cell, power-counter, io-engine, electricity-quirks]
 code: [TimerSwitch.cs, CustomTimerSwitch.cs]

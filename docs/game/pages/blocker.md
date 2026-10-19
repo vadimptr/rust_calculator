@@ -3,6 +3,7 @@ id: blocker
 title: Блокировщик
 kind: object
 group: Электричество
+icon: electric.blocker
 summary: Блокировщик пропускает питание с входа 0, пока на вход Block не подан сигнал; закрытый не тратит батарею, петель не проверяет и поэтому служит основой генератора колебаний.
 related: [electricity, logic-gates, flicker, circuit-loops, io-engine, battery]
 code: [ElectricalBlocker.cs, IOEntity.cs]

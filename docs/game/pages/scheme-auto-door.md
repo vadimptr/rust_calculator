@@ -3,6 +3,7 @@ id: scheme-auto-door
 title: Автозакрывание дверей
 kind: scheme
 group: Схемы
+icon: electric.doorcontroller
 summary: Дверь открываешь руками и уходишь, а она сама захлопывается в течение нескольких секунд — таймер с блокировщиком раз в N секунд подают «Close» на контроллер двери, без кнопок и датчиков. Плюс вариант с HBHF «открыто, пока свои рядом» и почему доводчик в ванили недоступен.
 related: [door, doors, garage-door, timer, blocker, splitter, sensors, battery, code-lock, scheme-pulse-watering]
 code: [CustomDoorManipulator.cs, Door.cs, TimerSwitch.cs, ElectricalBlocker.cs, Splitter.cs, HBHFSensor.cs, DoorCloser.cs]
