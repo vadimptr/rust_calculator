@@ -273,7 +273,8 @@ export function transformOf(resolved: Resolved, id: string): ResolvedElement | u
  */
 export function removeElement(bp: Blueprint, id: string): Blueprint {
   const target = bp.elements.find(e => e.id === id);
-  if (!target || target.root) return bp;
+  if (!target) return bp;
+  if (target.root) return bp.elements.length === 1 ? { ...bp, elements: [], deployables: [] } : bp;
   const before = resolveBlueprint(bp).resolved;
   const root = bp.elements.find(e => e.root)!;
   let elements = bp.elements.filter(e => e.id !== id);

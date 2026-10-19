@@ -372,3 +372,12 @@ test('game sockets: the high edge of a roof takes a wall, a floor and another ro
     assert.ok(c.every(p => Math.abs(p.transform.position[1] - (roof.position[1] + 3)) < 1e-6), k);
   }
 });
+
+test('the last block can be removed: the root foundation goes when nothing else stands, otherwise it stays', () => {
+  const single = removeElement(newBlueprint(), 'f1');
+  assert.equal(single.elements.length, 0);
+  assert.equal(single.deployables!.length, 0);
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  assert.equal(removeElement(bp, 'f1').elements.length, 2);
+});

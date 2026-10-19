@@ -248,6 +248,12 @@ const BlueprintSection: React.FC = () => {
   }, []);
   const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
+    if (next.elements.length === 0) {
+      setCollapsedNote('');
+      setSource(s => ({ label: s.label, data: null }));
+      setRaidPlay(0);
+      return;
+    }
     // после каждого действия — обрушение блоков без опоры, как в игре
     const { blueprint: settled, collapsed } = settle(next);
     setCollapsedNote(collapsed.length ? `Обрушилось без опоры: ${collapsed.length} (${collapsed.join(', ')})` : '');
