@@ -145,6 +145,40 @@ function initialPresetId(): string {
   return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'empty';
 }
 
+const UpkeepDays: React.FC<{ upkeep: Record<ResourceKey, number> }> = ({ upkeep }) => {
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const keys = RESOURCE_KEYS.filter(k => upkeep[k] > 0);
+  return (
+    <span
+      className="upkeep__trigger"
+      onMouseEnter={e => { const r = e.currentTarget.getBoundingClientRect(); setPos({ left: r.left, top: Math.max(8, Math.min(r.bottom + 6, window.innerHeight - 360)) }); }}
+      onMouseLeave={() => setPos(null)}
+    >
+      в сутки
+      {pos && (
+        <div className="upkeep__popup" style={{ left: pos.left, top: pos.top }}>
+          <table className="cost__days">
+            <thead>
+              <tr>
+                <th>Дней</th>
+                {keys.map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {UPKEEP_DAYS.map(d => (
+                <tr key={d}>
+                  <td>{d}</td>
+                  {keys.map(k => <td key={k}>{formatNum(Math.ceil(upkeep[k] * d))}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </span>
+  );
+};
+
 const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
@@ -406,29 +440,13 @@ const BlueprintSection: React.FC = () => {
                     <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
                   ))}
                 </div>
-                <div className="bp__section-title">Содержание в сутки</div>
+                <div className="bp__section-title">Содержание <UpkeepDays upkeep={cost.upkeep} /></div>
                 <div className="cost__row">
                   {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
                     <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(Math.ceil(cost.upkeep[k]))}</span>
                   ))}
                 </div>
                 <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
-                <table className="cost__days">
-                  <thead>
-                    <tr>
-                      <th>Дней</th>
-                      {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {UPKEEP_DAYS.map(d => (
-                      <tr key={d}>
-                        <td>{d}</td>
-                        {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <td key={k}>{formatNum(Math.ceil(cost.upkeep[k] * d))}</td>)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </section>
             )}
           </aside>

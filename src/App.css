@@ -2370,3 +2370,28 @@
 .sch-note { fill: var(--text-secondary); font-size: 12px; font-style: italic; }
 .sch-legend { fill: var(--text-secondary); font-size: 11px; }
 .sch-error { color: #ff8a7a; border-color: #8a3a2a; }
+
+.upkeep__trigger {
+  border-bottom: 1px dashed currentColor;
+  cursor: help;
+}
+
+.upkeep__popup {
+  position: fixed;
+  z-index: 60;
+  min-width: 260px;
+  padding: 0.5rem 0.75rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: #0f0d0b;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.upkeep__popup .cost__days {
+  margin: 0;
+}
