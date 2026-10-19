@@ -7,7 +7,7 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -59,48 +59,6 @@ const KIND_LABELS: Record<string, string> = {
   'metal-window-bars': 'Металлическая решётка',
   'drop-box': 'Дроп-бокс',
 };
-
-/** Переопределение материала и дверей поверх чертежа; иконки как в разделе строительства. */
-type GradeChoice = 'wood' | 'stone' | 'metal' | 'armored';
-type DoorChoice = 'wooden' | 'metal' | 'armored' | 'garage';
-const GRADE_CHOICES: { id: GradeChoice; label: string; img: string }[] = [
-  { id: 'wood', label: 'Дерево', img: '/icons/items/wood.webp' },
-  { id: 'stone', label: 'Камень', img: '/icons/items/stones.webp' },
-  { id: 'metal', label: 'Металл', img: '/icons/items/metal.fragments.webp' },
-  { id: 'armored', label: 'МВК', img: '/icons/items/metal.refined.webp' },
-];
-const DOOR_CHOICES: { id: DoorChoice; label: string; img: string; wide?: boolean }[] = [
-  { id: 'wooden', label: 'Деревянные двери', img: '/icons/items/wood.webp' },
-  { id: 'metal', label: 'Металлические двери', img: '/icons/items/metal.fragments.webp' },
-  { id: 'armored', label: 'Двери из МВК', img: '/icons/items/metal.refined.webp' },
-  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/items/metal.fragments.webp', wide: true },
-];
-const SINGLE_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
-const FRAME_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
-
-/** Значок-уточнение на иконке материала двери: створка или широкая гаражная. */
-const DoorBadge: React.FC<{ wide?: boolean }> = ({ wide }) => (
-  <svg className="bp__icon-badge" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-    {wide
-      ? <><rect x="1" y="2.5" width="10" height="7" rx="1" fill="#e8d9b0" /><line x1="1" y1="5" x2="11" y2="5" stroke="#1a1410" strokeWidth="1" /><line x1="1" y1="7" x2="11" y2="7" stroke="#1a1410" strokeWidth="1" /></>
-      : <><rect x="3.5" y="1" width="5" height="10" rx="1" fill="#e8d9b0" /><circle cx="7.3" cy="6" r="0.8" fill="#1a1410" /></>}
-  </svg>
-);
-const SINGLE_DOOR_KINDS = ['wooden-door', 'sheet-metal-door', 'armored-door'];
-const FRAME_DOOR_KINDS = ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'];
-
-/** Применить переопределения к документу: материал всех элементов и тип всех дверей. */
-function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): unknown {
-  if (!data || typeof data !== 'object') return data;
-  const doc = JSON.parse(JSON.stringify(data)) as { defaults?: { grade?: string }; elements?: { grade?: string }[]; deployables?: { kind: string }[] };
-  doc.defaults = { ...(doc.defaults ?? {}), grade };
-  for (const el of doc.elements ?? []) if (el.grade) el.grade = grade;
-  for (const d of doc.deployables ?? []) {
-    if (SINGLE_DOOR_KINDS.includes(d.kind)) d.kind = SINGLE_BY_CHOICE[door];
-    else if (FRAME_DOOR_KINDS.includes(d.kind)) d.kind = FRAME_BY_CHOICE[door];
-  }
-  return doc;
-}
 
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
@@ -170,24 +128,15 @@ const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
   </svg>
 );
 
-function downloadFile(name: string, text: string) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 interface Source {
   label: string;
-  /** Исходный документ (объект) — для повторной загрузки с переопределениями. */
+  /** Исходный документ (объект). */
   data: unknown;
 }
 
-function fromPreset(id: string, grade: GradeChoice = 'stone', door: DoorChoice = 'metal'): Source {
+function fromPreset(id: string): Source {
   const p = BLUEPRINT_PRESETS.find(x => x.id === id) ?? BLUEPRINT_PRESETS[0];
-  // материал и двери из переключателей сразу применяются к чертежу
-  return { label: p.label, data: applyOverrides(p.data, grade, door) };
+  return { label: p.label, data: p.data };
 }
 
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
@@ -199,21 +148,18 @@ function initialPresetId(): string {
 const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
-  const fileRef = useRef<HTMLInputElement>(null);
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
-  const [gradeChoice, setGradeChoice] = useState<GradeChoice>('stone');
-  const [doorChoice, setDoorChoice] = useState<DoorChoice>('metal');
 
   // Режим стройки включён всегда: документ правится напрямую
   const [tool, setTool] = useState<EditorTool>('build');
   const [buildKind, setBuildKind] = useState<ElementKind>('square-foundation');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
 
-  // Документ с переопределениями → схема → геометрия
+  // Документ → схема → геометрия
   const result: LoadResult = useMemo(
     () => (source.data === null ? { blueprint: null, resolved: EMPTY_RESOLVED, issues: [] } : loadBlueprint(source.data)),
     [source],
@@ -221,21 +167,9 @@ const BlueprintSection: React.FC = () => {
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
-    setSource(fromPreset(id, gradeChoice, doorChoice));
+    setSource(fromPreset(id));
     setRaidPlay(0);
   };
-  /** Материал всех блоков и тип всех дверей — сразу в чертёж. */
-  const chooseGrade = (g: GradeChoice) => {
-    setGradeChoice(g);
-    setSource(s => ({ label: s.label, data: applyOverrides(s.data, g, doorChoice) }));
-    setRaidPlay(0);
-  };
-  const chooseDoor = (d: DoorChoice) => {
-    setDoorChoice(d);
-    setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, d) }));
-    setRaidPlay(0);
-  };
-
   // 1 / 2 / 3 — строительный план, киянка, объект (как слоты в игре)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -260,18 +194,6 @@ const BlueprintSection: React.FC = () => {
     setSource(s => ({ label: s.label, data: settled }));
     setRaidPlay(0);
   }, []);
-
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    setActivePreset(null);
-    let data: unknown = null;
-    try { data = JSON.parse(text); } catch { data = { __invalid: text }; }
-    setSource({ label: file.name, data });
-    setRaidPlay(0);
-    e.target.value = '';
-  };
 
   const { blueprint, resolved, issues } = result;
 
@@ -353,11 +275,8 @@ const BlueprintSection: React.FC = () => {
     });
   }, [resolved]);
 
-  const download = () => blueprint && downloadFile(`${(blueprint.meta.name || 'blueprint').replace(/[^\wа-яё-]+/gi, '_')}.json`, exportBlueprint(blueprint));
-
   return (
     <section className="bp">
-      <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
       <div className="bp__layout">
         <nav className="bp__side" aria-label="Постройки">
           <div className="bp__side-title">Шаблоны</div>
@@ -370,36 +289,9 @@ const BlueprintSection: React.FC = () => {
               </li>
             ))}
           </ul>
-          <div className="bp__side-actions">
-            <div className="bp__row">
-              <button type="button" className="bp__upload-btn bp__grow" onClick={() => fileRef.current?.click()}>Загрузить JSON</button>
-              <a className="bp__icon-btn bp__help" href="https://github.com/vadimptr/rust_calculator/blob/main/docs/blueprint/SPEC.md" target="_blank" rel="noreferrer" data-tip="Формат чертежа: описание JSON">?</a>
-            </div>
-            <button type="button" className="raid-tier__btn bp__side-btn" disabled={!blueprint} onClick={download}>Скачать JSON</button>
-          </div>
         </nav>
 
         <div className="bp__center">
-          <div className="bp__overrides">
-            <span className="bp__override-label">Материал</span>
-            <div className="bp__icons" role="group" aria-label="Материал конструкций">
-              {GRADE_CHOICES.map(c => (
-                <button key={c.id} type="button" data-tip={`Все блоки — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
-                  onClick={() => chooseGrade(c.id)} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
-                  <img src={c.img} alt="" />
-                </button>
-              ))}
-            </div>
-            <span className="bp__override-label">Двери</span>
-            <div className="bp__icons" role="group" aria-label="Тип дверей">
-              {DOOR_CHOICES.map(c => (
-                <button key={c.id} type="button" data-tip={`Все двери — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
-                  onClick={() => chooseDoor(c.id)} aria-pressed={c.id === doorChoice} aria-label={c.label}>
-                  <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="bp__viewer">
             <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
             <div className="bp__camera" role="group" aria-label="Камера">

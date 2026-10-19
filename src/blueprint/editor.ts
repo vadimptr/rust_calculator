@@ -169,7 +169,8 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
       const twoSided = (((KINDS[host.kind].category === 'wallType' && socket === 'top') || (KINDS[host.kind].category === 'roof' && socket === 'edge:2')) && KINDS[kind].category !== 'wallType')
         || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
       const flips = twoSided || KINDS[kind].category === 'wallType' ? [false, true] : [false];
-      const turnsList = KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
+      const spiralOnSpiral = kind === 'spiral-stairs' && host.kind === 'spiral-stairs';
+      const turnsList = spiralOnSpiral ? [2, 0, 1, 3] : KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;
       const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
@@ -419,13 +420,6 @@ export function addDeployable(bp: Blueprint, d: Omit<Deployable, 'id'>): Bluepri
 
 export function removeDeployable(bp: Blueprint, id: string): Blueprint {
   return { ...bp, deployables: (bp.deployables ?? []).filter(d => d.id !== id) };
-}
-
-/** Документ для скачивания: без вычисляемого слоя, с отступами. */
-export function exportBlueprint(bp: Blueprint): string {
-  const { resolved: _resolved, ...rest } = bp as Blueprint & { resolved?: unknown };
-  void _resolved;
-  return JSON.stringify({ $schema: 'https://github.com/vadimptr/rust_calculator/docs/blueprint/schema/blueprint.schema.json', ...rest }, null, 2) + '\n';
 }
 
 /**

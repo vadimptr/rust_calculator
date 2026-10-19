@@ -1470,22 +1470,8 @@
   margin-top: 0.15rem;
 }
 
-.bp__overrides {
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
 
-.bp__override-label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
 
-.bp__icons {
-  display: inline-flex;
-  gap: 0.3rem;
-}
 
 .bp__icon-btn {
   width: 38px;
@@ -1520,11 +1506,6 @@
   position: relative;
 }
 
-.bp__icon-badge {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-}
 
 /* --- Режим стройки --- */
 .viewer3d--aim::after {
@@ -1693,37 +1674,10 @@
   background: rgba(207, 72, 32, 0.18);
 }
 
-.bp__side-actions {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
 
-.bp__row {
-  display: flex;
-  gap: 0.4rem;
-  align-items: stretch;
-}
 
-.bp__grow {
-  flex: 1;
-}
 
-.bp__side-btn {
-  width: 100%;
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-}
 
-.bp__help {
-  font-weight: 800;
-  font-size: 1rem;
-  color: var(--text-primary);
-  text-decoration: none;
-  width: 38px;
-  flex-shrink: 0;
-}
 
 .bp__center {
   display: flex;
@@ -1733,12 +1687,6 @@
   min-height: 0;
 }
 
-.bp__center .bp__overrides {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
 
 
 .bp__center .bp__viewer {

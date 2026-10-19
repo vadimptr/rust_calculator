@@ -382,3 +382,12 @@ test('the last block can be removed: the root foundation goes when nothing else 
   bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
   assert.equal(removeElement(bp, 'f1').elements.length, 2);
 });
+
+test('a spiral stair stacked on a spiral stair continues the spiral: the first offer is turned by half a turn', () => {
+  let bp = newBlueprint();
+  bp = addElement(bp, 'spiral-stairs', { to: 'f1', socket: 'top' });
+  const resolved = resolveBlueprint(bp).resolved;
+  const up = candidatePlacements(bp, resolved, 'spiral-stairs', 'ss1');
+  assert.equal(up[0].attach.turns, 2);
+  assert.equal(up.length, 4);
+});
