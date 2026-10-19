@@ -141,7 +141,7 @@ export function canAttach(
     return false;
   }
   if (p.category === 'roof' && (socket === 'edge:1' || socket === 'edge:3')) {
-    return c.category === 'roof' && (selfSocket === 'edge:1' || selfSocket === 'edge:3');
+    return c.category === 'roof' && (selfSocket === 'edge:1' || selfSocket === 'edge:3') && p.shape === c.shape;
   }
   return false;
 }

@@ -39,7 +39,7 @@ export type DeployableKind =
   | 'metal-window-bars'
   | 'drop-box';
 
-export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face';
+export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face' | 'offset';
 
 export interface Attach {
   to: string;
@@ -49,6 +49,9 @@ export interface Attach {
   turns?: 0 | 1 | 2 | 3;
   /** Только фундамент к фундаменту: сдвиг по высоте в метрах (ряды сокетов foundation-top/mid/bot в игре). */
   rise?: -3 | -1.5 | 0 | 1.5 | 3;
+  /** Только socket 'offset': положение и поворот в системе элемента `to` — блок, оставшийся без сокета-опоры (например, после сноса соседа). */
+  offset?: [number, number, number];
+  rotation?: number;
 }
 
 export interface Element {
@@ -101,6 +104,8 @@ export interface Transform {
   position: [number, number, number];
   rotation: number;
   level: number;
+  /** Только треугольная крыша: перевёрнута (см. ResolvedElement.inverted). */
+  inverted?: boolean;
 }
 
 export interface ResolvedElement extends Transform {
@@ -108,6 +113,8 @@ export interface ResolvedElement extends Transform {
   kind: ElementKind;
   grade: Grade;
   bunker?: boolean;
+  /** Треугольная крыша перевёрнута: ребро edge:0 у конька, вершина у края (заполняет просвет между соседними). */
+  inverted?: boolean;
 }
 
 export interface ResolvedDeployable extends Transform {

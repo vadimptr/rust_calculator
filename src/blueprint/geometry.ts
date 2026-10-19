@@ -46,10 +46,16 @@ function slotKey(parent: Element, socket: Socket, child: Element, flip: boolean)
   return `${parent.id}/${socket}`;
 }
 
-interface Placed extends Transform { el: Element }
+interface Placed extends Transform { el: Element; inverted?: boolean }
 
 function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transform {
   const a = child.attach!;
+  if (a.socket === 'offset') {
+    const [ox, oy, oz] = a.offset!;
+    const [cx, cz] = dir(parent.rotation);
+    const [px0, py0, pz0] = parent.position;
+    return { position: [px0 + ox * cx - oz * cz, py0 + oy, pz0 + ox * cz + oz * cx], rotation: parent.rotation + (a.rotation ?? 0), level: parent.level + oy / 3 };
+  }
   const p = KINDS[parent.el.kind];
   const c = KINDS[child.kind];
   const [px, py, pz] = parent.position;
@@ -59,8 +65,13 @@ function placeChild(parent: Placed, child: Element, selfSocket: Socket): Transfo
     const k = edgeIndex(a.socket)!;
     const m = edgeIndex(selfSocket)!;
     const normal = parent.rotation + edgeAngle(p.shape!, k);
-    const rot = normal + 180 - edgeAngle(c.shape!, m);
     const [nx, nz] = dir(normal);
+    // крыша внутрь (flip): низкое ребро на ребре ячейки, скат поднимается над самой ячейкой
+    if (c.category === 'roof' && a.flip === true) {
+      const back = apothem(p.shape!) - apothem(c.shape!);
+      return { position: [px + back * nx, py, pz + back * nz], rotation: normal - edgeAngle(c.shape!, m), level: parent.level };
+    }
+    const rot = normal + 180 - edgeAngle(c.shape!, m);
     const d = apothem(p.shape!) + apothem(c.shape!);
     // фундамент к фундаменту: сдвиг по высоте (ряды сокетов foundation-top/mid/bot)
     const rise = c.category === 'cell' ? a.rise ?? 0 : 0;
@@ -175,6 +186,14 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       continue;
     }
     if (!KINDS[e.kind]) { issues.push(err('V03', e.id, `Неизвестный тип «${e.kind}»`)); continue; }
+    // крепление смещением: блок держится не сокетом, а положением относительно элемента `to`
+    if (e.attach.socket === 'offset') {
+      if (!e.attach.offset) { issues.push(err('V03', e.id, 'Для socket offset нужно поле offset')); continue; }
+      const list = children.get(parent.id) ?? [];
+      list.push(e);
+      children.set(parent.id, list);
+      continue;
+    }
     if (!socketsOf(parent.kind).includes(e.attach.socket)) {
       issues.push(err('V03', e.id, `У ${parent.kind} «${parent.id}» нет сокета ${e.attach.socket}`));
       continue;
@@ -206,6 +225,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   for (const [pid, list] of children) {
     const parent = byId.get(pid)!;
     for (const c of list) {
+      if (c.attach!.socket === 'offset') continue;
       const key = slotKey(parent, c.attach!.socket, c, c.attach!.flip === true);
       const prev = slots.get(key);
       if (prev) issues.push(err('V05', c.id, `Слот ${key} уже занят элементом «${prev}»`));
@@ -230,6 +250,8 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
       const self = child.attach!.selfSocket ?? defaultSelfSocket(child.kind)!;
       const t = placeChild(cur, child, self);
       const pc: Placed = { el: child, ...t, rotation: norm360(t.rotation) };
+      // треугольная крыша, приставленная боком к треугольной, перевёрнута относительно неё
+      if (child.kind === 'roof-triangle' && cur.el.kind === 'roof-triangle' && child.attach!.socket !== 'edge:0') pc.inverted = !cur.inverted;
       placed.set(child.id, pc);
       queue.push(pc);
     }
@@ -251,7 +273,7 @@ export function resolveBlueprint(bp: Blueprint): ResolveResult {
   for (const e of elements) {
     const p = placed.get(e.id)!;
     resolved.elements.push({
-      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}),
+      id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}), ...(p.inverted ? { inverted: true } : {}),
       position: p.position.map(round3) as [number, number, number],
       rotation: round3(p.rotation), level: p.level,
     } satisfies ResolvedElement);

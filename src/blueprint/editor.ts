@@ -79,6 +79,12 @@ function overlaps(kind: ElementKind, t: Transform, resolved: Resolved): boolean 
   // только точный дубль: та же позиция и тот же наклон. Игровое «сращивание» крыш (угловые формы
   // на стыке скатов) не моделируется.
   const place = (c: string) => (c === 'cell' || c === 'ramp' ? 'cell' : c);
+  // фундамент занимает объём от земли до своего верха: крыша над его контуром не может начинаться
+  // ниже верха (иначе скат уходит внутрь фундамента), и фундамент нельзя поднять сквозь стоящую крышу
+  const roofIntoFoundation = (roof: Transform & { kind: ElementKind }, f: Transform & { kind: ElementKind }) =>
+    f.position[1] > roof.position[1] + 0.01 && polygonsOverlap(footprint(roof.kind, roof), footprint(f.kind, f));
+  if (cat === 'roof' && resolved.elements.some(e => KINDS[e.kind].isFoundation && roofIntoFoundation({ ...t, kind }, e))) return true;
+  if (KINDS[kind].isFoundation && resolved.elements.some(e => KINDS[e.kind].category === 'roof' && roofIntoFoundation(e, { ...t, kind }))) return true;
   return resolved.elements.some(e => {
     if (place(KINDS[e.kind].category) !== place(cat)) return false;
     if (cat === 'roof') return sameTransform(e, t);
@@ -155,7 +161,10 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
     if (socket === 'opening' || socket === 'face') continue;
     for (const self of selfSockets) {
       if (!canAttach(host.kind, socket, kind, self)) continue;
-      const flips = KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType' ? [false, true] : [false];
+      // две стороны: пол или крыша на верху стены — по обе стороны; крыша на ребре ячейки — наружу и внутрь
+      const twoSided = (KINDS[host.kind].category === 'wallType' && socket === 'top' && KINDS[kind].category !== 'wallType')
+        || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
+      const flips = twoSided ? [false, true] : [false];
       const turnsList = KINDS[kind].category === 'stairs' ? [0, 1, 2, 3] : [0];
       // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
       const hostY = resolved.elements.find(e => e.id === hostId)?.position[1] ?? 0;
@@ -179,8 +188,8 @@ export function candidatePlacements(bp: Blueprint, resolved: Resolved, kind: Ele
         if (seen.has(key)) continue;
         seen.add(key);
         if (overlaps(kind, t, resolved)) continue;
-        if (KINDS[kind].category === 'roof' && !roofSupported(kind, t, resolved)) continue;
-        out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level } });
+        if (KINDS[kind].category === 'roof' && !t.inverted && !roofSupported(kind, t, resolved)) continue;
+        out.push({ attach, transform: { position: t.position, rotation: t.rotation, level: t.level, ...(t.inverted ? { inverted: true } : {}) } });
       }
     }
   }
@@ -203,6 +212,29 @@ export function placementsNear(bp: Blueprint, resolved: Resolved, kind: ElementK
  * один и тот же «куда поставить» с разной ориентацией: крыша над зданием или наружу, пол по ту или
  * другую сторону стены, поворот лестницы.
  */
+/** Точка якоря в мире: середина ребра опоры у ячеек и крыш, середина стены по высоте у стен. */
+export function anchorPoint(kind: ElementKind, p: Placement): [number, number, number] {
+  const cat = KINDS[kind].category;
+  if (cat === 'cell' || cat === 'roof' || cat === 'ramp') {
+    const k = p.attach.selfSocket ? Number(p.attach.selfSocket.slice(5)) : 0;
+    return edgeMids(kind, p.transform)[k] ?? p.transform.position;
+  }
+  const [x, y, z] = p.transform.position;
+  return [x, y + (cat === 'wallType' ? wallHeight(kind) / 2 : 0), z];
+}
+
+/**
+ * Близость варианта к точке прицела: сначала ребро опоры (куда целится игрок), затем сама
+ * позиция блока — она различает стороны одного ребра (крыша внутрь или наружу, пол по ту или
+ * другую сторону стены). По одной позиции нельзя: у крыш внутрь на всех рёбрах ячейки центр общий.
+ */
+export function aimDistance(kind: ElementKind, p: Placement, aim: [number, number, number]): number {
+  const a = anchorPoint(kind, p);
+  const [x, y, z] = p.transform.position;
+  const h = KINDS[kind].category === 'wallType' ? wallHeight(kind) / 2 : 0;
+  return Math.hypot(a[0] - aim[0], a[1] - aim[1], a[2] - aim[2]) + 0.25 * Math.hypot(x - aim[0], y + h - aim[1], z - aim[2]);
+}
+
 export function placementAnchor(kind: ElementKind, p: Placement): string {
   const cat = KINDS[kind].category;
   const r = (v: number) => (Math.round(v * 100) / 100 + 0).toFixed(2);
@@ -239,28 +271,28 @@ export function removeElement(bp: Blueprint, id: string): Blueprint {
   const target = bp.elements.find(e => e.id === id);
   if (!target || target.root) return bp;
   const before = resolveBlueprint(bp).resolved;
+  const root = bp.elements.find(e => e.root)!;
   let elements = bp.elements.filter(e => e.id !== id);
-  let deployables = bp.deployables ?? [];
-  const removed = new Set([id]);
-  for (;;) {
-    const orphan = elements.find(e => e.attach && removed.has(e.attach.to));
-    if (!orphan) break;
+  let deployables = (bp.deployables ?? []).filter(d => d.attach.to !== id);
+  // Снос не тянет за собой поддерево: блоки, висевшие на снесённом, перецепляются к соседу с той же
+  // позицией, а кому не к кому — закрепляются смещением от корня. Что упадёт, решает стабильность (settle).
+  for (const orphan of elements.filter(e => e.attach?.to === id)) {
     const want = before.elements.find(e => e.id === orphan.id);
+    if (!want) continue;
     const rest = elements.filter(e => e.id !== orphan.id);
-    // для пробы крепления берём только то, что сейчас держится на корне: сироты и их поддеревья
-    // (в том числе ещё не разобранные) сами по себе не разрешатся
-    const live = subtree(elements, elements.find(e => e.root)!.id);
-    const probe = { ...bp, elements: elements.filter(e => live.has(e.id)), deployables: deployables.filter(d => live.has(d.attach.to)) };
-    const re = want ? reattach(probe, orphan, want) : null;
+    const live = subtree(rest, root.id);
+    const probe = { ...bp, elements: rest.filter(e => live.has(e.id)), deployables: deployables.filter(d => live.has(d.attach.to)) };
+    const re = reattach(probe, orphan, want);
     if (re) {
-      elements = rest.concat({ ...orphan, attach: re.attach });
+      elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach: re.attach } : e));
       if (re.flipped) ({ elements, deployables } = flipWall({ ...bp, elements, deployables }, orphan.id));
     } else {
-      elements = rest;
-      removed.add(orphan.id);
+      // корень стоит в начале координат без поворота: смещение — мировое положение блока
+      const attach: Attach = { to: root.id, socket: 'offset', offset: want.position.map(v => Math.round(v * 1000) / 1000) as [number, number, number] };
+      if (want.rotation) attach.rotation = want.rotation;
+      elements = elements.map(e => (e.id === orphan.id ? { ...orphan, attach } : e));
     }
   }
-  deployables = deployables.filter(d => !removed.has(d.attach.to));
   return { ...bp, elements, deployables };
 }
 
@@ -333,7 +365,7 @@ export interface DeployPlacement {
  * ячейки в точку наведения, дроп-бокс — на грань стены в точку наведения. local — точка наведения в
  * локальных осях хозяина (x по нормали, y вверх, z вдоль).
  */
-export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number]): DeployPlacement | null {
+export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number], rotation = 0): DeployPlacement | null {
   const host = bp.elements.find(e => e.id === hostId);
   const ht = resolved.elements.find(e => e.id === hostId);
   if (!host || !ht) return null;
@@ -343,9 +375,12 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   if (kind === 'tool-cupboard') {
     if (info.category !== 'cell' || info.isFrame) return null;
     if (taken.some(d => d.kind === 'tool-cupboard')) return null;
-    const r = (info.shape === 'square' ? 1.5 : 0.866) - 0.35;
-    const clamp = (v: number) => Math.max(-r, Math.min(r, v));
-    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0]) * 100) / 100, Math.round(clamp(local[2]) * 100) / 100], rotation: 0 };
+    // свободная точка в пределах ячейки: шкаф (1.1 × 0.6 м) целиком на ней, с учётом поворота
+    const side = Math.abs(Math.round(rotation / 90)) % 2 === 1;
+    const [hx, hz] = side ? [0.55, 0.3] : [0.3, 0.55];
+    const edge = info.shape === 'square' ? 1.5 : 0.866;
+    const clamp = (v: number, h: number) => { const r = Math.max(0, edge - h); return Math.max(-r, Math.min(r, v)); };
+    deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [Math.round(clamp(local[0], hx) * 100) / 100, Math.round(clamp(local[2], hz) * 100) / 100], rotation };
   } else if (kind === 'drop-box') {
     if (info.category !== 'wallType' || info.opening || host.kind === 'low-wall') return null;
     const h = wallHeight(host.kind);

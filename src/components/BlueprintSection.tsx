@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
-import type { CameraMode, EditorState, EditorTool } from './Viewer3D';
+import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, GRADES, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade } from '../blueprint/types.ts';
+import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
+import type { ResourceKey } from '../blueprint/cost.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, exportBlueprint, newBlueprint, removeDeployable, removeElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import type { RaidSimulation } from '../blueprint/splash.ts';
@@ -64,14 +66,14 @@ type DoorChoice = 'wooden' | 'metal' | 'armored' | 'garage';
 const GRADE_CHOICES: { id: GradeChoice; label: string; img: string }[] = [
   { id: 'wood', label: 'Дерево', img: '/icons/wood.png' },
   { id: 'stone', label: 'Камень', img: '/icons/stones.png' },
-  { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
+  { id: 'metal', label: 'Металл', img: '/icons/metal.fragments.png' },
+  { id: 'armored', label: 'МВК', img: '/icons/metal.refined.png' },
 ];
 const DOOR_CHOICES: { id: DoorChoice; label: string; img: string; wide?: boolean }[] = [
   { id: 'wooden', label: 'Деревянные двери', img: '/icons/wood.png' },
-  { id: 'metal', label: 'Металлические двери', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'Двери из МВК', img: '/icons/metal.fragments.png' },
-  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/metal.refined.png', wide: true },
+  { id: 'metal', label: 'Металлические двери', img: '/icons/metal.fragments.png' },
+  { id: 'armored', label: 'Двери из МВК', img: '/icons/metal.refined.png' },
+  { id: 'garage', label: 'Гаражные двери (в рамах)', img: '/icons/metal.fragments.png', wide: true },
 ];
 const SINGLE_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-door', metal: 'sheet-metal-door', armored: 'armored-door', garage: 'sheet-metal-door' };
 const FRAME_BY_CHOICE: Record<DoorChoice, string> = { wooden: 'wooden-double-door', metal: 'sheet-metal-double-door', armored: 'armored-double-door', garage: 'garage-door' };
@@ -100,20 +102,59 @@ function applyOverrides(data: unknown, grade: GradeChoice, door: DoorChoice): un
   return doc;
 }
 
+/** Иконка двери: закрытая — полотно в проёме, открытая — полотно повёрнуто наружу. */
+const DoorIcon: React.FC<{ open: boolean }> = ({ open }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+    <path d="M4 21h16M6 21V3h12v18" />
+    {open
+      ? <><path d="M6 3l7 3v15l-7-0" fill="currentColor" fillOpacity="0.25" /><circle cx="11" cy="13" r="0.9" fill="currentColor" /></>
+      : <><rect x="7.5" y="4.5" width="9" height="16.5" fill="currentColor" fillOpacity="0.25" /><circle cx="14.5" cy="13" r="0.9" fill="currentColor" /></>}
+  </svg>
+);
+
 const GRADE_LABELS: Record<string, string> = {
   twig: 'ветки', wood: 'дерево', stone: 'камень', metal: 'металл', armored: 'броня',
 };
 
-/** Киянка: материалы апгрейда с иконками раздела строительства; ветки — без иконки. */
-const HAMMER_GRADES: { id: Grade; label: string; img?: string }[] = [
-  { id: 'twig', label: 'Ветки' },
-  { id: 'wood', label: 'Дерево', img: '/icons/wood.png' },
-  { id: 'stone', label: 'Камень', img: '/icons/stones.png' },
-  { id: 'metal', label: 'Металл', img: '/icons/metal.refined.png' },
-  { id: 'armored', label: 'МВК', img: '/icons/metal.fragments.png' },
-];
+/** Короткие подписи для кольца радиального меню. */
+const SHORT_LABELS: Record<string, string> = {
+  'square-foundation': 'Фундамент', 'triangle-foundation': 'Тр. фунд.', 'foundation-steps': 'Ступени', 'ramp': 'Съезд',
+  'wall': 'Стена', 'half-wall': 'Полустена', 'low-wall': 'Низкая', 'doorway': 'Проём', 'window-frame': 'Окно', 'wall-frame': 'Рама',
+  'square-floor': 'Пол', 'triangle-floor': 'Тр. пол', 'floor-frame': 'Рама пола', 'triangle-floor-frame': 'Тр. рама',
+  'stairs-l-shape': 'Лестн. L', 'u-shaped-stairs': 'Лестн. U', 'spiral-stairs': 'Винтовая', 'roof': 'Крыша', 'roof-triangle': 'Тр. крыша',
+  'wooden-door': 'Дер. дверь', 'sheet-metal-door': 'Мет. дверь', 'armored-door': 'МВК дверь',
+  'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
+  'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка',
+  'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
+};
 
-function download(name: string, text: string) {
+/** Радиальные меню: блоки строительного плана, объекты, апгрейд и снос киянкой. */
+const RADIAL: Record<EditorTool, RadialItem[]> = {
+  build: BUILD_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
+  deploy: DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k] })),
+  hammer: [
+    { id: 'twig', label: 'Ветки' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
+    { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'remove', label: 'Снести' },
+  ],
+};
+
+const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
+
+/** Содержание по дням и иконки ресурсов. */
+const UPKEEP_DAYS = [1, 2, 3, 5, 10, 15, 20, 25, 30];
+const RES_ICONS: Record<ResourceKey, string> = { wood: '/icons/wood.png', stone: '/icons/stones.png', metal: '/icons/metal.fragments.png', hqm: '/icons/metal.refined.png' };
+const RES_LABELS: Record<ResourceKey, string> = { wood: 'Дерево', stone: 'Камень', metal: 'Металлические фрагменты', hqm: 'МВК' };
+
+/** Иконки нижней панели: строительный план, киянка, объект. */
+const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {tool === 'build' && <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="M3.5 9.5h17M9.5 9.5v11M14 14h4M14 17h4" /></>}
+    {tool === 'hammer' && <><path d="M14.5 3.5l6 6-2.5 2.5-6-6z" /><path d="M13 8L4 17l3 3 9-9" /></>}
+    {tool === 'deploy' && <><path d="M6 21V3h12v18" /><path d="M4 21h16" /><circle cx="14.5" cy="12" r="0.9" fill="currentColor" /></>}
+  </svg>
+);
+
+function downloadFile(name: string, text: string) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   a.download = name;
@@ -127,15 +168,16 @@ interface Source {
   data: unknown;
 }
 
-function fromPreset(id: string): Source {
+function fromPreset(id: string, grade: GradeChoice = 'stone', door: DoorChoice = 'metal'): Source {
   const p = BLUEPRINT_PRESETS.find(x => x.id === id) ?? BLUEPRINT_PRESETS[0];
-  return { label: p.label, data: p.data };
+  // материал и двери из переключателей сразу применяются к чертежу
+  return { label: p.label, data: applyOverrides(p.data, grade, door) };
 }
 
 /** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
 function initialPresetId(): string {
   const wanted = new URLSearchParams(window.location.search).get('bp');
-  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : BLUEPRINT_PRESETS[0].id;
+  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'empty';
 }
 
 const BlueprintSection: React.FC = () => {
@@ -151,36 +193,44 @@ const BlueprintSection: React.FC = () => {
   const [gradeChoice, setGradeChoice] = useState<GradeChoice>('stone');
   const [doorChoice, setDoorChoice] = useState<DoorChoice>('metal');
 
-  // Режим стройки: переопределения запекаются в документ при входе, дальше документ правится напрямую
-  const [editing, setEditing] = useState(false);
+  // Режим стройки включён всегда: документ правится напрямую
   const [tool, setTool] = useState<EditorTool>('build');
-  const [buildKind, setBuildKind] = useState<ElementKind>('wall');
+  const [buildKind, setBuildKind] = useState<ElementKind>('square-foundation');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
-  const [buildGrade, setBuildGrade] = useState<Grade>('twig');
-  const [demolish, setDemolish] = useState(false);
 
   // Документ с переопределениями → схема → геометрия
   const result: LoadResult = useMemo(
-    () => loadBlueprint(editing ? source.data : applyOverrides(source.data, gradeChoice, doorChoice)),
-    [source, gradeChoice, doorChoice, editing],
+    () => (source.data === null ? { blueprint: null, resolved: EMPTY_RESOLVED, issues: [] } : loadBlueprint(source.data)),
+    [source],
   );
 
   const choosePreset = (id: string) => {
     setActivePreset(id);
-    setSource(fromPreset(id));
+    setSource(fromPreset(id, gradeChoice, doorChoice));
+    setRaidPlay(0);
+  };
+  /** Материал всех блоков и тип всех дверей — сразу в чертёж. */
+  const chooseGrade = (g: GradeChoice) => {
+    setGradeChoice(g);
+    setSource(s => ({ label: s.label, data: applyOverrides(s.data, g, doorChoice) }));
+    setRaidPlay(0);
+  };
+  const chooseDoor = (d: DoorChoice) => {
+    setDoorChoice(d);
+    setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, d) }));
     setRaidPlay(0);
   };
 
-  const startEditing = () => {
-    setSource(s => ({ label: s.label, data: applyOverrides(s.data, gradeChoice, doorChoice) }));
-    setEditing(true);
-  };
-  const startNew = () => {
-    setActivePreset(null);
-    setSource({ label: 'Новая постройка', data: newBlueprint() });
-    setEditing(true);
-    setRaidPlay(0);
-  };
+  // 1 / 2 / 3 — строительный план, киянка, объект (как слоты в игре)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
+      if (t) { setTool(t); e.preventDefault(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
   const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
     // после каждого действия — обрушение блоков без опоры, как в игре
@@ -205,15 +255,24 @@ const BlueprintSection: React.FC = () => {
   const { blueprint, resolved, issues } = result;
 
   const editor = useMemo<EditorState | null>(() => {
-    if (!editing || !blueprint) return null;
+    if (!blueprint && source.data !== null) return null;
     return {
-      tool, demolish, kind: buildKind, deployKind, grade: buildGrade, blueprint,
-      onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, buildGrade)),
-      onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
-      onUpgrade: (id: string) => applyDoc(upgradeElement(blueprint, id, buildGrade)),
-      onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      tool, kind: buildKind, deployKind, blueprint, radial: RADIAL,
+      // новые блоки — из веток, как в игре; грейд меняется киянкой
+      onPlace: (kind: ElementKind, attach: Attach) => blueprint && applyDoc(addElement(blueprint, kind, attach, 'twig')),
+      onPlaceRoot: (kind: ElementKind) => applyDoc(newBlueprint('Новая постройка', kind)),
+      onDeploy: (d: Omit<Deployable, 'id'>) => blueprint && applyDoc(addDeployable(blueprint, d)),
+      onRemove: (id: string, deployable: boolean) => blueprint && applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {
+        if (t === 'build') setBuildKind(itemId as ElementKind);
+        else if (t === 'deploy') setDeployKind(itemId as DeployableKind);
+        else if (blueprint && targetId) {
+          if (itemId === 'remove') applyDoc(targetDeployable ? removeDeployable(blueprint, targetId) : removeElement(blueprint, targetId));
+          else if (!targetDeployable) applyDoc(upgradeElement(blueprint, targetId, itemId as Grade));
+        }
+      },
     };
-  }, [editing, blueprint, tool, demolish, buildKind, deployKind, buildGrade, applyDoc]);
+  }, [blueprint, source.data, tool, buildKind, deployKind, applyDoc]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -259,6 +318,8 @@ const BlueprintSection: React.FC = () => {
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
+  const cost = useMemo(() => (resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved]);
+
   const counts = useMemo(() => {
     if (!resolved) return [];
     const map = new Map<string, number>();
@@ -271,95 +332,81 @@ const BlueprintSection: React.FC = () => {
     });
   }, [resolved]);
 
+  const download = () => blueprint && downloadFile(`${(blueprint.meta.name || 'blueprint').replace(/[^\wа-яё-]+/gi, '_')}.json`, exportBlueprint(blueprint));
+
   return (
     <section className="bp">
-      <div className="bp__toolbar">
-        <div className="bp__presets" role="group" aria-label="Готовые постройки">
-          {BLUEPRINT_PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className={`raid-tier__btn${p.id === activePreset ? ' raid-tier__btn--active' : ''}`}
-              onClick={() => choosePreset(p.id)}
-              aria-pressed={p.id === activePreset}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <div className="bp__upload">
-          <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
-          <div className="bp__presets" role="group" aria-label="Камера">
-            {([['orbit', 'Орбита'], ['fly', 'Полёт']] as [CameraMode, string][]).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                className={`raid-tier__btn${id === cameraMode ? ' raid-tier__btn--active' : ''}`}
-                onClick={() => setCameraMode(id)}
-                aria-pressed={id === cameraMode}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <label className="bp__toggle">
-            <input type="checkbox" checked={doorsOpen} onChange={e => setDoorsOpen(e.target.checked)} />
-            Открыть двери
-          </label>
-          <div className="bp__presets" role="group" aria-label="Режим">
-            <button type="button" className={`raid-tier__btn${!editing ? ' raid-tier__btn--active' : ''}`} onClick={() => setEditing(false)} aria-pressed={!editing}>Просмотр</button>
-            <button type="button" className={`raid-tier__btn${editing ? ' raid-tier__btn--active' : ''}`} onClick={() => { if (!editing) startEditing(); }} aria-pressed={editing}>Стройка</button>
-          </div>
-        </div>
-        <div className="bp__upload bp__overrides">
-          {!editing && (
-            <>
-              <span className="bp__override-label">Материал</span>
-              <div className="bp__icons" role="group" aria-label="Материал конструкций">
-                {GRADE_CHOICES.map(c => (
-                  <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
-                    onClick={() => { setGradeChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
-                    <img src={c.img} alt="" />
-                  </button>
-                ))}
-              </div>
-              <span className="bp__override-label">Двери</span>
-              <div className="bp__icons" role="group" aria-label="Тип дверей">
-                {DOOR_CHOICES.map(c => (
-                  <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
-                    onClick={() => { setDoorChoice(c.id); setRaidPlay(0); }} aria-pressed={c.id === doorChoice} aria-label={c.label}>
-                    <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-          {editing && (
-            <>
-              <button type="button" className="raid-tier__btn" onClick={startNew}>Новая постройка</button>
-              <button type="button" className="raid-tier__btn" disabled={!blueprint} onClick={() => blueprint && download(`${(blueprint.meta.name || 'blueprint').replace(/[^\wа-яё-]+/gi, '_')}.json`, exportBlueprint(blueprint))}>Скачать JSON</button>
-            </>
-          )}
-          <button type="button" className="bp__upload-btn" onClick={() => fileRef.current?.click()}>
-            Загрузить JSON
-          </button>
-          <a className="bp__spec-link" href="https://github.com/vadimptr/rust_calculator/blob/main/docs/blueprint/SPEC.md" target="_blank" rel="noreferrer">
-            формат чертежа
-          </a>
-        </div>
-      </div>
-
+      <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} hidden />
       <div className="bp__layout">
-        <div className="bp__viewer">
-          <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
-          <div className="bp__hint">
-            {editing
-              ? (cameraMode === 'orbit'
-                ? 'Наведи на блок — синий призрак встанет в ближайший сокет · клик — поставить, апгрейд или снос (по режиму киянки) · R — другой вариант · перетаскивание вращает камеру'
-                : 'Клик — захват мыши, прицел в центре · ЛКМ — поставить или апгрейд · ПКМ — снести киянкой · R — другой вариант · WASD, Space / C — лететь · Esc — отпустить')
-              : cameraMode === 'orbit'
-                ? 'ЛКМ — вращать · колесо — приближать · ПКМ — сдвигать'
-                : 'Клик по сцене — захват мыши · мышь — смотреть · WASD — лететь · Space / C — вверх / вниз · Shift — быстрее · Esc — отпустить'}
+        <nav className="bp__side" aria-label="Постройки">
+          <div className="bp__side-title">Шаблоны</div>
+          <ul className="bp__list">
+            {BLUEPRINT_PRESETS.map(p => (
+              <li key={p.id}>
+                <button type="button" className={`bp__list-item${p.id === activePreset ? ' bp__list-item--active' : ''}`} onClick={() => choosePreset(p.id)} aria-pressed={p.id === activePreset}>
+                  {p.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="bp__side-actions">
+            <div className="bp__row">
+              <button type="button" className="bp__upload-btn bp__grow" onClick={() => fileRef.current?.click()}>Загрузить JSON</button>
+              <a className="bp__icon-btn bp__help" href="https://github.com/vadimptr/rust_calculator/blob/main/docs/blueprint/SPEC.md" target="_blank" rel="noreferrer" data-tip="Формат чертежа: описание JSON">?</a>
+            </div>
+            <button type="button" className="raid-tier__btn bp__side-btn" disabled={!blueprint} onClick={download}>Скачать JSON</button>
+          </div>
+        </nav>
+
+        <div className="bp__center">
+          <div className="bp__overrides">
+            <span className="bp__override-label">Материал</span>
+            <div className="bp__icons" role="group" aria-label="Материал конструкций">
+              {GRADE_CHOICES.map(c => (
+                <button key={c.id} type="button" data-tip={`Все блоки — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === gradeChoice ? ' bp__icon-btn--active' : ''}`}
+                  onClick={() => chooseGrade(c.id)} aria-pressed={c.id === gradeChoice} aria-label={c.label}>
+                  <img src={c.img} alt="" />
+                </button>
+              ))}
+            </div>
+            <span className="bp__override-label">Двери</span>
+            <div className="bp__icons" role="group" aria-label="Тип дверей">
+              {DOOR_CHOICES.map(c => (
+                <button key={c.id} type="button" data-tip={`Все двери — ${c.label.toLowerCase()}`} className={`bp__icon-btn${c.id === doorChoice ? ' bp__icon-btn--active' : ''}`}
+                  onClick={() => chooseDoor(c.id)} aria-pressed={c.id === doorChoice} aria-label={c.label}>
+                  <img src={c.img} alt="" /><DoorBadge wide={c.wide} />
+                </button>
+              ))}
+            </div>
+            <button type="button" className={`bp__icon-btn bp__doors-toggle${doorsOpen ? ' bp__icon-btn--active' : ''}`} onClick={() => setDoorsOpen(o => !o)} aria-pressed={doorsOpen}
+              aria-label={doorsOpen ? 'Закрыть двери' : 'Открыть двери'} data-tip={doorsOpen ? 'Двери открыты — нажми, чтобы закрыть все двери' : 'Двери закрыты — нажми, чтобы открыть все двери и крыши-затворы'}>
+              <DoorIcon open={doorsOpen} />
+            </button>
+          </div>
+          <div className="bp__viewer">
+            <Viewer3D resolved={resolved} mode={cameraMode} doorsOpen={doorsOpen} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
+            <div className="bp__camera" role="group" aria-label="Камера">
+              <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
+              </button>
+              <button type="button" className={`bp__icon-btn${cameraMode === 'fly' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('fly')} aria-pressed={cameraMode === 'fly'} aria-label="Полёт" data-tip="Полёт: клик по сцене — захват мыши, WASD — лететь, Esc — отпустить" data-tip-pos="left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
+              </button>
+            </div>
+            <div className="hotbar" role="group" aria-label="Инструменты">
+              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
+                <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id} aria-label={label}>
+                  <span className="hotbar__key">{i + 1}</span>
+                  <ToolIcon tool={id} />
+                  <span className="hotbar__sub">{sub}</span>
+                </button>
+              ))}
+            </div>
+            <div className="bp__hint">
+              {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
+              {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · R — снести · средняя кнопка — сдвиг камеры'}
+              {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры'}
+            </div>
           </div>
         </div>
 
@@ -391,58 +438,7 @@ const BlueprintSection: React.FC = () => {
             </div>
           )}
 
-          {editing && (
-            <section className="palette">
-              <div className="palette__tools" role="group" aria-label="Инструмент">
-                {([['build', 'Строительный план'], ['deploy', 'Объекты'], ['hammer', 'Киянка']] as [EditorTool, string][]).map(([id, label]) => (
-                  <button key={id} type="button" className={`raid-tier__btn raid-tier__btn--sm${tool === id ? ' raid-tier__btn--active' : ''}`} onClick={() => setTool(id)} aria-pressed={tool === id}>{label}</button>
-                ))}
-              </div>
-              {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
-              {tool === 'build' && BUILD_PLAN.map(g => (
-                <div key={g.group} className="palette__group">
-                  <div className="palette__title">{g.group}</div>
-                  <div className="palette__items">
-                    {g.kinds.map(k => (
-                      <button key={k} type="button" className={`palette__item${buildKind === k ? ' palette__item--active' : ''}`} onClick={() => setBuildKind(k)} aria-pressed={buildKind === k}>{KIND_LABELS[k]}</button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {tool === 'deploy' && DEPLOY_PLAN.map(g => (
-                <div key={g.group} className="palette__group">
-                  <div className="palette__title">{g.group}</div>
-                  <div className="palette__items">
-                    {g.kinds.map(k => (
-                      <button key={k} type="button" className={`palette__item${deployKind === k ? ' palette__item--active' : ''}`} onClick={() => setDeployKind(k)} aria-pressed={deployKind === k}>{KIND_LABELS[k]}</button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {tool === 'hammer' && (
-                <div className="palette__group">
-                  <div className="palette__title">Действие по клику</div>
-                  <div className="bp__presets" role="group" aria-label="Действие киянки">
-                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${!demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(false)} aria-pressed={!demolish}>Апгрейд</button>
-                    <button type="button" className={`raid-tier__btn raid-tier__btn--sm${demolish ? ' raid-tier__btn--active' : ''}`} onClick={() => setDemolish(true)} aria-pressed={demolish}>Снести</button>
-                  </div>
-                </div>
-              )}
-              <div className="palette__group">
-                <div className="palette__title">{tool === 'hammer' ? 'Апгрейд до' : 'Материал новых блоков'}</div>
-                <div className="bp__icons" role="group" aria-label="Материал">
-                  {HAMMER_GRADES.map(c => (
-                    <button key={c.id} type="button" title={c.label} className={`bp__icon-btn${buildGrade === c.id ? ' bp__icon-btn--active' : ''}`} onClick={() => setBuildGrade(c.id)} aria-pressed={buildGrade === c.id} aria-label={c.label}>
-                      {c.img ? <img src={c.img} alt="" /> : <span className="bp__icon-text">🌿</span>}
-                    </button>
-                  ))}
-                </div>
-                {tool === 'hammer' && <p className="raid-panel__hint">{demolish ? 'Клик или тап по блоку — снести (подсветка красная).' : 'Клик по блоку — апгрейд до выбранного материала; снос — режим «Снести», ПКМ или Delete.'} Блоки, которые держались только на снесённом, падают вместе с ним; корневой фундамент снести нельзя.</p>}
-                {tool === 'build' && <p className="raid-panel__hint">Как в игре: новый блок ставится в сокет того блока, на который наведён курсор. R перебирает варианты (сторона пола, поворот лестницы). Полный строительный план: {GRADES.length} материала, {BUILD_PLAN.reduce((n, g) => n + g.kinds.length, 0)} конструкций.</p>}
-                {tool === 'deploy' && <p className="raid-panel__hint">Двери — в проём (петли с той стороны, где курсор), вставки — в оконный проём, шкаф — на пол в точку курсора, дроп-бокс — на стену (направление по стороне, с которой наведён).</p>}
-              </div>
-            </section>
-          )}
+          {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
 
           {resolved && raidBusy && (
             <section className="raid-panel">
@@ -504,23 +500,60 @@ const BlueprintSection: React.FC = () => {
                       <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
                     </div>
                   )}
-                  <p className="raid-panel__hint">Путь ищется по стенам, дверям, полам и крыше; мягкая сторона стен не учитывается. «Оптимально» смешивает ракеты, C4 и разрывные; сплеш у каждого свой, радиусы приблизительные, закрытые двери и полы его не пропускают.</p>
+                  <p className="raid-panel__hint">Урон по правилам и данным игры: защита грейда и дверей, падение урона до ближайшей точки коробки блока, видимость по двум лучам. C4 и сачель сажаются на блок, ракета и разрывные бьют по области. «Оптимально» смешивает ракеты, C4 и разрывные.</p>
                 </>
               )}
             </section>
           )}
 
-          {resolved && (
-            <table className="bp__counts">
-              <tbody>
-                {counts.map(c => (
-                  <tr key={c.key}>
-                    <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
-                    <td className="bp__counts-n">×{c.n}</td>
-                  </tr>
+          {resolved && counts.length > 0 && (
+            <>
+              <div className="bp__section-title">Состав</div>
+              <table className="bp__counts">
+                <tbody>
+                  {counts.map(c => (
+                    <tr key={c.key}>
+                      <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
+                      <td className="bp__counts-n">×{c.n}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {cost && (
+            <section className="cost">
+              <div className="bp__section-title">Стоимость постройки</div>
+              <div className="cost__row">
+                {RESOURCE_KEYS.filter(k => cost.build[k] > 0).map(k => (
+                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
                 ))}
-              </tbody>
-            </table>
+              </div>
+              <div className="bp__section-title">Содержание в сутки</div>
+              <div className="cost__row">
+                {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
+                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(Math.ceil(cost.upkeep[k]))}</span>
+                ))}
+              </div>
+              <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
+              <table className="cost__days">
+                <thead>
+                  <tr>
+                    <th>Дней</th>
+                    {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {UPKEEP_DAYS.map(d => (
+                    <tr key={d}>
+                      <td>{d}</td>
+                      {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <td key={k}>{formatNum(Math.ceil(cost.upkeep[k] * d))}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
           )}
         </aside>
       </div>

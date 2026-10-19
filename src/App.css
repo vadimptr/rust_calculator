@@ -12,12 +12,15 @@
 .app-header {
   background: linear-gradient(180deg, #1a100a 0%, #161412 100%);
   border-bottom: 2px solid var(--accent);
-  padding: 1.5rem 1rem;
+  padding: 0.9rem 1rem;
 }
 
 .app-header__inner {
-  max-width: 1600px;
-  margin: 0 auto;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
 }
 
 .app-header__title {
@@ -951,7 +954,6 @@
 
 .tabs {
   display: inline-flex;
-  margin-top: 1rem;
   border: 1px solid var(--card-border);
   border-radius: 6px;
   overflow: hidden;
@@ -1624,6 +1626,386 @@
 }
 
 /* =========================================================
+   3D: раскладка на весь экран — шаблоны слева, сцена, панель справа
+   ========================================================= */
+
+.app-layout--wide {
+  max-width: none;
+  padding: 0.75rem 0.75rem 0.75rem;
+}
+
+.bp__layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 400px;
+  gap: 0.75rem;
+  align-items: stretch;
+  height: calc(100vh - 110px);
+  min-height: 520px;
+}
+
+.bp__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.bp__side-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.bp__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bp__list-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.bp__list-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--card-border);
+}
+
+.bp__list-item--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.18);
+}
+
+.bp__side-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bp__row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+
+.bp__grow {
+  flex: 1;
+}
+
+.bp__side-btn {
+  width: 100%;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.bp__help {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  width: 38px;
+  flex-shrink: 0;
+}
+
+.bp__center {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.bp__center .bp__overrides {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.bp__doors-toggle {
+  margin-left: 0.9rem;
+  color: var(--text-primary);
+}
+
+.bp__center .bp__viewer {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.bp__camera {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.bp__camera .bp__icon-btn {
+  color: var(--text-primary);
+  background: rgba(20, 17, 14, 0.75);
+}
+
+.bp__layout > .bp__panel {
+  width: auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Мгновенная подсказка по data-tip */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  z-index: 50;
+  width: max-content;
+  max-width: 240px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  color: #f1ece2;
+  background: #0f0d0b;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+[data-tip][data-tip-pos='left']:hover::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+@media (max-width: 1100px) {
+  .bp__layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .bp__center .bp__viewer {
+    height: 70vh;
+    flex: none;
+  }
+  .bp__layout > .bp__panel {
+    overflow: visible;
+  }
+}
+
+.bp__side .bp__upload-btn {
+  white-space: nowrap;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.72rem;
+}
+
+/* Нижняя панель инструментов (как слоты в игре) */
+.hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  z-index: 3;
+}
+
+.hotbar__slot {
+  position: relative;
+  width: 78px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: var(--text-primary);
+  background: rgba(20, 17, 14, 0.78);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hotbar__slot--active {
+  border-color: var(--accent);
+  background: rgba(207, 72, 32, 0.32);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.hotbar__key {
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.hotbar__sub {
+  max-width: 100%;
+  padding: 0 0.25rem;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Радиальное меню (зажатая ПКМ): сегменты с картинками */
+.radial {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.radial__svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+}
+
+.radial__seg {
+  fill: rgba(20, 17, 14, 0.82);
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+  transition: fill 0.06s;
+}
+
+.radial__seg--sel {
+  fill: rgba(207, 72, 32, 0.78);
+  stroke: rgba(255, 170, 130, 0.9);
+}
+
+.radial__hub {
+  fill: rgba(15, 13, 11, 0.6);
+}
+
+.radial__icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #e8e2d6;
+}
+
+.radial__icon img {
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+
+.radial__icon--sel {
+  color: #fff;
+}
+
+.radial__caption {
+  position: absolute;
+  top: 100%;
+  margin-top: 1px;
+  font-size: 0.62rem;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.radial__center {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  max-width: 120px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+}
+
+.bp__section-title {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.cost__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+.cost__res {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cost__res img, .cost__days img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.cost__note {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.cost__days {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.cost__days th, .cost__days td {
+  padding: 0.3rem 0.4rem;
+  text-align: right;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.cost__days th:first-child, .cost__days td:first-child {
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+/* =========================================================
    Documentation section
    ========================================================= */
 
@@ -1790,7 +2172,6 @@
   border: 1px solid var(--card-border);
   border-radius: 8px;
   padding: 1.5rem 1.75rem 2rem;
-  max-width: 920px;
 }
 
 .docs-page__crumbs {

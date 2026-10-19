@@ -114,3 +114,27 @@ export function cornerPosts(resolved: Resolved): CornerPost[] {
   }
   return [...posts.values()];
 }
+
+/**
+ * Вставка между треугольными крышами в ряд (модель roof.straight.right, условие RoofRight с углом 0
+ * и формой «треугольник»): две треугольные крыши одного грейда и уровня, смотрящие в одну сторону и
+ * стоящие вплотную основаниями, сами закрывают просвет между собой перевёрнутым треугольником в той же
+ * плоскости. Вставку рисует крыша, у которой сосед со стороны +z; центр вставки — (−0.866, 0, 1.5) в её
+ * системе, поворот на 180°, ребро edge:0 у конька.
+ */
+export function triangleRoofFillers(resolved: Resolved): { owner: string; el: ResolvedElement }[] {
+  const tris = resolved.elements.filter(e => e.kind === 'roof-triangle' && !e.inverted);
+  const out: { owner: string; el: ResolvedElement }[] = [];
+  for (const a of tris) {
+    const ang = a.rotation * DEG;
+    const at = (x: number, z: number): [number, number, number] => [a.position[0] + x * Math.cos(ang) - z * Math.sin(ang), a.position[1], a.position[2] + x * Math.sin(ang) + z * Math.cos(ang)];
+    const next = at(0, 3);
+    const b = tris.find(t => t !== a && t.grade === a.grade && near(t.position, next)
+      && Math.abs(((((t.rotation - a.rotation) % 360) + 540) % 360) - 180) < 10);
+    if (!b) continue;
+    out.push({ owner: a.id, el: { id: `${a.id}~fill`, kind: 'roof-triangle', grade: a.grade, position: at(-TRI_APO, 1.5), rotation: a.rotation + 180, level: a.level, inverted: true } });
+  }
+  return out;
+}
+
+const TRI_APO = 0.866;

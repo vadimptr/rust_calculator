@@ -13,6 +13,8 @@ export interface BlueprintPreset {
 
 /** Предзагруженные чертежи. Источник — docs/blueprint/examples. */
 export const BLUEPRINT_PRESETS: BlueprintPreset[] = [
+  // пустой участок: первый поставленный фундамент станет корнем постройки
+  { id: 'empty', label: 'Пустой участок', data: null },
   { id: 'starter-2x1', label: 'Дом 2×1 с аирлоком', data: starter2x1 },
   { id: 'house-2x2', label: 'Дом 2×2 с запрыгом', data: house2x2 },
   { id: 'sealed-triangle-tc', label: 'Шкаф в треугольном бункере', data: sealedTriangle },
