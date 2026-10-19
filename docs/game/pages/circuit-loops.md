@@ -105,9 +105,3 @@ IsConnectedTo(цель, глубина, defaultReturn):
 - Для обратной связи в логике используйте неосновные входы: Reset, Toggle, Block. Их петли
   сервер не обнуляет.
 - У ячейки памяти не заводите оба выхода обратно в саму ячейку, даже через длинную логику.
-
-## Где в коде
-
-`IOEntity.IsConnectedTo` (обе перегрузки), `IsConnectedToAnySlot`, `OutputsConnectedTo`,
-`ConsiderConnectedTo`; `ElectricalCombiner.UpdateFromInput`, `ORSwitch.UpdateFromInput`,
-`XORSwitch.UpdateFromInput`, `ElectricalDFlipFlop.DetectShortCircuit`.

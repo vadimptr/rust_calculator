@@ -28,7 +28,7 @@ code: [BuildingPrivlidge.cs, DecayEntity.cs, ConVar/Decay.cs, Upkeep.cs, Constru
 ### 1. Кто платит за что
 
 Платят все `DecayEntity` здания ([[building-structure]]), у которых в префабе есть атрибут
-`Upkeep` (`DecayEntity.upkeep != null`). Без атрибута сущность платит ноль. По ассетам `Upkeep`
+`Upkeep` (`DecayEntity.upkeep != null`). Без атрибута сущность платит ноль. Атрибут `Upkeep`
 есть у:
 
 - блоков постройки — у всех, кроме треугольной винтовой лестницы `block.stair.spiral.triangle`;
@@ -222,12 +222,3 @@ Sheet Metal — компонент и не считается, камень де
 4000 / 3 × 0.2 ≈ 267 камня в сутки за каждую стену при группе до 4 человек.
 
 Чтобы шкаф показывал «N дней», ресурса R в нём должно быть: суточная цена R × N.
-
-## Где в коде
-
-- `BuildingPrivlidge.CalculateTaxRate`, `CalculateBuildingTaxRate`, `CalculateDoorTaxRate`.
-- `BuildingPrivlidge.CalculateGroupUpkeepMultiplier`, `RecalculateGroupUpkeep`, `RefreshDoorGroupMembers`, `PruneGroupMembers`.
-- `BuildingPrivlidge.GetEntityUpkeepMultiplier`, `PurchaseUpkeepTime`, `QueueUpkeepPayment`, `ApplyUpkeepPayment`.
-- `BuildingPrivlidge.CalculateProtectedMinutes`, `FormatUpkeepMinutes`, `Die`, `PurchaseAntiGriefTime`.
-- `DecayEntity.OnDecay`, `CalculateUpkeepCostAmounts`.
-- `ConVar.Decay` — все настройки.

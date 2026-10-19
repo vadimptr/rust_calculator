@@ -25,7 +25,7 @@ code: [BaseGameMode.cs, GameModeVanilla.cs, GameModeSoftcore.cs, GameModeHardcor
 3. **Убирает лишнее с карты**: NPC и турели в безопасных зонах, MLRS, NPC-квестодателей
    (`DeleteEntities`), если соответствующий флаг выключен.
 
-Известные режимы в коде (`GameSetup.GameModeShortName`): `vanilla`, `softcore`, `hardcore`,
+Известные режимы (`GameSetup.GameModeShortName`): `vanilla`, `softcore`, `hardcore`,
 `primitive`, а также мини-игры `deathmatch`, `teamdeathmatch`, `onedeath`, `kingofthehillDM`,
 `kingofthehillTeam`, `weapontest`. Свой C#-класс есть только у `GameModeVanilla` (пустой),
 `GameModeSoftcore`, `GameModeHardcore` и `PrimitiveGameMode` (пустой, наследник `EraGameMode`).
@@ -91,8 +91,8 @@ ConVar переворачивается:
 | Одежда и броня | `gamemodesoftcore.reclaim_fraction_wear` = 1 | **0 %** | 100 % |
 
 Справка ConVar обещает «1.0 = сохранить 100 % одежды», но `RemoveFractionOfContainer` при доле
-0 сразу выходит, и одежда в возврат не попадает. Если сервер (или префаб режима, которого нет
-в выгрузке) выставит `reclaim_fraction_wear` = 0, одежда будет возвращаться полностью.
+0 сразу выходит, и одежда в возврат не попадает. Если сервер (или префаб
+режима) выставит `reclaim_fraction_wear` = 0, одежда будет возвращаться полностью.
 
 При следующем возрождении (`OnPlayerRespawn`) вещи сами возвращаются в инвентарь
 (`PlayerReclaimEntry.GiveToPlayer`): одежда, пояс, основной, затем рюкзак. Что не влезло, падает
@@ -141,15 +141,15 @@ ConVar переворачивается:
 
 ### Hardcore
 
-У `GameModeHardcore` в коде только две вещи:
+У `GameModeHardcore` своих отличий только два:
 
 - множитель крафта патронов берётся из `server.hardcorefirearmammunitioncraftingmultiplier`
   (по умолчанию 1, то есть без изменений, пока сервер не поменяет);
 - при старте переработчики пересчитывают, стоят ли они в безопасной зоне (`Recycler.UpdateInSafeZone`).
 
 Всё остальное (отключённая карта, компас, контакты, Rust+ и т. п.) задаётся полями префаба
-`hardcore.prefab`, которого нет в выгрузке ассетов. По данным сообщества, в hardcore нет карты,
-команд в интерфейсе и Rust+; в коде это не подтверждено.
+`hardcore.prefab`, точные значения которого неизвестны. По данным сообщества, в hardcore нет карты,
+команд в интерфейсе и Rust+; это не подтверждено.
 
 ### Эпохи (`server.era`)
 
@@ -176,7 +176,7 @@ ConVar переворачивается:
 | `server.gamemode` | пусто | имя режима при старте |
 | `gamemode.set <имя>` | — | сменить режим на лету (если текущий не `permanent`) |
 | `gamemodesoftcore.gather_rate` | 2 | множитель добычи в softcore |
-| `gamemodesoftcore.reclaim_fraction_belt` / `_main` / `_wear` | 0.5 / 0.5 / 1 | по коду — доля, что остаётся на трупе (вернут `1 − доля`) |
+| `gamemodesoftcore.reclaim_fraction_belt` / `_main` / `_wear` | 0.5 / 0.5 / 1 | доля, что остаётся на трупе (вернут `1 − доля`) |
 | `gamemodesoftcore.reclaim_suicide` | false | возвращать ли вещи после F1 kill |
 | `gamemodesoftcore.reclaim_building_auth` | false | возвращать ли при смерти в своей базе |
 | `gamemodesoftcore.allow_tc_corpse_no_building` | true | труп шкафа без здания |
@@ -208,8 +208,8 @@ ConVar переворачивается:
   и на PvE-сервере их можно ломать.
 - **PvE-отражение бьёт по броне.** Возвращённый урон идёт типом `Generic` через обычную защиту,
   поэтому одежда стрелка его частично гасит.
-- **Значения в префабах режимов неизвестны.** Префабы `assets/prefabs/gamemodes/*.prefab` не
-  попали в выгрузку. Например, лимит спальников в softcore может отличаться от 15.
+- **Значения в префабах режимов неизвестны.** Что задано в префабах `assets/prefabs/gamemodes/*.prefab`,
+  неизвестно. Например, лимит спальников в softcore может отличаться от 15.
 
 ## На практике
 
@@ -217,13 +217,3 @@ ConVar переворачивается:
 - Одиночные предметы возвращаются случайной половиной с округлением к чётному: из трёх стволов
   вернутся два, из одного — ни одного.
 - На PvE-сервере стрельба по игроку убьёт вас самого.
-
-## Где в коде
-
-- `BaseGameMode.CreateGameMode`, `OnCreated_Vanilla`, `ApplyConVars`, `DeleteEntities` — создание и флаги.
-- `GameModeSoftcore.OnPlayerDeath`, `OnPlayerRespawn`, `CorpseRemovalTime`, `SetInventoryLocked`, `CanMoveItemsFrom`.
-- `ItemContainer.RemoveFractionOfContainer` — деление стаков.
-- `ReclaimManager.AddPlayerReclaim`, `TickEntries`, `PlayerReclaimEntry.GiveToPlayer`.
-- `GameModeHardcore.GetCraftingCostConVar`.
-- `BasePlayer.Hurt`, `BuildingBlock.Hurt`, `DecayEntity.IsDemolishable` — PvE.
-- `ConVar.gamemode.set`, `ConVar.Softcore`, `ConVar.Server.era`.

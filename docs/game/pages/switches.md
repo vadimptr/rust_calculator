@@ -60,7 +60,7 @@ code: [ElectricSwitch.cs, SmartSwitch.cs, PressButton.cs, PressurePad.cs, BaseDe
 ```
 
 Плита — корневое устройство и срабатывает без питания (`ShouldTrigger` = true). Значения
-из префаба `pressurepad.deployed` (в коде по умолчанию 2).
+из префаба `pressurepad.deployed` (по умолчанию 2).
 
 ### Дверной контроллер
 
@@ -93,10 +93,3 @@ Close: новое значение > 0 при питании → закрыть
 - Кнопка без питания + [[memory-cell|ячейка памяти]] = переключатель «вкл/выкл» с одним
   проводом питания.
 - Плита у входа + [[timer|таймер]] = свет на время.
-
-## Где в коде
-
-`ElectricSwitch.SetSwitch`, `UpdateHasPower`, `RPC_Switch`; `SmartSwitch.ToggleSwitch`;
-`PressButton.Press`, `GetPassthroughAmount`, `UnpowerTime`; `PressurePad.GetPassthroughAmount`,
-`OnDetectorTriggered`; `BaseDetector.OnObjects`; `CustomDoorManipulator.UpdateFromInput`,
-`DoAction`, `PairDoorAttempt`.

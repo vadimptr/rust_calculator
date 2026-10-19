@@ -17,17 +17,17 @@ code: [BaseAIBrain.cs, ScientistBrain.cs, AIBrainSenses.cs, HumanNPC.cs, NPCPlay
 |---|---|---|
 | Классы | `NPCPlayer` → `HumanNPC` → `ScientistNPC`, `TunnelDweller`, `UnderwaterDweller`, `BanditGuard`, `ScarecrowNPC`, `GingerbreadNPC` | `BaseNPC2` → `Wolf2`, `Bear`, `PolarBear`, `Boar`, `Stag`, `Chicken`, `Tiger`, `Panther`, `Crocodile`, `ScientistNPC2` |
 | Тело | Настоящий `BasePlayer`: инвентарь, одежда, оружие из лоадаута | Отдельная сущность `BaseCombatEntity`; оружие выдаёт `NpcShootingComponent` |
-| Мозг | `BaseAIBrain` + набор состояний; переходы задаёт ассет `AIDesignSO` | `FSMComponent` — иерархический конечный автомат, собранный прямо в коде (`Wolf2FSM`, `TigerFSM` …) |
+| Мозг | `BaseAIBrain` + набор состояний; переходы задаёт `AIDesignSO` | `FSMComponent` — иерархический конечный автомат, заданный прямо в классе (`Wolf2FSM`, `TigerFSM` …) |
 | Органы чувств | `AIBrainSenses`: шар радиусом `SenseRange`, конус, луч видимости | `SenseComponent`: «ясность» видимости, конусы, слух по шумам |
 | Где | монументы, карго, нефтевышки, туннели, Брэдли, аванпост | все дикие животные; учёные Gen2 (`scientist2.heavy`, `scientist2.shotgun`) |
 
-Старых животных (`BaseAnimalNPC`, `BaseNpc`) в коде ещё много, но **ни один префаб животного их больше не использует** — все звери в мире на Gen2. Единственные «старые» звери — акула (`SimpleShark`) и змея (`SnakeHazard`), у которых своя простая логика (см. [[shark]], [[snake]]).
+Классы старых животных (`BaseAnimalNPC`, `BaseNpc`) ещё остались, но **ни один префаб животного их больше не использует** — все звери в мире на Gen2. Единственные «старые» звери — акула (`SimpleShark`) и змея (`SnakeHazard`), у которых своя простая логика (см. [[shark]], [[snake]]).
 
 ## Как работает
 
 ### Старый ИИ: состояния и AIDesign
 
-`ScientistBrain.AddStates` регистрирует состояния: `Idle`, `Roam`, `Chase`, `Combat`, `TakeCover`, `Cover`, `Mounted`, `Dismounted`, `FollowPath` (патруль), `NavigateHome`, `CombatStationary`, `MoveTowards`, `MoveToVector3`, `Blinded`, `KillSelf`, `MountAPC`. Состояния «бежать» у учёных нет. Каким будет переход «увидел цель → преследовать → укрыться», решает ассет `AIDesignSO`, указанный в поле `DefaultDesignSO` префаба (`Scientist.Roam.AIDesign`, `Scientist.CargoShip.AIDesign`, `HeavyScientist.Oilrig.AIDesign`, `Scientist.MilitaryTunnels.AIDesign`, `Bandit_Guard.AIDesign` и ещё ~20). Сами правила переходов лежат в отдельных бинарных файлах дизайна и **в дамп ассетов не попали** — поэтому ниже описано только то, что делают сами состояния.
+`ScientistBrain.AddStates` регистрирует состояния: `Idle`, `Roam`, `Chase`, `Combat`, `TakeCover`, `Cover`, `Mounted`, `Dismounted`, `FollowPath` (патруль), `NavigateHome`, `CombatStationary`, `MoveTowards`, `MoveToVector3`, `Blinded`, `KillSelf`, `MountAPC`. Состояния «бежать» у учёных нет. Каким будет переход «увидел цель → преследовать → укрыться», решает `AIDesignSO`, указанный в поле `DefaultDesignSO` префаба (`Scientist.Roam.AIDesign`, `Scientist.CargoShip.AIDesign`, `HeavyScientist.Oilrig.AIDesign`, `Scientist.MilitaryTunnels.AIDesign`, `Bandit_Guard.AIDesign` и ещё ~20). Сами правила переходов **неизвестны** — поэтому ниже описано только то, что делают сами состояния.
 
 - **Chase** (`ScientistBrain.ChaseState`): каждые 0,5–1 с выбирает «точку движения» (`AIMovePoint`) рядом с целью в пределах `BestMovementPointMaxDistance` (10 м в префабах) с видимостью цели. Ближе 10 м идёт обычным шагом, дальше — бегом.
 - **Combat** (`CombatState`): стоит у точки, где начал бой, и каждые 1–3 с с шансом 1/3 приседает и замирает, иначе делает шаг в случайную точку в радиусе 1 м. То самое «приседание-дёргание» учёных.
@@ -76,7 +76,7 @@ Gen2 NPC **полностью восстанавливает HP**, когда в
 | `server.npcammolootmultiplier` | 1 | множитель патронов в трупах NPC | да |
 | `ai.npc_gun_noise_silencer_modifier` | 0,15 | «шум глушителя» | **нет**, нигде не читается |
 | `ai.npc_htn_player_base_damage_modifier` | 1,15 | урон HTN-NPC | **нет** |
-| `ai.npc_speed_*`, `ai.npc_alertness_*`, `ai.npc_valid_aim_cone`, `ai.npc_use_new_aim_system`, `ai.npc_cover_*`, `ai.npc_max_roam_multiplier`, `ai.npc_junkpile_dist_aggro_gate`, `ai.npc_max_junkpile_count`, `ai.npc_families_no_hurt`, `ai.sensetime`, `ai.tickrate` | разные | наследие удалённой HTN-системы | **нет** — значения в коде не используются |
+| `ai.npc_speed_*`, `ai.npc_alertness_*`, `ai.npc_valid_aim_cone`, `ai.npc_use_new_aim_system`, `ai.npc_cover_*`, `ai.npc_max_roam_multiplier`, `ai.npc_junkpile_dist_aggro_gate`, `ai.npc_max_junkpile_count`, `ai.npc_families_no_hurt`, `ai.sensetime`, `ai.tickrate` | разные | наследие удалённой HTN-системы | **нет** — значения ни на что не влияют |
 
 Время реакции Gen2 задаётся командой `ai.setnpcreactiontime` (по умолчанию 0,65 с) — см. [[npc-perception]].
 
@@ -94,10 +94,3 @@ Gen2 NPC **полностью восстанавливает HP**, когда в
 - Отошли и спрятались, но учёный Gen2 или зверь недобит — у вас две минуты, потом он вернётся к патрулю с полным HP.
 - Флешка — отличный инструмент против учёных старой системы на монументах: до 4 с они не стреляют и бродят. На охрану аванпоста и бандитки не действует, на зверей и учёных Gen2 тоже.
 - Сидя в машине/лодке вы «надоедаете» зверям в 12 раз быстрее — они бросают погоню примерно через 10 с вместо 120.
-
-## Где в коде
-
-- `BaseAIBrain` (`AddStates`, `SetBlinded`, `BasicAIState`), `ScientistBrain` (`ChaseState`, `CombatState`, `CoverState`, `BlindedState`).
-- `HumanNPC.TickAttack`, `EngagementRange`, `Hurt`, `FindHealingItem`; `NPCPlayer.ShotTest`, `EligibleForWounding`.
-- `Rust.Ai.Gen2/BaseNPC2.InitShared`, `FSMComponent`, `NPCEncounterTimer.Tick`, `State_Roam.Reset`, `State_Patrol.Reset`.
-- `TimedExplosive.BlindAnyAI`; `SpawnGroup.Spawn` (проверка `ai.scientist_spawners_enabled`); `ConVar/AI.cs`.

@@ -11,7 +11,7 @@ code: [BuildingPrivlidge.cs, BuildingPrivilegeRetro.cs, LootPanelToolCupboard.cs
 
 ## Кратко
 
-Шкаф (в коде `BuildingPrivlidge`, наследник `StorageContainer`) — это контейнер плюс
+Шкаф (класс `BuildingPrivlidge`, наследник `StorageContainer`) — это контейнер плюс
 «мозг» здания. Он:
 
 - хранит список авторизованных игроков и даёт им право строить в зоне ([[building-privilege]]);
@@ -122,11 +122,3 @@ code: [BuildingPrivlidge.cs, BuildingPrivilegeRetro.cs, LootPanelToolCupboard.cs
   МВК-дверей или стен), гнить начнут именно сущности, которым он нужен ([[upkeep]]).
 - Для калькулятора: время защиты = минимум по ресурсам (в шкафу / суточная цена) × 24 ч,
   а суточная цена считается по формуле со страницы [[upkeep]].
-
-## Где в коде
-
-- `BuildingPrivlidge` — весь шкаф: `ItemFilter`, `GetIdealSlot`, `DecayTick`, `EnsurePrimary`,
-  `AddAuthorize`, `ClearList`, `RemoveSelfAuthorize`, `RPC_Rotate`, `Die`, `Save`.
-- `BuildingPrivilegeRetro` — ретро-вариант.
-- `LootPanelToolCupboard` — клиентская панель (иконки цены, текст защиты, ряд инструментов).
-- `StorageMonitor` — данные для Rust+.

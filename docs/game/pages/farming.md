@@ -35,7 +35,7 @@ code: [GrowableEntity.cs, GrowableGenes.cs, GrowableGenetics.cs, GrowableGene.cs
 
 Стадии (`PlantProperties.State`): Seed → Seedling → Sapling → **Crossbreed** → Mature →
 Fruiting → Ripe → Dying. Длительность (`lifeLength`, в минутах), здоровье, ресурсы и урожай
-каждой стадии задаются в ассете растения (`*.plantproperty`, класс `PlantProperties`):
+каждой стадии задаются в настройках растения (`*.plantproperty`, класс `PlantProperties`):
 
 | Растение | Seed / Seedling / Sapling / Crossbreed / Mature / Fruiting, мин | До Ripe при `overall = 1` | `yield` Fruiting | `pickupMultiplier` | Клонов (`BaseCloneCount`) | `WaterIntake` |
 |----------|--------------------------------------------------------------|---------------------------|------------------|--------------------|---------------------------|---------------|
@@ -55,7 +55,7 @@ Mature 0,5, Fruiting и Ripe 1.
 ### 2. Четыре условия
 
 Все качества переводятся в 0–1 функцией `RemapValue(x, 0, Optimal…, 0, 1)`: значение
-`Optimal…` и выше даёт 1. В коде по умолчанию 1, в ассетах растений меньше:
+`Optimal…` и выше даёт 1. По умолчанию 1, у растений меньше:
 
 | Растения | `OptimalLight/Water/Ground/TemperatureQuality` |
 |----------|-----------------------------------------------|
@@ -75,7 +75,7 @@ Mature 0,5, Fruiting и Ripe 1.
 **Вода.** В грядке — по насыщенности почвы `soilSaturation / soilSaturationMax` (как грядку
 поливают — в [[planters]] и [[sprinkler]]). Ёмкость
 из префабов: большая грядка и железнодорожная — 9000, малая, треугольная, ванна, вагонетка —
-3000, горшок (`plantpot.single`) — 1000 (в коде по умолчанию 8000):
+3000, горшок (`plantpot.single`) — 1000 (по умолчанию 8000):
 
 | Насыщенность | Качество воды |
 |--------------|--------------|
@@ -107,7 +107,7 @@ Mature 0,5, Fruiting и Ripe 1.
 | **W** — WaterRequirement | плохой | +10 % к расходу воды |
 | **X** — Empty | плохой | ничего |
 
-Гены нового семени выбираются случайно по весам из ассета `generic.genes`
+Гены нового семени выбираются случайно по весам из `generic.genes`
 (`GrowableGeneProperties`, общий для всех растений): базовый вес + вес для слота.
 
 | Ген | Базовый вес | Добавка по слотам 1–6 | Вес скрещивания |
@@ -137,7 +137,7 @@ G и Y по ≈ 5 %. Идеальное случайное семя почти �
 3. Если наибольшая сумма **строго больше** веса собственного гена растения в этом слоте,
    ген заменяется на победивший тип.
 
-Сами веса задаются в ассете `generic.genes` (`CrossBreedingWeight`): G, Y, H — 0,6,
+Сами веса задаются в `generic.genes` (`CrossBreedingWeight`): G, Y, H — 0,6,
 W и X — 1,0. Например, два соседа с G (1,2) перебивают собственный W (1,0), а один
 сосед с W (1,0) перебивает собственный G (0,6).
 
@@ -174,7 +174,7 @@ W и X — 1,0. Например, два соседа с G (1,2) перебив�
 | `server.sprinklerRadius` | 3 м | Радиус разбрызгивателя |
 | `server.plantlightdetection` | `true` | Учитывать тень и лампы |
 | `planterboxstatic.favourablegenechance` | 0,5 | Шанс хорошего гена при «улучшенной» генерации |
-| `soilSaturationMax` | 8000 в коде; 9000 / 3000 / 1000 в префабах | Ёмкость большой / малой грядки / горшка |
+| `soilSaturationMax` | 8000 по умолчанию; 9000 / 3000 / 1000 в префабах | Ёмкость большой / малой грядки / горшка |
 
 ## Нюансы
 
@@ -212,12 +212,3 @@ W и X — 1,0. Например, два соседа с G (1,2) перебив�
   и водопровод ([[water-system]]).
 - Для селекции окружайте целевое растение 2–4 растениями с нужными генами в 1,5 м.
 - Не держите W в «доноре»: его вес выше, и он легко перебивает хорошие гены.
-
-## Где в коде
-
-- `GrowableEntity.RunUpdate`, `UpdateAge`, `UpdateHealthAndYield`, `ApplyDeathRate` — тик роста.
-- `GrowableEntity.CalculateLightQuality`, `CalculateWaterQuality`, `CalculateGroundQuality`, `CalculateTemperatureQuality`, `CalculateOverallQuality` — условия.
-- `GrowableGenetics.CrossBreed`, `GetDominantGeneWeighting` — скрещивание.
-- `GrowableGenes.GenerateRandom`, `GenerateFavourableGenes` — генерация генов.
-- `GrowableEntity.PickFruit`, `TakeClones` — урожай и клоны.
-- `PlanterBox.DoSplash`, `CalculateRainFactor`, `FertilizeGrowables`, `GetPlantTemperature` — грядка.

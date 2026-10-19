@@ -12,7 +12,7 @@ code: [BuildingBlock.cs, StabilityEntity.cs, BuildingBlockDecay.cs, SocketMod_Te
 ## Кратко
 
 Фундамент — единственный блок, который ставится прямо на землю. От него считается
-[[stability|стабильность]] всего здания. В коде у фундамента нет своего класса: это обычный
+[[stability|стабильность]] всего здания. У фундамента нет своего класса: это обычный
 `BuildingBlock`, а всё особенное — сокеты, проверки земли, флаг опоры — задано в префабе.
 Код узнаёт фундамент по имени префаба.
 
@@ -25,7 +25,7 @@ code: [BuildingBlock.cs, StabilityEntity.cs, BuildingBlockDecay.cs, SocketMod_Te
 | Ступени | `foundation.steps` | Пристраиваются к краю фундамента (сокет `Ramp`) |
 
 **HP и цена** — `baseHealth` и `baseCost` грейда × `healthMultiplier` / `costMultiplier` префаба,
-см. [[building-grades]] и [[data-building-blocks]]. Значения из ассетов:
+см. [[building-grades]] и [[data-building-blocks]]. Значения:
 
 | | `healthMultiplier` | `costMultiplier` | HP: солома / дерево / камень / металл / МВК | Цена: солома / дерево / камень / металл / МВК |
 |---|---|---|---|---|
@@ -117,12 +117,3 @@ code: [BuildingBlock.cs, StabilityEntity.cs, BuildingBlockDecay.cs, SocketMod_Te
 - Если фундамент не ставится на склоне, ищите место, где все опорные точки уходят в землю или скалу.
   На монументе фундамент не встанет.
 - Треугольные фундаменты вдвое дешевле. Ими удобно заполнять углы и делать «соты» вокруг базы.
-
-## Где в коде
-
-- `BuildingBlock` — общий класс блока.
-- `StabilityEntity.grounded`, `StabilityEntity.InitializeSupports`.
-- `BuildingBlockDecay.ShouldDecay`, `BuildingBlockDecay.AttributeSetup` (`isFoundation`).
-- `SocketMod_TerrainCheck.IsInTerrain`.
-- `ModelConditionTest_FoundationSide`, `ModelConditionTest_FoundationCornerLeft/Right`.
-- `Rust.Ai.Gen2.State_CrocBreakFoundation.FindNearestTwigFoundationOnTargetBuilding`.

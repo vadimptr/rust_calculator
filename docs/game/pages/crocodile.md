@@ -57,8 +57,3 @@ code: [Rust.Ai.Gen2/Crocodile.cs, Rust.Ai.Gen2/CrocodileFSM.cs, Rust.Ai.Gen2/Sta
 - Переплываете реку в джунглях — только на лодке: и быстрее, и крокодил вас игнорирует.
 - Строитесь у воды в джунглях — сразу улучшайте фундамент из соломы.
 - От броска (`bellyFlop`) можно увернуться стрейфом вбок: атака помечена как уклоняемая.
-
-## Где в коде
-
-- `Rust.Ai.Gen2/CrocodileFSM.InitShared`, `Hurt`; `State_AttackWithTracking`; `State_CrocBreakFoundation.FindNearestTwigFoundationOnTargetBuilding`.
-- `Trans_IsTargetProtectedByMount.IsProtected` → `BaseMountable.ProtectsFromAnimals`; `Trans_IsTargetTooFarFromWater` (30 м), `Trans_TooFarFromWater` (20 м).

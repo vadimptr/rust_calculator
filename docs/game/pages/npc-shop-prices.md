@@ -4,15 +4,15 @@ title: Цены в магазинах NPC
 kind: object
 group: Торговля
 icon: scrap
-summary: Полный список товаров всех NPC-магазинов (Аванпост, Бандитский лагерь, конюшни, рыбацкие деревни, колодцы, плавучий город) с базовыми ценами, запасом и скоростью пополнения из ассетов NPCVendingOrder.
+summary: Полный список товаров всех NPC-магазинов (Аванпост, Бандитский лагерь, конюшни, рыбацкие деревни, колодцы, плавучий город) с базовыми ценами, запасом и скоростью пополнения из наборов NPCVendingOrder.
 related: [npc-shops, vending-machines, drone-marketplace, travelling-vendor, gambling, safe-zones]
 code: [NPCVendingOrder.cs, NPCVendingMachine.cs, InvisibleVendingMachine.cs]
 ---
 
 ## Кратко
 
-Таблицы собраны из ассетов `NPCVendingOrder` (поле `orders`), а расстановка по монументам взята из
-префабов монументов (поле `vendingOrders` у `NPCVendingMachine` / `InvisibleVendingMachine`).
+Товары задаются наборами `NPCVendingOrder` (поле `orders`), а расстановка по монументам —
+префабами монументов (поле `vendingOrders` у `NPCVendingMachine` / `InvisibleVendingMachine`).
 Как работают запас, пополнение и плавающие цены, описано в [[npc-shops]].
 
 **Важно: это базовые цены.** Если товар продаётся за скрап, итоговая цена = базовая × множитель
@@ -23,7 +23,7 @@ code: [NPCVendingOrder.cs, NPCVendingMachine.cs, InvisibleVendingMachine.cs]
 
 Обозначения:
 - «Кол-во» — сколько штук вы получаете за одну покупку (`sellItemAmount`).
-- «Макс. запас» — `maxStock`. «по умолч.» означает −1 в ассете: тогда берётся `StartingStock` автомата
+- «Макс. запас» — `maxStock`. «по умолч.» означает −1 в наборе: тогда берётся `StartingStock` автомата
   (10 почти везде, 2 у колодцев, 20 у префаба торговца-путешественника).
 - «Пополнение» — `refillAmount` единиц раз в `refillDelay` секунд, пока запас ниже максимума (`NPCVendingMachine.Refill`).
 
@@ -327,10 +327,10 @@ code: [NPCVendingOrder.cs, NPCVendingMachine.cs, InvisibleVendingMachine.cs]
 `WaterWell_Primitive` («Medical shop»). Цены в глубоком море не плавают: `DynamicPricingServerInit`
 включает `BypassDynamicPricing`, если автомат внутри зоны глубокого моря.
 
-## Наборы без размещения в дампе монументов
+## Наборы без размещения на монументах
 
-Эти наборы есть в ассетах (часть — в манифесте `NPCVendingOrderManifest`), но в выгруженных
-префабах монументов не стоят. Их могут использовать префабы, которых нет в дампе, или модовые
+Эти наборы существуют (часть — в манифесте `NPCVendingOrderManifest`), но в известных
+префабах монументов не стоят. Их могут использовать другие префабы или модовые
 карты (`assets/bundled/prefabs/modding/hapis/*`).
 
 #### `Compound_Extra2`
@@ -389,8 +389,3 @@ code: [NPCVendingOrder.cs, NPCVendingMachine.cs, InvisibleVendingMachine.cs]
 
 Наборы торговца-путешественника (`TravellingVendorLite`, `TravellingVendor_Primitive`, `TravellingVendor`)
 описаны в [[travelling-vendor]].
-
-## Где в коде
-
-- `NPCVendingOrder` — ассет со списком `orders` и случайными ценами `EntryRandom`.
-- `NPCVendingMachine.InstallFromVendingOrders` — установка заказов на автомат.

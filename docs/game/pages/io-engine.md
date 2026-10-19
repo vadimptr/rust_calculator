@@ -66,7 +66,7 @@ code: [IOEntity.cs, ServerMgr.cs, ElectricBattery.cs, Splitter.cs, ElectricGener
 | `ElectricLowPriority` | электрика игроков (есть `sourceItem`) | `ioentity.framebudgetelectriclowpriorityms` = 0.5 |
 | `Fluidic` | вода | `ioentity.framebudgetfluidms` = 0.25 |
 | `Kinetic` | кинетика (монументы) | `ioentity.framebudgetkineticms` = 1 |
-| `Generic` | «прочее», в коде помечено как неиспользуемое | `ioentity.framebudgetgenericms` = 1 |
+| `Generic` | «прочее», помечено как неиспользуемое | `ioentity.framebudgetgenericms` = 1 |
 | `Industrial` | конвейеры, адаптеры | `ioentity.framebudgetindustrialms` = 0.25 |
 
 Очередь выбирается по `ioType` устройства (`GetQueueType`): `Electric`, `Fluidic`, `Kinetic`,
@@ -204,10 +204,3 @@ Push-модель передаёт только «сколько подано».
 - Для «одновременного» срабатывания разводите сигнал сплиттером, а не цепочкой.
 - Если схема «не просыпается» после рестарта, проверьте, что у неё есть корневой источник.
   Батарея, панель, генератор и сплиттер сами перезапускают схему.
-
-## Где в коде
-
-`IOEntity.UpdateFromInput`, `UpdateOutputs`, `ShouldUpdateOutputs`, `ProcessQueue`,
-`GetQueueType`, `GetFrameBudgetForQueue`, `TouchInternal`, `MarkDirty`, `Init`,
-`SendChangedToRootRecursive`, `ApplyInfinitePower`, `infiniteIoPower`; `ServerMgr` (вызов
-`IOEntity.ProcessQueue`); `ElectricGenerator.UpdateOutputs`.

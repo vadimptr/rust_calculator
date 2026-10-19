@@ -54,9 +54,3 @@ code: [Rust.Ai.Gen2/Tiger.cs, Rust.Ai.Gen2/Panther.cs, Rust.Ai.Gen2/TigerFSM.cs,
 - Увидели следы когтей — держите кошку в поле зрения: пока вы смотрите, дальше 15 м она не приближается.
 - Хотите прогнать — прицельтесь в неё издалека. Хотите убить — встречайте бросок копьём или дробовиком вблизи.
 - Без брони первый укус почти никогда не убивает со 100 HP — это шанс ответить.
-
-## Где в коде
-
-- `Rust.Ai.Gen2/TigerFSM.InitShared`, `Hurt`; ConVar `TigerFSM.chargeRange`.
-- `State_DeadlyAttack.DoDamage`, `State_FleeToHide.MoveAwayFromTarget`, `State_DragCorpse`, `State_AttackUnreachableWarped`.
-- `Trans_IsWatchedByTarget`, `Trans_IsInTargetViewCone`; `ClawMarkSpawner`.

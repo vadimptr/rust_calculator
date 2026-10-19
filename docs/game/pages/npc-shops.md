@@ -4,7 +4,7 @@ title: Магазины NPC
 kind: mechanic
 group: Торговля
 icon: ui/market
-summary: NPC-автоматы на Аванпосте, в Бандитском лагере, на конюшнях и в деревнях бесконечно пополняют запас из ассета NPCVendingOrder, а цены за скрап плавают от ×0,5 до ×2 по спросу и на свежем вайпе стартуют с ×2.
+summary: NPC-автоматы на Аванпосте, в Бандитском лагере, на конюшнях и в деревнях бесконечно пополняют запас по набору NPCVendingOrder, а цены за скрап плавают от ×0,5 до ×2 по спросу и на свежем вайпе стартуют с ×2.
 related: [npc-shop-prices, vending-machines, drone-marketplace, travelling-vendor, gambling, safe-zones]
 code: [NPCVendingMachine.cs, NPCVendingOrder.cs, InvisibleVendingMachine.cs, NPCVendingOrderManifest.cs, VendingMachine.cs]
 ---
@@ -13,7 +13,7 @@ code: [NPCVendingMachine.cs, NPCVendingOrder.cs, InvisibleVendingMachine.cs, NPC
 
 NPC-магазин — это тот же торговый автомат ([[vending-machines]]), только класса `NPCVendingMachine`
 (или `InvisibleVendingMachine`, если за прилавком стоит торговец-NPC). Товары, цены и скорость
-пополнения задаёт ассет `NPCVendingOrder`. Запас не кончается навсегда: автомат сам досоздаёт
+пополнения задаёт набор `NPCVendingOrder`. Запас не кончается навсегда: автомат сам досоздаёт
 товар. Скрап, которым вы платите, **уничтожается**, а не копится в автомате. Если товар
 продаётся за скрап, его цена каждые несколько часов сдвигается по спросу. На свежем вайпе цены
 стоят **вдвое выше** базовых.
@@ -164,11 +164,3 @@ NPC-магазин — это тот же торговый автомат ([[ven
 - Популярный товар дорожает быстро (+10 % за интервал), невостребованный дешевеет до ×0,5.
   Ходовые позиции к середине вайпа часто дороже базы, редкие — дешевле.
 - Смотреть точные текущие цены удобнее всего с телефона (Rust+ получает цену с множителем) или на маркере карты.
-
-## Где в коде
-
-- `NPCVendingMachine.InstallFromVendingOrders`, `SmartAddItemForSale`, `AddItemForSale` — установка заказов.
-- `NPCVendingMachine.Refill`, `GetMaxStock` — пополнение.
-- `NPCVendingMachine.SalesData.ProcessEndOfInterval`, `HourCheck`, `GetDiscountForSlot`, `GetReceivedQuantityMultiplier` — цены.
-- `NPCVendingOrder.GetRandomEntries`, `EntryRandom.GetRandomPrice` — случайный ассортимент и цены.
-- `InvisibleVendingMachine.CheckSellOrderRefresh` — перевыбор ассортимента колодца.

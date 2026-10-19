@@ -19,19 +19,19 @@ code: [TimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, DamageUtil.cs, B
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Классы | `TimedExplosive` + `ServerProjectile` | `ServerProjectile.IProjectileImpact` |
-| Скорость | 18 м/с (+ скорость игрока) | `speed = 18` в префабе `rocket_basic`, `initialSpeedMultiplier = 1` у `rocket_launcher.entity` |
-| Гравитация | `Physics.gravity × 0.25` | `gravityModifier = 0.25` в префабе |
-| Радиус снаряда | 0 (луч, а не сфера) | `radius = 0`, `scanRange = 0` в префабе |
-| Самоуничтожение | 8–10 с | `timerAmountMin/Max` в префабе |
-| Радиусы | полный урон до 1 м, ноль на 3.8 м | `minExplosionRadius = 1`, `explosionRadius = 3.8` |
-| Урон | 275 Explosion + 75 Blunt | `damageTypes` префаба |
-| Урон по игрокам | 350 Explosion | `playerDamage` префаба |
-| Разброс | 2.25° прицельно, 1.8° от бедра | `aimCone`, `hipAimCone` у `rocket_launcher.entity` |
-| Перезарядка между выстрелами | 2 с | `repeatDelay` у лаунчера |
-| Урон ракет турели / NPC | ×0.35 / ×1 | `turretDamageScale`, `npcDamageScale` у лаунчера |
+| Параметр | Значение |
+|----------|----------|
+| Классы | `TimedExplosive` + `ServerProjectile` |
+| Скорость | 18 м/с (+ скорость игрока) |
+| Гравитация | `Physics.gravity × 0.25` |
+| Радиус снаряда | 0 (луч, а не сфера) |
+| Самоуничтожение | 8–10 с |
+| Радиусы | полный урон до 1 м, ноль на 3.8 м |
+| Урон | 275 Explosion + 75 Blunt |
+| Урон по игрокам | 350 Explosion |
+| Разброс | 2.25° прицельно, 1.8° от бедра |
+| Перезарядка между выстрелами | 2 с |
+| Урон ракет турели / NPC | ×0.35 / ×1 |
 
 Варианты ракет — в [[data-explosives]]:
 
@@ -105,7 +105,7 @@ code: [TimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, DamageUtil.cs, B
 
 - **Сплэш ракеты всегда «по твёрдой стороне».** `RadiusDamage` не заполняет `HitEntity`,
   поэтому `DirectionProperties.IsWeakspot` всегда `false`. Направленная защита блоков —
-  ассет `BuildingShell` — по Explosion равна 0, так что взрывную часть она не трогает,
+  профиль `BuildingShell` — по Explosion равна 0, так что взрывную часть она не трогает,
   а дробящую часть ракеты режет ещё на 90 %.
 - **Точка взрыва — в 10 см перед поверхностью.** Стена, в которую попали, почти всегда
   в зоне полного урона. Соседние блоки получают полный урон, если их ближайшая точка
@@ -125,7 +125,7 @@ code: [TimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, DamageUtil.cs, B
   с префабом `rocket_basic` (`minExplosionRadius = 1`, `explosionRadius = 3.8`). Урон 137.7
   по камню, металлу и МВК подтверждается (137.65 и 137.575), по дереву занижен (реально 247.65),
   но число ракет совпадает. Точку удара в приложении стоит считать на 0.1 м перед поверхностью.
-  Видимость в коде мягче, чем отрезок до ближайшей точки: хватает открытого луча к центру.
+  Видимость в игре мягче, чем отрезок до ближайшей точки: хватает открытого луча к центру.
   Деплои взрыв не заслоняют.
 
 ## На практике
@@ -133,11 +133,3 @@ code: [TimedExplosive.cs, ServerProjectile.cs, BaseLauncher.cs, DamageUtil.cs, B
 - Цельтесь в стык стен, потолка и фундамента: одна ракета может пробить сразу 2–4 блока.
 - Ракета не учитывает мягкую сторону, так что по стенам можно стрелять с любой стороны.
 - Ящики и шкаф внутри не защищают стену за ними, но стена защищает их.
-
-## Где в коде
-
-- `BaseLauncher.SV_Launch`, `BaseLauncher.ServerUse`.
-- `ServerProjectile.DoMovement`, `DoHitDetection`, `ProcessHit`, `IsAValidHit`, `IsShootable`, `GetMaxRange`.
-- `TimedExplosive.ProjectileImpact`, `Explode`, `SetDamageScale`.
-- `DamageUtil.RadiusDamage`, `BaseEntity.IsVisible`.
-- `FlameExplosive` (зажигательная), `SeekingServerProjectile` (самонаводящиеся), `MLRSRocket` (РСЗО).

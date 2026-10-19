@@ -21,7 +21,7 @@ code: [AutoTurret.cs, BaseProjectile.cs, ConVar/Sentry.cs]
 |---|---|---|
 | Потребление | **10 rW** | `AutoTurret.ConsumptionAmount` |
 | Время включения | 2 с после подачи питания | `InitiateStartup` → `Invoke(SetOnline, 2f)` |
-| Радиус обнаружения | 30 м | `sightRange` в префабе `autoturret_deployed` (совпадает с умолчанием кода) |
+| Радиус обнаружения | 30 м | `sightRange` в префабе `autoturret_deployed` (совпадает со значением по умолчанию) |
 | HP | 1000 | `startHealth` префаба |
 | Защита | `turret_protection`: Bullet и Arrow 90 %, Slash / Blunt / Stab 50 %, Heat 80 %, Explosion 0 % | [[data-protection]] |
 | Слотов | 7: оружие + 6 под патроны | `numSlots` в префабе |
@@ -117,9 +117,3 @@ code: [AutoTurret.cs, BaseProjectile.cs, ConVar/Sentry.cs]
 - Перед уходом проверьте, кто авторизован. Очистка и добавление требуют выключить турель.
 - Не ставьте больше 12 турелей в кругу 40 м. Лишние будут молчать.
 - Выходы «есть цель» и «нет патронов» удобно вести на сирену, свет или RF-передатчик.
-
-## Где в коде
-
-`AutoTurret.ConsumptionAmount`, `GetPassthroughAmount`, `IOStateChanged`, `InitiateStartup`,
-`AddSelfAuthorize`, `ClearList`, `AssignToFriend`, `CanChangeSettings`, `Reload`, `TargetTick`,
-`ObjectVisible`, `RecalculateInterference`; `BaseProjectile.ServerUse`

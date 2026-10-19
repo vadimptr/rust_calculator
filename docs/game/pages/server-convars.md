@@ -4,7 +4,7 @@ title: Настройки сервера (ConVar)
 kind: mechanic
 group: Сервер и режимы
 icon: ui/gear
-summary: Подборка ConVar, которые сильнее всего меняют игру — распад и содержание, урон, исчезновение предметов и трупов, ранение, спальники, погода, время, команды, ивенты — со значениями по умолчанию из кода и ссылками на страницы.
+summary: Подборка ConVar, которые сильнее всего меняют игру — распад и содержание, урон, исчезновение предметов и трупов, ранение, спальники, погода, время, команды, ивенты — со значениями по умолчанию и ссылками на страницы.
 related: [decay, upkeep, game-modes, raid-window, day-night-weather, teams, wipe-and-saves, deep-sea, world-events, respawn, sleeping-bag, wounded, death-drop, damage-system, building-grades, turret-targeting, farming, gathering, data-server-settings]
 code: [ConVar/Server.cs, ConVar/Decay.cs, ConVar/Env.cs, ConVar/Weather.cs, ConVar/Softcore.cs, ConVar/DeepSea.cs, ConVar/Player.cs, ConVar/Global.cs, ConVar/Spawn.cs, ConVar/Sentry.cs, ConVar/Bradley.cs, ConVar/PatrolHelicopter.cs, ConVar/Vehicle.cs, ConVar/Clan.cs, RelationshipManager.cs, GameModeSoftcore.cs, ConsoleGen.cs]
 ---
@@ -15,7 +15,7 @@ code: [ConVar/Server.cs, ConVar/Decay.cs, ConVar/Env.cs, ConVar/Weather.cs, ConV
 На каждой странице внизу есть блок «Настройки сервера» с теми, что влияют на её механику.
 
 ConVar — серверные переменные, которые меняются командой в консоли или в `server.cfg`. Здесь
-собраны значения **по умолчанию из кода** этой версии сервера. Режим игры может переписать часть
+собраны значения **по умолчанию** этой версии сервера. Режим игры может переписать часть
 из них при старте ([[game-modes]]), а модифицированные серверы (Oxide/Carbon) часто меняют их или
 подменяют механику плагинами: «x2», «x3» и т. п. — это не ванильные ConVar, в ванили множителя
 добычи для обычного режима нет вовсе.
@@ -120,7 +120,7 @@ ConVar — серверные переменные, которые меняют�
 | `events.set_event_enabled` / `set_event_min_delay` / `set_event_max_delay` | — | расписание ивентов | [[world-events]] |
 | `deepsea.enabled` / `deepsea.wipeduration` | true / 10800 | глубокое море | [[deep-sea]] |
 | `xmas.enabled` | false | Рождественское событие: подарки в чулках (`XMasRefill`) и праздничные предметы | — |
-| `halloween.enabled` | false | Объявлена, но в коде не используется: Хэллоуин включают другие настройки | — |
+| `halloween.enabled` | false | Объявлена, но ни на что не влияет: Хэллоуин включают другие настройки | — |
 
 ## Нюансы
 
@@ -133,11 +133,4 @@ ConVar — серверные переменные, которые меняют�
 - **Сохраняемые ConVar.** Переменные с `Saved = true` (например, `gamemodesoftcore.gather_rate`,
   настройки окна рейдов) пишутся в конфиг сервера и переживают рестарт без `server.cfg`.
 - **Значения из префабов.** Длина суток и веса погоды по умолчанию берутся из префабов неба и
-  климата, а не из кода; в ConVar они только читаются и переопределяются.
-
-## Где в коде
-
-- `ConVar/*.cs` — объявления с `[ServerVar]` и `[ReplicatedVar]`.
-- `ConsoleGen.cs` — полный список зарегистрированных команд и их полные имена.
-- `RelationshipManager.maxTeamSize`, `GameModeSoftcore`, `ReclaimManager`, `WipeTimer` — ConVar,
-  объявленные вне папки `ConVar`.
+  климата; в ConVar они только читаются и переопределяются.

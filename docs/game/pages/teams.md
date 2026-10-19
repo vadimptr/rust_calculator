@@ -57,7 +57,7 @@ code: [RelationshipManager.cs, BasePlayer.cs, SleepingBag.cs, BuildingPrivlidge.
 
 - **Прав в шкафе, замков, турелей.** Ни в `BuildingPrivlidge`, ни в замках, ни в турелях
   проверки команды нет: каждого надо авторизовать отдельно ([[building-privilege]], [[auto-turret]]).
-- **Защиты от своего огня.** В коде нет ни одной проверки команды при уроне.
+- **Защиты от своего огня.** Нет ни одной проверки команды при уроне.
 
 ### Ограничение авторизаций (`limitTeamAuths`)
 
@@ -114,12 +114,3 @@ code: [RelationshipManager.cs, BasePlayer.cs, SleepingBag.cs, BuildingPrivlidge.
 
 - После вступления в команду каждого всё равно нужно авторизовать в шкафу, на турелях и замках.
 - Если вы не хотите, чтобы вас звали в команды издалека, выключите удалённые приглашения в настройках.
-
-## Где в коде
-
-- `RelationshipManager.PlayerTeam` (`AddPlayer`, `RemovePlayer`, `SendInvite`), команды
-  `sendinvite`, `sendofflineinvite`, `promote`, `kickmember`, `leaveteam`.
-- `BasePlayer.TeamUpdate` — что видят члены команды.
-- `SleepingBag.CanAssignBed`, `SleepingBag.UpdateTeamsBags`.
-- `BuildingPrivlidge.UpdateMaxAuthCapacity`, `SimplePrivilege.UpdateMaxAuthCapacity`.
-- `ConVar.Clan`, `ClanManager`.

@@ -48,7 +48,3 @@ code: [HarborCrane.cs, HarborCraneContainerPickup.cs, HarborCraneContainerSpawnP
 
 - Гавань — удобная точка за синей картой без радиационной защиты.
 - Ждёте карго — встаньте у кранов: контейнеры появляются ещё до швартовки.
-
-## Где в коде
-
-- `HarborCraneContainerPickup`, `HarborCraneContainerSpawnPoint`, `CargoShip.StartHarborApproach`.

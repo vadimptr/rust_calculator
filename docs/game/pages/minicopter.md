@@ -24,25 +24,25 @@ code: [Minicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicopter.cs, BaseHe
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| HP | 750 | `startHealth` в префабе `minicopter.entity` |
-| Защита | `player_helicopter_protection` | `baseProtection` в префабе |
-| Мест | 2: пилот (`miniheliseat`) и пассажир сзади (`minihelipassenger`) | `mountPoints` в префабе |
-| Бак | 1 слот, только низкосортное топливо | `fuel_storage` (`inventorySlots = 1`, `allowedItem` = lowgradefuel) |
-| Расход топлива | 0,5 ед./с при включённом двигателе, от газа не зависит (в коде по умолчанию 0,25) | `fuelPerSec` в префабе, `PlayerHelicopter.VehicleFixedUpdate` → `TickFuel` |
-| Шкала топлива на приборе | 100 ед. (только отображение) | `fuelGaugeMax` в префабе |
-| Стартовое топливо у купленного | 100 | `PlayerHelicopter.StartingFuelUnits` |
-| Запуск двигателя | 5 с | литерал `5f` в `PlayerHelicopter.InitShared` |
-| Тяга | `engineThrustMax` = 3000 | префаб |
-| Крутящий момент (тангаж/рыскание/крен) | 400 / 400 / 200 | `torqueScale` в префабе |
-| Подъёмная сила пропадает при наклоне | больше 60° (`liftDotMax` = 0,5) | префаб, `BaseHelicopter.MovementUpdate` |
-| Ловушки (флары) | 1 слот, пауза 30 с | `flares_playerheli`: `timeBetweenFlares = 30` |
-| Цена у Airwolf (Bandit Camp) | 750 скрапа | `scrapCost` в `bandit_conversationalist` |
-| Ремонт | 500 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар | чертёж `minicopter.repair.item`, `BaseCombatEntity.DoRepair` |
-| Шредер на свалке | 200 скрапа × доля HP | `MagnetLiftable.shredResources` в префабе |
-| Распад | 480 мин снаружи, 2880 мин под крышей | `playerhelicopter.outsidedecayminutes`, `playerhelicopter.insidedecayminutes`, см. [[vehicles]] |
-| Природный спаун | нет (`minicopter.population` = 0) | ConVar |
+| Параметр | Значение |
+|---|---|
+| HP | 750 |
+| Защита | `player_helicopter_protection` |
+| Мест | 2: пилот (`miniheliseat`) и пассажир сзади (`minihelipassenger`) |
+| Бак | 1 слот, только низкосортное топливо |
+| Расход топлива | 0,5 ед./с при включённом двигателе, от газа не зависит (по умолчанию 0,25) |
+| Шкала топлива на приборе | 100 ед. (только отображение) |
+| Стартовое топливо у купленного | 100 |
+| Запуск двигателя | 5 с |
+| Тяга | `engineThrustMax` = 3000 |
+| Крутящий момент (тангаж/рыскание/крен) | 400 / 400 / 200 |
+| Подъёмная сила пропадает при наклоне | больше 60° (`liftDotMax` = 0,5) |
+| Ловушки (флары) | 1 слот, пауза 30 с |
+| Цена у Airwolf (Bandit Camp) | 750 скрапа |
+| Ремонт | 500 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар |
+| Шредер на свалке | 200 скрапа × доля HP |
+| Распад | 480 мин снаружи, 2880 мин под крышей |
+| Природный спаун | нет (`minicopter.population` = 0) |
 
 ### Защита `player_helicopter_protection`
 
@@ -218,12 +218,3 @@ code: [Minicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicopter.cs, BaseHe
 - Чинить — фрагментами, двигатель выключен, через 30 с после последнего урона. Полный
   ремонт с нуля — около 250 фрагментов.
 - Не оставляйте миникоптер на площадке Airwolf: следующая покупка удалит его.
-
-## Где в коде
-
-- `BaseHelicopter.MovementUpdate`, `ProcessCollision`, `DelayedImpactDamage`, `OnDied`, `ToggleAutoHover` — полёт, удары, взрыв.
-- `PlayerHelicopter.PilotInput`, `MeetsEngineRequirements`, `SetDefaultInputState`, `ApplyHandbrake`, `OnDied`, `DoRepair`, `RPC_OpenFuel`, `IsValidSAMTarget`, `IsValidHomingTarget`, `GetServiceCeiling`.
-- `PlayerHelicopterWithFlares.PilotInput`, `RPC_OpenStorage`; `HelicopterFlares.TryFireFlare`, `CanBeLooted`.
-- `VehicleEngineController.TryStartEngine`, `CanRunEngine`, `IsWaterlogged`.
-- `SeekerTarget.GetBestForPoint`, `SeekingServerProjectile.UpdateTarget`, `LockOnLauncher`.
-- `TriggerHurtNotChild.OnTick`, `LargeShredder.CreateShredResources`, `ConVar.vehicle.autohover`.

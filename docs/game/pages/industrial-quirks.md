@@ -13,11 +13,11 @@ code: [IndustrialConveyor.cs, IndustrialCrafter.cs, IndustrialStorageAdaptor.cs,
 
 Здесь собраны места, где код индустрии ведёт себя неожиданно: ошибки, расхождения
 с описаниями ConVar и неочевидные правила.
-Где вывод не следует из кода однозначно, это сказано отдельно.
+Где вывод не однозначен, это сказано отдельно.
 
 ## Как работает
 
-### Ошибки и расхождения в коде
+### Ошибки и расхождения
 
 1. **`server.maxItemStacksMovedPerTickIndustrial` (12) фактически не работает.**
    В `RunConveyor` счётчик перенесённых стопок `num3` объявлен внутри цикла по предметам
@@ -37,7 +37,7 @@ code: [IndustrialConveyor.cs, IndustrialCrafter.cs, IndustrialStorageAdaptor.cs,
    `OutputSlotRange` = 3–5, а у электропечи всего 5 слотов (0–4). Но у IO-части электропечи
    нет промышленных портов, так что этот код мёртвый. Реально работает `BaseOven`
    в режиме `ElectricFurnace` (0–1 / 2–4) через адаптер.
-5. **`MaxStackSizePerMove` в коде — 128, а в префабе — 60.** Работает значение префаба.
+5. **`MaxStackSizePerMove` по умолчанию — 128, а в префабе — 60.** Работает значение префаба.
 6. **Порция «по веткам» считается, но не используется.** `ContainerInputOutput.MaxStackSize`
    никто не читает. Делитель — общее число получателей.
 
@@ -52,7 +52,7 @@ code: [IndustrialConveyor.cs, IndustrialCrafter.cs, IndustrialStorageAdaptor.cs,
 - **Рестарт заканчивает крафт мгновенно** (`IndustrialCrafter.Load` → `CompleteCraft`).
   При этом апгрейды верстака, скорее всего, не применятся: в момент загрузки родитель-верстак
   может быть ещё не привязан, а `CompleteCraft` берёт его через `GetParentEntity`. Это вывод
-  из порядка вызовов, напрямую в коде не проверено.
+  из порядка вызовов, напрямую не проверено.
 - **Адаптер не тратит заряд батареи.** `ShouldDrainBattery` по умолчанию сравнивает тип IO:
   промышленный адаптер против электрической батареи даёт `false`. Батарея не учитывает
   его 1 единицу в `ElectricBattery.GetDrain`. Конвейер и крафтер переопределяют проверку
@@ -86,11 +86,3 @@ code: [IndustrialConveyor.cs, IndustrialCrafter.cs, IndustrialStorageAdaptor.cs,
 - Для сигналов «пусто/не пусто» используйте режим «Любой», а не «Не».
 - Ставьте конвейер и крафтер за дверь: переключить их можно без прав в шкафу.
 - После вайпа или рестарта проверьте крафтеры: если питание моргнуло, они выключены.
-
-## Где в коде
-
-- `IndustrialConveyor.RunConveyor`, `CheckIfAnyInputPassesFilters`, `SvSwitch`
-- `IndustrialCrafter.Load`, `CompleteCraft`, `IOStateChanged`
-- `IndustrialStorageAdaptor.UpdatedStorageSettings`, `RequestSort`
-- `IOEntity.ShouldDrainBattery`, `ElectricBattery.GetDrain`, `ElectricFurnaceIO.InputSlotRange`
-- `WireTool.VerifyLineOfSight`, `BuildingBlock.CheckForPipes`

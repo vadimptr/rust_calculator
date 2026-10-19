@@ -19,7 +19,7 @@ code: [ApartmentBuilding.cs, ApartmentRoom.cs, ApartmentTerminal.cs, ApartmentUp
 
 ### Квартиры
 
-| Размер | Покупка (скрап) | Минимальная плата за 24 ч | Сколько в выгрузке |
+| Размер | Покупка (скрап) | Минимальная плата за 24 ч | Сколько на карте |
 |--------|-----------------|---------------------------|--------------------|
 | Малая | 25 | 10 | 16 |
 | Средняя | 150 | 50 | 40 |
@@ -37,7 +37,7 @@ code: [ApartmentBuilding.cs, ApartmentRoom.cs, ApartmentTerminal.cs, ApartmentUp
 - Мастер-ключ у охраны (`NPCApartmentSecurity`): 1000 скрапа (`masterkeyprice`).
 - Взлом длится 30 с, ключ тратится, даёт 300 с доступа (`intruderauthseconds`).
 - Пока квартира арендована и взлома нет, невидимый барьер выталкивает чужих.
-- 50 скрапа охраннику (зашито в коде) открывают дверь охраны на 300 с (`TimerSwitch`).
+- 50 скрапа охраннику открывают дверь охраны на 300 с (`TimerSwitch`).
 
 ### Магазины (`RentableShop`)
 
@@ -57,8 +57,3 @@ code: [ApartmentBuilding.cs, ApartmentRoom.cs, ApartmentTerminal.cs, ApartmentUp
 
 - Малая квартира (25 + 10/сутки) — дешёвый безопасный склад, если заходить раз в 2–3 дня.
 - Ценное держите в шкафах, а не на полу: при выселении квартира освобождается.
-
-## Где в коде
-
-- `ApartmentRoom.RunUpkeepPayment`, `GetUpgradeCost`, `Checkout`; `ApartmentUpkeepTerminal`.
-- `NPCApartmentSecurity`, `ItemModApartmentTax`, `RentableShop`, `RentableShopVendingMachine`.

@@ -247,13 +247,3 @@ code: [Planner.cs, Construction.cs, Socket_Base.cs, ConstructionSocket.cs, Socke
 - «Too close to Foundation» значит, что блок пытается встать не по сокету рядом с существующим.
   Цельтесь в сокет или отойдите больше чем на 1,5 м.
 - Чтобы соединить две базы с разными шкафами, один из шкафов придётся убрать.
-
-## Где в коде
-
-- `Planner.DoBuild`, `Planner.DoPlacement`, `Planner.SpawnConstruction`, `Planner.PayForPlacement`.
-- `Construction.UpdatePlacement`, `TestPlacingThroughRock`, `TestPlacingThroughWall`, `TestPlacingCloseToRoad`.
-- `Socket_Base.CheckSocketMods`, `ConstructionSocket.IsCompatible`, `ConstructionSocket.CanConnect`, `ConstructionSocket.DoPlacement`.
-- `SocketMod_*` — по файлу на мод.
-- `DeployVolume.CheckFlags` — объёмы и уточнение ошибки.
-- `BuildingProximity.Check`, `BuildingProximity.GetProximity`.
-- `ConstructionErrors` — все тексты ошибок.

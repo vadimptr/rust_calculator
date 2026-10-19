@@ -12,7 +12,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_RampHigh.cs, 
 ## Кратко
 
 Пандус — блок постройки на целую секцию в виде наклонной плоскости. Для него есть отдельный тип
-сокета `ConstructionSocket.Type.Ramp`. В коде это обычный `BuildingBlock`, а высота пандуса
+сокета `ConstructionSocket.Type.Ramp`. Это обычный `BuildingBlock`, а высота пандуса
 определяется не отдельным префабом, а облик-тестами: один и тот же блок показывает высокую
 или низкую модель.
 
@@ -46,7 +46,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_RampHigh.cs, 
 
 **Проверка земли.** На `ramp-male/1` висят `SocketMod_TerrainCheck`: 4 точки должны быть в земле,
 2 — не в земле (такой же набор у ступеней фундамента `foundation.steps`). Где именно стоят точки,
-в дампе не видно (позиции дочерних объектов не выгружены), но смысл тот же, что у фундамента:
+неизвестно, но смысл тот же, что у фундамента:
 пандус, пристраиваемый к краю, должен касаться грунта и не быть закопан целиком.
 
 **Постановка, опора, поворот** — общие правила [[construction-placement]]: подбор поворота по шагу
@@ -63,9 +63,3 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_RampHigh.cs, 
 
 - Пандус удобен для заезда техники на фундамент и для выхода на уровень выше без лестницы.
 - Если пандус «не той высоты», посмотрите, что стоит у его нижнего края: от этого зависит выбор модели.
-
-## Где в коде
-
-- `ConstructionSocket.Type.Ramp`.
-- `ModelConditionTest_RampHigh.DoTest`, `ModelConditionTest_RampLow.DoTest`.
-- `BuildingBlock.ChangeSkin`, `ConstructionSkin.DetermineConditionalModelState` — пересчёт облика.

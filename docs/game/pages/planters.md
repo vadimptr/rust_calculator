@@ -98,7 +98,7 @@ code: [PlanterBox.cs, PlanterBoxStatic.cs, GrowableEntity.cs, WaterBall.cs, ConV
   запас по числу гнёзд.
 - **Забрать грядку можно только без растений** (`CanCompletePickup`).
 - Свойство `availableIdealWaterCapacity` в `PlanterBox` вызывает само себя и упало бы с
-  переполнением стека, но в коде им никто не пользуется.
+  переполнением стека, но им никто не пользуется.
 - 9 разных растений в грядках рядом — достижение `HONEST_WORK` (`OnPlantInserted`).
 
 ## На практике
@@ -106,9 +106,3 @@ code: [PlanterBox.cs, PlanterBoxStatic.cs, GrowableEntity.cs, WaterBall.cs, ConV
 - Большая грядка + разбрызгиватель на таймере (например, 1 мин полива на 3 мин паузы) держит
   влажность около 60 %.
 - Клоны и семена с «диких» грядок — дешёвый источник хороших генов.
-
-## Где в коде
-
-- `PlanterBox.DoSplash`, `WantsSplash`, `ConsumeWater`, `CalculateRainFactor`, `FertilizeGrowables`.
-- `PlanterBoxStatic.CreateStaticPlants`.
-- `GrowableEntity.ConsumeWater`, `CalculateWaterConsumption`.

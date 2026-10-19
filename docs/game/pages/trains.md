@@ -14,7 +14,7 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 Все поезда — наследники `TrainCar`. Двигатель есть у `TrainEngine`: это дрезины (подземная и
 наземные) и локомотив. Вагоны без двигателя ездят только в составе: сцепка срабатывает
 автоматически, когда вагоны сходятся. Поезд движется по сплайну рельсов, сойти с рельсов в
-привычном смысле он не может. «Сход» в коде — это мгновенная смерть от слишком сильного удара.
+привычном смысле он не может. «Сход» здесь — это мгновенная смерть от слишком сильного удара.
 
 Главные факты:
 - защита `TrainProtection` гасит **100 %** почти всех типов урона: пули, холодное оружие, огонь.
@@ -28,23 +28,23 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 
 ### Двигатели (`TrainEngine`)
 
-| Параметр | Подземная дрезина | Наземная дрезина | Наземная дрезина 2 | Локомотив | Источник |
-|---|---|---|---|---|---|
-| Префаб | `workcart.entity` | `workcart_aboveground.entity` | `workcart_aboveground2.entity` | `locomotive.entity` | — |
-| HP | 1000 | 1000 | 1000 | 2000 | `startHealth` |
-| Макс. скорость | 21 м/с | 18 м/с | 17 м/с | 20 м/с | `maxSpeed` |
-| Сила двигателя | 33 000 | 30 000 | 30 000 | 250 000 | `engineForce` |
-| Расход на холостом ходу | 0,025 ед./с | 0,025 | 0,025 | 0,035 | `idleFuelPerSec` |
-| Расход на полном газу | 0,075 ед./с | 0,075 | 0,075 | 0,1 | `maxFuelPerSec` |
-| Бак | 1 слот низкосортного топлива | то же | то же | то же | `workcart_fuel_storage` / `trainengine_fuel_storage` |
-| Хранилище | 18 слотов | 18 | 18 | нет | `WorkCartItemStorage`, у локомотива `itemStoragePrefab` пуст |
-| Остов после смерти | 600 с | 60 с | 60 с | 600 с | `corpseSeconds` |
-| Порог «схода» | 250 000 | 250 000 | 250 000 | 325 000 | `derailCollisionForce` |
-| Защита водителя | 50 % от всего | то же | то же | то же | `driverProtection = 50Percent` |
-| Ремонт (полный, 0 → макс. HP) | 50 фрагментов | 50 | 50 | 100 | чертёж `workcart` / `locomotive`: 100 / 200 фрагментов × 0,5 |
+| Параметр | Подземная дрезина | Наземная дрезина | Наземная дрезина 2 | Локомотив |
+|---|---|---|---|---|
+| Префаб | `workcart.entity` | `workcart_aboveground.entity` | `workcart_aboveground2.entity` | `locomotive.entity` |
+| HP | 1000 | 1000 | 1000 | 2000 |
+| Макс. скорость | 21 м/с | 18 м/с | 17 м/с | 20 м/с |
+| Сила двигателя | 33 000 | 30 000 | 30 000 | 250 000 |
+| Расход на холостом ходу | 0,025 ед./с | 0,025 | 0,025 | 0,035 |
+| Расход на полном газу | 0,075 ед./с | 0,075 | 0,075 | 0,1 |
+| Бак | 1 слот низкосортного топлива | то же | то же | то же |
+| Хранилище | 18 слотов | 18 | 18 | нет |
+| Остов после смерти | 600 с | 60 с | 60 с | 600 с |
+| Порог «схода» | 250 000 | 250 000 | 250 000 | 325 000 |
+| Защита водителя | 50 % от всего | то же | то же | то же |
+| Ремонт (полный, 0 → макс. HP) | 50 фрагментов | 50 | 50 | 100 |
 
-Какой из двух наземных префабов — «крытая дрезина», в дампе не видно. По данным сообщества,
-это `workcart_aboveground2`, в коде не подтверждено. Ещё один `TrainEngine` — `sedanrail.entity`
+Какой из двух наземных префабов — «крытая дрезина», точно неизвестно. По данным сообщества,
+это `workcart_aboveground2`, но это не подтверждено. Ещё один `TrainEngine` — `sedanrail.entity`
 (седан на рельсах, 350 HP) из событий.
 
 Водитель один (`mountPoints` в префабах дрезины и локомотива). Садиться можно только стоя на
@@ -65,7 +65,7 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 
 ### Защита `TrainProtection`
 
-Комментарий в ассете: «Destroyable but only with explosives or a collision».
+Описание: «Destroyable but only with explosives or a collision».
 
 | Тип урона | Защита | Итог |
 |---|---|---|
@@ -115,7 +115,7 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 - при HP ниже 40 % двигатель слабеет (`GetEnginePowerMultiplier`): к 0 HP максимальная скорость
   падает до 50 %, а сила тяги до 75 %.
 
-Масса вагонов (`Rigidbody.mass`) в дамп не попала, поэтому точное ускорение не посчитать.
+Масса вагонов (`Rigidbody.mass`) неизвестна, поэтому точное ускорение не посчитать.
 
 ### Расход топлива
 
@@ -164,7 +164,7 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 заднему) вагону наносится урон `TrainCar.ApplyCollisionDamage`, без учёта защиты:
 
 ```
-урон = сила^1.3 / collisionDamageDivide        (50 000 во всех префабах; в коде по умолчанию 100 000)
+урон = сила^1.3 / collisionDamageDivide        (50 000 во всех префабах; по умолчанию 100 000)
 если сила > derailCollisionForce → урон = float.MaxValue  («сход»: мгновенная смерть)
 ```
 
@@ -242,8 +242,8 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 
 `TrainCarUnloadable.FillWithLoot` при спауне кладёт в хранилище вагона случайный груз из
 `TrainWagonLootData`: для рудного вагона — по весам `oreOptions`, для топливного — топливо. Хранилище
-**заперто** (`SetLocked(true)`). Сам ассет `TrainWagonLootData` в дамп не попал, поэтому виды руды
-и количества неизвестны.
+**заперто** (`SetLocked(true)`). Виды руды
+и количества в `TrainWagonLootData` неизвестны.
 
 Вагон с лутом (`TrainCarUnloadableLoot.Spawn`) берёт один из 5 наборов по 4–5 ящиков
 (`wagon_crate_normal`, `wagon_crate_normal_2`, варианты с едой и медициной) и **запирает их**,
@@ -283,7 +283,7 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
   же препятствием, с уроном от удара.
 - **Сначала мягко, потом смерть.** Урон от удара на 70 000 равен ≈ 40, а чуть выше порога
   `derailCollisionForce` — бесконечности. Значение `collisionDamageDivide` в префабах (50 000) вдвое
-  меньше значения в коде (100 000), то есть удары в игре бьют вдвое сильнее, чем по коду.
+  меньше значения по умолчанию (100 000), то есть удары в игре бьют вдвое сильнее, чем по умолчанию.
 - **Ошибка спауна двигателей на запасных путях.** `ConvarControlledSpawnPopulationRail.SubFill`
   выбирает индекс из списка двигателей, а берёт префаб из **общего** списка `Prefabs[num]`.
   На пустой запасной путь вместо двигателя может встать вагон.
@@ -316,21 +316,3 @@ code: [TrainCar.cs, TrainEngine.cs, CompleteTrain.cs, TrainCouplingController.cs
 - Грузовые вагоны выгодно цеплять к локомотиву и везти на сортировочную станцию. Пока вагон в
   составе с двигателем, а вы на поезде, он не исчезнет. Пустой вагон отцепите или используйте
   быстро — через 10 минут его не станет.
-
-## Где в коде
-
-- `TrainCar.Spawn`, `DecayTick`, `GetDecayMinutes`, `CanDieFromDecayNow`, `OnDied`, `DoRepair`,
-  `ApplyCollisionDamage`, `RPC_WantsUncouple` — общее поведение вагонов.
-- `TrainEngine.PlayerServerInput`, `GetThrottleForce`, `GetCurTopSpeed`, `GetEnginePowerMultiplier`,
-  `MeetsEngineRequirements`, `Hurt`, `CheckForHazards` — двигатели.
-- `CompleteTrain.MovementTick`, `ParamsTick`, `ApplyCollisions`, `HandleStaticCollisions`,
-  `HandleRigidbodyCollision`, `TryShuntCarTo` — движение состава и столкновения.
-- `TrainCouplingController.TryCouple`, `TrainCoupling.TryCouple` — сцепка.
-- `TriggerTrainCollisions.OnObjectAdded`, `HittableByTrains.CustomCollision`, `PushForceTick`,
-  `DestroyThisBarrier` — препятствия и баррикады.
-- `TriggerHurtNotChild.OnTick`, `TrainCar.GetDamageMultiplier` — давка.
-- `TrainCarUnloadable.FillWithLoot`, `EndEmptyProcess`, `TrainCarUnloadableLoot.Spawn`,
-  `TrainWagonLootData.GetLootOption`, `CoalingTower.EmptyTenPercent` — грузы и разгрузка.
-- `ConvarControlledSpawnPopulationRail.SubFill`, `GenerateRailMeshes.AddTrackSpline` — спаун.
-- `TrainSignal.RefreshLightState`, `TrainTrackSpline.HasValidHazardWithin` — сигналы.
-- `ConVar/vehicle.cs`: `cinematictrains`, `trainskeeprunning`, `stop_all_trains`, `train_speed`.

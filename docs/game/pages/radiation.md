@@ -34,9 +34,9 @@ code: [Radiation.cs, TriggerRadiation.cs, TwoTierRadiationZone.cs, PlayerMetabol
 | `HIGH` | 51 |
 | `NONE` | 0 |
 
-Какой уровень у какого памятника, задаётся в префабах. Полная сводка по всем монументам, собранная
-из выгрузки их сцен, — на странице [[monument-radiation]].
-Что видно в выгрузке (`TriggerRadiation`, поле `radiationTier`):
+Какой уровень у какого памятника, задаётся в префабах. Полная сводка по всем монументам —
+на странице [[monument-radiation]].
+Уровни (`TriggerRadiation`, поле `radiationTier`):
 
 | Префаб | Уровень | `falloff` | Особенности |
 |--------|---------|-----------|-------------|
@@ -176,12 +176,3 @@ radiation_poison += radiation_level × dt
 - После выхода из зоны прыгните в воду и поплавайте: отравление уйдёт без урона.
   Так быстрее и бесплатнее, чем ждать.
 - Пока висит отравление ≥ 125 (25 % шкалы), сами HP не растут: лечитесь бинтами и шприцами.
-
-## Где в коде
-
-- `Radiation.GetRadiation`, `Radiation.GetRadiationAfterProtection` — уровни и вычитание.
-- `TriggerRadiation.GetRadiationForPosition` — геометрия и режимы защиты.
-- `BaseEntity.radiationLevel` — максимум по зонам.
-- `BasePlayer.RadiationProtection`, `BasePlayer.UpdateProtectionFromClothing` — защита.
-- `PlayerMetabolism.RunMetabolism` / `DoMetabolismDamage` — накопление, выведение, урон.
-- `BasePlayer.ApplyRadiation`, `InflictRadsFromInventory`, `InflictRadsFromContainer`, `CheckWaterRadiation`.

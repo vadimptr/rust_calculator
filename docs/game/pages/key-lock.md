@@ -66,9 +66,3 @@ code: [KeyLock.cs, BaseLock.cs, Deployer.cs]
 - Ключевой замок годится для одиночки. Для группы удобнее [[code-lock]]: доступ там можно
   отозвать сменой кода.
 - Убитый с ключом в инвентаре игрок отдаёт доступ тому, кто подберёт ключ.
-
-## Где в коде
-
-- `KeyLock.HasLockPermission`, `CanKeyUnlockUs` — проверка доступа.
-- `KeyLock.OnDeployed`, `Lock`, `LockLock` — установка и запирание.
-- `KeyLock.RPC_CreateKey`, `RPC_Unlock`, `RPC_Lock` — действия игрока.

@@ -20,7 +20,7 @@ code: [LootContainer.cs, LootSpawn.cs, SpawnHandler.cs, SpawnPopulationBase.cs, 
    которые раз в минуту доспавнивают недостающее до целевой плотности. Ящики на монументах —
    спавн-группы (`SpawnGroup`) с собственными задержками.
 
-Конкретные таблицы и веса лежат в ассетах `LootSpawn` (в выгрузке их 1321), а количество
+Конкретные таблицы и веса задаются в таблицах `LootSpawn` (всего их 1321), а количество
 скрапа, слоты и таймеры — в префабах ящиков (таблица ниже). Ящики событий со взломом описаны
 отдельно: [[locked-crate]].
 
@@ -72,7 +72,7 @@ code: [LootContainer.cs, LootSpawn.cs, SpawnHandler.cs, SpawnPopulationBase.cs, 
 После таблиц:
 
 - В ящиках типа `ROADSIDE` и `TOWN` у всех предметов с прочностью прочность случайная
-  в диапазоне `foundCondition` из ассета предмета ([[item-condition]]). `TOWN` — это почти
+  в диапазоне `foundCondition` предмета ([[item-condition]]). `TOWN` — это почти
   все ящики монументов (`crate_normal`, `crate_normal_2`, `crate_elite`, `crate_tools`,
   `crate_basic`), а не только «городские».
 - `GenerateScrap` кладёт `scrapAmount` скрапа (если больше 0).
@@ -80,7 +80,7 @@ code: [LootContainer.cs, LootSpawn.cs, SpawnHandler.cs, SpawnPopulationBase.cs, 
 ### Обновление содержимого
 
 Если у префаба `minSecondsBetweenRefresh > 0` и `maxSecondsBetweenRefresh > 0`
-(по умолчанию в коде 3600 и 7200 с; у большинства ящиков и бочек в префабах так и есть, у
+(по умолчанию 3600 и 7200 с; у большинства ящиков и бочек в префабах так и есть, у
 мусорных куч и коробок с едой 900–1800 с), после каждого заполнения запускается таймер на
 случайное время в этом диапазоне. По таймеру `SpawnLoot` **очищает** ящик и заполняет
 заново. Оставшееся время таймера сохраняется в сейв.
@@ -99,7 +99,7 @@ target = round(площадь_карты * плотность * 1e-6 * плот�
 спавн  = min(нужно, 100)       // MinSpawnsPerTick = MaxSpawnsPerTick = 100
 ```
 
-Плотность и скорость берутся из ассета популяции. Если в ассете включён
+Плотность и скорость берутся из настроек популяции. Если в них включён
 `ScaleWithServerPopulation`, обе масштабируются онлайном:
 
 ```
@@ -121,8 +121,8 @@ target = round(площадь_карты * плотность * 1e-6 * плот�
 PlayerScale = max(1, (игроков - spawn.player_base) / spawn.player_base * spawn.player_scale)
 ```
 
-Значения `respawnDelayMin/Max` — в префабе группы (поля по умолчанию 10 и 20 с). Префабы
-самих монументов в выгрузку не попали; у малых построек, которые есть в выгрузке, ящики
+Значения `respawnDelayMin/Max` — в префабе группы (поля по умолчанию 10 и 20 с). Для самих
+монументов точные значения неизвестны; у малых построек ящики
 возвращаются через 15–30 мин (подводные лаборатории, `spawner_normal_crates`) и 20–30 мин
 (пустынные постройки `desert_dwelling_*`). Ящики в мусорных кучах (`junkpile_*`,
 `CrateSpawner`) имеют задержку «бесконечность» и после лута сами не появляются.
@@ -174,7 +174,7 @@ PlayerScale = max(1, (игроков - spawn.player_base) / spawn.player_base * 
   а выше 300 (`population_cap_rate`) рост прекращается.
 - **Чай на скрап работает на разбиваемых контейнерах.** Бонус начисляется в
   `DropBonusItems`, который вызывается при уничтожении контейнера. При обычном лутании
-  ящика руками этого пути в коде нет. Бонус считается от `scrapAmount` префаба, а не от
+  ящика руками этого пути нет. Бонус считается от `scrapAmount` префаба, а не от
   того, сколько скрапа реально лежало.
 - **Дерево таблиц: выбор одной ветки.** На каждом уровне с подкатегориями выбирается ровно
   одна ветка. Поэтому «редкий» предмет — это произведение весов на всех уровнях.
@@ -191,12 +191,3 @@ PlayerScale = max(1, (игроков - spawn.player_base) / spawn.player_base * 
 - Под чай на скрап выгоднее разбивать бочки, чем лутать ящики.
 - На низком онлайне бочек меньше — маршрут по дорогам даёт меньше, чем на заполненном
   сервере.
-
-## Где в коде
-
-- `LootContainer.PopulateLoot`, `LootContainer.FillLoot`, `LootContainer.SpawnLoot` — заполнение и таймер.
-- `LootSpawn.SpawnIntoContainer`, `LootSpawn.SubCategoryIntoContainer` — таблицы.
-- `LootContainer.DropBonusItems` — бонус скрапа.
-- `SpawnHandler.SpawnRepeating`, `SpawnHandler.PlayerFraction`, `SpawnHandler.PlayerScale` — популяции и онлайн.
-- `DensitySpawnPopulation.GetTargetCount`, `SpawnPopulationBase.GetCurrentSpawnRate` — целевое число.
-- `SpawnGroup.GetSpawnDelta` — задержка спавн-групп.

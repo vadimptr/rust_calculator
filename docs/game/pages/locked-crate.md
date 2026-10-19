@@ -92,12 +92,3 @@ code: [HackableLockedCrate.cs, CH47HelicopterAIController.cs, CH47AIBrain.cs, CH
 - Чинук над монументом дольше минуты и старше 5 минут — скоро сброс.
 - На сервере с изменённым `requiredhackseconds` все связанные таймеры (уход карго) подстраиваются
   автоматически.
-
-## Где в коде
-
-- `HackableLockedCrate.RPC_Hack`, `StartHacking`, `HackProgress` — взлом.
-- `HackableLockedCrate.OnAttacked` — откат при попадании в ноутбук.
-- `HackableLockedCrate.RefreshDecay` — самоуничтожение.
-- `CH47AIBrain.DropCrate`, `EgressState`, `OrbitState` — поведение чинука.
-- `CH47HelicopterAIController.DropCrate`, `OnDied`, `InitiateAnger` — сброс и учёные.
-- `AirfieldCallChinookTerminal.Activate` — вызов с аэродрома.

@@ -22,25 +22,25 @@ code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs,
 
 ## Характеристики
 
-| Параметр | Снегоход и Tomaha | Источник |
-|----------|-------------------|----------|
-| HP | 300 | `startHealth` в префабах `snowmobile` и `tomahasnowmobile` |
-| Защита корпуса | `CarProtection`: пули 90 %, холодное 95–96 %, стрелы 95 %, взрывы 40 %, AntiVehicle 25 % | `baseProtection` в префабе, массив `amounts` ассета `CarProtection` |
-| Защита седоков | `wood_armor` поверх одежды | `riderProtection` в префабе |
-| Места | 2: водитель и пассажир | `mountPoints` в префабе |
-| Топливо | низкосортное, 1 слот | `SnowmobileFuelStorage`: `inventorySlots = 1`, `allowedItem` = низкосортное топливо |
-| Расход | 0,03 ед./с на холостых → 0,15 ед./с на полном газу | `idleFuelPerSec`, `maxFuelPerSec` в префабе |
-| Стартовое топливо | 0 | `Snowmobile.StartingFuelUnits` |
-| Хранилище | 12 слотов, без замка | `SnowmobileItemStorage`: `inventorySlots = 12`, `isLockable = 0` |
-| Мощность | 49 кВт (в коде 59) | `engineKW` в префабе |
-| Запуск двигателя | 0,5 с | `engineStartupTime` в префабе |
-| Сопротивление вне снега | 1,5 | `badTerrainDrag` в префабе (в коде 1) |
-| Задний ход | 25 % от максимальной скорости | `carSettings.reversePercentSpeed` |
-| Макс. угол поворота | 22° | `carSettings.maxSteerAngle` |
-| Распад снаружи | 1440 мин (24 ч) | `snowmobile.outsidedecayminutes` |
-| Распад под крышей | нет | `Snowmobile.SnowmobileDecay` |
-| Пауза распада после езды | 45 мин | `timeSinceLastUsed < 2700` в `SnowmobileDecay` |
-| Ремонт | по чертежу предмета: 100 фрагментов металла | `repair.itemTarget = item:snowmobile` / `item:snowmobiletomaha`; чертёж предмета |
+| Параметр | Снегоход и Tomaha |
+|----------|-------------------|
+| HP | 300 |
+| Защита корпуса | `CarProtection`: пули 90 %, холодное 95–96 %, стрелы 95 %, взрывы 40 %, AntiVehicle 25 % |
+| Защита седоков | `wood_armor` поверх одежды |
+| Места | 2: водитель и пассажир |
+| Топливо | низкосортное, 1 слот |
+| Расход | 0,03 ед./с на холостых → 0,15 ед./с на полном газу |
+| Стартовое топливо | 0 |
+| Хранилище | 12 слотов, без замка |
+| Мощность | 49 кВт (по умолчанию 59) |
+| Запуск двигателя | 0,5 с |
+| Сопротивление вне снега | 1,5 |
+| Задний ход | 25 % от максимальной скорости |
+| Макс. угол поворота | 22° |
+| Распад снаружи | 1440 мин (24 ч) |
+| Распад под крышей | нет |
+| Пауза распада после езды | 45 мин |
+| Ремонт | по чертежу предмета: 100 фрагментов металла |
 
 ## Поведение
 
@@ -48,7 +48,7 @@ code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs,
 
 - Максимальная сила тяги: `engineKW × 10 × производительность` (`GetMaxDriveForce`).
 - Максимальная скорость: `сила / масса × 15` (`GetMaxForwardSpeed`). Масса тела задаётся в
-  префабе, в выгрузку ассетов не попала, поэтому скорость в км/ч из кода не посчитать.
+  префабе и неизвестна, поэтому скорость в км/ч не посчитать.
 - **Производительность** (`GetPerformanceFraction`) зависит от HP: при HP ≥ 50 % — 100 %,
   от 50 % до 25 % линейно падает до 50 %, ниже 25 % — 50 %. Побитый снегоход едет вдвое
   слабее.
@@ -99,7 +99,7 @@ code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs,
 
 - **Столкновения** (`GroundVehicle.QueueCollisionDamage`): сила удара переводится в урон
   `от 1 до 200 × collisionDamageMultiplier` по шкале от 20 000 до 1 000 000
-  (`minCollisionDamageForce`, `maxCollisionDamageForce` в префабе, в коде максимум
+  (`minCollisionDamageForce`, `maxCollisionDamageForce` в префабе, по умолчанию максимум
   2 500 000). Урон типа `Collision` по самому снегоходу, без защиты, не чаще раза в 0,33 с.
   Удар о лошадь считается вдвое слабее. Седоки от столкновений урона не получают — это
   есть только у велосипедов и мотоциклов (см. [[bikes]]).
@@ -138,7 +138,7 @@ code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs,
 - **Распад гасится крышей полностью.** Под крышей `SnowmobileDecay` берёт бесконечное время
   распада: снегоход под крышей не гниёт вообще.
 - **Стартового топлива нет**: `StartingFuelUnits = 0`. Найденный снегоход пуст.
-- `engineKW` в префабе 49, а в коде 59; `badTerrainDrag` 1,5 против 1; действуют значения
+- `engineKW` в префабе 49, а по умолчанию 59; `badTerrainDrag` 1,5 против 1; действуют значения
   префаба.
 - `snowmobile.allterrain = true` полностью отключает медленный режим.
 - Достижение `DRIVE_SNOWMOBILE` даётся за запуск двигателя внутри гаража Arctic Research
@@ -156,15 +156,3 @@ code: [Snowmobile.cs, GroundVehicle.cs, CarPhysics.cs, VehicleTerrainHandler.cs,
 - Ставьте его под крышу: там он не гниёт вовсе.
 - Хранилище не запирается и открывается при выключенном двигателе любым прохожим —
   не оставляйте лут в нём.
-
-## Где в коде
-
-- `Snowmobile.VehicleFixedUpdate` — расход топлива, выравнивание в воздухе, триггеры наезда.
-- `Snowmobile.GetModifiedDrag`, `VehicleTerrainHandler.DoTerrainCheck` — снег и медленный режим.
-- `Snowmobile.GetMaxDriveForce`, `GetMaxForwardSpeed`, `GetPerformanceFraction`, `GetAdjustedDriveForce` — тяга и скорость.
-- `Snowmobile.PlayerServerInput` — ввод, тормоз и запуск двигателя.
-- `Snowmobile.AttemptMount`, `CanPlayerSeeMountPoint` — посадка.
-- `Snowmobile.RPC_OpenFuel`, `RPC_OpenItemStorage`, `CanBeLooted` — бак и хранилище.
-- `Snowmobile.SnowmobileDecay` — распад.
-- `Snowmobile.ScaleDamageForPlayer` — защита седоков.
-- `GroundVehicle.QueueCollisionDamage`, `ProcessCollision`, `OnHurtTriggerOccupant` — столкновения и наезды.

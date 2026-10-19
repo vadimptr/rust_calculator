@@ -19,7 +19,7 @@ code: [StorageContainer.cs, BoxStorage.cs, StashContainer.cs, Fridge.cs, Dropped
 
 ## Характеристики
 
-| Поле `StorageContainer` | По умолчанию в коде | Смысл |
+| Поле `StorageContainer` | По умолчанию | Смысл |
 |-------------------------|--------------------|-------|
 | `inventorySlots` | 6 | Число слотов |
 | `maxStackSize` | 0 (без ограничения) | Максимальный стак внутри |
@@ -53,7 +53,7 @@ code: [StorageContainer.cs, BoxStorage.cs, StashContainer.cs, Fridge.cs, Dropped
 | Объект | Особенность | Где |
 |--------|-------------|-----|
 | Ящики (`BoxStorage`) | На них можно ставить дочерние деплои; пока они есть, ящик нельзя подобрать | `BoxStorage` |
-| Холодильник (`Fridge`) | 5 ед. энергии (мини-холодильник 2); запитанный **полностью останавливает** порчу еды: в префабах `PoweredFoodSpoilageRateMultiplier` = 0 (в коде по умолчанию 0,1) | `Fridge.PowerConsumption`, `PoweredFoodSpoilageRateMultiplier` |
+| Холодильник (`Fridge`) | 5 ед. энергии (мини-холодильник 2); запитанный **полностью останавливает** порчу еды: в префабах `PoweredFoodSpoilageRateMultiplier` = 0 (по умолчанию 0,1) | `Fridge.PowerConsumption`, `PoweredFoodSpoilageRateMultiplier` |
 | Тайник (`StashContainer`) | Прячется в землю; открывается в 3 м при взгляде прямо на него | `StashContainer.PlayerInRange` |
 
 ## Поведение
@@ -136,12 +136,3 @@ code: [StorageContainer.cs, BoxStorage.cs, StashContainer.cs, Fridge.cs, Dropped
   обращённой к вам, а не застрянет за ним в стене.
 - Тайники прячьте подальше от мест, где кто-то может строить.
 - Если сервер включил `canRequireAuthIfNoLock`, ящики без замков всё равно защищены шкафом.
-
-## Где в коде
-
-- `StorageContainer.CanBeLooted`, `StorageContainer.ShouldRequireAuthIfNoCodelock` — доступ.
-- `StorageContainer.DropItems`, `ItemContainer.Drop`, `DroppedItemContainer.TakeFrom` — выпадение.
-- `BaseCombatEntity.ShouldDropDeployableCorpse` — «труп» хранилища.
-- `BoxStorage.GetDropPosition` — точка выпадения.
-- `StashContainer.SetHidden`, `StashContainer.PlayerInRange`, `StashContainer.DoOccludedCheck` — тайник.
-- `Fridge.GetSpoilMultiplier` — холодильник.

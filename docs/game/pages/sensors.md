@@ -57,7 +57,7 @@ code: [BaseDetector.cs, HBHFSensor.cs, LaserDetector.cs, SeismicSensor.cs, RFBro
 - Уровни (поле `vibrationLevel` в префабах): C4, обычная ракета, ракета MLRS — 3;
   сачель, HE-граната 40 мм, миномёт, разрывные патроны, торпеда — 2; бобовая граната, F1,
   мина, HV- и зажигательная ракета — 1. Таран — 2, огнемётная турель и вертолёт — 1
-  (константы в коде).
+  (фиксированные значения).
 - Выход = уровень, **независимо от мощности на входе** (лишь бы > 0). Сейсмодатчик на 1 rW
   выдаёт 3 после C4.
 
@@ -114,11 +114,3 @@ code: [BaseDetector.cs, HBHFSensor.cs, LaserDetector.cs, SeismicSensor.cs, RFBro
 - Сейсмодатчик рядом со стеной базы → [[memory-cell|ячейка памяти]] (Set) → сирена: тревога
   не гаснет через 3 с.
 - RF-передатчик + приёмники = беспроводная проводка через всю карту.
-
-## Где в коде
-
-`HBHFSensor.CountDetectedPlayers`, `UpdatePassthroughAmount`, `GetPassthroughAmount`;
-`LaserDetector.CanSee`, `VisibilityCheck`; `SeismicSensor.Notify`, `SetVibrationLevel`;
-`RFManager`; `RFBroadcaster.UpdateFromInput`, `ServerSetFrequency`; `RFReceiver.RFSignalUpdate`;
-`SmartAlarm.IOStateChanged`; `StorageMonitor.OnContainerChanged`; `DigitalClock`;
-`AutoTurret.GetPassthroughAmount`, `SamSite.GetPassthroughAmount`.

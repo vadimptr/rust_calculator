@@ -4,7 +4,7 @@ title: Баги и неочевидности электрики
 kind: mechanic
 group: Электричество
 icon: ui/warning
-summary: Сборник неочевидного поведения электросети по коду — деление сплиттера, расход батарей и двойной счёт в цепочках, OR и AND дают максимум, источники «энергии из ничего», DesiredPower, ячейка памяти, кабельный туннель, датчики и провода.
+summary: Сборник неочевидного поведения электросети — деление сплиттера, расход батарей и двойной счёт в цепочках, OR и AND дают максимум, источники «энергии из ничего», DesiredPower, ячейка памяти, кабельный туннель, датчики и провода.
 related: [electricity, io-engine, flicker, circuit-loops, battery, splitter, electrical-branch, combiner, logic-gates, memory-cell, timer, switches, sensors, electric-generator, electric-consumers, solar-panel, wind-turbine]
 code: [IOEntity.cs, Splitter.cs, ElectricBattery.cs, ORSwitch.cs, ANDSwitch.cs, ElectricalDFlipFlop.cs, CableTunnel.cs, PressButton.cs, PressurePad.cs, SeismicSensor.cs, TeslaCoil.cs, ElectricGenerator.cs, WireTool.cs]
 ---
@@ -12,7 +12,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricBattery.cs, ORSwitch.cs, ANDSwitch.cs, 
 ## Кратко
 
 Здесь собрано всё, что в электрике Rust работает не так, как подсказывает интуиция. Каждый
-пункт — что происходит, почему (метод в коде) и что из этого следует на практике. Общие
+пункт — что происходит, почему (какой метод за это отвечает) и что из этого следует на практике. Общие
 механизмы описаны в [[io-engine]], [[flicker]] и [[circuit-loops]].
 
 ## Как работает
@@ -151,16 +151,6 @@ maxOutput(A))`. Когда B полна (`WantsPower` = false), обход в н
 который тикал при сохранении, на полную длину. См. [[timer]].
 
 **28. Провода на транспорте.** `ioentity.allow_on_boats`: в описании ConVar значение
-по умолчанию `True`, а инициализатор поля в коде — `false`. Какое действует на конкретном
+по умолчанию `True`, а у самого поля — `false`. Какое действует на конкретном
 сервере, зависит от применения реплицируемых значений по умолчанию. Если выключено, провода
 к устройствам на транспорте и у лодочной верфи (1.5 м) запрещены (`AllowWireConnections`).
-
-## Где в коде
-
-`Splitter.GetPassthroughAmount`, `IOEntity.GetPassthroughAmount`, `DesiredPower`,
-`ElectricalBranch.GetPassthroughAmount`, `ElectricBattery.GetDrain`, `AddConnectedRecursive`,
-`ORSwitch`/`ANDSwitch.GetPassthroughAmount`, `ElectricalDFlipFlop.UpdateFromInput`,
-`RANDSwitch.UpdateFromInput`, `PressButton.GetPassthroughAmount`,
-`PressurePad.GetPassthroughAmount`, `LaserDetector.GetPassthroughAmount`,
-`ElectricGenerator.UpdateOutputs`, `TeslaCoil.Discharge`, `CableTunnel.IOStateChanged`,
-`WireTool.ValidateLine`, `IOEntity.AllowWireConnections`.

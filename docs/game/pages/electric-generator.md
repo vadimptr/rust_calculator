@@ -18,11 +18,11 @@ code: [FuelGenerator.cs, ElectricGenerator.cs, ElectricWaterWheel.cs, FuelElectr
 
 ## Характеристики
 
-| Источник | Класс, префаб | Предмет | Выход | Входы | HP |
-|---|---|---|---|---|---|
-| Малый топливный генератор | `FuelGenerator`, `small_fuel_generator.deployed` | `electric.fuelgenerator.small` | **40 rW** (`outputEnergy`, в коде 35) на 1 выход | Force Start, Force Stop | 100 |
-| Тестовый генератор | `ElectricGenerator`, `generator.small` | `electric.generator.small` | **100 rW** (`electricAmount`, в коде 8) на **каждый** из 3 выходов | нет | 1000 |
-| Водяное колесо | `ElectricWaterWheel`, `electric.waterwheel` | `generator.water` | до **30 rW** от воды, до **60 rW** вручную | нет | 400 |
+| Класс, префаб | Предмет | Выход | Входы | HP |
+|---|---|---|---|---|
+| `FuelGenerator`, `small_fuel_generator.deployed` | `electric.fuelgenerator.small` | **40 rW** (`outputEnergy`, по умолчанию 35) на 1 выход | Force Start, Force Stop | 100 |
+| `ElectricGenerator`, `generator.small` | `electric.generator.small` | **100 rW** (`electricAmount`, по умолчанию 8) на **каждый** из 3 выходов | нет | 1000 |
+| `ElectricWaterWheel`, `electric.waterwheel` | `generator.water` | до **30 rW** от воды, до **60 rW** вручную | нет | 400 |
 
 Значения — из префабов.
 
@@ -34,7 +34,7 @@ code: [FuelGenerator.cs, ElectricGenerator.cs, ElectricWaterWheel.cs, FuelElectr
   Выключается кнопкой или сигналом на «Force Stop». Оба входа не основные.
 - При включении сразу списывает топливо за 1 с работы (`UseFuel(1)`), дальше — каждые
   `fuelTickRate` = 3 с.
-- Расход `fuelPerSec` = 0.069444 в префабе (в коде 1): 1 низкосортное топливо на 14.4 с,
+- Расход `fuelPerSec` = 0.069444 в префабе (по умолчанию 1): 1 низкосортное топливо на 14.4 с,
   250 в час. Дробный остаток копится в `pendingFuel`.
 - Без топлива генератор выключается и сам не включится, пока его не запустят снова.
 - Выход только на слот 0, весь `outputEnergy`.
@@ -94,9 +94,3 @@ code: [FuelGenerator.cs, ElectricGenerator.cs, ElectricWaterWheel.cs, FuelElectr
   Force Start/Stop: запускайте только когда батарея садится (выход батареи «Fully Charged»
   → Force Stop).
 - Колесо ставьте поперёк течения реки и так, чтобы выше по течению 10 м было чисто.
-
-## Где в коде
-
-`FuelGenerator.TurnOn`, `TurnOff`, `UseFuel`, `FuelConsumption`, `UpdateFromInput`,
-`GetPassthroughAmount`, `AllowDrainFrom`; `ElectricGenerator.UpdateOutputs`, `GetCurrentEnergy`;
-`ElectricWaterWheel.PowerUpdate`, `WaterUpdate`, `GetWaterFlowAlignment`, `IsInOpenWater`.

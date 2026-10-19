@@ -17,9 +17,9 @@ code: [BaseMelee.cs, AttackEntity.cs, ResourceDispenser.cs, ItemModEntityThrow.c
 - **урон** — список `damageTypes` (Slash, Blunt, Stab и т. д.) и, отдельно,
   `deployableDamageOverrides` для деплоев;
 - **темп** — `repeatDelay` (задержка между ударами);
-- **дистанция** — `maxDistance` (по умолчанию в коде `1.5` м) и радиус удара `attackRadius`
+- **дистанция** — `maxDistance` (по умолчанию `1.5` м) и радиус удара `attackRadius`
   (`0.3` м);
-- **множители по зонам** — ассет `damageProperties` ([[hit-zones]]);
+- **множители по зонам** — `damageProperties` ([[hit-zones]]);
 - **параметры добычи** — `gathering` для дерева, руды и туш ([[gathering]]).
 
 Удар фиксирует клиент (куда попала «коса» удара), сервер проверяет его и применяет урон
@@ -28,7 +28,7 @@ code: [BaseMelee.cs, AttackEntity.cs, ResourceDispenser.cs, ItemModEntityThrow.c
 ### Оружие в цифрах
 
 Поля `BaseMelee` из префабов (`*.entity`). «Ударов в секунду» = 1 / `repeatDelay`.
-Множители по зонам у всего этого оружия — ассет `Damage.Melee`: голова ×2, ноги ×0.75
+Множители по зонам у всего этого оружия — `Damage.Melee`: голова ×2, ноги ×0.75
 ([[hit-zones]]).
 
 | Оружие | Урон | `repeatDelay`, с | Урон в секунду | Дальность, м | Радиус, м |
@@ -96,7 +96,7 @@ Slash, Stab, Bite, Bullet или Arrow (`DamageTypeEx.IsBleedCausing`):
 `кровотечение += итоговый урон × 0.2 × (1 − Clotting)`. Дубинки и молоты (Blunt) кровь не
 пускают. Подробнее — [[metabolism]].
 
-Разная защита одежды от Slash, Stab и Blunt задаётся в её ассетах, поэтому один и тот же
+Разная защита одежды от Slash, Stab и Blunt задаётся отдельно для каждой вещи, поэтому один и тот же
 нагрудник может по-разному держать нож и дубину.
 
 ### 3. Износ
@@ -138,7 +138,7 @@ Slash, Stab, Bite, Bullet или Arrow (`DamageTypeEx.IsBleedCausing`):
 
 | Что | Значение | Где |
 |---|---|---|
-| Задержка между ударами | от 0.15 с (отбойный молоток) до 2 с (длинный меч, булава); умолчание кода 0.5 с | `AttackEntity.repeatDelay`, таблица выше |
+| Задержка между ударами | от 0.15 с (отбойный молоток) до 2 с (длинный меч, булава); по умолчанию 0.5 с | `AttackEntity.repeatDelay`, таблица выше |
 | Задержка доставания | `1` с (кулдаун `× 0.9`) | `AttackEntity.deployDelay` |
 | Дальность | 1.5 м у большинства, 1.25 м у камня, 2.6–2.75 м у копий и вил | `BaseMelee.maxDistance` |
 | Радиус удара | 0.2–0.4 м | `BaseMelee.attackRadius` |
@@ -155,7 +155,7 @@ Slash, Stab, Bite, Bullet или Arrow (`DamageTypeEx.IsBleedCausing`):
   всегда разрешает «раненое» состояние, в отличие от огнестрельного хедшота
   ([[hit-zones]]).
 - **Отдельный урон по деплоям.** Если у оружия задан `deployableDamageOverrides`, по деплоям
-  (но не по стенам, дверям и ящикам с лутом) используется он. В ассетах он есть только
+  (но не по стенам, дверям и ящикам с лутом) используется он. Он есть только
   у сальважного молота: 60 Blunt по деплоям вместо 40.
 - **Бросок меняет урон.** Брошенное копьё или нож бьёт уроном своего снаряда, с падением по
   дистанции и множителями зон снаряда, а не ближнего боя.
@@ -171,12 +171,3 @@ Slash, Stab, Bite, Bullet или Arrow (`DamageTypeEx.IsBleedCausing`):
 - Не бейте инструментом по стенам и броне без нужды: износ растёт с поглощённым уроном.
 - Копьё стоит бросать, только если уверены в попадании: урон считается как у снаряда, а оружие
   остаётся лежать в мире.
-
-## Где в коде
-
-- `BaseMelee.PlayerAttack`, `DoAttackShared`, `GetAttackStats` — удар игрока.
-- `BaseMelee.UpdateItemCondition` — износ.
-- `BaseMelee.CLProject`, `CLEntityThrow` — броски.
-- `BaseMelee.ServerUse`, `ServerUse_Strike` — удары NPC.
-- `AttackEntity.repeatDelay`, `deployDelay`, `npcDamageScale`.
-- `DamageTypeEx.IsBleedCausing`, `IsMeleeType`.

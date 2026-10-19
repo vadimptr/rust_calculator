@@ -25,7 +25,3 @@ code: [PuzzleReset.cs, CardReader.cs]
 - Из-за ошибки в `PuzzleReset.AnyPlayersWithinDistance` сброс подземного пазла блокируют
   игроки **на поверхности** в 60 м, а не те, кто в канализации ([[monument-puzzles]]).
 - Защиты 10 хватает на все зоны.
-
-## Где в коде
-
-- `PuzzleReset`, `CardReader` префаба.

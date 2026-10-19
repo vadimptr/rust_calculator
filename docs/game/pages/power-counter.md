@@ -25,13 +25,13 @@ code: [PowerCounter.cs]
 | Вход 3 | Reset Counter |
 | Выход 0 | Passthrough |
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Максимум счёта | 999 (`MAX_VALUE`) | код |
-| Цель | 1…999, по умолчанию 10 | `SERVER_SetTarget`, поле `targetCounterNumber` |
-| Значение сброса | 0…999 | `resetTargetNumber` |
-| Кто настраивает | игрок с правом строительства | `CanPlayerAdmin` |
-| HP | 100 | префаб |
+| Параметр | Значение |
+|---|---|
+| Максимум счёта | 999 (`MAX_VALUE`) |
+| Цель | 1…999, по умолчанию 10 |
+| Значение сброса | 0…999 |
+| Кто настраивает | игрок с правом строительства |
+| HP | 100 |
 
 ## Поведение
 
@@ -64,7 +64,3 @@ code: [PowerCounter.cs]
 
 - Кодовый замок: кнопки → Increment/Reset, выход → дверной контроллер.
 - Вольтметр: режим passthrough в разрыв провода показывает мощность.
-
-## Где в коде
-
-`PowerCounter.UpdateFromInput`, `GetPassthroughAmount`, `WantsPower`, `SERVER_SetTarget`, `ToggleDisplayMode`.

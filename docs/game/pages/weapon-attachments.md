@@ -20,7 +20,7 @@ code: [ProjectileWeaponMod.cs, BaseProjectile.cs, Projectile.cs, RecoilPropertie
 - `enabled` — учитывать ли этот модификатор вообще.
 
 Сами значения (насколько глушитель режет урон, насколько прицел сужает конус) задаются в
-префабе каждого модуля, в коде их нет. Сводка по префабам — в разделе «Модули в цифрах».
+префабе каждого модуля. Сводка по префабам — в разделе «Модули в цифрах».
 
 ## Как работает
 
@@ -34,8 +34,8 @@ code: [ProjectileWeaponMod.cs, BaseProjectile.cs, Projectile.cs, RecoilPropertie
 | `hipAimCone` | дополнительный конус от бедра | сервер (`GetAimCone`) |
 | `repeatDelay` | задержка между выстрелами | сервер (`ScaleRepeatDelay`) |
 | `magazineCapacity` | ёмкость магазина | сервер (`DelayedModsChanged`) |
-| `projectileVelocity` | скорость пули | клиент (в серверном коде не используется) |
-| `recoil`, `aimsway`, `aimswaySpeed` | отдача и раскачка прицела | клиент (в серверном коде не используется) |
+| `projectileVelocity` | скорость пули | клиент (на сервере не используется) |
+| `recoil`, `aimsway`, `aimswaySpeed` | отдача и раскачка прицела | клиент (на сервере не используется) |
 | `burstCount`, `timeBetweenBursts` | режим очереди | сервер и клиент |
 | `zoomLevels`, `isScope` | кратность прицела | клиент; сервер хранит выбранный уровень |
 
@@ -109,7 +109,7 @@ code: [ProjectileWeaponMod.cs, BaseProjectile.cs, Projectile.cs, RecoilPropertie
 
 ### 4. Дульный тормоз и ускоритель
 
-Флаги `isMuzzleBrake` и `isMuzzleBoost` в серверном коде отвечают только за выбор эффекта
+Флаги `isMuzzleBrake` и `isMuzzleBoost` на сервере отвечают только за выбор эффекта
 выстрела (`muzzleBrakeAttack`). Их влияние на отдачу, скорость и темп — обычные модификаторы
 (`recoil`, `projectileVelocity`, `repeatDelay`, `projectileDamage`) в префабе.
 
@@ -165,11 +165,3 @@ code: [ProjectileWeaponMod.cs, BaseProjectile.cs, Projectile.cs, RecoilPropertie
 - Сочетания модулей с множителями <1 на один параметр дают всё меньшую прибавку: эффект
   перемножается.
 - Чините модули: один сломанный модуль делает оружие небоеспособным.
-
-## Где в коде
-
-- `ProjectileWeaponMod.Mult / Sum / IsValid / HasBrokenWeaponMod`.
-- `BaseProjectile.GetProjectileModifier`, `GetAimCone`, `ScaleRepeatDelay`, `DelayedModsChanged`.
-- `BaseProjectile.IsSilenced`, `GetAttackEffect`, `CreateProjectileEffectClientside`.
-- `BaseProjectile.IsBurstEligable`, `GetBurstModeCount`, `TimeBetweenBursts`.
-- `BaseProjectile.UpdateItemCondition` — износ модулей.

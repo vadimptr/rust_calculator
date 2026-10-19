@@ -57,7 +57,7 @@ code: [BuildingManager.cs, ServerBuildingManager.cs, DecayEntity.cs, BuildingBlo
 расстояния — при равенстве предпочтение отдаётся фундаменту. Если в радиусе пусто,
 деплой остаётся вне здания (`buildingID = 0`).
 
-Исключение — высокие внешние стены и ворота (`Upkeep.highWall` = 1 в префабе; по ассетам это
+Исключение — высокие внешние стены и ворота (`Upkeep.highWall` = 1 в префабе; это
 все `wall.external.high.*` — дерево, камень, саман, лёд, legacy — и все `gates.external.high.*`): у них радиус
 поиска **16 м**, и выбирается не ближайший, а **самый старый** блок (меньший сетевой ID).
 Кроме того, при каждом тике распада такая стена проверяет, совпадает ли её здание со зданием
@@ -129,12 +129,3 @@ code: [BuildingManager.cs, ServerBuildingManager.cs, DecayEntity.cs, BuildingBlo
   вплотную к нему.
 - Для калькулятора содержания: число блоков, влияющее на ставку, — это все `BuildingBlock`
   одного здания, включая солому и любые формы.
-
-## Где в коде
-
-- `BuildingManager.Building` — состав здания, `GetDominatingBuildingPrivilege`.
-- `BuildingManager.Add` / `Remove` — регистрация сущностей.
-- `ServerBuildingManager.CheckMerge`, `Merge`, `CheckSplit`, `ShouldSplit`, `Split`.
-- `DecayEntity.AttachToBuilding`, `GetNearbyBuildingBlock`; `BuildingBlock.AttachToBuilding`.
-- `BuildingProximity.Check` — запрет соединять два здания со шкафами.
-- `Socket_Base.ConnectsBuildings`, `CornerSocket.ConnectsBuildings`.

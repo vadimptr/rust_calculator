@@ -12,7 +12,7 @@ code: [Item.cs, ItemDefinition.cs, RepairBench.cs, ItemModRepair.cs, BaseProject
 ## Кратко
 
 У предмета с прочностью два числа: `condition` (сейчас) и `maxCondition` (до скольки можно
-починить). Оба ограничены заводским максимумом `info.condition.max` из ассета. Ремонт
+починить). Оба ограничены заводским максимумом `info.condition.max` предмета. Ремонт
 возвращает `condition` к `maxCondition`, но сам `maxCondition` при этом уменьшается — тем
 сильнее, чем ниже была прочность. Предмет, сломавшийся при `maxCondition ≤ 5`, исчезает. Ремонт построек молотком — отдельная механика, см. [[repair]].
 
@@ -20,19 +20,19 @@ code: [Item.cs, ItemDefinition.cs, RepairBench.cs, ItemModRepair.cs, BaseProject
 
 ### Потеря прочности
 
-Всё сводится к `Item.LoseCondition(amount)`. Кто и сколько отнимает (по коду):
+Всё сводится к `Item.LoseCondition(amount)`. Кто и сколько отнимает:
 
-| Источник | Потеря |
-|----------|--------|
-| Выстрел огнестрела (`BaseProjectile.UpdateItemCondition`) | `0,25 + barrelConditionLoss` патрона; моды на оружии теряют то же × `ConditionLossMultiplier` мода |
-| Удар оружием ближнего боя (`BaseMelee.UpdateItemCondition`) | `GetConditionLoss()` (по умолчанию 1) + 0,2 × урон, который «съела» броня цели |
-| Добыча ресурсов (`ResourceDispenser`, см. [[gathering]]) | `conditionLost` из настроек добычи |
-| Броня и одежда (`ItemModWearable`, см. [[armor-clothing]]) | сумма по типам урона `урон × защита предмета от этого типа`, не больше текущей прочности |
-| Факел | 1/12 за тик горения |
-| Ракетница, гранатомёт (`BaseLauncher`) | случайно 1–2 за выстрел |
+| Потеря |
+|--------|
+| `0,25 + barrelConditionLoss` патрона; моды на оружии теряют то же × `ConditionLossMultiplier` мода |
+| `GetConditionLoss()` (по умолчанию 1) + 0,2 × урон, который «съела» броня цели |
+| `conditionLost` из настроек добычи |
+| сумма по типам урона `урон × защита предмета от этого типа`, не больше текущей прочности |
+| 1/12 за тик горения |
+| случайно 1–2 за выстрел |
 
-Числа «на предмет» (`barrelConditionLoss`, `conditionLost`, защиты) лежат в ассетах. По
-выгрузке `barrelConditionLoss` = 0 у всех патронов, кроме разрывных 5.56 (`ammo.rifle.explosive`,
+Числа «на предмет» (`barrelConditionLoss`, `conditionLost`, защиты) у каждого предмета свои.
+`barrelConditionLoss` = 0 у всех патронов, кроме разрывных 5.56 (`ammo.rifle.explosive`,
 0,5): обычный выстрел снимает 0,25, разрывной — 0,75 прочности.
 
 Заводской максимум (`condition.max` в `ItemDefinition`), примеры: автомат и MP5 — 150,
@@ -81,7 +81,7 @@ condition    = maxCondition
 `maxLossFraction` — `RepairBench.maxConditionLostOnRepair` (поле, по умолчанию 0,2) или
 `ItemModRepair.conditionLost` (0,05), если у предмета есть этот мод. В обоих префабах
 верстака ремонта (`repairbench_deployed`, `repairbench_static`) `maxConditionLostOnRepair` = 0,2.
-Если у предмета в ассете `maintainMaxCondition`, максимум не теряется вообще: так у всех
+Если у предмета задан `maintainMaxCondition`, максимум не теряется вообще: так у всех
 деплоев (ящики, печи, шкаф, турели, SAM, модули машин) и нескольких праздничных костюмов,
 но ни у одного оружия, инструмента или брони.
 
@@ -103,7 +103,7 @@ condition    = maxCondition
 ### Прочность найденных предметов
 
 В ящиках типа `TOWN` и `ROADSIDE` ([[loot-spawns]]) прочность случайна в пределах
-`foundCondition` ассета предмета (доли от максимума):
+`foundCondition` предмета (доли от максимума):
 
 | Предметы | Найденная прочность |
 |----------|---------------------|
@@ -159,10 +159,3 @@ condition    = maxCondition
 - Перед переработкой не чините: ремонт уменьшит выход переработчика.
 - Броня изнашивается пропорционально защите, которую она дала. Сильно побитый шлем
   может слететь при смертельном попадании.
-
-## Где в коде
-
-- `Item.LoseCondition`, `Item.OnBroken`, `Item.DoRepair` — прочность и поломка.
-- `RepairBench.RepairAnItem`, `RepairBench.GetRepairCostList`, `RepairBench.StripComponentRepairCost` — ремонт.
-- `ItemModRepair.ServerCommand` — «refill».
-- `BaseProjectile.UpdateItemCondition`, `BaseMelee.UpdateItemCondition`, `ItemModWearable` — износ.

@@ -9,8 +9,6 @@ related: [smelting, furnace]
 code: [ItemModCookable.cs, BaseOven.cs]
 ---
 
-> Таблица собрана автоматически из ассетов сервера Rust от 2026-10-16 скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.
-
 ## Как читать
 
 Данные из `ItemModCookable` на предметах. «Время» — секунды на одну единицу при базовой скорости печи,

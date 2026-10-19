@@ -249,15 +249,3 @@ wire spo.Power Out 3 -> ef3.Power In "3"
 - **Первое включение схемы** с пустым ящиком — печи 30 с простоят под током, один раз.
 - Экономия от выключения есть **только при питании от батареи**: батарея считает расход по потреблению
   печей, а солнечная панель и генератор выдают своё независимо от нагрузки.
-
-## Где в коде
-
-- `IndustrialConveyor.RunConveyor` — порция `floor(60 / N)`, Max/Min, пропуск полного получателя, «Filter Fail».
-- `IndustrialConveyor.OnFlagsChanged`, `GetPassthroughAmount` — интервал тика и «Passthrough».
-- `IOEntity.FindContainerSource` — обход сети сквозь адаптеры, стоп на конвейере, до 32 точек.
-- `BaseOven.InputSlotRange`, `OutputSlotRange`, `GetAllowedSlots`, `ItemFilter`, `Cook`, `ConsumeFuel`, `StartCooking`.
-- `IndustrialStorageAdaptor` — слоты печи для конвейера.
-- `ElectricOven.CanRunWithNoFuel`, `OvenFull`; `ElectricFurnaceIO.UpdateHasPower`, `DesiredPower` — электропечь не гаснет без руды.
-- `IndustrialConveyor.RunConveyor`, `CheckIfAnyInputPassesFilters`, `GetPassthroughAmount` — «Filter Fail» подачи и выгрузки, проверка в начале тика.
-- `TimerSwitch.UpdateFromInput`, `SwitchPressed`, `EndTimer`; `ElectricalBlocker`, `ANDSwitch`, `Splitter` — логика автовыключения.
-- `Igniter.IgniteInRange` — поджигатель.

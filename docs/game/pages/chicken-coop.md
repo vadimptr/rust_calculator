@@ -19,22 +19,22 @@ code: [ChickenCoop.cs, FarmableAnimal.cs, ItemModConsumable.cs, ConVar/Server.cs
 
 ### Курятник
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Кур максимум | 4 | `MaxChickens` в префабе |
-| Инкубация | 2 мин | `ChickenHatchTimeMinutes` в префабе (в коде 30) |
-| Проверка солнца | раз в 10 с | `SunCheckRate` |
-| Слоты | 4 | `inventorySlots` |
-| Здоровье | 250 | `startHealth` |
+| Параметр | Значение |
+|----------|----------|
+| Кур максимум | 4 |
+| Инкубация | 2 мин |
+| Проверка солнца | раз в 10 с |
+| Слоты | 4 |
+| Здоровье | 250 |
 
 ### Курица
 
-| Потребность | Убывает в час | Восполнение | Источник |
-|-------------|---------------|-------------|----------|
-| Еда | 5 | +40 за 1 корм, не чаще раза в 15 с, когда еда ≤ 92 | `HungerDecayRate`, `AmountPerFood`, `MinimumTimeBetweenEating` |
-| Вода | 8 | +10 за 1 воду, не чаще раза в 10 с, когда вода ≤ 95 | `ThirstDecayRate`, `AmountPerDrink`, `MinimumTimeBetweenDrinking` |
-| Ласка | 3 | +15 за поглаживание, перерыв 5 с | `LoveDecayRate`, `ServerPetChicken` |
-| Солнце | 3 в тени | **+300 в час** (5 в минуту) на солнце | `SunlightDecayRate`, `SunlightIncreaseRate` |
+| Потребность | Убывает в час | Восполнение |
+|-------------|---------------|-------------|
+| Еда | 5 | +40 за 1 корм, не чаще раза в 15 с, когда еда ≤ 92 |
+| Вода | 8 | +10 за 1 воду, не чаще раза в 10 с, когда вода ≤ 95 |
+| Ласка | 3 | +15 за поглаживание, перерыв 5 с |
+| Солнце | 3 в тени | **+300 в час** (5 в минуту) на солнце |
 
 Все — значения в префабе `simplechicken.entity`. HP курицы 100.
 
@@ -96,8 +96,3 @@ code: [ChickenCoop.cs, FarmableAnimal.cs, ItemModConsumable.cs, ConVar/Server.cs
 - Ставьте курятник на открытой площадке и проверьте днём, что куры набирают солнце; если нет —
   поверните курятник. Заполните корм и воду.
 - 4 курицы при счастье 100 % — около 50 яиц в час.
-
-## Где в коде
-
-- `ChickenCoop.SubmitEggForHatching`, `CheckEggHatchState`, `UpdateSunValue`, `SpawnFoodProduction`.
-- `FarmableAnimal.TickHappiness`, `ApplyStartingStats`, `ServerPetChicken`.

@@ -129,10 +129,3 @@ code: [SleepingBag.cs, SleepingBagCamper.cs, StaticRespawnArea.cs, Planner.cs, C
 - Подарок спальника не даёт «свежий» спальник: если вы только что на нём возродились, друг
   будет ждать ту же перезарядку.
 - Кровать на базе плюс спальники дальше 50 м от неё дают несколько независимых возрождений.
-
-## Где в коде
-
-- `SleepingBag.CanAssignBed`, `CanBuildBed`, `AssignToFriend`, `AssignToUser`, `RPC_MakePublic`, `RPC_MakeBed`.
-- `SleepingBag.Rename`, `SetShownOnCompass`, `DestroyBag`, `OnDeployableCorpseSpawned`, `ShouldDisplayPickupOption`.
-- `SleepingBagCamper`, `StaticRespawnArea`.
-- `Planner` — общие проверки установки и вызов `CanBuildBed`.

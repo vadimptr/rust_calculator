@@ -20,12 +20,12 @@ code: [BradleyAPC.cs, BradleySpawner.cs, RoadBradleys.cs, ConVar/Bradley.cs]
 
 | Параметр | Значение | Откуда |
 |----------|----------|--------|
-| Дальность обзора / поиска | 100 м / 50 м (в коде по умолчанию 100 / 100) | `viewDistance`, `searchRange` в префабе `bradleyapc` |
+| Дальность обзора / поиска | 100 м / 50 м (по умолчанию 100 / 100) | `viewDistance`, `searchRange` в префабе `bradleyapc` |
 | Обновление списка целей | раз в 2 с | `InvokeRepeating(UpdateTargetList, 0, 2)` |
-| Память о цели | 45 с (в коде 20) | `memoryDuration`, префаб |
+| Память о цели | 45 с (по умолчанию 20) | `memoryDuration`, префаб |
 | Главная пушка | 4 выстрела через 0,25 с, затем пауза 5 с; разброс 2°; только по цели дальше 10 м | `FireGunTest` |
-| Спаренный пулемёт | очередь 15 выстрелов через 0,05 с, пауза 1 с; до 40 м; разброс 3° (в коде 10 через 0,0667 с) | `coaxFireRate`, `coaxBurstLength`, префаб |
-| Урон пули | 7 × (0,9–1,1) (в коде по умолчанию 15) | `bulletDamage` в префабе, `ApplyDamage` |
+| Спаренный пулемёт | очередь 15 выстрелов через 0,05 с, пауза 1 с; до 40 м; разброс 3° (по умолчанию 10 через 0,0667 с) | `coaxFireRate`, `coaxBurstLength`, префаб |
+| Урон пули | 7 × (0,9–1,1) (по умолчанию 15) | `bulletDamage` в префабе, `ApplyDamage` |
 | Верхняя турель | выстрел раз в 0,25 с, по 2-й цели | `topTurretFireRate` |
 | Учёные | 3 группы: при HP ≤ 80 % — 2, ≤ 60 % — 4, ≤ 40 % — 6; всего 12 | `ScientistSpawns[].BradleyHealth` в префабе |
 | HP | 1000 | `startHealth` префаба `bradleyapc` |
@@ -99,7 +99,7 @@ code: [BradleyAPC.cs, BradleySpawner.cs, RoadBradleys.cs, ConVar/Bradley.cs]
   (`TraceAll` по лучу).
 - **Высадку провоцирует только урон с 50 м и ближе**, если учёные ещё не снаружи. Дальний бой
   по танку (ракеты с 60+ м) учёных не вызывает. Пороги по HP — 80/60/40 % (префаб);
-  ConVar `bradleyapc.deployhealthrangemin/max` объявлены, но в коде этой версии не используются.
+  ConVar `bradleyapc.deployhealthrangemin/max` объявлены, но в этой версии не используются.
 - **Пушка не бьёт в упор**: главный калибр стреляет только по цели дальше 10 м, а пулемёт
   только ближе 40 м. В «кармане» 10–40 м работают оба.
 - **Вторую цель обстреливает верхняя турель.** Танк, сфокусированный на одном игроке, всё
@@ -120,13 +120,3 @@ code: [BradleyAPC.cs, BradleySpawner.cs, RoadBradleys.cs, ConVar/Bradley.cs]
   взрывчатка (−65 %) и противотранспортный урон (−50 %).
 - Делайте перерывы меньше 10 минут, иначе он вылечится.
 - Не ставьте баррикады и стены на его пути: он снесёт их за 5 секунд.
-
-## Где в коде
-
-- `BradleyAPC.UpdateTargetList`, `TargetInfo.GetPriorityScore`, `VisibilityTest` — цели.
-- `BradleyAPC.DoWeapons`, `FireGunTest`, `FireGun` — оружие.
-- `BradleyAPC.UpdateMovement_Patrol`, `UpdateMovement_Hunt`, `DoSimpleAI` — движение.
-- `BradleyAPC.TrySpawnScientists`, `DeployScientists`, `UpdateDeployed` — учёные.
-- `BradleyAPC.DoHealing` — лечение.
-- `BradleyAPC.BuildingCheck` — снос построек.
-- `BradleyAPC.OnDied`, `BradleySpawner.ScheduleRespawn` — смерть и респаун.

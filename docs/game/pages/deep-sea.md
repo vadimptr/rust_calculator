@@ -54,7 +54,7 @@ code: [DeepSeaManager.cs, ConVar/DeepSea.cs, TriggerDeepSeaPortal.cs, DeepSeaPor
 
 Кого пропускает портал (`IsAllowedInDeepSea`):
 
-- **лодку из белого списка** (`vehicleWhitelist` в префабе менеджера, в выгрузке его нет) вместе
+- **лодку из белого списка** (`vehicleWhitelist` в префабе менеджера, состав неизвестен) вместе
   со всеми, кто на ней; лодку игрока (`PlayerBoat`) — только если рядом с ней нет неразрешённых
   вертолётов, лодок и подлодок;
 - игрока **вплавь — нет** (`deepsea.allow_swimmers` = false), стоящего на неразрешённом
@@ -113,10 +113,3 @@ code: [DeepSeaManager.cs, ConVar/DeepSea.cs, TriggerDeepSeaPortal.cs, DeepSeaPor
 
 - Цикл моря — 4.5 часа: 3 часа открыто, 1.5 закрыто.
 - Выходите не позже чем за 5 минут до закрытия: дальше радиация, а в самом конце — смерть.
-
-## Где в коде
-
-- `DeepSeaManager.ServerTick`, `OpenDeepSeaAsync`, `CloseDeepSeaAsync`, `KillAllEntitiesAsync`.
-- `DeepSeaManager.IsAllowedInDeepSea`, `CanTeleportToDeepSea`, `IsInsideDeepSea`, `DeepSeaBounds`.
-- `TriggerDeepSeaPortal.OnEntityEnter`.
-- `ConVar.DeepSea`; `Construction` (запрет строительства); `Climate.DeepSeaWeatherState`.

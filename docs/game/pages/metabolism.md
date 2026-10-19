@@ -28,7 +28,7 @@ code: [PlayerMetabolism.cs, BaseMetabolism.cs, MetabolismAttribute.cs, BasePlaye
 
 ### Шкалы и их пределы
 
-У каждой шкалы есть `min`, `max`, `startMin`, `startMax`. В коде их нет, они заданы в
+У каждой шкалы есть `min`, `max`, `startMin`, `startMax`. Они заданы в
 компоненте `PlayerMetabolism` префаба игрока (`assets/prefabs/player/player.prefab`).
 При возрождении `MetabolismAttribute.Reset` берёт случайное значение
 в диапазоне `startMin..startMax`.
@@ -193,7 +193,7 @@ heal/с = base / 5 × (1 + 6 × комфорт)       // 0.13–0.2 без ко�
 
 ### «Грязь» (`dirtyness`)
 
-Шкала есть, сбрасывается, сохраняется и уходит клиенту, но ни один серверный код её не меняет.
+Шкала есть, сбрасывается, сохраняется и уходит клиенту, но сервер её никак не меняет.
 Это рудимент.
 
 ### Еда и лекарства
@@ -223,12 +223,12 @@ heal/с = base / 5 × (1 + 6 × комфорт)       // 0.13–0.2 без ко�
 
 | Параметр | По умолчанию | Смысл |
 |----------|--------------|-------|
-| `server.metabolismtick` | `1` | Интервал тика в секундах. Подсказка ConVar называет его «множителем», но в коде это интервал |
+| `server.metabolismtick` | `1` | Интервал тика в секундах. Подсказка ConVar называет его «множителем», но на деле это интервал |
 | `server.radiation` | `true` | Радиационное отравление и его урон |
 | `server.bleedingdamage` | `1` | Множитель урона от кровотечения |
 | `server.bleedingarmor` | `1` | Множитель защиты от кровотечения |
 | `weather.wetness_rain` / `weather.wetness_snow` | `0.4` / `0.2` | Предел намокания от дождя и снега |
-| `PlayerMetabolism.HotThreshold` / `ColdThreshold` | `40` / `5` | Константы порогов; в серверном коде не используются (вероятно, для интерфейса клиента) |
+| `PlayerMetabolism.HotThreshold` / `ColdThreshold` | `40` / `5` | Константы порогов; на сервере не используются (вероятно, для интерфейса клиента) |
 
 ## Нюансы
 
@@ -253,12 +253,3 @@ heal/с = base / 5 × (1 + 6 × комфорт)       // 0.13–0.2 без ко�
   до 100 % HP, и в 7 раз больше HP с той же еды.
 - Бинт и чай после боя применяйте, когда кровь уже не идёт. Иначе часть HoT сгорит.
 - Водолазный костюм (защита от `Drowned`) не даёт намокнуть, значит холод в воде слабее.
-
-## Где в коде
-
-- `PlayerMetabolism.RunMetabolism` — все шкалы, регенерация, влажность, радиация, кислород.
-- `PlayerMetabolism.DoMetabolismDamage` — холод, жара, кровь, яд, радиация, утопление.
-- `BaseMetabolism.DoMetabolismDamage` — голод и жажда.
-- `BasePlayer.Hurt` — сжигание `pending_health`. `BasePlayer.OnAttacked` — набор кровотечения.
-- `BasePlayer.ApplyFallDamageFromVelocity` — падение.
-- `ItemModConsume.DoAction`, `ItemModConsumable` — еда и лекарства.

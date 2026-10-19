@@ -57,9 +57,3 @@ code: [Gate.cs, Door.cs, BuildingPrivlidge.cs, ConVar/Decay.cs]
 
 - На ворота ставьте кодовый замок и доводчик: это самая часто открываемая дверь базы.
 - Если ворота управляются электрикой, помните, что контроллер открывает мимо замка.
-
-## Где в коде
-
-- `Gate.CanBeRedirectSwapped` — единственное отличие класса от `Door`.
-- `Door` — всё остальное поведение.
-- `BuildingPrivlidge.GetEntityUpkeepMultiplier` — ставка содержания.

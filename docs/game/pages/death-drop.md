@@ -21,12 +21,12 @@ code: [BasePlayer.cs, BaseCorpse.cs, LootableCorpse.cs, PlayerCorpse.cs, Dropped
 
 ### 1. Труп
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Время жизни | 300 с | `server.corpsedespawn`, `BaseCorpse.GetRemovalTime` |
-| Время жизни трупа NPC | 600 с | `server.npccorpsedespawn` |
-| HP | 100 | `startHealth` префаба `player_corpse` |
-| Защита | `corpse_protection` | `baseProtection` префаба |
+| Параметр | Значение |
+|---|---|
+| Время жизни | 300 с |
+| Время жизни трупа NPC | 600 с |
+| HP | 100 |
+| Защита | `corpse_protection` |
 
 Таймер трупа (`BaseCorpse.ResetRemovalTime`) **перезапускается** при каждом закрытии окна обыска
 (`LootableCorpse.PlayerStoppedLooting`). Пока труп кто-то обыскивает, удалить его нельзя:
@@ -80,11 +80,11 @@ code: [BasePlayer.cs, BaseCorpse.cs, LootableCorpse.cs, PlayerCorpse.cs, Dropped
 
 ### 4. Что ещё делает сумка
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Слотов | 42 | `maxItemCount` префаба `item_drop_backpack` |
-| Защита | `Immortal` | `baseProtection` — сломать сумку нельзя |
-| Закапывать остатки | да | `buryLeftoverItems = 1` |
+| Параметр | Значение |
+|---|---|
+| Слотов | 42 |
+| Защита | `Immortal` |
+| Закапывать остатки | да |
 
 - Таймер сумки, как и у трупа, **перезапускается на полный срок** после каждого закрытия.
   Открытая сумка не исчезает: `DroppedItemContainer.RemoveMe` при открытом окне просто ставит таймер заново.
@@ -114,7 +114,7 @@ code: [BasePlayer.cs, BaseCorpse.cs, LootableCorpse.cs, PlayerCorpse.cs, Dropped
   Если периодически заглядывать в сумку, она пролежит сколько угодно.
 - **Мусор живёт по самому ценному.** Сумка с камнями и одним AK пролежит 60 минут: время
   считается по максимуму, а не по каждому предмету.
-- **Остатки не исчезают, а закапываются.** Как их потом достать, в коде этой страницы не разобрано.
+- **Остатки не исчезают, а закапываются.** Как их потом достать, здесь не разобрано.
 
 ## На практике
 
@@ -129,11 +129,3 @@ code: [BasePlayer.cs, BaseCorpse.cs, LootableCorpse.cs, PlayerCorpse.cs, Dropped
 | Полный рюкзак | до 2 ч 5 мин |
 
 Если нужно забрать лут быстро и в безопасности — разбейте труп топором и заберите всё из сумки за раз.
-
-## Где в коде
-
-- `BasePlayer.CreateCorpse` — какие контейнеры уходят в труп.
-- `BaseCorpse.GetRemovalTime`, `BaseCorpse.ResetRemovalTime`, `LootableCorpse.CanRemove` — таймер трупа.
-- `LootableCorpse.DoServerDestroy`, `LootableCorpse.DropItems` — превращение в сумку.
-- `DroppedItemContainer.CalculateRemovalTime`, `RemoveMe`, `BuryLeftoverItems` — жизнь сумки.
-- `Item.despawnMultiplier`, `Item.GetDespawnDuration` — время по редкости.

@@ -20,16 +20,16 @@ code: [RidableHorse.cs, HorseBreed.cs, HorseModifiers.cs, HorseSaddle.cs, HorseS
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 400 × множитель породы (у Bay 440) | `startHealth` в префабе ridablehorse, `HorseBreed.maxHealth`, `RidableHorse.ApplyBreedInternal` |
-| Базовая защита | фактически 0 % (см. «Нюансы») | `baseProtection` = `horse_base_protection`, затирается в `EquipmentUpdate` |
-| Выносливость | максимум 60, при спауне 30 / ядро 30 | `maxStamina`, `currentStamina`, `currentMaxStamina` в префабе |
-| Слоты снаряжения | 4 | `equipmentSlots` в префабе |
-| Хранилище | 0 слотов без снаряжения, контейнер до 48 | `RidableHorse.CreateStorageInventory`, `EquipmentUpdate` |
-| Сиденья | 0 / 1 / 2 — по седлу | `RidableHorse.GetSeatCapacity` |
-| Распад | 180 мин под крышей, 360 мин снаружи | `ridablehorse.decayminutes` = 180, `RidableHorse.HorseDecay` |
-| Плотность спауна | 2 на км² | `ridablehorse.population` |
+| Параметр | Значение |
+|----------|----------|
+| HP | 400 × множитель породы (у Bay 440) |
+| Базовая защита | фактически 0 % (см. «Нюансы») |
+| Выносливость | максимум 60, при спауне 30 / ядро 30 |
+| Слоты снаряжения | 4 |
+| Хранилище | 0 слотов без снаряжения, контейнер до 48 |
+| Сиденья | 0 / 1 / 2 — по седлу |
+| Распад | 180 мин под крышей, 360 мин снаружи |
+| Плотность спауна | 2 на км² |
 
 ### Породы
 
@@ -44,7 +44,7 @@ code: [RidableHorse.cs, HorseBreed.cs, HorseModifiers.cs, HorseSaddle.cs, HorseS
 | Bay | **1,1** | 1 | 14 (50) |
 | Dapple Grey, Red Roan | 1 | 0,9 | 12,6 (45) |
 
-Поля `staminaDrain` и `maxStamina` у всех пород равны 1 и **в коде нигде не читаются** — порода
+Поля `staminaDrain` и `maxStamina` у всех пород равны 1 и **ни на что не влияют** — порода
 влияет только на HP и скорость галопа.
 
 ### Аллюры
@@ -248,7 +248,7 @@ Ragdoll лошади (`RagdollHorse`) можно отключить: `physics.al
 
 - **Базовая защита лошади не работает.** `ServerInit` копирует `horse_base_protection`
   (−25 % к порезам и колющим, иммунитет к AntiVehicle и Cannon) в новую `baseProtection`, но тут же
-  `EquipmentUpdate` делает `baseProtection.Clear()` и добавляет только броню. Исходник
+  `EquipmentUpdate` делает `baseProtection.Clear()` и добавляет только броню. Исходная защита
   (`baseHorseProtection`) больше нигде не используется. Голая лошадь имеет 0 % ко всему.
 - **Рестарт сервера почти всегда лечит лошадь.** При загрузке сначала `Spawn` → `ServerInit`
   ставит случайную породу, потом `Load` ставит сохранённое HP и вызывает `ApplyBreed(сохранённая)`.
@@ -285,16 +285,3 @@ Ragdoll лошади (`RagdollHorse`) можно отключить: `physics.al
 - Для боя: броня из знаков режет урон всаднику вдвое, но лошадь медленнее на 4,5 м/с.
 - Держите лошадь на улице у коновязи с едой: снаружи распад вдвое медленнее, еда отодвигает его.
 - В heavy plate на лошадь не сесть.
-
-## Где в коде
-
-- `RidableHorse.MovementsUpdate`, `GetCurrentMaxSpeed`, `IncrementGait`, `CanGallop` — движение и аллюры.
-- `RidableHorse.UpdateStamina`, `ReplenishStamina`, `ReplenishStaminaCore` — выносливость.
-- `RidableHorse.ReplenishFromFood`, `EatDroppedFood`, `EatFromHitch`, `UpdateDung` — еда и навоз.
-- `RidableHorse.EquipmentUpdate`, `EquipmentItemFilter`, `ItemModAnimalEquipment` — снаряжение.
-- `RidableHorse.SERVER_Claim`, `SERVER_RequestSaddleSwap`, `HorseSpawner.RespawnHorse` — покупка.
-- `RidableHorse.SetLeading`, `AIHorseInputProvider` — ведение; `HitchTrough` — коновязь.
-- `RidableHorse.TowAttach`, `TowingAttachment` — буксировка.
-- `RidableHorse.DoCollisionDamage`, `OnLanded`, `RagdollHorse`, `HorseDecay` — урон и распад.
-- `RidableHorse.OnDied`, `SetupCorpse`, `HorseCorpse` — смерть.
-- `HorseBreed`, `HorseModifiers` — породы и модификаторы еды.

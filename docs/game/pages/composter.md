@@ -18,14 +18,14 @@ code: [Composter.cs, ItemModCompostable.cs, CookableItemInfo.cs, ItemModCookable
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Слоты | 8, из них 5 входных | `inventorySlots`, `inputSlots` в префабе |
-| Скорость | 5 | `smeltSpeed` в префабе |
-| Время на 1 предмет | 300 «секунд печи» | `CookableItemInfo(ItemModCompostable).cookTime` = 300 |
-| Температура | 30 °C, окно 29–31 | `TemperatureType.Compost`, `lowTemp`/`highTemp` |
-| Топливо | не нужно | `CanRunWithNoFuel` |
-| Здоровье | 500 | `startHealth` |
+| Параметр | Значение |
+|----------|----------|
+| Слоты | 8, из них 5 входных |
+| Скорость | 5 |
+| Время на 1 предмет | 300 «секунд печи» |
+| Температура | 30 °C, окно 29–31 |
+| Топливо | не нужно |
+| Здоровье | 500 |
 
 ### Сколько удобрения даёт предмет
 
@@ -43,7 +43,7 @@ code: [Composter.cs, ItemModCompostable.cs, CookableItemInfo.cs, ItemModCookable
 | 0,05 | растительное волокно |
 | 0,01 | ягоды (все цвета) |
 
-Значения — `ItemModCompostable.TotalFertilizerProduced` в ассетах предметов (в коде по умолчанию 0,2).
+Значения — `ItemModCompostable.TotalFertilizerProduced` у предметов (по умолчанию 0,2).
 
 ## Поведение
 
@@ -66,7 +66,7 @@ code: [Composter.cs, ItemModCompostable.cs, CookableItemInfo.cs, ItemModCookable
 - **`server.composterUpdateInterval` почти не работает.** ConVar (по умолчанию 300) задаёт только
   стартовое время предмета при создании, а при попадании в компостер `BaseOven.OnItemAddedOrRemoved`
   сбрасывает его на жёсткие 300.
-- **Поле `CompostEntireStack` в коде не используется.**
+- **Поле `CompostEntireStack` ни на что не влияет.**
 - **Ягоды — худший компост:** 100 ягод → ~1 удобрение за 100 минут. Конский навоз — лучший:
   10 удобрения в минуту.
 - Удобрение в грядке тратится по одному на растение навсегда — 9 штук на большую грядку на весь
@@ -76,10 +76,3 @@ code: [Composter.cs, ItemModCompostable.cs, CookableItemInfo.cs, ItemModCookable
 
 - Кладите в компостер то, что дешевле всего: навоз, рыбу, тухлое мясо, гнилые овощи.
 - Не ставьте 5 стопок «для скорости» — смысла нет, достаточно одной.
-
-## Где в коде
-
-- `Composter` — флаги работы без топлива.
-- `CookableItemInfo(ItemModCompostable)` — 300 с, окно температуры 29–31.
-- `ItemModCookable.CycleCooking` — списание и выдача удобрения.
-- `BaseOven.Cook`, `IncreaseCookTime` — деление времени между стопками.

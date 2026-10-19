@@ -51,7 +51,7 @@ code: [SaveRestore.cs, World.cs, UserPersistance.cs, PlayerBlueprints.cs, WipeTi
 
 ### Что не переживает рестарт
 
-Собрано по коду и другим страницам. Общая причина почти везде одна: таймер считается от
+Общая причина почти везде одна: таймер считается от
 `Time.time` или `Time.realtimeSinceStartup`, которые после запуска сервера начинаются с нуля, и
 поле не пишется в `Save`.
 
@@ -120,7 +120,7 @@ code: [SaveRestore.cs, World.cs, UserPersistance.cs, PlayerBlueprints.cs, WipeTi
   Таймер лишь показывает ожидаемое время и сдвигает ивенты.
 - **«Раз в две недели» в cron.** Строка `1-7,15-21,29-31 * 4` задаёт и дни месяца, и день
   недели. В зависимости от того, как библиотека Cronos их объединяет, это 1-й, 3-й и (в длинных
-  месяцах) 5-й четверг; точная семантика зависит от Cronos и в коде Rust не проверяется.
+  месяцах) 5-й четверг; точная семантика зависит от Cronos, сам Rust её не проверяет.
 - **Простой сервера бесплатен для постройки.** Распад тикает от реального времени работы
   сервера. Ночь, проведённая сервером выключенным, базу не разрушает.
 
@@ -130,11 +130,3 @@ code: [SaveRestore.cs, World.cs, UserPersistance.cs, PlayerBlueprints.cs, WipeTi
 - Перед объявленным рестартом не тратьте перезарядку спальника и не ставьте блоки, которые
   хотите повернуть или снести: окна закроются.
 - Защищаясь от рейда в момент рестарта, помните: после него все спальники доступны сразу.
-
-## Где в коде
-
-- `SaveRestore.SaveRegularly`, `DoAutomatedSave`, `ShiftSaveBackups`, `Load`, `InitializeWipeId`.
-- `World.SaveFileName`, `World.MapFileName`.
-- `UserPersistance` (конструктор: имена файлов баз), `PlayerBlueprints`.
-- `WipeTimer.RecalculateWipeFrequency`, `BuildCronString`, `GetWipeTime`; `EventScheduleWipeOffset.RunSchedule`.
-- `EnvSync.Save` / `Load`; `DecayEntity.Save` / `OnDecay`.

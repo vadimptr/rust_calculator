@@ -4,21 +4,21 @@ title: Защита и «мягкая сторона»
 kind: mechanic
 group: Урон и рейд
 icon: ui/security
-summary: Защита — это 28 коэффициентов по типам урона из ассета ProtectionProperties; у блоков её задаёт грейд, а «мягкая сторона» — это дополнительная защита DirectionProperties, которая снимается, только если игрок бьёт в слабое место с обратной стороны.
+summary: Защита — это 28 коэффициентов по типам урона из профиля ProtectionProperties; у блоков её задаёт грейд, а «мягкая сторона» — это дополнительная защита DirectionProperties, которая снимается, только если игрок бьёт в слабое место с обратной стороны.
 related: [damage-system, explosions, building-grades, wall, foundation, repair, armor-clothing, explosive-ammo, c4, rocket, data-protection, data-building-blocks, data-entity-health]
 code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, BaseCombatEntity.cs, BuildingBlock.cs, BuildingGrade.cs, ConstructionGrade.cs, Workbench.cs, ItemModWorkbenchReinforced.cs]
 ---
 
 ## Кратко
 
-Защита объекта — ассет `ProtectionProperties` с массивом `amounts[28]`: по одному
+Защита объекта — профиль `ProtectionProperties` с массивом `amounts[28]`: по одному
 коэффициенту на каждый [[damage-system|тип урона]]. Урон каждого типа умножается на
 `1 − clamp(amount, −1, 1)`. Значение 0.9 по Explosion — это −90 % урона от взрывов.
 Значение 1 даёт полный иммунитет к этому типу.
 
 У строительного блока защита зависит от **грейда**: `BlockTwig`, `BlockWood`, `BlockStone`
 и `BlockMetal` (металл и МВК делят одну таблицу). Поверх неё действует **направленная** защита
-`DirectionProperties` с ассетом `BuildingShell`. Это и есть механизм «мягкой» и «твёрдой»
+`DirectionProperties` с профилем `BuildingShell`. Это и есть механизм «мягкой» и «твёрдой»
 стороны. Все числа — в [[data-protection]].
 
 ## Как работает
@@ -37,7 +37,7 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
   пулями: `BaseCombatEntity.PenetrationResistance` возвращает `baseProtection.density`, а без
   защиты 100. Насколько пуля теряет целостность при прохождении сквозь объект, считается
   в [[projectile-ballistics]].
-- Есть два служебных ассета: `Immortal.asset` и `ImmortalLowDensity.asset`.
+- Есть два служебных профиля: `Immortal.asset` и `ImmortalLowDensity.asset`.
   `ProtectionProperties.IsImmortal` считает объект с ними неуязвимым.
 
 ### Где берётся защита строительного блока
@@ -67,11 +67,11 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
 
 На префаб можно повесить один или несколько атрибутов `DirectionProperties`. У атрибута есть:
 - `bounds` — коробка слабого места в локальных координатах;
-- `extraProtection` — дополнительный ассет `ProtectionProperties`;
+- `extraProtection` — дополнительный профиль `ProtectionProperties`;
 - положение и направление `worldForward` внутри префаба.
 
 У всех строительных блоков, дверей, люков, внешних стен, решёток и шкафа `extraProtection` —
-один и тот же ассет **`BuildingShell`** — по описанию в самом ассете, он делает внешнюю сторону
+один и тот же профиль **`BuildingShell`** — по его описанию, он делает внешнюю сторону
 строительных блоков прочнее:
 
 | Тип урона | Generic | Bullet | Arrow | Slash | Blunt | Stab | Bite | Explosion | Heat |
@@ -163,11 +163,11 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
 |-----|----------|--------|
 | Формула | `урон_t × (1 − clamp(p_t, −1, 1))` | `ProtectionProperties.Scale` |
 | Порог «сзади» для слабого места | угол > 100° | `DirectionProperties.IsWeakspot` |
-| Защита от взрыва по грейдам | 0 / 10 / 50 / 50 / 50 % (солома / дерево / камень / металл / МВК) | ассеты `BlockTwig`, `BlockWood`, `BlockStone`, `BlockMetal` |
-| Допзащита твёрдой стороны | Bullet и Arrow 50 %, Slash / Blunt / Stab 90 %, Explosion 0 % | ассет `BuildingShell` в `DirectionProperties` |
+| Защита от взрыва по грейдам | 0 / 10 / 50 / 50 / 50 % (солома / дерево / камень / металл / МВК) | профили `BlockTwig`, `BlockWood`, `BlockStone`, `BlockMetal` |
+| Допзащита твёрдой стороны | Bullet и Arrow 50 %, Slash / Blunt / Stab 90 %, Explosion 0 % | профиль `BuildingShell` в `DirectionProperties` |
 | Коробка слабого места стены | 2.8 × 2.8 × 0.2 м, со смещением −0.1 по z | `DirectionProperties.bounds` префаба `wall` |
 | Броня верстака | −20 % Explosion | `explosiveResistance` предмета `workbench.upgrade.reinforced` |
-| `density` | 1 по умолчанию | ассет `ProtectionProperties` |
+| `density` | 1 по умолчанию | профиль `ProtectionProperties` |
 | Защита игрока от взрыва, максимум | 0.75 | `server.max_explosive_protection` |
 
 ## Нюансы
@@ -187,13 +187,13 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
   от Explosion нулевая, так что поставленный C4 выигрывает лишь на дробящей и колющей части
   (заметно только у сачеля: 51.5 вместо 37.5 + 0.4 + 1 = 38.9 по камню, будь удар «твёрдым»).
 - **Скин может иметь свою защиту.** Защита берётся из `ConstructionGrade` для пары
-  (грейд, скин). Технически у скина грейда может быть свой `BuildingGrade`, но в ассетах
+  (грейд, скин). Технически у скина грейда может быть свой `BuildingGrade`, но на деле
   тематические скины (кирпич, бруталист, контейнер и т. д.) используют те же HP, стоимость
   и защиту, что и базовый грейд (см. [[data-building-blocks]]).
 - **В приложении (замечание).** Калькулятор хранит в `splash.ts` готовый урон по грейду
   (`EXPLOSIVES[*].block`) и не делит его на тип урона и защиту. Модель верна, пока грейд
-  определяет один коэффициент. Для поставленных C4 и сачелей направление в коде действительно
-  не важно, и приложение это не моделирует — совпадает. Для ракеты это тоже совпадает с кодом:
+  определяет один коэффициент. Для поставленных C4 и сачелей направление действительно
+  не важно, и приложение это не моделирует — совпадает. Для ракеты это тоже совпадает с игрой:
   137.7 в приложении — это 275 × 0.5 + 75 × 0.02 × 0.1 = 137.65 по камню, то есть уже
   с `BuildingShell`. Для разрывных патронов сторона меняет только пулю: по камню 2.75
   с твёрдой и 3.0 с мягкой стороны за патрон, по металлу 2.5 с любой.
@@ -204,14 +204,3 @@ code: [ProtectionProperties.cs, DirectionProperties.cs, WeakpointProperties.cs, 
   Цель должна быть в поле зрения.
 - Для C4 и сачеля сторона не важна, ставьте туда, куда удобнее подойти.
 - Броня верстака продлевает жизнь верстаку при рейде: −20 % взрывного урона и +500–750 HP.
-
-## Где в коде
-
-- `ProtectionProperties.Scale`, `Get`, `IsImmortal`, поле `density`.
-- `BaseCombatEntity.ScaleDamage`, `BaseCombatEntity.Hurt` (шаг с `propDirection`), `PenetrationResistance`.
-- `DirectionProperties.IsWeakspot`, `CheckWeakpointRoof`, `IsWeakspotVisible`.
-- `WeakpointProperties.BlockWhenRoofAttached`.
-- `BuildingBlock.UpdateGrade`, `SetGrade`, `currentGrade`.
-- `BuildingGrade.damageProtecton`, `ConstructionGrade`.
-- `Workbench.ScaleDamage`, `ItemModWorkbenchReinforced.explosiveResistance`.
-- `DamageUtil.RadiusDamage`, `TimedExplosive.Explode` — откуда приходят HitInfo без `HitEntity` и `PointStart`.

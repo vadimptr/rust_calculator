@@ -151,11 +151,3 @@ code: [ConditionalModel.cs, ConstructionSkin.cs, ModelConditionTest_RoofLeft.cs,
   она снова станет прямоугольной.
 - Странные торцы посреди крыши почти всегда означают, что соседние сегменты разного грейда
   или повёрнуты не под ожидаемым углом.
-
-## Где в коде
-
-- `ConditionalModel.RunTests` — все тесты куска должны пройти.
-- `ConstructionSkin.DetermineConditionalModelState`, `ConstructionSkin.Refresh` — маска и создание кусков.
-- `BuildingBlock.ChangeSkin`, `BuildingBlock.RefreshNeighbours`, `BuildingBlock.SetConditionalModel` — пересчёт и каскад.
-- `NeighbourSocket.CanConnect`, `EntityLink` — как блоки узнают соседей.
-- `ModelConditionTest_*` — все тесты, по файлу на тест.

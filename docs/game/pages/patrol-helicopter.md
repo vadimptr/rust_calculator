@@ -21,15 +21,15 @@ code: [PatrolHelicopterAI.cs, PatrolHelicopter.cs, HelicopterTurret.cs, ConVar/P
 | Параметр | Значение | Откуда |
 |----------|----------|--------|
 | Время жизни | 30 мин | `heli.lifetimeMinutes` |
-| Макс. скорость | 42 м/с (в коде по умолчанию 25) | `PatrolHelicopterAI.maxSpeed`, префаб `patrolhelicopter` |
+| Макс. скорость | 42 м/с (по умолчанию 25) | `PatrolHelicopterAI.maxSpeed`, префаб `patrolhelicopter` |
 | Высота патруля | 50 м | `GetPlaneHeight` |
 | Радиус поиска целей | 150 м | `AddNewTargetsToList` |
 | Пулемёты | 2 (левый, правый), сектор ±80° от борта | `HelicopterTurret.InFiringArc` |
-| Урон пули | 11 × `heli.bulletDamageScale` (в коде по умолчанию 20) | `PatrolHelicopter.bulletDamage`, префаб |
-| Скорость пули | 350 м/с (в коде 250) | `PatrolHelicopter.bulletSpeed`, префаб |
+| Урон пули | 11 × `heli.bulletDamageScale` (по умолчанию 20) | `PatrolHelicopter.bulletDamage`, префаб |
+| Скорость пули | 350 м/с (по умолчанию 250) | `PatrolHelicopter.bulletSpeed`, префаб |
 | Разброс пулемёта | 2° | `heli.bulletAccuracy` |
-| Темп пулемёта | очередь 3 с, выстрел каждые 0,09 с (~33 выстрела), пауза 4 с | `HelicopterTurret` в префабе (`fireRate`, `burstLength`, `timeBetweenBursts`; в коде 0,125 / 3 / 3) |
-| Дальность пулемёта | 150 м (в коде по умолчанию 300) | `HelicopterTurret.maxTargetRange` в префабе |
+| Темп пулемёта | очередь 3 с, выстрел каждые 0,09 с (~33 выстрела), пауза 4 с | `HelicopterTurret` в префабе (`fireRate`, `burstLength`, `timeBetweenBursts`; по умолчанию 0,125 / 3 / 3) |
+| Дальность пулемёта | 150 м (по умолчанию 300) | `HelicopterTurret.maxTargetRange` в префабе |
 | Ракет в заходе | 11–12 (в «кружащем» заходе 9–27) | `StartStrafe`, `State_OrbitStrafe_Enter` |
 | Интервал ракет | 0,2 с (по кругу 0,5 с), разброс 3,9–4,1° | `timeBetweenRockets`, `FireRocket` |
 | Ящики | 4 (`maxCratesToSpawn` в префабе) | `PatrolHelicopter` |
@@ -134,13 +134,3 @@ code: [PatrolHelicopterAI.cs, PatrolHelicopter.cs, HelicopterTurret.cs, ConVar/P
   сбитых винта — это 10 000, то есть весь вертолёт.
 - Хотите избежать — снимите оружие с пояса и лишнюю одежду или нырните.
 - После падения ящики горят: ждите, пока огненные шары погаснут, или тушите их.
-
-## Где в коде
-
-- `PatrolHelicopterAI.UpdateTargetList`, `AddNewTargetsToList`, `PlayerVisible` — цели.
-- `BasePlayer.GetThreatLevel`, `BasePlayer.EnsureUpdated` — уровень угрозы.
-- `PatrolHelicopterAI.UpdateDangerZones`, `UpdateNoGoZones` — опасные и запретные зоны.
-- `PatrolHelicopterAI.StartStrafe`, `State_Strafe_Think`, `FireRocket` — ракетные заходы.
-- `HelicopterTurret.TurretThink` — пулемёты.
-- `PatrolHelicopterAI.Update`, `Retire` — отлёт по времени.
-- `PatrolHelicopterAI.State_Death_Enter`, `PatrolHelicopter.OnDied` — крушение и ящики.

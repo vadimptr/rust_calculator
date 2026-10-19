@@ -26,29 +26,29 @@ code: [AttackHelicopter.cs, AttackHelicopterRockets.cs, AttackHelicopterTurret.c
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| HP | 850 | `startHealth` в префабе `attackhelicopter.entity` |
-| Защита | `player_helicopter_protection` (как у миникоптера) | `baseProtection` |
-| Места | пилот (`attackhelidriver`), стрелок (`attackheligunner`) | `mountPoints` |
-| Бак | 1 слот низкосортного топлива | `fuel_storage_attackheli` |
-| Расход | 0,5 ед./с | `fuelPerSec` |
-| Шкала топлива | 283 (только отображение) | `fuelGaugeMax` |
-| Тяга | 8500 | `engineThrustMax` |
-| Момент (тангаж/рыскание/крен) | 8000 / 8000 / 5200 | `torqueScale` |
-| Подъёмная сила пропадает при наклоне | больше ~71° (`liftDotMax` = 0,33) | префаб |
-| Вертикальная доля тяги | 0,33 (у мини и скрап-хели 0,25) | `liftFraction` |
-| Отклик тяги | `thrustLerpSpeed` = 1 (у мини 4) | префаб |
-| Ракетный контейнер | 18 слотов: 0–11 ракеты (HV, зажигательные), 12–17 ловушки | `rockets_attackheli`, `AttackHelicopterRockets.ItemFilter` |
-| Темп ракет | 1 за 0,5 с, поочерёдно из левой и правой трубы | `timeBetweenRockets` |
-| Залп и перезарядка | 6 ракет, затем 8 с | `rocketsPerReload`, `reloadTime` |
-| Ловушки | 1 предмет → 2 ловушки, пауза 30 с | `timeBetweenFlares` |
-| Турель | 7 слотов: слот 0 — оружие, 1–6 — патроны | `turret_attackheli` |
-| Углы турели | рыскание ±90°, наклон от 3° вниз до 70° вниз | `turretYawClamp`, `turretPitchClamp` в префабе |
-| Цена у Airwolf | 2250 скрапа | `scrapCost` в `bandit_conversationalist` |
-| Ремонт | 1000 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар | чертёж предмета `attackhelicopter` |
-| Шредер | 500 скрапа × доля HP | `MagnetLiftable` |
-| Распад | 480 / 2880 мин | см. [[vehicles]] |
+| Параметр | Значение |
+|---|---|
+| HP | 850 |
+| Защита | `player_helicopter_protection` (как у миникоптера) |
+| Места | пилот (`attackhelidriver`), стрелок (`attackheligunner`) |
+| Бак | 1 слот низкосортного топлива |
+| Расход | 0,5 ед./с |
+| Шкала топлива | 283 (только отображение) |
+| Тяга | 8500 |
+| Момент (тангаж/рыскание/крен) | 8000 / 8000 / 5200 |
+| Подъёмная сила пропадает при наклоне | больше ~71° (`liftDotMax` = 0,33) |
+| Вертикальная доля тяги | 0,33 (у мини и скрап-хели 0,25) |
+| Отклик тяги | `thrustLerpSpeed` = 1 (у мини 4) |
+| Ракетный контейнер | 18 слотов: 0–11 ракеты (HV, зажигательные), 12–17 ловушки |
+| Темп ракет | 1 за 0,5 с, поочерёдно из левой и правой трубы |
+| Залп и перезарядка | 6 ракет, затем 8 с |
+| Ловушки | 1 предмет → 2 ловушки, пауза 30 с |
+| Турель | 7 слотов: слот 0 — оружие, 1–6 — патроны |
+| Углы турели | рыскание ±90°, наклон от 3° вниз до 70° вниз |
+| Цена у Airwolf | 2250 скрапа |
+| Ремонт | 1000 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар |
+| Шредер | 500 скрапа × доля HP |
+| Распад | 480 / 2880 мин |
 
 ### Ракеты вертолёта
 
@@ -130,7 +130,7 @@ HV-ракета по технике при прямом попадании: ми
 
 ## Нюансы
 
-- **Турель не стреляет вверх.** В коде по умолчанию наклон −15…70°, но в префабе
+- **Турель не стреляет вверх.** По умолчанию наклон −15…70°, но в префабе
   `turretPitchClamp` = (3, 70): стрелок бьёт только на 3° ниже горизонта и ниже, а по
   рысканию — только в передней полусфере (±90°). Вертолёт выше вас турелью не достать.
 - **Одна обычная ракета не сбивает боевой вертолёт.** 825 урона против 850 HP — не хватает
@@ -162,11 +162,3 @@ HV-ракета по технике при прямом попадании: ми
 - В турель ставьте пулемёт с запасом патронов в 6 слотах. При уничтожении вертолёта
   оружие выпадает вместе с патронами.
 - Полный ремонт с нуля — 500 фрагментов, двигатель выключен, через 30 с после урона.
-
-## Где в коде
-
-- `AttackHelicopter.PilotInput`, `PassengerInput`, `RPC_OpenGunnerView`, `RPC_OpenStorage`, `RPC_OpenTurret`, `RPC_SetRocketAmmoType`, `RPC_TriggerRocketReload`, `FilterServerProjectileAmmo`, `MarkAllMountedPlayersAsHostile`, `LaunchFlare`, `DoServerDestroy`.
-- `AttackHelicopterRockets.TryFireRocket`, `TryFireFlare`, `StartReload`, `IsReloading`, `ItemFilter`, `OnItemAddedOrRemoved`, `GetMinRocketSpeed`.
-- `AttackHelicopterTurret.InputTick`, `ClampEyeAngle`, `CanAcceptItem`, `IsValidWeapon`, `TryFireWeapon`.
-- `BaseMountable.TryFireProjectile`, `FireProjectile`; `ItemModProjectile.GetOverrideProjectile`.
-- `PlayerHelicopter.OnDied`, `DoRepair`; `BaseHelicopter.MovementUpdate`, `ProcessCollision`.

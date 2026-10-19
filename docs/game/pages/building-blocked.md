@@ -39,7 +39,7 @@ to <монумент>`, остальные — свои тексты. Общий
 Подробнее — в [[building-privilege]].
 
 Дальше `BuildingPrivlidge.CanBuild(player)`: вы в списке авторизованных, и у шкафа не стоит флаг
-`Flag_BlockAllFromBuilding` (`Reserved6`). В коде его никто не выставляет, но в ассетах он стоит
+`Flag_BlockAllFromBuilding` (`Reserved6`). Сама игра его не выставляет, но он стоит
 в поле `flags` префабов «трупов» шкафа режима softcore — `cupboard.tool.corpse`,
 `cupboard.tool.retro.deployed.corpse`, `cupboard.tool.shockbyte.deployed.corpse`
 (`flags` = 16400 = `Locked` + `Reserved6`). В зоне такого «трупа» не строит никто, даже
@@ -60,7 +60,7 @@ to <монумент>`, остальные — свои тексты. Общий
 
 - `IsBuildingBlockedByVehicle` — техника с собственной привилегией (`BaseVehicle.HasBuildingPrivilege`)
   ближе **2 м**, и вы в её привилегии не авторизованы. Сюда же относится станция постройки лодок.
-- `IsBuildingBlockedByEntity` — сущность с `EntityPrivilege` ближе **3 м**, в коде это
+- `IsBuildingBlockedByEntity` — сущность с `EntityPrivilege` ближе **3 м**, на деле это
   `LegacyShelter`, легаси-укрытие. Вы в нём не авторизованы — заблокировано.
 
 **Невидимые шкафы.** В режиме Softcore (`GameModeSoftcore`) при `StorageContainer.dropCorpseOnDeath`
@@ -76,7 +76,7 @@ to <монумент>`, остальные — свои тексты. Общий
   не авторизованы: `Cannot attach to unauthorized building`.
 
 Префаб может отключить эти проверки флагом `Construction.canBypassBuildingPermission`.
-По ассетам флаг включён у:
+Флаг включён у:
 
 - **всех четырёх полов** — `floor`, `floor.triangle`, `floor.frame`, `floor.triangle.frame`
   (и их лодочных вариантов);
@@ -111,12 +111,12 @@ Prevent Building плюс слой игроков на сервере.
 
 **Динамические зоны запрета** — те же объёмы, появляющиеся и исчезающие во время игры:
 
-| Источник | Как |
-|---|---|
-| Торговец-путешественник | `TravellingVendor.CreatePreventBuilding` — объём едет вместе с ним как дочерний объект |
-| Падение спутника | `SatelliteControlComputer.SpawnPreventBuildingVolume` резервирует место крушения. Место выбирается с отступом `satellite.site_clearance_radius` = 16 м от построек, зон запрета и зон безопасности |
-| Промышленные трубы | `IOEntity` вдоль каждой трубы ставит капсулы `ioentitypreventbuilding.prefab`. Ошибка `Blocked by industrial piping` |
-| `DynamicPreventBuilding` | Пустой класс-сущность, вся логика в коллайдере префаба |
+| Как |
+|---|
+| `TravellingVendor.CreatePreventBuilding` — объём едет вместе с ним как дочерний объект |
+| `SatelliteControlComputer.SpawnPreventBuildingVolume` резервирует место крушения. Место выбирается с отступом `satellite.site_clearance_radius` = 16 м от построек, зон запрета и зон безопасности |
+| `IOEntity` вдоль каждой трубы ставит капсулы `ioentitypreventbuilding.prefab`. Ошибка `Blocked by industrial piping` |
+| Пустой класс-сущность, вся логика в коллайдере префаба |
 
 **Замки и прочие «слотовые» деплои** (`Deployer.DoDeploy_Slot`) проверяют ещё и позицию
 игрока: если он стоит в зоне запрета монумента (`IsBuildBlockedByMonument`, сфера 0,1 м
@@ -144,7 +144,7 @@ Prevent Building плюс слой игроков на сервере.
   слой World.
 - **«В земле»:** `SocketMod_TerrainCheck` смотрит вниз на 3 м от точки. Попали в слой World —
   проверяется, чей коллайдер. Монумент или `NPCDwelling` → `Cannot be placed on monument`,
-  если у мода включён `preventWorldLayerInMonuments`. В ассетах он включён только у двойной
+  если у мода включён `preventWorldLayerInMonuments`. Он включён только у двойной
   деревянной баррикады `barricade.cover.wood_double`; у фундаментов, пандуса и стен он выключен,
   и скала монумента для них — обычная «земля». Тег `AllowBarricadePlacement` разрешает,
   `BlockBarricadePlacement` запрещает. Если коллайдеров нет, точка считается в земле, когда
@@ -164,7 +164,7 @@ Prevent Building плюс слой игроков на сервере.
   `Cannot build in the deep sea`.
 - **Вода:** ограничения на воду задаются модами `SocketMod_InWater` (в воде или не в воде)
   и `SocketMod_WaterDepth` (глубина в диапазоне, по умолчанию 2–4 м) на конкретных префабах.
-  Общего запрета строить в воде в коде нет. У блоков постройки модов `SocketMod_InWater` и
+  Общего запрета строить в воде нет. У блоков постройки модов `SocketMod_InWater` и
   `SocketMod_WaterDepth` нет: фундамент на мелководье ограничен только проверкой «в земле»
   (точки под водой, но ниже дна, считаются в земле).
 
@@ -219,13 +219,3 @@ Prevent Building плюс слой игроков на сервере.
 - Если пишет `Cannot build this close to …`, вы в объёме монумента. Объёмы невидимы, отходите,
   пока ошибка не пропадёт.
 - Ставьте шкаф сразу: без него нельзя снести неудачный блок, а соседи могут поворачивать ваши стены.
-
-## Где в коде
-
-- `BasePlayer.CanBuild`, `IsBuildingBlocked`, `IsBuildingAuthed`, `IsBuildingBlockedByVehicle`, `IsBuildingBlockedByEntity`, `IsBuildBlockedByMonument`.
-- `BaseEntity.GetBuildingPrivilege(OBB, …)` — поиск шкафа в 16 м.
-- `BuildingPrivlidge.CanBuild`, `BuildingManager.Building.GetDominatingBuildingPrivilege`.
-- `Construction.UpdatePlacement`, `TestPlacingCloseToRoad`, `TestPlacingThroughRock`.
-- `DeployVolume.CheckFlags`, `ConstructionErrors.GetBlockedByErrorFromCollider`, `PreventBuildingMonumentTag`.
-- `TravellingVendor.CreatePreventBuilding`, `SatelliteControlComputer.SpawnPreventBuildingVolume`, `IOEntity` (трубы), `BuildingBlock.CheckForPipes`.
-- `SocketMod_TerrainCheck`, `SocketMod_EnvironmentVolume`, `SocketMod_RoadCheck`, `SocketMod_InWater`, `SocketMod_WaterDepth`.

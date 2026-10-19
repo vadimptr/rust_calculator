@@ -33,17 +33,17 @@ code: [BaseSiegeWeapon.cs, Catapult.cs, CatapultAmmoContainer.cs, ItemModCatapul
 
 ### HP и защита
 
-| Объект | HP | Защита | Источник |
-|--------|----|--------|----------|
-| Катапульта | 500 | `SiegeWeaponProtection` | `startHealth` в префабе `catapult.entity` |
-| Баллиста на колёсах | 300 | `SiegeWeaponProtection` | префаб `ballista.entity` |
-| Стационарная баллиста | 250 | `SiegeWeaponProtection` | префаб `ballistagun.static.entity` |
-| Таран | 1000 | `SiegeWeaponProtection` | префаб `batteringram.entity` |
-| Голова тарана | 200 | `Immortal` (внешний урон не проходит) | префаб `batteringram.head` |
-| Осадная башня | 1000 | `SiegeWeaponProtection` | префаб `siegetower.entity` |
-| Подъёмные мостки башни (3 шт.) | 800 → выравниваются под HP башни | `Immortal` | префабы `siegetower.drawbridge_01..03` |
-| Каркас катапульты / тарана / башни / баллисты | 250 / 500 / 500 / 150 | `CarProtection` | префабы `*.constructable.entity` |
-| Осадный заряд на земле | 10 | `DeployedSiegeExplosive`, но урон всё равно обнуляется (см. ниже) | префабы `explosivesiegedeployable`, `flammablesiegedeployable` |
+| Объект | HP | Защита |
+|--------|----|--------|
+| Катапульта | 500 | `SiegeWeaponProtection` |
+| Баллиста на колёсах | 300 | `SiegeWeaponProtection` |
+| Стационарная баллиста | 250 | `SiegeWeaponProtection` |
+| Таран | 1000 | `SiegeWeaponProtection` |
+| Голова тарана | 200 | `Immortal` (внешний урон не проходит) |
+| Осадная башня | 1000 | `SiegeWeaponProtection` |
+| Подъёмные мостки башни (3 шт.) | 800 → выравниваются под HP башни | `Immortal` |
+| Каркас катапульты / тарана / башни / баллисты | 250 / 500 / 500 / 150 | `CarProtection` |
+| Осадный заряд на земле | 10 | `DeployedSiegeExplosive`, но урон всё равно обнуляется (см. ниже) |
 
 Защита `SiegeWeaponProtection` (доля урона, которая гасится, — см. [[data-protection]]):
 
@@ -138,7 +138,7 @@ HP каркаса растёт пропорционально вложенном
     взводе. Собственная `speed` снарядов (12–18) меньше, поэтому работает именно эта формула;
   - гравитация снаряда × `lerp(2, 1, f)`: при неполном взводе снаряд падает вдвое круче.
   Ориентир: при полном взводе пропановая бомба (гравитация ×1.3) под 45° пролетела бы
-  `30² / (9.81 × 1.3)` ≈ 70 м. Реальный угол задаёт модель, в коде его нет.
+  `30² / (9.81 × 1.3)` ≈ 70 м. Реальный угол задаёт модель.
 - **Scattershot** вместо одного снаряда выпускает **7 обломков** (`ItemModCatapultBoulder`):
   3 мелких, 3 средних и 1 большой, с разбросом ±6° и случайной гравитацией ±5/10/20 %.
 - **Отдача**: импульс назад `масса × 1` (×5, если стоит на тормозе) и подброс вверх
@@ -170,7 +170,7 @@ HP каркаса растёт пропорционально вложенном
 - Стрелок садится в турель `BallistaGun`. Сесть можно, только если под обеими сторонами
   есть земля (`AttemptMount` → `HasGround`). Если баллиста едет быстрее 5 м/с или
   опрокидывается, стрелка выкидывает.
-- **Перезарядка**: `reloadTime` = **4 с** (в префабах; в коде по умолчанию 3). Болт берётся
+- **Перезарядка**: `reloadTime` = **4 с** (в префабах; по умолчанию 3). Болт берётся
   из инвентаря стрелка в конце перезарядки (`LoadAmmo`), выстрел возможен при прогрессе
   ≥ 0.94. Стрелять можно не чаще раза в секунду. **В безопасной зоне выстрел не проходит**
   (`IsFireRPCInvalid` → `InSafeZone`).
@@ -190,7 +190,7 @@ HP каркаса растёт пропорционально вложенном
 
 - Удар (`SERVER_WantsAttack`) делает только водитель. Нужно: двигатель включён, голова
   не сломана, таран не «занят» и водитель не в безопасной зоне. Цикл — `timeBetweenFire` =
-  **4.5 с** (префаб; в коде по умолчанию 2). Урон приходит через **2.5 с** после нажатия
+  **4.5 с** (префаб; по умолчанию 2). Урон приходит через **2.5 с** после нажатия
   (2 с замах + 0.5 с).
 - В момент удара ищутся все объекты в шаре **радиусом 1 м** у точки удара с прямой
   видимостью от неё (`ScanEntities`, `FilterEntities`). **Каждый** получает
@@ -266,18 +266,18 @@ Firebomb и пропановую бомбу можно не только зар�
 
 С учётом `SiegeWeaponProtection`, при попадании в полную силу:
 
-| Источник | Урон по орудию | Катапульта 500 | Таран / башня 1000 |
-|----------|---------------|----------------|--------------------|
-| C4, см. [[c4]] (550 взрыв) | 330 | 2 | 4 |
-| Пропановая бомба | 165 + 3.75 = 168.75 | 3 | 6 |
-| Пропановый заряд на земле | 96 + 3.75 ≈ 99.75 | 6 | 11 |
-| Удар тарана | 60 + 2.5 = 62.5 | 8 | 16 |
-| Firebomb (без шаров) | 65 | 8 | 16 |
-| Scattershot, все 7 обломков | ≈ 134 | 4 | 8 |
-| Piercer (≤ 10 м) | 4 + 45 = 49 | 11 | 21 |
-| Incendiary bolt | 15 + до 45.5 жаром | — | — |
-| Pitchfork / Hammerhead | 13.5 / 13.75 | 38 / 37 | 75 / 73 |
-| Огненный шар | 5 × 0.2 × 1.3 = 1.3 ед./с | — | — |
+| Урон по орудию | Катапульта 500 | Таран / башня 1000 |
+|---------------|----------------|--------------------|
+| 330 | 2 | 4 |
+| 165 + 3.75 = 168.75 | 3 | 6 |
+| 96 + 3.75 ≈ 99.75 | 6 | 11 |
+| 60 + 2.5 = 62.5 | 8 | 16 |
+| 65 | 8 | 16 |
+| ≈ 134 | 4 | 8 |
+| 4 + 45 = 49 | 11 | 21 |
+| 15 + до 45.5 жаром | — | — |
+| 13.5 / 13.75 | 38 / 37 | 75 / 73 |
+| 5 × 0.2 × 1.3 = 1.3 ед./с | — | — |
 
 ## Нюансы
 
@@ -320,15 +320,15 @@ Firebomb и пропановую бомбу можно не только зар�
 - **Часы распада перепутаны.** `ServerInit` пишет в `lastUseTime` значение
   `realtimeSinceStartup`, а `DecayTick` сравнивает его с `Time.time`. Пауза после спавна
   поэтому может быть длиннее 5 мин.
-- **Значения в коде и в префабах расходятся.** У тарана `timeBetweenFire` 2 → 4.5 с, у баллисты
-  `reloadTime` 3 → 4 с. У осадной башни `uprightAngle` 10 → 0.6: в коде это поле сравнивается
+- **Значения по умолчанию и в префабах расходятся.** У тарана `timeBetweenFire` 2 → 4.5 с, у баллисты
+  `reloadTime` 3 → 4 с. У осадной башни `uprightAngle` 10 → 0.6: это поле сравнивается
   с `transform.up.y`, а не с углом, так что 10 по умолчанию было бы бессмысленно.
 - **Рейд-окно (Softcore)** не защищает мостки осадной башни (`RaidWindow`: исключение для
   `SiegeTowerDoor`).
 - **Эпоха сервера.** `server.era` принимает значения `siege` и `medieval` (одна и та же эпоха).
   У болтов баллисты в префабе `era = 10`, у орудий и снарядов катапульты `era = 0`, то есть
-  они доступны в любой эпохе. Какой эпохе соответствует 10, по коду установить
-  не удалось: перечисления `Era` в нём нет.
+  они доступны в любой эпохе. Какой эпохе соответствует 10,
+  установить не удалось.
 
 ## На практике
 
@@ -344,16 +344,3 @@ Firebomb и пропановую бомбу можно не только зар�
   Пули и ближний бой пробивают только 4–5 %.
 - Лошадью орудие тянется на рыси. Перед сцепкой выровняйте лошадь по оси орудия.
 - Брошенное орудие под открытым небом сгниёт за 10 ч, под крышей — за 100 ч.
-
-## Где в коде
-
-- `BaseSiegeWeapon.DecayTick`, `SERVER_StartPulling`, `DoPullAction`, `CanPushNow`, `CanPullNow`, `OnTowAttach`; ConVar `basesiegeweapon.outsidedecayminutes`.
-- `Catapult.Fire`, `SERVER_WantsFire`, `SERVER_ReloadStart`, `ReloadProgress`, `FireRecoil`, `AttemptMount`, `IsArmed`; админ-команды `catapult.reload`, `catapult.fire`.
-- `ItemModCatapultBoulder` — обломки Scattershot; `BaseMountable.FireProjectile` — формула скорости.
-- `BallistaGun.SERVER_ReloadStart`, `ReloadProgress`, `LoadAmmo`, `IsFireRPCInvalid`, `AttemptMount`; `Ballista.VehicleFixedUpdate`, `DoPushAction`.
-- `BatteringRam.SERVER_WantsAttack`, `ScanEntities`, `DamageEntities`, `CanAttack`; `BatteringRamHead.TakeDamage`, `CanBeUsed`; ConVar `batteringram.maxbuildingblockgrade`.
-- `SiegeTower.Hurt`, `SetupDoor`, `UprightIfRaise`, `SV_RequestRaise`, `CanPushNow`; `SiegeTowerDoor.Hurt`, `OnDied`.
-- `DeployableSiegeExplosive.Hurt`, `Ignite`, `DoSplash`, `ActuallyExplode`, `OnGroundMissing`.
-- `ConstructableEntity.DoRepair`, `CanRepair`, `OnConstructionComplete`.
-- `RidableHorse.SERVER_RequestTow`, `TowAttach`, `GetCurrentAcceleration`, `IncrementGait`; `TowingAttachment.AttachTo`.
-- `FireBall.DoRadialDamage` — множитель 0.2 по осадным орудиям; `ItemModProjectileRadialDamage.ServerProjectileHit`.

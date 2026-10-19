@@ -20,14 +20,14 @@ code: [FluidSwitch.cs, ElectricSwitch.cs, Splitter.cs, IOEntity.cs]
 
 ## Характеристики
 
-| Параметр | Переключатель | Разветвитель | Источник |
-|----------|---------------|--------------|----------|
-| Здоровье | 200 | 200 | `startHealth` в префабах |
-| Входы | Fluid Input, Toggle (ток), Pump Power (ток) | Water In | слоты префабов |
-| Выходы | Fluid Output | Water Out 1–3 | слоты префабов |
-| Потребление | 0 | 0 | `ConsumptionAmount` |
-| Гравитационный источник | да | нет | `IsGravitySource` |
-| Потребитель в расчёте расхода | нет (0) | нет | `DesiredPower` = 0 / `BlockFluidDraining` |
+| Параметр | Переключатель | Разветвитель |
+|----------|---------------|--------------|
+| Здоровье | 200 | 200 |
+| Входы | Fluid Input, Toggle (ток), Pump Power (ток) | Water In |
+| Выходы | Fluid Output | Water Out 1–3 |
+| Потребление | 0 | 0 |
+| Гравитационный источник | да | нет |
+| Потребитель в расчёте расхода | нет (0) | нет |
 
 ## Поведение
 
@@ -39,7 +39,7 @@ code: [FluidSwitch.cs, ElectricSwitch.cs, Splitter.cs, IOEntity.cs]
 - **Выключен** — `AllowLiquidPassthrough` возвращает `false`, а поток на выходе 0. Расчёт
   расхода и перелива за кран не проходит: всё, что ниже, не получает типа воды и не работает.
 - **Pump Power.** Любой ток > 0 на слоте 2 ставит флаг `Reserved6`, и кран перестаёт подчиняться
-  гравитации (`DisregardGravityRestrictionsOnLiquid`). Отдельного расхода тока в коде нет —
+  гравитации (`DisregardGravityRestrictionsOnLiquid`). Отдельного расхода тока нет —
   хватает 1 ед.
 - Переключатель считается **гравитационным источником**: при переливе высота следующей ёмкости
   сравнивается с его выходом, а не с исходной бочкой.
@@ -75,8 +75,3 @@ code: [FluidSwitch.cs, ElectricSwitch.cs, Splitter.cs, IOEntity.cs]
 - Бочка на земле → переключатель с Pump Power от батареи → бак на втором этаже: работает.
 - Разветвитель ставьте ниже потребителей или на одном уровне. Подъём больше 1 м от его выхода —
   ветка без воды.
-
-## Где в коде
-
-- `FluidSwitch.IOStateChanged`, `AllowLiquidPassthrough`, `DisregardGravityRestrictionsOnLiquid`.
-- `Splitter.GetPassthroughAmount`.

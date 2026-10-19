@@ -26,26 +26,26 @@ code: [ScrapTransportHelicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicop
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| HP | 1000 | `startHealth` в префабе `scraptransporthelicopter` |
-| Защита | `player_large_helicopter_protection` | `baseProtection` в префабе |
-| Сидячих мест | 2: пилот (`transporthelipilot`) и второй пилот | `mountPoints` в префабе |
-| Пассажиры в отсеке | стоят, прицепляются триггером `TriggerParentEnclosed` (спящие тоже) | дочерний `trigger` в префабе |
-| Бак | 1 слот низкосортного топлива; открывается с 5 м | `fuel_storage_scrapheli`, `LootDistanceOverride = 5` |
-| Расход | 0,5 ед./с | `fuelPerSec` в префабе |
-| Шкала топлива | 500 (только отображение) | `fuelGaugeMax` |
-| Тяга | 17 500 | `engineThrustMax` |
-| Момент (тангаж/рыскание/крен) | 8000 / 8000 / 4000 | `torqueScale` |
-| Тензор инерции | (19082, 14356, 7940), жёстко в коде | `ScrapTransportHelicopter.ServerInit` |
-| Подъёмная сила пропадает при наклоне | больше 60° (`liftDotMax` = 0,5) | префаб |
-| Колёса на земле | мотор 750, тормоз 2500 | `motorForceConstant`, `brakeForceConstant` |
-| Ловушки | 1 слот, пауза 30 с | `flares_playerheli` |
-| Цена у Airwolf | 1250 скрапа | `scrapCost` в `bandit_conversationalist` |
-| Ремонт | 1500 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар | чертёж `scrapheli.repair.item` |
-| Шредер | 300 скрапа × доля HP | `MagnetLiftable` в префабе |
-| Распад | 480 / 2880 мин | `playerhelicopter.*decayminutes`, см. [[vehicles]] |
-| Природный спаун | нет (`scraptransporthelicopter.population` = 0) | ConVar |
+| Параметр | Значение |
+|---|---|
+| HP | 1000 |
+| Защита | `player_large_helicopter_protection` |
+| Сидячих мест | 2: пилот (`transporthelipilot`) и второй пилот |
+| Пассажиры в отсеке | стоят, прицепляются триггером `TriggerParentEnclosed` (спящие тоже) |
+| Бак | 1 слот низкосортного топлива; открывается с 5 м |
+| Расход | 0,5 ед./с |
+| Шкала топлива | 500 (только отображение) |
+| Тяга | 17 500 |
+| Момент (тангаж/рыскание/крен) | 8000 / 8000 / 4000 |
+| Тензор инерции | (19082, 14356, 7940), задан жёстко |
+| Подъёмная сила пропадает при наклоне | больше 60° (`liftDotMax` = 0,5) |
+| Колёса на земле | мотор 750, тормоз 2500 |
+| Ловушки | 1 слот, пауза 30 с |
+| Цена у Airwolf | 1250 скрапа |
+| Ремонт | 1500 фрагментов × 0,5 × доля потерянного HP, до 50 HP за удар |
+| Шредер | 300 скрапа × доля HP |
+| Распад | 480 / 2880 мин |
+| Природный спаун | нет (`scraptransporthelicopter.population` = 0) |
 
 ### Защита `player_large_helicopter_protection`
 
@@ -145,10 +145,3 @@ code: [ScrapTransportHelicopter.cs, PlayerHelicopterWithFlares.cs, PlayerHelicop
 - От ПВО скрап-хели живёт дольше всех вертолётов игроков (11 ракет), но против ракет и C4
   (×3) он так же уязвим.
 - Полный ремонт с нуля — 750 фрагментов, по 50 HP за удар (20 ударов).
-
-## Где в коде
-
-- `ScrapTransportHelicopter.ServerInit`, `OnFlagsChanged`, `CanPushNow`, `GetDamageMultiplier`.
-- `BaseHelicopter.VehicleFixedUpdate` (`killTriggers`), `MovementUpdate`, `ProcessCollision`.
-- `TriggerHurtNotChild.IsInterested`, `OnTick`; `TriggerParentEnclosed`.
-- `PlayerHelicopter.OnDied`, `DoRepair`; `LargeShredder.ServerUpdate`, `CreateShredResources`.

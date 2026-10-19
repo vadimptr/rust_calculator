@@ -20,21 +20,21 @@ code: [WaterCatcher.cs, WaterCatcherCollectRate.cs, Climate.cs, LiquidContainer.
 вода = ceil(maxItemToCreate × коэф)
 ```
 
-Коэффициенты лежат в ассете `Water Catcher Collection Rates` (`WaterCatcherCollectRate`).
-В коде по умолчанию дождь — 1, а в ассете — **500**.
+Коэффициенты задаёт профиль `Water Catcher Collection Rates` (`WaterCatcherCollectRate`).
+По умолчанию дождь — 1, а в профиле — **500**.
 
 ## Характеристики
 
-| Параметр | Малый | Большой | Источник |
-|----------|-------|---------|----------|
-| `maxItemToCreate` | 10 | 30 | префабы `water_catcher_small` / `_large` |
-| Ёмкость | 10000 | 50000 | `maxStackSize` |
-| Поток на выходе | 6 | 12 | `maxOutputFlow` |
-| Перелив за ~2 с | 12 | 6 | `autofillTickAmount` |
-| Радиус проверки неба | 0,5 м | 1 м | `rainTestSize` |
-| Здоровье | 200 | 300 | `startHealth` |
+| Параметр | Малый | Большой |
+|----------|-------|---------|
+| `maxItemToCreate` | 10 | 30 |
+| Ёмкость | 10000 | 50000 |
+| Поток на выходе | 6 | 12 |
+| Перелив за ~2 с | 12 | 6 |
+| Радиус проверки неба | 0,5 м | 1 м |
+| Здоровье | 200 | 300 |
 
-Коэффициенты ассета: `baseRate` 0,25, `fogRate` 2, `rainRate` 500, `snowRate` 0,5.
+Коэффициенты профиля: `baseRate` 0,25, `fogRate` 2, `rainRate` 500, `snowRate` 0,5.
 
 ### Сколько воды в минуту
 
@@ -80,8 +80,3 @@ code: [WaterCatcher.cs, WaterCatcherCollectRate.cs, Climate.cs, LiquidContainer.
 - Ставьте сборники под открытым небом не в арктике и подключайте к бочке: в ливень лишняя вода
   уйдёт в бочку, а не будет потеряна.
 - Для фермы на дожде один большой сборник с бочкой заменяет насос.
-
-## Где в коде
-
-- `WaterCatcher.CollectWater`, `AddResource`, `CheckPushLiquid`, `TestIsOutside`.
-- `Climate.GetRain`, `GetSnow`, `GetFog`.

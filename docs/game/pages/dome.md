@@ -26,7 +26,7 @@ code: [WaterCatcher.cs, OilSwitchBroadcast.cs, TimerSwitch.cs, PuzzleReset.cs]
 2. где-то на сервере активен топливный рубильник (`OilSwitchBroadcast`): на
    [[oil-rig|нефтевышках]] (множитель 0.5 малая, 1.0 большая) или в префабах
    `spheretankfuelswitch` (1.0) и `spheretankfuelswitch.small` (0.5) — по названию это рубильники
-   «резервуара», в выгрузке они лежат отдельными префабами; их генераторы требуют стадии 3.
+   «резервуара», это отдельные префабы; их генераторы требуют стадии 3.
 
 Множители всех активных рубильников складываются и умножают выработку. После включения
 насос прогревается `WaterCatcher.OilProductionStartDelay = 900` с. Рубильник держится
@@ -37,7 +37,3 @@ code: [WaterCatcher.cs, OilSwitchBroadcast.cs, TimerSwitch.cs, PuzzleReset.cs]
 - Множитель глобальный: рубильник, включённый на нефтевышке, разгоняет насосы Купола, даже
   если на Куполе никого нет.
 - Без хотя бы одного тяжёлого предохранителя на Электростанции насосы стоят.
-
-## Где в коде
-
-- `WaterCatcher.OnOilSwitchToggled`, `ToggleProducing`; `OilSwitchBroadcast.GetHasPower`.

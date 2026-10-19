@@ -21,7 +21,3 @@ code: [PuzzleReset.cs, CardReader.cs, ItemBasedFlowRestrictor.cs]
 | Бочки | 15 (4 одноразовых) |
 | Пазлы | главный: 1800 с, r20, радиационный сброс и пауза до лута; ещё пазлы r20 и r130 и угольная башня (r130), все 1800 с |
 | Комната энергосети | стадия 2 |
-
-## Где в коде
-
-- `PuzzleReset`, `CardReader` префабов `trainyard_1` и `coaling_tower`.

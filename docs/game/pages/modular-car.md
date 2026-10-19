@@ -26,11 +26,11 @@ code: [ModularCar.cs, BaseModularVehicle.cs, BaseVehicleModule.cs, VehicleModule
 
 ### Шасси
 
-| Шасси | Сокетов | HP предмета | Ремонт по рецепту | Источник |
-|-------|---------|-------------|-------------------|----------|
-| Small Chassis (`vehicle.chassis.2mod`) | 2 | 200 | 20 МВК, 6 шестерней, 4 пружины | `condition.max` и `ItemBlueprint` предмета |
-| Medium Chassis (`vehicle.chassis.3mod`) | 3 | 250 | 30 МВК, 8 шестерней, 4 пружины | то же |
-| Large Chassis (`vehicle.chassis.4mod`) | 4 | 300 | 40 МВК, 8 шестерней, 4 пружины | то же |
+| Шасси | Сокетов | HP предмета | Ремонт по рецепту |
+|-------|---------|-------------|-------------------|
+| Small Chassis (`vehicle.chassis.2mod`) | 2 | 200 | 20 МВК, 6 шестерней, 4 пружины |
+| Medium Chassis (`vehicle.chassis.3mod`) | 3 | 250 | 30 МВК, 8 шестерней, 4 пружины |
+| Large Chassis (`vehicle.chassis.4mod`) | 4 | 300 | 40 МВК, 8 шестерней, 4 пружины |
 
 Рецепты шасси не крафтятся (`userCraftable = 0`) и не изучаются. Они нужны только для расчёта
 цены ремонта. HP шасси работает, только пока на нём нет модулей: тогда включается защита
@@ -244,7 +244,7 @@ Cannon −100 %). От пуль это **не** защищает: брониро
 - Покупка: ни у одного продавца транспорта (`VehicleSpawner` в Bandit Camp, рыбацких
   деревнях, конюшнях) машин в списке нет. Рецепты шасси не крафтятся, а кнопка «собрать
   шасси» есть только в клиентском интерфейсе (`VehicleEditingPanel`); серверного обработчика у
-  неё нет. Машины берутся только из природного спауна. В таблицах лута есть ассеты
+  неё нет. Машины берутся только из природного спауна. В таблицах лута есть предметы
   «2module car chassis» и т.п.; где они выпадают, не установлено.
 - Природный спаун: `modularcar.population` = 3 на км². Префабы `2/3/4module_car_spawned`
   выбирают случайный пресет из 9 / 15 / 16 вариантов (`ModularCarPresetConfig`). Во всех
@@ -270,10 +270,10 @@ Cannon −100 %). От пуль это **не** защищает: брониро
   максималку, и в экономию. Самые выгодные детали для апгрейда — поршни и карбюратор.
 - **Пустой слот обнуляет весь двигатель**, а не только свою характеристику. Сломанная деталь —
   тоже. При этом урон по деталям распределяется и на пустые слоты (веса берутся по `capacity`).
-- **Модуль двигателя с 0 HP**: доля экономии становится 0, а расход в коде делится на неё
+- **Модуль двигателя с 0 HP**: доля экономии становится 0, а расход делится на неё
   (`num /= PerformanceFractionFuelEconomy`). Если на машине есть второй рабочий двигатель и
   машина заведена, у мёртвого двигателя получается деление на ноль. Что происходит с топливом
-  в этом случае, по коду однозначно не видно.
+  в этом случае, неясно.
 - **Распад бьёт по самому прочному модулю.** Бронированная кабина (700 HP) заставляет
   платформу на 250 HP гнить со скоростью 0,81 HP/мин вместо 0,29. Снаружи такая платформа
   сгниёт примерно за 5 часов, а бронированная кабина — за 14,4.
@@ -308,17 +308,3 @@ Cannon −100 %). От пуль это **не** защищает: брониро
 - Чтобы угнать запертую машину: снять замок на своём подъёмнике или сбить кабину до 20 % HP и
   уничтожить замок.
 - Бронированные модули ставьте ради HP (700 / 675) и укрытия, а не ради «брони» пассажиров.
-
-## Где в коде
-
-- `ModularCar.Hurt`, `ModuleHurt`, `PropagateDamageToModules`, `DoCollisionDamage`, `OnDied`, `DecayTick`, `DoDecayDamage` — урон, смерть, остов, распад.
-- `ModularCar.GetMaxDriveForce`, `RollOffDriveForce`, `GetMaxForwardSpeed`, `SpawnPreassignedModules`, `HandleAdminBonus`, `CanBeLooted`, `CanPushNow`.
-- `VehicleModuleEngine.GetPerformanceFraction`, `GetMaxDriveForce`, `GetAdjustedDriveForce`, `VehicleFixedUpdate` — формулы двигателя и расхода.
-- `EngineStorage.RefreshLoadoutData`, `GetTierValue`, `OnModuleDamaged`; `EngineItemTypeEx` — детали.
-- `VehicleModuleStorage.TrySpawnExplosion`, `CanBeMovedNowOnVehicle`; `LiquidContainerCrude.CanAcceptItem`.
-- `VehicleModuleSeating.ScaleDamageForPlayer`, `PlayerCanDestroyLock`, `RPC_DestroyLock`; `VehicleModuleTaxi.CanKickPassengers`.
-- `ModularCarCodeLock.PlayerCanUseThis`, `TryOpenWithCode`, `CheckEnableCentralLocking`.
-- `ModularCarGarage.FixedUpdate`, `RPC_RequestAddLock`, `RPC_RequestRemoveLock`, `RPC_RequestNewCode`, `RPC_RepairItem`, `RPC_StartDestroyingChassis`, `Server_RequestFuelExtract`, `UpdateOccupantMode`.
-- `GroundVehicle.ProcessCollision`, `QueueCollisionDamage`, `OnHurtTriggerOccupant`; `TriggerHurtNotChild.OnTick`.
-- `CarPhysics.FixedUpdate`, `ComputeDriveForce`; `BaseModularVehicle.AddMass`, `MountEligable`.
-- ConVar: `modularcar.population`, `modularcar.outsidedecayminutes`, `vehicle.carwrecks`, `vehicle.vehiclesdroploot`.

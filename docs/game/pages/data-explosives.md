@@ -4,12 +4,10 @@ title: Таблица: взрывчатка и ракеты
 kind: data
 group: Урон и рейд
 icon: explosive.timed
-summary: Урон по типам, радиус, таймер и шанс осечки для всей взрывчатки, ракет и снарядов из ассетов игры.
+summary: Урон по типам, радиус, таймер и шанс осечки для всей взрывчатки, ракет и снарядов.
 related: [explosions, c4, rocket, satchel-charge, beancan-grenade, explosive-ammo, data-protection]
 code: [TimedExplosive.cs, DudTimedExplosive.cs, ServerProjectile.cs]
 ---
-
-> Таблица собрана автоматически из ассетов сервера Rust от 2026-10-16 скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.
 
 ## Как читать
 

@@ -43,7 +43,3 @@ code: [PuzzleReset.cs, SpawnGroup.cs, NPCSpawner.cs, CardReader.cs]
 
 - Синяя карта открывает гаражи; красная карта лежит на базе — заберите её первой.
 - Защита 10 закрывает все зоны базы.
-
-## Где в коде
-
-- `PuzzleReset` (базы и гаражей), `SpawnGroup.Clear` (`setFreeIfMovedBeyond`), `NPCSpawner`.

@@ -20,7 +20,7 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
 Если стабильность падает ниже `stability.collapse` = 0.05 (5%), блок разрушается. Его соседи,
 стоящие на нём, пересчитываются — и обрушение идёт волной.
 
-Важное следствие из кода: **грейд (солома, дерево, камень, металл, МВК) на стабильность не влияет**.
+Важное следствие: **грейд (солома, дерево, камень, металл, МВК) на стабильность не влияет**.
 В формуле нет ни HP, ни грейда — только геометрия опор и коэффициенты сокетов из префабов.
 
 ## Как работает
@@ -34,8 +34,8 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
 - `StabilitySocket` — невидимый сокет, который ни во что не «ставится» (`TestTarget` всегда `false`),
   а только ловит пересечение с чужим сокетом (`CanConnect` проверяет пересечение коробок `OBB`).
 
-У каждого такого сокета есть поле `support` в диапазоне 0…1 (по умолчанию 1). В коде чисел нет,
-они в префабах. Значения «пап» из ассетов:
+У каждого такого сокета есть поле `support` в диапазоне 0…1 (по умолчанию 1). Конкретные числа
+заданы в префабах. Значения «пап»:
 
 | Блок | Опорные «папы» и `support` |
 |---|---|
@@ -75,11 +75,11 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
 Для каждой опоры выбирается **ровно один** блок-опора, даже если к сокету подключено несколько
 блоков (`Support.SupportEntity`). Выбор — по наименьшему «расстоянию до земли»
 (`cachedDistanceFromGround`, число блоков до фундамента). Альтернативный режим «брать самую
-стабильную опору» (`Stability.support_highest_stability`) в коде есть, но это обычное статическое
+стабильную опору» (`Stability.support_highest_stability`) существует, но это обычное статическое
 поле без `[ServerVar]`, то есть консолью сервера его не включить; по умолчанию `false`.
 
 Пропускаются опоры, которые уничтожены, и сокеты с флагом `femaleNoStability` на стороне опоры —
-так префаб может запретить передавать стабильность через конкретный «женский» сокет. В ассетах
+так префаб может запретить передавать стабильность через конкретный «женский» сокет. Этот
 флаг стоит у двух из четырёх верхних `floor-female` дверного проёма, оконного проёма и стеновой
 рамы: пол, зацепившийся за проём именно через них, опоры от проёма не получает. У сплошной
 стены и полустены таких сокетов нет.
@@ -118,7 +118,7 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
 
 Отдельно существует компонент `DestroyOnGroundMissing`: у сущностей, которым нужна земля под
 собой, он вызывает `Die()` при пропаже опоры (с логом при `stability.log_ground_missing_death`).
-В ассетах он стоит на ~450 префабах — это деплои (ящики, печи, верстаки и т. п.), а не блоки
+Он стоит на ~450 префабах — это деплои (ящики, печи, верстаки и т. п.), а не блоки
 постройки.
 
 ## Числа и настройки
@@ -135,8 +135,8 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
 | `stability.log_stability_death` / `log_stability_updates` / `log_ground_missing_death` | `false` | Логи |
 | `stability.refresh_stability` | команда | Пересчитать стабильность всех блоков на сервере |
 
-\* В справке ConVar написано «секунды», но сама очередь (`ObjectWorkQueue.RunQueue`) находится вне
-кода сервера; значение 9 больше похоже на миллисекунды. Точную единицу код не показывает.
+\* В справке ConVar написано «секунды», но сама очередь (`ObjectWorkQueue.RunQueue`) работает вне
+сервера; значение 9 больше похоже на миллисекунды. Точная единица неизвестна.
 
 Коэффициенты `support` у сокетов, флаг `grounded` и `femaleNoStability` — в префабах, значения
 см. в разделе «Опоры» выше.
@@ -173,13 +173,3 @@ code: [StabilityEntity.cs, StabilitySocket.cs, ConstructionSocket.cs, Socket_Bas
   независимых путей опоры до фундаментов.
 - Для калькулятора: стабильность не зависит от материала, поэтому её нельзя вывести из списка
   блоков — нужна геометрия. Значения `support` — в таблице выше.
-
-## Где в коде
-
-- `StabilityEntity.InitializeSupports` — сбор опор из мужских `StabilitySocket`/`ConstructionSocket`.
-- `StabilityEntity.SupportValue`, `CachedSupportValue` — формула.
-- `StabilityEntity.Support.SupportEntity` — выбор одной опоры на сокет.
-- `StabilityEntity.StabilityCheck` — пересчёт, страйки, `Kill(DestroyMode.Gib)`.
-- `StabilityEntity.UpdateConnectedEntities`, `UpdateSurroundingsQueue.NotifyNeighbours` — распространение.
-- `ServerBuildingManager.Cycle` — где крутятся очереди.
-- `ConVar.Stability` — настройки.

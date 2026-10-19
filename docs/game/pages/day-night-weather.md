@@ -84,7 +84,7 @@ InverseLerp(105, 90, SunZenith)`, ночь при `LerpValue ≤ 0.1`. Поло�
 
 Сумма весов 1.12, поэтому доли — вес / 1.12 (`Climate.GetWeatherPreset`).
 
-### Параметры пресетов (ассеты `WeatherPreset`)
+### Параметры пресетов (`WeatherPreset`)
 
 | Пресет | Дождь | Ветер | Гром | Туманность (`Fogginess`) | Облачность | Волны (`OceanScale`) |
 |--------|-------|-------|------|------|-----|-----|
@@ -151,7 +151,7 @@ InverseLerp(105, 90, SunZenith)`, ночь при `LerpValue ≤ 0.1`. Поло�
 - **Ночь короткая.** Тёмная часть (`IsNight`) — около 8 реальных минут из 80. Солнечные панели
   простаивают примерно 10 % времени суток.
 - **`server.cycletime` мёртвый.** ConVar объявлен (`ConVar.Server.cycletime` = 500, «длина
-  суток в секундах»), но в коде нигде не читается. Длину суток задаёт `env.daylength`.
+  суток в секундах»), но ни на что не влияет. Длину суток задаёт `env.daylength`.
 - **Погоду можно предсказать.** Она зависит только от игровой даты и `World.Seed`. Новый тип
   начинается в начале каждого 18-часового блока и за 6 игровых часов плавно набирает силу.
   Реальная длина блока зависит от того, на какие часы он пришёлся: 40–75 минут.
@@ -179,12 +179,3 @@ InverseLerp(105, 90, SunZenith)`, ночь при `LerpValue ≤ 0.1`. Поло�
 - Если важно время до темноты, считайте по реальным минутам: после 18:00 игрового времени до
   полной ночи остаётся около 5 минут, а ночь длится около 8.
 - Ставьте водосборники в умеренном биоме под открытым небом: один дождь заполняет их полностью.
-
-## Где в коде
-
-- `TOD_Time.Update`, `ApplyTimeCurve`, `ApproximateCurve`; `TOD_Sky.UpdateCelestials`, `IsNight` (firstpass).
-- `Climate.Update`, `GetWeatherPreset`, `GetRain`, `GetSnow`, `GetTemperature`, `InitRainGracePeriod`.
-- `EnvSync.Save` / `Load` — сохранение даты и паузы дождя.
-- `WaterCatcher.CollectWater`, `PlanterBox.CalculateRainFactor`, `PlayerMetabolism` (намокание),
-  `SprayCanSpray.RainCheck`, `WaterSystem` (волны).
-- `ConVar.Env`, `ConVar.Weather`.

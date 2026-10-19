@@ -20,7 +20,3 @@ code: [PuzzleReset.cs, CardReader.cs, ItemBasedFlowRestrictor.cs]
 кнопка изнутри → тот же OR. Пока горит предохранитель (200 с обычный), дверь открыта;
 после выгорания достаточно нового предохранителя — карта повторно не нужна
 ([[monument-puzzles]]). Сброс 1800 с, радиус 5 м, радиационный сброс.
-
-## Где в коде
-
-- `CardReader.ServerCardSwiped`, `ItemBasedFlowRestrictor`, `PuzzleReset`.

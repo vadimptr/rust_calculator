@@ -17,16 +17,16 @@ code: [ElectricalCombiner.cs, WireTool.cs, IOEntity.cs]
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Входы | 2: «Root Power 1», «Root Power 2», оба основные, оба `rootConnectionsOnly` | префаб |
-| Выход | «Combined Power Out» | префаб |
-| Потребление | 0 | `ConsumptionAmount` |
-| Корневое устройство | да | `IsRootEntity` |
-| Поиск петли | глубина `ioentity.backtracking × 2` = 16, `defaultReturn: true` | `UpdateFromInput` |
-| HP | 200 | префаб |
+| Параметр | Значение |
+|---|---|
+| Входы | 2: «Root Power 1», «Root Power 2», оба основные, оба `rootConnectionsOnly` |
+| Выход | «Combined Power Out» |
+| Потребление | 0 |
+| Корневое устройство | да |
+| Поиск петли | глубина `ioentity.backtracking × 2` = 16, `defaultReturn: true` |
+| HP | 200 |
 
-В коде у класса три поля входов (`input1Amount…input3Amount`). Третий вход есть только у
+У класса три поля входов (`input1Amount…input3Amount`). Третий вход есть только у
 жидкостного (`fluid.combiner.deployed`) и индустриального (`industrialcombiner.deployed`)
 сумматоров того же класса.
 
@@ -59,8 +59,3 @@ code: [ElectricalCombiner.cs, WireTool.cs, IOEntity.cs]
 - Две батареи по 50 → сумматор → 100 rW на мощного потребителя.
 - Солнечные панели в «гирлянду»: панель + панель → сумматор → сумматор + панель → … Каждое звено
   корневое, цепочка разрешена. Следите, чтобы над любым входом было не больше 15 устройств.
-
-## Где в коде
-
-`ElectricalCombiner.UpdateFromInput`, `GetPassthroughAmount`, `UpdateHasPower`;
-`IOEntity.IsConnectedTo`; `WireTool.RPC_MakeConnection` (проверка `rootConnectionsOnly`).

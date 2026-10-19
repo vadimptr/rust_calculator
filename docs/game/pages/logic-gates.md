@@ -78,8 +78,3 @@ HP у всех — 200 (префабы).
 - Резерв питания через OR: основная батарея на A, резервная на B. Тратится только та, что
   сильнее. Когда основная сядет (выход 0), OR переключится на резерв.
 - RAND — «рулетка» для ловушек и развлечений.
-
-## Где в коде
-
-`ANDSwitch`, `ORSwitch`, `XORSwitch`: `GetPassthroughAmount`, `WantsPower`, `UpdateFromInput`;
-`RANDSwitch.UpdateFromInput`, `UpdateBlocked`, `RandomRoll`.

@@ -4,7 +4,7 @@ title: Решётки, амбразуры и ставни
 kind: object
 group: Двери и замки
 icon: wall.window.bars.metal
-summary: Вставки в оконный проём — решётки и стёкла (SimpleBuildingBlock), амбразуры (StabilityEntity) и ставни (Door); HP от 200 до 500, отдельных классов в коде нет, различия — в префабах.
+summary: Вставки в оконный проём — решётки и стёкла (SimpleBuildingBlock), амбразуры (StabilityEntity) и ставни (Door); HP от 200 до 500, отдельных классов нет, различия — в префабах.
 related: [wall, door, doors, upkeep, decay, protection, construction-placement, data-entity-health, data-protection, data-crafting]
 code: [SimpleBuildingBlock.cs, Door.cs, StabilityEntity.cs, SimpleUpgrade.cs, BaseMelee.cs]
 ---
@@ -12,8 +12,8 @@ code: [SimpleBuildingBlock.cs, Door.cs, StabilityEntity.cs, SimpleUpgrade.cs, Ba
 ## Кратко
 
 Деревянные и металлические решётки, укреплённые стёкла, металлические амбразуры и
-деревянные ставни ставятся в сокеты оконного проёма `wall.window`. В серверном коде нет классов
-с их именами: это префабы общих классов, и всё, что их отличает, лежит в префабах.
+деревянные ставни ставятся в сокеты оконного проёма `wall.window`. Отдельных классов
+с их именами нет: это префабы общих классов, и всё, что их отличает, лежит в префабах.
 
 У оконного проёма два вида «мам»: `Window` (×2) — решётки и стёкла, `Shutters` (×2) — ставни
 и амбразуры. Поэтому в один проём можно поставить одновременно решётку и ставни.
@@ -60,10 +60,3 @@ code: [SimpleBuildingBlock.cs, Door.cs, StabilityEntity.cs, SimpleUpgrade.cs, Ba
 - **Укреплённое стекло гниёт как МВК** (`decayGrade` = TopTier, 12 ч), хотя сделано из фрагментов.
 - **Перекраска.** У `SimpleBuildingBlock` смену скина блокируют посторонние объекты в объёме
   вставки (`CanBeRedirectSwapped`).
-
-## Где в коде
-
-- `SimpleBuildingBlock`, `SimpleUpgrade` — решётки и стёкла.
-- `Door` — ставни.
-- `StabilityEntity` — амбразуры.
-- `BaseMelee.GetAttackStats` — какие сущности бьются профилем «по деплойаблам».

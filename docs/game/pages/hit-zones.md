@@ -4,7 +4,7 @@ title: Зоны попадания
 kind: mechanic
 group: Оружие и бой
 icon: ui/bullet
-summary: Каждая кость скелета отнесена к зоне (голова, грудь, живот, руки, кисти, ноги, ступни); множитель урона по зоне берётся из ассета DamageProperties снаряда или оружия — у большинства пуль голова ×2, ноги ×0.75 — и работает только для игроков и человекоподобных NPC.
+summary: Каждая кость скелета отнесена к зоне (голова, грудь, живот, руки, кисти, ноги, ступни); множитель урона по зоне берётся из профиля DamageProperties снаряда или оружия — у большинства пуль голова ×2, ноги ×0.75 — и работает только для игроков и человекоподобных NPC.
 related: [projectile-ballistics, armor-clothing, melee, damage-system, protection]
 code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BasePlayer.cs, BaseCombatEntity.cs, Rust.Ai.Gen2/ScientistNPC2.cs, ScarecrowNPC.cs]
 ---
@@ -15,8 +15,8 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 (`SkeletonProperties`) знает, к какой **зоне** (`HitArea`) относится каждая кость. Зона
 влияет на две вещи:
 
-1. **Множитель урона.** Его берут из ассета `DamageProperties`, который висит на снаряде
-   (пули, стрелы) или на оружии ближнего боя. Базовый ассет `Damage.Default`: голова ×2,
+1. **Множитель урона.** Его берут из профиля `DamageProperties`, который висит на снаряде
+   (пули, стрелы) или на оружии ближнего боя. Базовый профиль `Damage.Default`: голова ×2,
    ноги и ступни ×0.75, остальное ×1. Стрелы, дробь и брошенное оружие бьют в голову слабее.
 2. **Какая одежда защищает.** Учитывается только одежда, покрывающая эту зону
    ([[armor-clothing]]).
@@ -45,36 +45,36 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 
 ### 2. Кость → зона
 
-`SkeletonProperties` — ассет со списком `BoneProperty { bone, boneName, area }`.
+`SkeletonProperties` — профиль со списком `BoneProperty { bone, boneName, area }`.
 `BaseCombatEntity.SkeletonLookup(boneID)` ищет кость по имени (через `StringPool`) и возвращает
 её `area`, иначе `-1`. Свойство `HitInfo.isHeadshot` истинно, когда зона кости — `Head`.
 
 ### 3. Зона → множитель
 
-`DamageProperties` — ассет со списком `HitAreaProperty { area, damage }` и ссылкой
-`fallback` на другой такой же ассет:
+`DamageProperties` — профиль со списком `HitAreaProperty { area, damage }` и ссылкой
+`fallback` на другой такой же профиль:
 
 ```
 множитель(зона):
-    есть запись с этой зоной в ассете → её damage
+    есть запись с этой зоной          → её damage
     иначе есть fallback               → множитель(зона) у fallback
     иначе                             → 1
 ```
 
-- Если зона не указана ни в ассете, ни в цепочке `fallback` — множитель `1`.
+- Если зона не указана ни в профиле, ни в цепочке `fallback` — множитель `1`.
 - `ScaleDamage` применяет множитель ко **всем** типам урона попадания (`ScaleAll`) и ничего
   не делает для зоны `-1`/`0`.
-- Ассет назначается: снаряду — `Projectile.damageProperties` (копируется в `HitInfo` при
+- Профиль назначается: снаряду — `Projectile.damageProperties` (копируется в `HitInfo` при
   попадании, см. [[projectile-ballistics]]), оружию ближнего боя — `BaseMelee.damageProperties`
   ([[melee]]). То есть у разных пуль и
   разных клинков могут быть разные множители головы и конечностей.
 
-### Множители в ассетах
+### Множители по профилям
 
-Ассеты `DamageProperties` из `content.jsonl`. Все наследуют `Damage.Default` через `fallback`
+Профили `DamageProperties`. Все наследуют `Damage.Default` через `fallback`
 и переопределяют в лучшем случае голову.
 
-| Ассет | Голова | Грудь | Живот | Руки | Кисти | Ноги | Ступни | Кто использует |
+| Профиль | Голова | Грудь | Живот | Руки | Кисти | Ноги | Ступни | Кто использует |
 |-------|--------|-------|-------|------|-------|------|--------|----------------|
 | `Damage.Default` | 2 | 1 | 1 | 1 | 1 | 0.75 | 0.75 | база для остальных |
 | `Damage.Rifle` | 2 | 1 | 1 | 1 | 1 | 0.75 | 0.75 | `riflebullet`, `riflebullet_fire`, `riflebullet_explosive` |
@@ -88,7 +88,7 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 | `Damage.Ballista` | **1.5** | 1 | 1 | 1 | 1 | 0.75 | 0.75 | болты баллисты |
 
 У пуль ловушки-дробовика (`trapbullet`), пуль учёных нового ИИ (`scientist2.clientbullet`)
-и пулемёта Брэдли (`coaxbullet`) ассета нет — множитель зоны у них всегда 1.
+и пулемёта Брэдли (`coaxbullet`) профиля нет — множитель зоны у них всегда 1.
 
 ### 4. Кто применяет множитель
 
@@ -117,14 +117,14 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 
 | Что | Значение | Где |
 |---|---|---|
-| Множитель по зоне | голова ×2 (стрелы ×1.5, картечь ×1.25, зажигательная дробь ×1), ноги и ступни ×0.75, остальное ×1 | ассеты `DamageProperties`, таблица выше |
+| Множитель по зоне | голова ×2 (стрелы ×1.5, картечь ×1.25, зажигательная дробь ×1), ноги и ступни ×0.75, остальное ×1 | профили `DamageProperties`, таблица выше |
 | Множитель, если зона не описана | `1` | `DamageProperties.GetMultiplier` |
 | Множитель тела пугала от игроков | `0.25` | `halloween.scarecrow_body_dmg_modifier` |
 | Задержка повторного «ранения» | `60` с | `server.rewounddelay` |
 | Ранения включены | `true` | `server.woundingenabled` |
 
-Конкретные значения в коде не хранятся: они лежат в ассетах `DamageProperties`
-(см. таблицу «Множители в ассетах»).
+Конкретные значения задаются в профилях `DamageProperties`
+(см. таблицу «Множители по профилям»).
 
 ## Нюансы
 
@@ -139,7 +139,7 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
   содержит зону попадания: попадание в ногу шлем не смягчит, даже если он «бронированный».
 - **Уведомление о попадании.** Если игрок попал в голову игроку или учёному, стандартное
   серверное уведомление о попадании не отправляется (проверка `isHeadshot` в
-  `BaseCombatEntity`). Видимо, хедшот клиент отображает сам, но клиентского кода у нас нет —
+  `BaseCombatEntity`). Видимо, хедшот клиент отображает сам, но это
   не подтверждено.
 
 ## На практике
@@ -150,12 +150,3 @@ code: [HitArea.cs, SkeletonProperties.cs, DamageProperties.cs, HitInfo.cs, BaseP
 - По животным цельтесь туда, где проще попасть: зона урона не меняет.
 - Каска защищает голову, нагрудник — грудь; закрыть все зоны можно только комплектом
   ([[armor-clothing]]).
-
-## Где в коде
-
-- `HitArea`, `HitAreaUtil` — перечень зон.
-- `SkeletonProperties.FindBone`, `BaseCombatEntity.SkeletonLookup` — кость → зона.
-- `DamageProperties.GetMultiplier / ScaleDamage` — множитель зоны.
-- `HitInfo.boneArea`, `HitInfo.isHeadshot`.
-- `BasePlayer.ScaleDamage`, `BasePlayer.EligibleForWounding`.
-- `ScientistNPC2.ScaleDamage`, `ScarecrowNPC` (модификатор тела).

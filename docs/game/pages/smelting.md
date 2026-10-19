@@ -39,7 +39,7 @@ code: [BaseOven.cs, ItemModCookable.cs, CookableItemInfo.cs, ItemModBurnable.cs,
 
 Предмет готовится, только если температура строго внутри его диапазона
 (`lowTemp < T < highTemp`, `CookableItemInfo.CanBeCookedByAtTemperature`). Диапазоны заданы
-в ассетах предметов (`ItemModCookable`, все значения — в [[data-smelting]]): руды — 800–1200,
+у предметов (`ItemModCookable`, все значения — в [[data-smelting]]): руды — 800–1200,
 сырая нефть — 1400–1600, мясо — 150–250. Поэтому руду нельзя переплавить на костре, а сырое мясо в печке
 не жарится — оно туда даже не кладётся: `ItemFilter` пропускает во вход только то, что
 готовится при температуре этой печи.
@@ -63,7 +63,7 @@ code: [BaseOven.cs, ItemModCookable.cs, CookableItemInfo.cs, ItemModBurnable.cs,
 ### Готовка одного стака
 
 `ItemModCookable.CycleCooking`. У каждого стака есть таймер `cookTimeLeft`, изначально
-`cookTime` из ассета (поле по умолчанию 30 с; у серной руды 5 с, металлической 10 с,
+`cookTime` предмета (поле по умолчанию 30 с; у серной руды 5 с, металлической 10 с,
 МВК-руды 20 с, сырой нефти 10 с, сырого мяса 20–30 с — см. [[data-smelting]]). Доля бюджета вычитается из таймера.
 Когда он проходит ноль:
 
@@ -176,11 +176,3 @@ code: [BaseOven.cs, ItemModCookable.cs, CookableItemInfo.cs, ItemModBurnable.cs,
   стаков.
 - Уголь делается «бесплатно»: оставьте печь с деревом включённой без руды.
 - Держите свободные выходные слоты: при переполнении печь бросает ресурсы на землю.
-
-## Где в коде
-
-- `BaseOven.Cook`, `BaseOven.IncreaseCookTime`, `BaseOven.ConsumeFuel` — цикл и топливо.
-- `BaseOven.BaseOvenWorkQueue.RunJob` — шаг 0,5 с и накопление времени.
-- `ItemModCookable.CycleCooking` — готовка стака.
-- `BaseOven.ItemFilter`, `BaseOven.IsMaterialInput`, `CookableItemInfo.CanBeCookedByAtTemperature` — что можно класть.
-- `ElectricOven`, `ElectricFurnaceIO` — электропечь.

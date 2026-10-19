@@ -73,15 +73,15 @@ code: [VendingMachine.cs, VendingMachineMapMarker.cs, DeliveryDroneConfig.cs, It
 
 ### Прочность и разрушение
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 1250 | `startHealth` в префабе |
-| Защита | `BlockMetal` (как у металлической стены) | `baseProtection`, см. [[protection]] |
-| Слотов | 30 | `numSlots` |
-| Поднять (pickup) | нельзя | `pickup.enabled = 0` |
-| Ремонт | можно | `repair.enabled = 1`, см. [[repair]] |
-| Замок | нельзя | `isLockable = 0` |
-| Установка | на пол и в дверной проём (сокет `doorway`), не в воду | сокеты префаба |
+| Параметр | Значение |
+|----------|----------|
+| HP | 1250 |
+| Защита | `BlockMetal` (как у металлической стены) |
+| Слотов | 30 |
+| Поднять (pickup) | нельзя |
+| Ремонт | можно |
+| Замок | нельзя |
+| Установка | на пол и в дверной проём (сокет `doorway`), не в воду |
 
 При уничтожении содержимое выпадает (`dropsLoot = 1`). Если остаётся «труп» деплоя
 (`spawnDeployableCorpseOnDeath = 1`), вещи переходят в него целиком. Если автомат сгнил, «трупа» нет
@@ -142,11 +142,3 @@ code: [VendingMachine.cs, VendingMachineMapMarker.cs, DeliveryDroneConfig.cs, It
 - Чтобы торговать через дрон-маркетплейс, оставьте над лицевой стороной открытое небо (без крыши и
   козырька на 1–2 м вперёд), и пусть трансляция будет включена.
 - Подключите 5 единиц энергии — получите вечный холодильник на 30 слотов.
-
-## Где в коде
-
-- `VendingMachine.BuyItem`, `CompletePendingOrder`, `DoTransaction` — покупка.
-- `VendingMachine.CanPlayerAdmin`, `PlayerBehind`, `CanAcceptItem`, `CanMoveFrom` — доступ.
-- `VendingMachine.AddSellOrder`, `RefreshSellOrderStockLevel` — заказы и запас.
-- `VendingMachine.UpdateMapMarker`, `VendingMachineMapMarker` — маркер.
-- `VendingMachine.UpdateDronePrediction`, `DeliveryDroneConfig` — доступность для дрона.

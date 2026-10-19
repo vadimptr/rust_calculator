@@ -18,18 +18,18 @@ code: [TravellingVendor.cs, TravellingVendorEvent.cs, NPCVendingMachine.cs, NPCV
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Интервал появления | 45–78 игровых часов | `minimumHoursBetween`/`maxmumHoursBetween` префаба `event_travellingvendor` |
-| Время жизни | 1800 с | `travellingvendor.alive_time_seconds` |
-| Максимальная скорость | 5 | `travellingvendor.max_speed` |
-| Скорость на участках по кривой | 2 | `splineMovementSpeed` префаба |
-| Радиус «покупателя» | 10 м | `TravellingVendor.searchRange` |
-| Съезд на обочину | каждые 25 с пути | `TimeBetweenPullovers` префаба (в коде по умолчанию 120) |
-| Стоянка на обочине без игроков | 70 с | `waitTimeAccumulator += 60` плюс 10 с ожидания |
-| Турели | 4 × `NPCAutoTurret`, защита `Immortal` | дочерние объекты префаба `travellingvendor` |
-| Дальность турелей | 40 м у двух передних, 20 м у двух боковых | `sightRange` турелей |
-| Свет фар | с 19:00 до 8:00 игрового времени | `TravellingVendor.NightCheck` |
+| Параметр | Значение |
+|---|---|
+| Интервал появления | 45–78 игровых часов |
+| Время жизни | 1800 с |
+| Максимальная скорость | 5 |
+| Скорость на участках по кривой | 2 |
+| Радиус «покупателя» | 10 м |
+| Съезд на обочину | каждые 25 с пути |
+| Стоянка на обочине без игроков | 70 с |
+| Турели | 4 × `NPCAutoTurret`, защита `Immortal` |
+| Дальность турелей | 40 м у двух передних, 20 м у двух боковых |
+| Свет фар | с 19:00 до 8:00 игрового времени |
 
 Сам фургон — `BaseEntity`, а не боевая сущность. HP у него нет, сломать его нельзя.
 
@@ -122,7 +122,7 @@ code: [TravellingVendor.cs, TravellingVendorEvent.cs, NPCVendingMachine.cs, NPCV
 - **На крышу можно встать.** Покупатель определяется по расстоянию до центра фургона, высота не важна.
   Проверка препятствий смотрит только вперёд, поэтому стоящий на крыше не получает игнор.
   Фургон стоит, пока вы там, и не исчезает. Возможность физически залезть зависит от коллайдеров модели
-  и в коде не видна.
+  и заранее неизвестна.
 - **Торговца можно «держать» бесконечно.** Пока рядом есть покупатель, он не исчезает, а пополнение
   продолжается раз в 10 минут по той же цене. При удачной цене это бесконечный источник ресурсов
   за скрап.
@@ -144,11 +144,3 @@ code: [TravellingVendor.cs, TravellingVendorEvent.cs, NPCVendingMachine.cs, NPCV
   на дороге хуже: через секунду он перестанет вас замечать.
 - Лучшие покупки — то, что выпало по «очень низкой» цене. Сравнивайте с таблицей выше.
 - Скупили МВК — ждите до 10 минут до следующего пополнения, полный запас вернётся к второму.
-
-## Где в коде
-
-- `TravellingVendorEvent.RunEvent` — условия появления.
-- `TravellingVendor.SpawnTravellingVendorForEvent`, `GetSpawnPoint` — путь по кольцу и точка старта.
-- `TravellingVendor.ProcessState`, `HandlePullover`, `CheckForObstacle`, `FetchCycle` — движение и остановки.
-- `TravellingVendor.ProcessLifetime`, `BuildingCheck`, `OnAttacked` — жизнь, уничтожение препятствий, враждебность.
-- `NPCVendingMachine.InstallFromVendingOrders`, `Refill`, `NPCVendingOrder.GetRandomEntries`, `EntryRandom.GetRandomPrice` — торговля.

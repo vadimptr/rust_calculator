@@ -4,16 +4,14 @@ title: Таблица: HP и стоимость блоков
 kind: data
 group: Строительство
 icon: build/foundation
-summary: HP и стоимость каждого блока постройки по грейдам, посчитанные из ассетов игры.
+summary: HP и стоимость каждого блока постройки по грейдам.
 related: [building-grades, foundation, wall, floor, roof, stairs, data-protection, upkeep]
 code: [BuildingGrade.cs, ConstructionGrade.cs, Construction.cs]
 ---
 
-> Таблица собрана автоматически из ассетов сервера Rust от 2026-10-16 скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.
-
 ## Как считается
 
-У каждого грейда есть базовое HP и базовая стоимость (ассет `BuildingGrade`). У каждого блока —
+У каждого грейда есть базовое HP и базовая стоимость (`BuildingGrade`). У каждого блока —
 множители `healthMultiplier` и `costMultiplier` (компонент `Construction` на префабе).
 
 - HP блока = базовое HP грейда × `healthMultiplier` (`ConstructionGrade.maxHealth`).

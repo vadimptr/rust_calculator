@@ -24,7 +24,7 @@ code: [BasePlayer.cs, PlayerMetabolism.cs, NPCAutoTurret.cs, AutoTurret.cs, GunT
 
 - Ставится флаг `Sleeping`, игрок попадает в `sleepingPlayerList`.
 - Если персонаж сидел на сиденье, где не разрешены спящие (`allowSleeperMounting` в префабе),
-  его ссаживают. В выгрузке ассетов флаг включён только у парашюта (`parachute.prefab`), у
+  его ссаживают. Флаг включён только у парашюта (`parachute.prefab`), у
   остальных 265 сидений и мест выключен: заснув в машине, на стуле или в вертолёте, вы
   окажетесь рядом с ним.
 - Останавливаются обновления инвентаря и команды. Закрывается лут, гаснут фонарики.
@@ -118,11 +118,3 @@ code: [BasePlayer.cs, PlayerMetabolism.cs, NPCAutoTurret.cs, AutoTurret.cs, GunT
 - Не выходите, стоя в воде или на краю обрыва.
 - В безопасной зоне выходить можно ненадолго. Дольше 20 минут — лишь в своей комнате
   апартаментов.
-
-## Где в коде
-
-- `BasePlayer.OnDisconnected`, `StartSleeping`, `EndSleeping`, `RunOfflineMetabolism`, `OfflineMetabolism`.
-- `BasePlayer.ScheduledDeath`, `NPCAutoTurret.IsEntityHostile`.
-- `BasePlayer.CanBeLooted`, `OnStartBeingLooted`.
-- `BasePlayer.EligibleForWounding`, `BasePlayer.ApplyRadiation`.
-- `AutoTurret.AimOffset`, `GunTrap`, `FlameTurret` — отбор целей.

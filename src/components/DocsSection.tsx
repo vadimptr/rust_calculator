@@ -61,11 +61,11 @@ function Overview() {
       <p className="docs-page__lead">
         Справочник по игровым механикам Rust.
         Механики объясняют общие алгоритмы, объекты описывают конкретные вещи и ссылаются на механики,
-        в которых участвуют. Таблицы собраны автоматически из ассетов игры: HP, защита, урон, рецепты.
+        в которых участвуют. Таблицы — справочные числа: HP, защита, урон, рецепты.
       </p>
       <p className="docs-page__meta">
         Механик: {count('mechanic')}, объектов: {count('object')}, схем: {count('scheme')}, таблиц: {count('data')}.
-        Код и ассеты сервера от 16 октября 2026.
+        Данные актуальны на 16 октября 2026.
       </p>
       <div className="docs-groups">
         {DOC_GROUPS.map(g => {
@@ -110,7 +110,7 @@ function SettingsBlock({ pageId }: { pageId: string }) {
     <section className="docs-settings">
       <h3>Настройки сервера</h3>
       <p className="docs-settings__hint">
-        Что администратор может изменить в этой механике. Значения по умолчанию — из кода сервера;
+        Что администратор может изменить в этой механике. Указаны значения по умолчанию;
         на конкретном сервере они могут быть другими. <a href="#docs/data-server-settings">Все настройки</a>
       </p>
       <div className="docs-md">
@@ -182,12 +182,6 @@ function Page({ page }: { page: DocPage }) {
             <div>
               <h4>Упоминается в</h4>
               <div className="docs-chips">{incoming.map(p => <PageLink key={p.id} page={p} />)}</div>
-            </div>
-          )}
-          {page.code.length > 0 && (
-            <div>
-              <h4>Файлы кода</h4>
-              <div className="docs-code-list">{page.code.map(f => <code key={f}>{f}</code>)}</div>
             </div>
           )}
         </footer>

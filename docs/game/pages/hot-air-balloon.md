@@ -13,7 +13,7 @@ code: [HotAirBalloon.cs, HotAirBalloonArmor.cs, HotAirBalloonEquipment.cs, ItemM
 Воздушный шар (`HotAirBalloon`, префаб `hotairballoon.prefab`) — не обычный транспорт с сиденьями.
 Игроки просто стоят в корзине: шар «подхватывает» их триггером-родителем, как лифт.
 Управлять можно только горелкой (вкл/выкл). Горелка надувает оболочку, а потом даёт подъёмную силу.
-Горизонтально шар несёт ветер, и направление ветра в коде зависит **только от высоты**.
+Горизонтально шар несёт ветер, и направление ветра зависит **только от высоты**.
 Поэтому курс выбирают, поднимаясь или опускаясь до нужного «слоя» ветра.
 
 Шар можно найти в мире (`hotairballoon.population` = 1 на км²) или купить у продавца Airwolf
@@ -22,28 +22,28 @@ code: [HotAirBalloon.cs, HotAirBalloonArmor.cs, HotAirBalloonEquipment.cs, ItemM
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 1500 | `startHealth` в префабе `hotairballoon` |
-| Защита | `DeployableWood` (90 % от пуль, 50 % от холодного оружия, 0 % от взрывов, 50 % от AntiVehicle) | `baseProtection` в префабе, см. [[data-protection]] |
-| Броня: доп. HP | +1000 | `AdditionalHealth` в префабе `hotairballoon_armor_t1` (в коде по умолчанию 100) |
-| Броня: защита попаданий по ней | `DeployableMetal` (99 % от пуль, 50 % от взрывов, 100 % от AntiVehicle) | `baseProtection` в префабе брони |
-| Дверь брони | 800 HP, `DeployableMetal`, без замка и доводчика | `Door` в префабе брони: `startHealth`, `canTakeLock = 0`, `canTakeCloser = 0` |
-| Топливо | низкосортное, 1 слот | `fuel_storage`: `inventorySlots = 1`, `allowedItem` = низкосортное топливо |
-| Расход | 0,2 ед./с, пока горелка включена (12 ед./мин) | `fuelPerSec` в префабе (в коде 0,25) |
-| Стартовое топливо | 75 ед. | `HotAirBalloon.StartingFuelUnits` |
-| Хранилище | 18 слотов, без замка | `hab_storage`: `inventorySlots = 18`, `isLockable = 0` |
-| Подъёмная сила горелки | 2400 | `liftAmount` в префабе (в коде 10) |
-| Сила ветра | 2400 | `windForce` в префабе (в коде 30000) |
-| Потолок | 175 м над сглаженным рельефом | ConVar `hotairballoon.serviceceiling` = 175 |
-| Минимальная «высота рельефа» | 25 м | ConVar `hotairballoon.minimumaltitudeterrain` = 25 |
-| Распад снаружи | 180 мин | `hotairballoon.outsidedecayminutes` |
-| Популяция | 1 на км² | `hotairballoon.population` |
-| Цена у Airwolf | 150 скрапа | диалог `bandit_conversationalist`, действие `buyhab` |
-| Ремонт | от чертежа предмета `hab`: 200 ткани | `repair.itemTarget = item:hab` в префабе; чертёж `hab.repair.item` |
-| Броня: крафт | 200 фрагментов металла, верстак 1, 30 с, изучается | чертёж `hab.armor.item` |
+| Параметр | Значение |
+|----------|----------|
+| HP | 1500 |
+| Защита | `DeployableWood` (90 % от пуль, 50 % от холодного оружия, 0 % от взрывов, 50 % от AntiVehicle) |
+| Броня: доп. HP | +1000 |
+| Броня: защита попаданий по ней | `DeployableMetal` (99 % от пуль, 50 % от взрывов, 100 % от AntiVehicle) |
+| Дверь брони | 800 HP, `DeployableMetal`, без замка и доводчика |
+| Топливо | низкосортное, 1 слот |
+| Расход | 0,2 ед./с, пока горелка включена (12 ед./мин) |
+| Стартовое топливо | 75 ед. |
+| Хранилище | 18 слотов, без замка |
+| Подъёмная сила горелки | 2400 |
+| Сила ветра | 2400 |
+| Потолок | 175 м над сглаженным рельефом |
+| Минимальная «высота рельефа» | 25 м |
+| Распад снаружи | 180 мин |
+| Популяция | 1 на км² |
+| Цена у Airwolf | 150 скрапа |
+| Ремонт | от чертежа предмета `hab`: 200 ткани |
+| Броня: крафт | 200 фрагментов металла, верстак 1, 30 с, изучается |
 
-Имя ConVar потолка в коде — `HotAirBalloon.serviceCeiling` (`[ServerVar]`), его же используют
+Имя ConVar потолка — `HotAirBalloon.serviceCeiling` (`[ServerVar]`), его же используют
 коптеры (`PlayerHelicopter.GetServiceCeiling`) и дрон (`Drone`), так что изменение потолка
 шара меняет потолок и им.
 
@@ -161,7 +161,7 @@ code: [HotAirBalloon.cs, HotAirBalloonArmor.cs, HotAirBalloonEquipment.cs, ItemM
   купленного шара не обнуляется.
 - **Броня — частичный щит от ПВО.** У `DeployableMetal` защита от AntiVehicle 100 %, у самого
   шара 50 %. Ракеты, попавшие в броню, наносят только дробящий урон.
-- **Значения в коде и префабе сильно расходятся**: `liftAmount` 10 против 2400, `windForce`
+- **Значения по умолчанию и в префабе сильно расходятся**: `liftAmount` 10 против 2400, `windForce`
   30000 против 2400, `fuelPerSec` 0,25 против 0,2, `AdditionalHealth` 100 против 1000.
   Действуют значения префаба.
 - **Ветер — функция высоты, а не погоды.** Каждые 10 м высоты курс поворачивается на 60°.
@@ -191,16 +191,3 @@ code: [HotAirBalloon.cs, HotAirBalloonArmor.cs, HotAirBalloonEquipment.cs, ItemM
 - Повреждённый шар медленнее летит и хуже держит высоту — чините тканью (полный ремонт с
   нуля стоит 100 ткани при `RepairCostFraction = 0,5`, см. [[repair]]).
 - Пули против шара почти бесполезны; сбивают его взрывчаткой, ракетами и ПВО.
-
-## Где в коде
-
-- `HotAirBalloon.FixedUpdate` — горелка, надувание, подъёмная сила, ветер, давящий триггер.
-- `HotAirBalloon.EngineSwitch`, `ScheduleOff` — горелка и её автоотключение.
-- `HotAirBalloon.GetWindAtPos` — ветер.
-- `HotAirBalloon.DecayTick` — распад и выталкивание застрявшего шара.
-- `HotAirBalloon.IsValidSAMTarget`, `IsValidHomingTarget` — ПВО и самонаводящиеся ракеты.
-- `HotAirBalloon.OnAttacked`, `IsSafe`, `SetupOwner`, `ClearOwnerEntry` — защита купленного шара.
-- `HotAirBalloon.RPC_ReqEquipItem`, `ItemModHABEquipment.CanEquipToHAB`, `ApplyToHAB` — броня.
-- `HotAirBalloonArmor.Added`, `Hurt` — прибавка HP и защита брони.
-- `HotAirBalloonEquipment.UpdateArmorPanels`, `HealthThresholdToggle.UpdateDetachedMask` — отваливающиеся панели.
-- `ConVar.Server.homingMissileTargetsHab` — ракеты по шару.

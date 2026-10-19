@@ -47,7 +47,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 Пример: на вход устройства с потреблением 1 пришло 10, подключено 3 выхода. Каждый выход
 получит `(10 − 1) / 3 = 3`.
 
-### Потребление устройств (из кода)
+### Потребление устройств
 
 Полная таблица с префабами и особенностями спроса — [[electric-consumers]].
 
@@ -167,18 +167,18 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
   (`WantsPassthroughPower`) и хотят питания (`WantsPower`).
 - Каждую секунду (`TickUsage`) заряд уменьшается на `activeDrain` rWs.
 - Заряд идёт раз в секунду (`AddCharge`): `min(вход, DesiredPower) × chargeRatio`.
-  `chargeRatio` в коде по умолчанию 0.25, но во всех трёх префабах батарей — 0.8.
+  `chargeRatio` по умолчанию 0.25, но во всех трёх префабах батарей — 0.8.
   Выходы и ёмкости: 15 / 50 / 100 rW и 24 000 / 540 000 / 1 440 000 rWs (см. [[battery]]).
 
 ### Генераторы
 
-| Источник | Формула выхода | Обновление |
-|---|---|---|
-| Солнечная панель ([[solar-panel]]) | `floor(20 × InverseLerp(0.3, 0.7, dot) × healthFraction)`, ночью 0, в тени 0 (префаб `solarpanel.large.deployed`) | раз в ~5 с |
-| Ветрогенератор ([[wind-turbine]]) | `floor(150 × clamp01(InverseLerp(0,50,высота)×0.5 + шум Перлина))` (префаб `electric.windmill.small`) | раз в 20 с |
-| Топливный генератор (`FuelGenerator`) | **40** (`outputEnergy` в префабе `small_fuel_generator.deployed`; в коде 35), пока включён | постоянно |
-| Тестовый и монументный генератор (`ElectricGenerator`) | `electricAmount`: 100 у `generator.small` (в коде 8) **на каждый из трёх выходов**, у монументных может зависеть от стадии энергосети | без троттлинга |
-| Водяное колесо (`ElectricWaterWheel`) | до 30 от воды, до 60 вручную (префаб `electric.waterwheel`) | раз в ~1 с |
+| Формула выхода | Обновление |
+|---|---|
+| `floor(20 × InverseLerp(0.3, 0.7, dot) × healthFraction)`, ночью 0, в тени 0 (префаб `solarpanel.large.deployed`) | раз в ~5 с |
+| `floor(150 × clamp01(InverseLerp(0,50,высота)×0.5 + шум Перлина))` (префаб `electric.windmill.small`) | раз в 20 с |
+| **40** (`outputEnergy` в префабе `small_fuel_generator.deployed`; по умолчанию 35), пока включён | постоянно |
+| `electricAmount`: 100 у `generator.small` (по умолчанию 8) **на каждый из трёх выходов**, у монументных может зависеть от стадии энергосети | без троттлинга |
+| до 30 от воды, до 60 вручную (префаб `electric.waterwheel`) | раз в ~1 с |
 
 Подробнее — [[electric-generator]].
 
@@ -187,7 +187,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 - Включается кнопкой или сигналом на вход 0, выключается сигналом на вход 1.
 - При включении сразу списывает топливо за 1 с работы.
 - Дальше тратит топливо каждые `fuelTickRate` = 3 с. Расход `fuelPerSec` в префабе —
-  0.0694 в секунду (в коде 1): одна единица низкосортного топлива на 14.4 с, 250 в час.
+  0.0694 в секунду (по умолчанию 1): одна единица низкосортного топлива на 14.4 с, 250 в час.
 - Дробный остаток копится в `pendingFuel`.
 - Когда топливо кончается, генератор выключается.
 - `AllowDrainFrom` = false: батарея не «видит» нагрузку сквозь генератор.
@@ -208,7 +208,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 - Провисание каждой точки — от 0 до 2 (`MIN_SLACK`/`MAX_SLACK`).
 - Оба устройства на одном транспорте или оба не на транспорте. Если `ioentity.allow_on_boats`
   выключен, провода на транспорте и у лодочной верфи запрещены. В описании ConVar значение
-  по умолчанию `True`, а инициализатор поля в коде — `false`.
+  по умолчанию `True`, а у самого поля — `false`.
 - Отдельные входы принимают провод только от «корневых» устройств (`rootConnectionsOnly`,
   задаётся в префабе).
 
@@ -224,7 +224,7 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 | `ioentity.backtracking` | 8 | Глубина обхода для поиска петель (сумматор использует ×2) |
 | `ioentity.framebudgetelectriclowpriorityms` | 0.5 | Бюджет кадра на электрику игроков, мс |
 | `ioentity.framebudgetelectrichighpriorityms` | 1 | Бюджет на монументную электрику, мс |
-| `ioentity.allow_on_boats` | True по ConVar (поле в коде false) | Разрешить провода на транспорте |
+| `ioentity.allow_on_boats` | True по ConVar (у самого поля false) | Разрешить провода на транспорте |
 | `electricbattery.dischargebudgetms` | 0.05 | Бюджет проверки разряда батарей |
 | `solarpanel.sunupdatebudgetms` | 0.05 | Бюджет пересчёта солнечных панелей |
 | `ioentity.infiniteiopower` | false | Админ-режим: вся электрика игроков получает 999 |
@@ -264,14 +264,3 @@ code: [IOEntity.cs, Splitter.cs, ElectricalBranch.cs, ElectricalBlocker.cs, Elec
 - Не стройте перед сумматором очень длинные последовательные цепочки.
 - Для турелей и ПВО ставьте батарею, а не прямое питание от панелей. Панель ночью и в тени
   даёт 0, ветряк может упасть до 0, когда шум Перлина низкий.
-
-## Где в коде
-
-- `IOEntity.GetPassthroughAmount`, `GetCurrentEnergy`, `DesiredPower`, `UpdateFromInput`,
-  `UpdateOutputs`, `ShouldUpdateOutputs`, `ProcessQueue`, `IsFlickering`, `IsConnectedTo`
-- `Splitter.GetPassthroughAmount`, `ElectricalBranch.GetPassthroughAmount`,
-  `ElectricalBlocker.UpdateFromInput`, `ElectricalCombiner.UpdateFromInput`,
-  `ORSwitch.UpdateFromInput`
-- `ElectricBattery.GetDrain`, `TickUsage`, `AddCharge`
-- `SolarPanel.SunUpdate`, `ElectricWindmill.WindUpdate`, `FuelGenerator.UseFuel`
-- `WireTool.ValidateLine`, `WireTool.CanPlayerUseWires`, `WireTool.GetMaxWireLength`

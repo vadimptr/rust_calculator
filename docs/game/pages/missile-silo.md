@@ -46,8 +46,3 @@ code: [PuzzleReset.cs, NPCSpawner.cs, TriggerRadiation.cs, TriggerHurtNotChild.c
 - Нужна одна красная карта (лежит внутри) и защита 25 для зон `MEDIUM`.
 - В зону 80 рад/с — только короткими забегами; каждая секунда = 30 отравления.
 - Не стойте в шахте под люком.
-
-## Где в коде
-
-- `PuzzleReset` (два компонента), `NPCSpawner`, `TriggerRadiation.GetRadiationAmount`,
-  `TriggerHurtNotChild`.

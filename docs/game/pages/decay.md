@@ -35,7 +35,7 @@ code: [DecayEntity.cs, Decay.cs, BuildingBlockDecay.cs, BuildingGradeDecay.cs, D
 `ServerBuildingManager.Cycle` каждый серверный кадр вызывает `DecayTick` у 5 сущностей из зданий
 и 5 сущностей вне зданий, перебирая их по кругу. Сущность реально обрабатывается, только если с её
 прошлого тика прошло не меньше `decay.tick` = 600 с (или `decayTickOverride` из префаба для
-деплоев: по ассетам он задан только у баррикад — бетонной, каменной, мешков с песком и двойной
+деплоев: он задан только у баррикад — бетонной, каменной, мешков с песком и двойной
 деревянной — и равен 60 с). Урон считается от фактически прошедшего времени, так что задержки очереди ничего не
 «съедают».
 
@@ -82,7 +82,7 @@ decayTimer += Δ
 `decay.duration_override` / `decay.delay_override` (> 0) задают одно значение для всех (в
 секундах — без умножения на 3600, в отличие от часовых ConVar).
 
-**Старый режим** (`decay.upkeep` = false) — константы в коде:
+**Старый режим** (`decay.upkeep` = false) — постоянные значения:
 
 | Грейд | Задержка | Срок |
 |-------|---------|------|
@@ -103,7 +103,7 @@ decayTimer += Δ
 | `SprayDecay` | граффити из баллончика | `global.SprayDuration` (не меньше 1 с), без задержки | всегда, без скидки «внутри» |
 
 У `DeployableDecay` может быть свой коэффициент лечения (`overrideHealRate`/`healRate`) и свой
-период тика (`decayTickOverride`). Свой коэффициент лечения (1,5) по ассетам есть только
+период тика (`decayTickOverride`). Свой коэффициент лечения (1,5) есть только
 у воспламенителя и катушки Теслы.
 
 `decayGrade` у `BuildingGradeDecay` и сроки `DeployableDecay` в префабах (часы):
@@ -134,7 +134,7 @@ decayTimer += Δ
 
 При `decay.upkeep` = false вместо «внутри» работают `DecayPoint`: у префаба блока есть точки,
 привязанные к сокетам. Каждый занятый сокет снижает силу распада на `protection` (по умолчанию
-0.25). По ассетам точки есть только у фундаментов (4 × 0,25 на `foundation-mid/1..4`,
+0.25). Точки есть только у фундаментов (4 × 0,25 на `foundation-mid/1..4`,
 у треугольного 3 × 0,35); у ступеней фундамента и пандуса по 4 точки 0,25, но без привязанного сокета. Также в старом режиме распад «откладывается» активностью (`decayTimer` обнуляется, и
 задержка начинается заново):
 
@@ -158,7 +158,7 @@ decayTimer += Δ
 | `decay.outside_test_range` | `50` м | Длина лучей проверки «снаружи» |
 | `decay.duration_*`, `decay.delay_*` | см. таблицу | Сроки и задержки по грейдам, в часах |
 | `decay.duration_override`, `decay.delay_override` | `0` | Общие значения, в секундах |
-| `decay.debug` | `false` | Объявлена, но в коде не используется |
+| `decay.debug` | `false` | Объявлена, но ни на что не влияет |
 | `decay.forcedecaytick` | команда | Немедленный тик у всех сущностей |
 
 ## Нюансы
@@ -194,12 +194,3 @@ decayTimer += Δ
 
 Металлическая стена снаружи — 8 ч, внутри — 80 ч; соломенный фундамент — 1 ч.
 Добавьте до 10 минут на ожидание первого тика и ~5% разброса (`decayVariance`).
-
-## Где в коде
-
-- `DecayEntity.DecayTick`, `OnDecay` — весь алгоритм.
-- `Decay.GetDecayDelay(grade)`, `GetDecayDuration(grade)` — сроки.
-- `BuildingBlockDecay`, `BuildingGradeDecay`, `DeployableDecay`, `SprayDecay`, `BoatBuildingBlockDecay` — виды.
-- `BuildingBlock.IsOutside`, `BaseEntity.IsOutside` — «внутри/снаружи».
-- `DecayPoint`, `Decay.BuildingDecayTouch` — старый режим.
-- `ServerBuildingManager.Cycle` — очередь тиков.

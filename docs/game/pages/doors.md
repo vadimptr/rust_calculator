@@ -41,7 +41,7 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, DoorMan
 
 Если у префаба `canReverseOpen = true`, дверь открывается **от игрока**. Сервер смотрит,
 с какой стороны стоит игрок (`InverseTransformPoint(...).x > 0`), и ставит флаг `Reserved1`.
-По ассетам флаг выключен у всех префабов класса `Door`, включая ворота: все двери открываются
+Флаг выключен у всех префабов класса `Door`, включая ворота: все двери открываются
 в одну, заданную моделью сторону.
 
 ### Что мешает закрытию
@@ -51,7 +51,7 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, DoorMan
 по умолчанию в классе 4 с). При открытии проверка идёт, только если в префабе
 `checkPhysBoxesOnOpen = 1`, при закрытии — всегда.
 
-По ассетам триггеры есть у всех дверей игрока: одинарные и люки — 1, двойные и высокие ворота — 2,
+Триггеры есть у всех дверей игрока: одинарные и люки — 1, двойные и высокие ворота — 2,
 гаражная дверь — 1. У гаражной двери `checkPhysBoxesOnOpen = 0`: она проверяет транспорт только
 при закрытии. Остальные — и при открытии, и при закрытии.
 
@@ -96,7 +96,7 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, DoorMan
 ### Апгрейд двери
 
 Дверь реализует `ISimpleUpgradable`. Её можно «улучшить» до другой двери из списка
-`UpgradeItems` префаба. **По ассетам этот список пуст у всех дверей и люков**: апгрейд работает
+`UpgradeItems` префаба. **Этот список пуст у всех дверей и люков**: апгрейд работает
 только у высоких деревянных ворот (в каменные и саманные, [[external-gate]]). Механика
 описана ниже на случай, если список заполнят. Сервер требует:
 
@@ -180,14 +180,3 @@ HP дверей и защита — в префабах, сводка в [[door]
 - Не давайте чужим доступ к замку, если на двери стоит контроллер: спаренный контроллер
   откроет дверь от любого сигнала.
 - Если базу снесли до шкафа, электрические двери перестанут управляться. Их нужно спарить заново.
-
-## Где в коде
-
-- `Door.RPC_OpenDoor`, `Door.RPC_CloseDoor`, `Door.SetOpen` — открытие и закрытие.
-- `Door.OnObjects`, `Door.StartCheckingForBlockages`, `Door.ReverseDoorAnimation` — помехи.
-- `AnimatedBuildingBlock.UpdateAnimationParameters` — флаг `Busy` на время анимации.
-- `DoorCloser.Think`, `DoorCloser.SendClose`, `DoorCloser.RPC_Take` — доводчик.
-- `Door.RPC_KnockDoor`, `DoorKnocker.Knock` — стук.
-- `DoorManipulator.DoAction`, `CustomDoorManipulator.PairDoorAttempt`, `BuildingPrivlidge.UnlinkDoorControllers` — электрика.
-- `Door.DoSimpleUpgrade`, `SimpleUpgrade.CanUpgrade`, `SprayCan.DoRedirectSwap`, `BaseCombatEntity.Reskin_Restore` — апгрейд.
-- `Door.ShouldDisplayPickupOption`, `Door.CanCompletePickup` — подбор.

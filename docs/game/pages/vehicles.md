@@ -73,12 +73,12 @@ code: [BaseVehicle.cs, GroundVehicle.cs, BaseMountable.cs, TriggerHurtNotChild.c
 
 | Транспорт | Расход |
 |-----------|--------|
-| Миникоптер, скрап-хели, боевой вертолёт | `fuelPerSec` = **0,5** ед./с в префабах (в коде по умолчанию 0,25), постоянно, пока двигатель включён: 30 ед./мин |
+| Миникоптер, скрап-хели, боевой вертолёт | `fuelPerSec` = **0,5** ед./с в префабах (по умолчанию 0,25), постоянно, пока двигатель включён: 30 ед./мин |
 | Машина | от `idleFuelPerSec` до `maxFuelPerSec` двигателя (по умолчанию 0,25 и 0,25) по газу, делённое на качество двигательных деталей |
-| Лодка | `fuelPerSec` префаба при нажатом газе (RHIB в варианте Deep Sea 0,25, PT-катер 0,3, буксир 0,33; префабы обычных лодки и RHIB в выгрузку не попали), без газа — 3,33 % от этого |
+| Лодка | `fuelPerSec` префаба при нажатом газе (RHIB в варианте Deep Sea 0,25, PT-катер 0,3, буксир 0,33; значения обычных лодки и RHIB неизвестны), без газа — 3,33 % от этого |
 | Снегоход, подлодка | 0,03 ед./с на холостых → 0,15 ед./с на полном газу |
 | Мотоцикл | 0,03 → 0,125 ед./с |
-| Воздушный шар | 0,2 ед./с в префабе (в коде 0,25), пока горелка включена |
+| Воздушный шар | 0,2 ед./с в префабе (по умолчанию 0,25), пока горелка включена |
 
 Стартовое топливо при спауне (`StartingFuelUnits`): коптеры 100, лодки 50, воздушный шар 75,
 снегоход и мотоциклы 0, прочее — 20 % ёмкости бака.
@@ -231,7 +231,7 @@ HP из префабов (`startHealth`): миникоптер 750, боевой
 
 - **Взрыв отбрасывает транспорт.** Если `Explosion + 0,5 × AntiVehicle` урона больше 3, к телу
   прикладывается взрывная сила `min(урон × explosionForceMultiplier, explosionForceMax)` —
-  по умолчанию в коде 100 и 10 000 (`BaseVehicle.DoExplosionForce`).
+  по умолчанию 100 и 10 000 (`BaseVehicle.DoExplosionForce`).
 - **Толкание** (`RPC_WantsPush`): не чаще раза в секунду, стоит 3 калории, только пешком и в
   пределах 5 м. Стоящий транспорт толкается импульсом `масса × 5`, перевёрнутый —
   переворачивается вращающим импульсом `масса × 9` (`DoPushAction`). Так ставят на колёса
@@ -296,20 +296,3 @@ HP из префабов (`startHealth`): миникоптер 750, боевой
   каждый толчок — 3 калории.
 - На мотоцикле и велосипеде даже небольшой удар об стену снимает заметную долю HP; на машине
   без разгона столкновения почти безвредны.
-
-## Где в коде
-
-- `PlayerHelicopter.DecayTick`, `ModularCar.DecayTick`, `ModularCar.DoDecayDamage` — распад коптеров и машин.
-- `BaseBoat.WaterVehicleDecay` — распад лодок и подлодок.
-- `RidableHorse.HorseDecay`, `RidableHorse.AddDecayDelay` — лошади.
-- `HotAirBalloon.DecayTick`, `Snowmobile.SnowmobileDecay` — прочее.
-- `BaseEntity.IsOutside` — проверка «под крышей».
-- `EntityFuelSystem.TryUseFuel`, `VehicleModuleEngine.VehicleFixedUpdate` — топливо.
-- `VehicleSpawner.SpawnVehicle`, `CleanupArea`, `BaseVehicle.SetupOwner`, `IsSafe` — покупка и защита.
-- `ModularCarCodeLock.PlayerCanUseThis` — замок машины.
-- `VehicleVendor.FindVehicleSpawner`, `NPCTalking.OnConversationAction` — покупка за скрап.
-- `RepairableVehiclePad`, `ConstructableEntity.DoRepair`, `VehicleSpawner.IsPadUsable` — площадка Airwolf.
-- `BaseVehicle.MountEligable`, `GetIdealMountPoint`, `OnAttacked` — доступ и неуязвимость купленного.
-- `GroundVehicle.ProcessCollision`, `QueueCollisionDamage`, `OnHurtTriggerOccupant`, `TriggerHurtNotChild.OnTick` — столкновения и наезды.
-- `BaseVehicle.DoExplosionForce`, `RPC_WantsPush`, `DoPushAction`, `GetPlayerDamageInitiator` — взрывы, толкание, виновник.
-- `BaseMountable.VehicleFixedUpdate`, `ApplyRepelForce` — граница карты.

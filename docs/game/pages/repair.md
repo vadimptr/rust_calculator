@@ -18,7 +18,7 @@ code: [BaseCombatEntity.cs, Hammer.cs, BuildingBlock.cs, ConstructionGrade.cs, R
   `RepairCostFraction = 1`: полная починка с нуля стоит как постройка блока этого грейда.
   У остальных объектов по умолчанию `0.5`.
 
-Максимальное HP при ремонте не снижается: в коде нет механики «износа» от починки.
+Максимальное HP при ремонте не снижается: в игре нет механики «износа» от починки.
 
 ## Как работает
 
@@ -154,14 +154,3 @@ build_i = ceil( gradeBase.baseCost_i × Construction.costMultiplier × decay.<г
 - Цена полной починки по грейдам — цена постройки ([[data-building-blocks]]): стена 50 / 200
   дерева, 300 камня, 200 металла или 25 МВК; пол и крыша — половина, треугольный пол — четверть.
 - Двери и деплои чинить выгоднее, чем строить заново: половина цены.
-
-## Где в коде
-
-- `BaseCombatEntity.DoRepair`, `RepairCost`, `RepairCostFraction`, `BuildCost`, `GetDamageRepairCooldown`, `SetJustAttacked`, `CanBeReskinned`.
-- `Hammer.DoAttackShared`, `Hammer.CanHit`.
-- `BuildingBlock.RepairCostFraction`, `BuildingBlock.BuildCost`, `BuildingBlock.DoUpgradeToGrade`.
-- `ConstructionGrade.UpdateCosts`, `CostToBuild`.
-- `RepairBench.StripComponentRepairCost`.
-- `DecayEntity.OnRepairFinished`.
-- `Planner.CanUpgradeInPlace`.
-- `ConVar.Decay.GetCostMultiplier`.

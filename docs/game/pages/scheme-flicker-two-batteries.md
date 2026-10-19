@@ -16,8 +16,8 @@ code: [ElectricBattery.cs, IOEntity.cs, ElectricalDFlipFlop.cs, ElectricalBlocke
 [[flicker|мерцания]] и заряжаются по **максимуму** последних входов, то есть так, будто панель всё время
 подключена к каждой. Итог — по 14,4 rWs/с на каждую, в сумме в 1,8 раза больше обычного.
 
-> На многих серверах генераторы колебаний ради заряда считаются абузом и запрещены правилами. Защиты в
-> коде сервера нет, но админ видит такую схему в `ioentity.debugqueue`.
+> На многих серверах генераторы колебаний ради заряда считаются абузом и запрещены правилами. Защиты
+> на сервере нет, но админ видит такую схему в `ioentity.debugqueue`.
 
 ## Схема
 
@@ -126,12 +126,3 @@ wire cell.Inverted Output -> batb.Power In "0 / 18"
   ячейка обнулит все входы.
 - **Прожектор на мигающем питании разрушается** — 25 урона за каждое включение. Остальные элементы схемы от мерцания не страдают.
 - История входов батареи не очищается. Утром первые 1–2 начисления могут пройти по вчерашнему пику — на расчёт это не влияет.
-
-## Где в коде
-
-- `ElectricBattery.IOStateChanged`, `AddCharge`, `DesiredPower`, `GetHighestInputFromHistory` — заряд по пику.
-- `IOEntity.IOStateChanged`, `IsFlickering`, `ShouldUpdateOutputs` — условие мерцания и задержка 0,1 с.
-- `ElectricalBlocker.UpdateBlocked`, `GetPassthroughAmount` — инвертор.
-- `ElectricalDFlipFlop.GetDesiredState`, `UpdateOutputs`, `DetectShortCircuit` — ячейка памяти.
-- `ElectricalBranch.GetPassthroughAmount`, `Splitter.GetPassthroughAmount` — деление тока.
-- `SolarPanel.SunUpdate` — выработка панели.

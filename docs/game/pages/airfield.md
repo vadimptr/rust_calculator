@@ -45,7 +45,3 @@ code: [AirfieldAirdropTerminal.cs, AirfieldCallChinookTerminal.cs, ChargeUpIOEnt
 
 - Аэродром — источник красной карты без радиационного костюма (зона всего `LOW`).
 - Терминал чинука: 10 минут под током 36 — и чинук летит к вам.
-
-## Где в коде
-
-- `AirfieldAirdropTerminal`, `AirfieldCallChinookTerminal.Activate`, `ChargeUpIOEntity`.

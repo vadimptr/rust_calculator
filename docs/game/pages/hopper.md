@@ -17,14 +17,14 @@ code: [Hopper.cs, IndustrialEntity.cs, ItemContainer.cs, ConVar/Server.cs]
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Рецепт | 200 фрагментов металла, 1 шестерня, верстак 1, 30 с | чертёж `Hopper.item` |
-| Потребление | 8 | `Hopper.ConsumptionAmount`, `DesiredPower` |
-| Порты | вход 0 Power In, вход 1 Industrial In, выход 0 Industrial Out | префаб |
-| Частота сканирования | раз в 0,5 с | `InvokeRepeating(QueueScan, 0.5, 0.5)` |
-| Задержка | предмет должен пролежать в зоне > 0,5 с | `ItemTrigger.EnterTime > 0.5` |
-| Бюджет анимации | 0,1 мс за кадр | `server.hopperAnimationBudgetMs` |
+| Параметр | Значение |
+|----------|----------|
+| Рецепт | 200 фрагментов металла, 1 шестерня, верстак 1, 30 с |
+| Потребление | 8 |
+| Порты | вход 0 Power In, вход 1 Industrial In, выход 0 Industrial Out |
+| Частота сканирования | раз в 0,5 с |
+| Задержка | предмет должен пролежать в зоне > 0,5 с |
+| Бюджет анимации | 0,1 мс за кадр |
 
 ## Поведение
 
@@ -50,7 +50,3 @@ code: [Hopper.cs, IndustrialEntity.cs, ItemContainer.cs, ConVar/Server.cs]
 - Воронка на ящике у фермы или под ловушками собирает дроп. Конвейер из того же ящика
   развозит его дальше.
 - Нужна стабильная мощность 8: при 7 воронка не работает.
-
-## Где в коде
-
-- `Hopper.ScanForItemsTick`, `MovingItemsTick`, `IntakeItem`, `IOStateChanged`, `OnParentChanging`

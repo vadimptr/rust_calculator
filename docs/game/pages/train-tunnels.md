@@ -50,8 +50,3 @@ code: [GenerateDungeonGrid.cs, DungeonGridCell.cs, DungeonGridInfo.cs, TunnelDwe
 
 - Не ложитесь спать (не выходите из игры) на станции — сброс убьёт спящего.
 - Тяжёлую баррикаду лучше снести оружием, чем таранить дрезиной: таран бьёт по поезду.
-
-## Где в коде
-
-- `GenerateDungeonGrid.Process`; `DungeonGridInfo`, `DungeonGridCell`.
-- `HittableByTrains`, `TunnelDweller`, `NPCDwelling`, `PuzzleReset.AnyPlayersWithinDistance`.

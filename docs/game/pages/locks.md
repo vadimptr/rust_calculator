@@ -34,7 +34,7 @@ code: [BaseLock.cs, CodeLock.cs, KeyLock.cs, Deployer.cs, Door.cs, StorageContai
 3. До цели не больше 3 м.
 4. Игрок может строить в границах цели (`CanBuild(baseEntity.WorldSpaceBounds())`).
 
-Слот `Lock` есть у двери, если в префабе `canTakeLock = true`. По ассетам флаг стоит у всех дверей
+Слот `Lock` есть у двери, если в префабе `canTakeLock = true`. Флаг стоит у всех дверей
 игрока (одинарных и двойных), люков, гаражной двери, высоких ворот, двери камеры, калитки
 забора и витрины. Нет его у деревянных ставней и у дверей монументов. У контейнера слот есть,
 если `isLockable`. У шкафа (`BuildingPrivlidge`) он есть всегда.
@@ -122,11 +122,3 @@ code: [BaseLock.cs, CodeLock.cs, KeyLock.cs, Deployer.cs, Door.cs, StorageContai
 - Большой клан, раздающий коды от дверей, платит за это повышенный налог содержания,
   даже если никого не авторизовал в шкафу.
 - Нужно убрать доступ у всех — смените основной код: список допущенных обнулится.
-
-## Где в коде
-
-- `BaseLock.OnTryToOpen`, `BaseLock.RPC_TakeLock`, `BaseLock.GetPlayerLockPermission` — общее поведение.
-- `CodeLock.RPC_ChangeCode`, `UnlockWithCode`, `TryLock`, `TryUnlock`, `ClearCodeEntryBlocked` — кодовый замок.
-- `KeyLock.HasLockPermission`, `RPC_CreateKey`, `OnDeployed` — ключевой замок.
-- `Deployer.DoDeploy_Slot` — установка в слот.
-- `BuildingPrivlidge.RefreshDoorGroupMembers`, `RecalculateGroupUpkeep` — замки и налог на группу.

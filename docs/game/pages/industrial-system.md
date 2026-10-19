@@ -92,17 +92,17 @@ code: [IndustrialEntity.cs, IndustrialConveyor.cs, IOEntity.cs, IIndustrialStora
 
 ### Диапазоны слотов у разных хранилищ
 
-| Хранилище | Кладёт в слоты | Забирает из слотов | Источник |
-|-----------|----------------|---------------------|----------|
-| Ящик, холодильник, шкаф (TC), торговый автомат, шкафчик на стене | весь инвентарь | весь инвентарь | `IndustrialStorageAdaptor.InputSlotRange` |
-| Почтовый ящик (`DropBox`) | весь | весь | особый случай в `OutputSlotRange` |
-| Шкафчик (`Locker`) | 14 слотов одного комплекта — какого, зависит от сокета адаптера | то же | `Locker.GetIndustrialSlotRange` |
-| Маленькая печь (`IndustrialMode = Furnace`) | 0–2 (топливо + руда) | 3–5 | `BaseOven.InputSlotRange` |
-| Большая печь (`LargeFurnace`) | 0–6 | 7–16 | там же |
-| Нефтеперегонка (`OilRefinery`) | 0–1 | 2–4 | там же |
-| Электропечь (`ElectricFurnace`) | 0–1 | 2–4 | там же |
-| Промышленный крафтер | вход 4–8 или чертежи 0–3 (по порту) | выход 9–12 или чертежи 0–3 | `IndustrialCrafter` |
-| Воронка | весь ящик | весь ящик | `Hopper` |
+| Хранилище | Кладёт в слоты | Забирает из слотов |
+|-----------|----------------|---------------------|
+| Ящик, холодильник, шкаф (TC), торговый автомат, шкафчик на стене | весь инвентарь | весь инвентарь |
+| Почтовый ящик (`DropBox`) | весь | весь |
+| Шкафчик (`Locker`) | 14 слотов одного комплекта — какого, зависит от сокета адаптера | то же |
+| Маленькая печь (`IndustrialMode = Furnace`) | 0–2 (топливо + руда) | 3–5 |
+| Большая печь (`LargeFurnace`) | 0–6 | 7–16 |
+| Нефтеперегонка (`OilRefinery`) | 0–1 | 2–4 |
+| Электропечь (`ElectricFurnace`) | 0–1 | 2–4 |
+| Промышленный крафтер | вход 4–8 или чертежи 0–3 (по порту) | выход 9–12 или чертежи 0–3 |
+| Воронка | весь ящик | весь ящик |
 
 Внутри диапазона печь всё равно раскладывает предметы по своим правилам
 (`BaseOven.GetAllowedSlots`): горючее идёт только в слоты топлива, руда — только во входные.
@@ -139,7 +139,7 @@ code: [IndustrialEntity.cs, IndustrialConveyor.cs, IOEntity.cs, IIndustrialStora
 | `server.allowSorting` | true | Сортировка через адаптер |
 | `server.enforcePipeChecksOnBuildingBlockChanges` | true | Резать трубы при смене модели стены или крыши |
 | `ioentity.frameBudgetIndustrialMs` | 0,25 мс | Бюджет IO-очереди для пересчёта питания и сигналов промышленных сущностей (не перенос предметов) |
-| `MaxStackSizePerMove` | 60 | Префаб `industrialconveyor.deployed` (в коде по умолчанию 128) |
+| `MaxStackSizePerMove` | 60 | Префаб `industrialconveyor.deployed` (по умолчанию 128) |
 | Фильтров у конвейера | до 30 | `IndustrialConveyor.MAX_FILTER_SIZE` |
 | Точек в сети конвейера | до 32 | `FindContainerSource` |
 
@@ -170,12 +170,3 @@ code: [IndustrialEntity.cs, IndustrialConveyor.cs, IOEntity.cs, IIndustrialStora
   руда — максимум 3000 на печь. Тогда печи не переполняются, а остаток лежит в ящике.
 - Для забора готового из печей отдельный конвейер без фильтров вытащит только выходные слоты.
 - Держите трубы снаружи стен или ведите их через двери: стену сквозь трубу поставить нельзя.
-
-## Где в коде
-
-- `IndustrialEntity.Queue`, `ServerMgr` (вызов `RunQueue(ConVar.Server.industrialFrameBudgetMs)`)
-- `IndustrialConveyor.OnFlagsChanged`, `RunConveyor`, `CheckIfAnyInputPassesFilters`
-- `IOEntity.FindContainerSource`, `NotifyIndustrialNetworkChanged`, `RefreshIndustrialPreventBuilding`
-- `ItemContainer.QuickIndustrialPreCheck`, `GetTotalItemAmount`, `GetTotalCategoryAmount`
-- `BaseOven.InputSlotRange`, `OutputSlotRange`, `GetAllowedSlots`; `Locker.GetIndustrialSlotRange`
-- `WireTool.ValidateLine`, `VerifyLineOfSight`; `BuildingBlock.CheckForPipes`

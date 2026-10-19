@@ -11,7 +11,7 @@ code: [BuildingPrivlidge.cs, BaseEntity.cs, BasePlayer.cs, BuildingManager.cs, B
 
 ## Кратко
 
-Шкаф (класс `BuildingPrivlidge` — опечатка в имени класса так и живёт в коде) хранит список
+Шкаф (класс `BuildingPrivlidge` — с опечаткой в имени) хранит список
 авторизованных игроков (`authorizedPlayers`, набор Steam ID). Он не «излучает» круг вокруг себя:
 его зона — это **16 метров от каждого блока постройки здания**, в котором стоит шкаф.
 Чем больше база, тем больше зона, и форма у неё повторяет контур постройки.
@@ -125,8 +125,8 @@ code: [BuildingPrivlidge.cs, BaseEntity.cs, BasePlayer.cs, BuildingManager.cs, B
   отклоняет.
 - **Замок на шкафу защищает список, а не зону.** Вскрыв или убрав шкаф, рейдер получает
   возможность строить; авторизоваться в чужом шкафу с замком без кода нельзя.
-- **`Flag_BlockAllFromBuilding`** запрещает строить даже авторизованным. В серверном коде
-  этот флаг никто не выставляет, он приходит из префабов: стоит в поле `flags` у «трупов» шкафа
+- **`Flag_BlockAllFromBuilding`** запрещает строить даже авторизованным. Сама игра
+  этот флаг не выставляет, он приходит из префабов: стоит в поле `flags` у «трупов» шкафа
   режима softcore (`cupboard.tool.corpse` и вариантов retro / shockbyte). Пока такой «труп»
   держит зону, строить в ней не может никто ([[building-blocked]]).
 - **Привилегия у здания, а не у шкафа-коробки.** Все блоки здания используют один «главный»
@@ -139,12 +139,3 @@ code: [BuildingPrivlidge.cs, BaseEntity.cs, BasePlayer.cs, BuildingManager.cs, B
 - Хотите снести блок — у вас 10 минут и нужен шкаф с вашей авторизацией. Потом только ломать.
 - После рейда первое, что делают, — ломают шкаф: без него зона пропадает, и можно строить
   внутри или рядом.
-
-## Где в коде
-
-- `BaseEntity.GetBuildingPrivilege(OBB, ...)` — поиск шкафа для точки.
-- `BasePlayer.CanBuild`, `IsBuildingBlocked`, `IsBuildingAuthed`, `CanPlaceBuildingPrivilege`.
-- `BuildingPrivlidge.CanBuild`, `IsAuthed`, `CanAdministrate`, `AddPlayer`, `RemovePlayer`, `ClearAuthList`.
-- `BuildingManager.Building.GetDominatingBuildingPrivilege`.
-- `BuildingProximity.Check` — пристройка к чужому зданию.
-- `DecayEntity.CanDemolish`, `IsDemolishable`, `StartBeingDemolishable`.

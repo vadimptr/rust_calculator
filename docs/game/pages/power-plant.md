@@ -81,11 +81,3 @@ code: [PowergridManager.cs, PowergridFuseBox.cs, PowergridStageConfig.cs, Powerg
 - Чтобы держать 4-ю стадию, нужно 18 предохранителей; три самых старых горят за 2 ч 40 мин
   (на пустом сервере — в 4 раза медленнее). Меняйте самые изношенные.
 - Ставить предохранители выгоднее при низком онлайне: износ ×0.25 до 10 игроков.
-
-## Где в коде
-
-- `PowergridManager.Server_GetPowerPlantInsertedFuses`, `ServerTick`, `ServerFuseDeteriorationTick`,
-  `Server_GetCurrentPowerlineEnergy`.
-- `PowergridFuseBox.Server_DeteriorateFuse`, `Server_OnFuseRemovalAttempt`, `CanSwapFrom`.
-- `PowergridStageConfig.GetStageForFuseCount`; `ElectricGenerator.GetCurrentEnergy`.
-- `Recycler` (конфиг `RecyclerConfig`), `Marketplace.Server_GetChargeRate`, `WaterCatcher.ToggleProducing`.

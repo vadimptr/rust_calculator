@@ -27,7 +27,3 @@ code: [PuzzleReset.cs, CardReader.cs, TimerSwitch.cs, TriggerMonumentIOArea.cs]
 
 - `falloff 0.1` — край зоны не спасает, в отличие от Канализационного отвода.
 - Точка подключения труб `watertreatment_pipe_access_point` — объект водной системы.
-
-## Где в коде
-
-- `PuzzleReset`, `CardReader`, `TriggerRadiation` префаба.

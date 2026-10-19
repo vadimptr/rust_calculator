@@ -77,8 +77,8 @@ code: [TimedExplosive.cs, DamageUtil.cs, DudTimedExplosive.cs, ServerProjectile.
 
 Препятствиями считаются только слои из маски `1218519041`: стройка, рельеф, мир, деревья,
 крупная техника, Default. **Слоя деплоев в ней нет**: ящики, шкафы, кровати и прочие
-деплои взрыв не заслоняют. Номера слоёв видны в коде, а имена даны по стандартной схеме
-слоёв Rust (самого перечисления `Rust.Layer` в коде сервера нет).
+деплои взрыв не заслоняют. Имена слоёв даны по стандартной схеме
+слоёв Rust.
 
 ### Режим 2: «только родитель» (`onlyDamageParent`)
 
@@ -208,7 +208,7 @@ code: [TimedExplosive.cs, DamageUtil.cs, DudTimedExplosive.cs, ServerProjectile.
 ## Нюансы
 
 - **Поставленный и брошенный заряд — разные вещи только для бобовки.** Флаг «бить только
-  родителя» в коде выставляет установка (`DoDrop`), а брошенный заряд ведёт себя так,
+  родителя» выставляет установка (`DoDrop`), а брошенный заряд ведёт себя так,
   как задано в префабе. У C4 и сачеля в префабе `onlyDamageParent = 1`, так что для них
   разницы нет. У бобовки `0`: брошенная, она бьёт радиально.
 - **Поставленный заряд не задевает соседние блоки**, но задевает деплои и людей:
@@ -239,9 +239,9 @@ code: [TimedExplosive.cs, DamageUtil.cs, DudTimedExplosive.cs, ServerProjectile.
   (C4 275, ракета 137.7, сачель 43.5 по металлу) подтверждается для камня, металла и МВК;
   по дереву и дверям числа в приложении занижены, но число зарядов от этого не меняется.
   Отличия:
-  - в коде такой заряд ещё бьёт деплои в радиусе;
+  - на деле такой заряд ещё бьёт деплои в радиусе;
   - заряд на двери задевает и проём;
-  - видимость в коде — «хотя бы один из двух лучей к центру или ближайшей точке, деплои
+  - видимость — «хотя бы один из двух лучей к центру или ближайшей точке, деплои
     не заслоняют»;
   - у разрывного патрона радиусы в приложении 0.3 / 0.6 м, а в игре 0 / 1.5 м, и мини-взрыв
     бьёт также блок, в который попала пуля (см. [[explosive-ammo]]);
@@ -254,13 +254,3 @@ code: [TimedExplosive.cs, DamageUtil.cs, DudTimedExplosive.cs, ServerProjectile.
 - Ракетой выгодно бить в стык нескольких блоков: каждый блок в `minExplosionRadius` от точки
   взрыва получает полный урон, а точка взрыва — в 10 см от поверхности.
 - Мебель за стеной от ракеты не прикрывает, а стена прикрывает.
-
-## Где в коде
-
-- `TimedExplosive` — `SetFuse`, `Explode(Vector3)`, `ExplosionCenter`, `OnCollision`, `DoStick`, `CanStickTo`, `CheckClippingThroughWalls`, `GetDamageList`.
-- `DamageUtil.RadiusDamage`, `ShouldSingleHitSharedParentEntity`.
-- `BaseEntity.IsVisible(Vector3, float)`, `IsVisible(Ray, int, float)`.
-- `ThrownWeapon.DoDrop`, `DoThrowImpl`.
-- `ServerProjectile.DoMovement`, `DoHitDetection`, `ProcessHit`, `GetMaxRange`; `BaseLauncher.SV_Launch`.
-- `MLRS.FireNextRocket`, `MLRSRocket.ProjectileImpact`, `MLRSServerProjectile`.
-- `FlameExplosive.FlameExplode`, `RFTimedExplosive.SetFuse/ArmRF/RFSignalUpdate`.

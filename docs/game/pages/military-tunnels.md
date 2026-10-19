@@ -53,8 +53,3 @@ code: [PuzzleReset.cs, NPCSpawner.cs, Rust.Ai/AiLocationSpawner.cs, Rust.Ai/Scie
 - Возьмите все три карты, предохранитель и защиту 25.
 - 22 автоматчика в главном зале не возвращаются — после зачистки зал безопасен до сброса.
 - Оружейная открыта 120 с: сначала зачистите, потом жмите кнопку.
-
-## Где в коде
-
-- `PuzzleReset.AnyPlayersWithinDistance`, `ResetTick`, `CleanupSleepers`.
-- `NPCSpawner`, `AiLocationSpawner.SpawnInitial`, `ScientistSpawner.Spawn`.

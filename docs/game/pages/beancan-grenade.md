@@ -18,19 +18,19 @@ code: [DudTimedExplosive.cs, TimedExplosive.cs, ThrownWeapon.cs, DamageUtil.cs, 
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Класс | `DudTimedExplosive` | компонент префаба `grenade.beancan.deployed` |
-| Шанс осечки | **15 %** (`dudChance = 0.15`; умолчание класса 0.4) | префаб |
-| Фитиль | 3.5–4 с × (0.334 с шансом 15 %, ×3 с шансом 12.75 %): 1.2–1.3 с, 3.5–4 с или 10.5–12 с | `timerAmountMin/Max` в префабе + `DudTimedExplosive.GetRandomTimerTime` |
-| Радиусы | полный урон до 1.5 м, ноль на 4.5 м | `minExplosionRadius`, `explosionRadius` в префабе |
-| Урон | 15 Explosion + 50 Blunt + 50 Stab | `damageTypes` префаба |
-| Урон по игрокам | 115 Explosion | `playerDamage` префаба |
-| Только родитель | нет | `onlyDamageParent = 0` в префабе |
-| Прилипание при броске | нет | `canStick = 0` у заряда |
-| Установка вплотную | да | `canStick = 1` у оружия `grenade.beancan.entity` (`GrenadeWeapon`) |
-| Гаснет в воде | да | `becomeDudInWater = 1` в префабе |
-| Бросок | 13 м/с × `throwScale` + скорость игрока × 0.5 | `maxThrowVelocity = 13` у оружия, `ThrownWeapon.ComputeThrowVelocity` |
+| Параметр | Значение |
+|----------|----------|
+| Класс | `DudTimedExplosive` |
+| Шанс осечки | **15 %** (`dudChance = 0.15`; умолчание класса 0.4) |
+| Фитиль | 3.5–4 с × (0.334 с шансом 15 %, ×3 с шансом 12.75 %): 1.2–1.3 с, 3.5–4 с или 10.5–12 с |
+| Радиусы | полный урон до 1.5 м, ноль на 4.5 м |
+| Урон | 15 Explosion + 50 Blunt + 50 Stab |
+| Урон по игрокам | 115 Explosion |
+| Только родитель | нет |
+| Прилипание при броске | нет |
+| Установка вплотную | да |
+| Гаснет в воде | да |
+| Бросок | 13 м/с × `throwScale` + скорость игрока × 0.5 |
 
 Все значения — в [[data-explosives]].
 
@@ -90,10 +90,3 @@ code: [DudTimedExplosive.cs, TimedExplosive.cs, ThrownWeapon.cs, DamageUtil.cs, 
   и разброса урона по площади считать её надо с запасом.
 - Бросайте вплотную к цели: урон полный до 1.5 м от ближайшей точки двери и падает линейно
   до нуля к 4.5 м. Деревянная дверь — 7 бобовок, листовая — 21.
-
-## Где в коде
-
-- `DudTimedExplosive.GetRandomTimerTime`, `Explode`, `BecomeDud`, `RPC_Pickup`, `DoSplash`.
-- `TimedExplosive.Explode`, `DamageUtil.RadiusDamage`.
-- `ThrownWeapon.DoThrowImpl`, `ComputeThrowVelocity`, `DoDrop`.
-- `ConVar.Halloween` — `scarecrows_throw_beancans`, `scarecrow_throw_beancan_global_delay`, `scarecrow_beancan_vs_player_dmg_modifier`.

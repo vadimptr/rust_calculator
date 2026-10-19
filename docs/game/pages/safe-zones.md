@@ -31,8 +31,8 @@ code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone
 `BaseEntity.InSafeZone` возвращает «да», если объект внутри любого `TriggerSafeZone` и проходит
 проверку высоты `PassesHeightChecks`: не ниже центра триггера больше чем на `maxDepth`
 (по умолчанию 20 м) и не выше на `maxAltitude` (по умолчанию −1, то есть без ограничения).
-Значения могут быть переопределены в префабе; префабы монументов с зонами в выгрузку
-ассетов не попали, а у единственного выгруженного триггера (паром Nexus,
+Значения могут быть переопределены в префабе; для монументов точные значения
+неизвестны, а у единственного известного триггера (паром Nexus,
 `nexusferry.entity`) стоят те же 20 м и −1. Если активный игровой режим отключает
 безопасные зоны (`BaseGameMode.safeZone = false`), зон нет вовсе.
 
@@ -49,7 +49,7 @@ code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone
 
 ### 3. Что делает игрока враждебным
 
-| Действие | Длительность | Где в коде |
+| Действие | Длительность | Где задано |
 |----------|-------------|-----------|
 | Выстрел из огнестрела (где угодно на карте) | 60 с | `BaseProjectile` → `MarkHostileFor()` |
 | Урон игроку, если стрелок или жертва в зоне | 300 с | `BasePlayer.Hurt` → `MarkHostileFor(300)` |
@@ -99,11 +99,11 @@ code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone
 |--------|--------------|-----------|
 | `npcautoturret.sleeperhostiledelay` | 1200 с | Через сколько спящий в зоне убивается/становится целью |
 | `npcautoturret.forceDamageBlockedSleepers` | `true` | 5 урона спящему, если пуля не прошла |
-| `sentry.hostileduration` | 120 с | Объявлен, но в коде этой версии не используется |
+| `sentry.hostileduration` | 120 с | Объявлен, но в этой версии не используется |
 | `player.adminsafezonelooting` | `false` | Разрешить админам лутать игроков в зоне |
 | `clearhostile` / `markhostile` | — | Админ-команды сброса/установки враждебности |
 
-Длительности 30/60/300 с из таблицы выше — константы в коде, ConVar для них нет.
+Длительности 30/60/300 с из таблицы выше — константы, ConVar для них нет.
 
 ## Нюансы
 
@@ -126,7 +126,7 @@ code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone
   Брэдли — только враждебных ([[bradley]]).
 - Купленный транспорт рядом с точкой выдачи защищён отдельно, см. [[vehicles]].
 - **Переработчик в зоне хуже обычного.** Жёлтый переработчик возвращает 40 % ингредиентов
-  за тик 8 с, а зелёный на монументе — 50 % за 5 с (ассет `RecyclerConfig`, см. [[recycler]]).
+  за тик 8 с, а зелёный на монументе — 50 % за 5 с (`RecyclerConfig`, см. [[recycler]]).
 - **Возрождение в Outpost** на ванильном сервере открывается миссией и даёт личную
   перезарядку 30 минут; пока вы враждебны, точка недоступна (см. [[respawn]]).
 
@@ -135,12 +135,3 @@ code: [TriggerSafeZone.cs, TriggerSafeZoneOverride.cs, TriggerHostileWarningZone
 - Подходите к Outpost с убранным оружием и не стреляйте последнюю минуту перед входом.
 - Если стали враждебным, отойдите из зоны и переждите таймер — он виден в интерфейсе.
 - Не оставляйте персонажа спящим в безопасной зоне.
-
-## Где в коде
-
-- `TriggerSafeZone.PassesHeightChecks`, `BaseEntity.InSafeZone` — границы зоны.
-- `BasePlayer.IsItemHoldRestricted`, `BasePlayer.UpdateHostility` — оружие в руках.
-- `BasePlayer.MarkHostileFor`, `SetHostileDuration` — таймер враждебности.
-- `BasePlayer.Hurt` (блок с `MarkHostileFor(300f)`), `BasePlayer.OnAttacked` (`ManuallyCheckSafezone`) — враждебность и обнуление урона.
-- `NPCAutoTurret.IsEntityHostile`, `AutoTurret.FireGun`, `AutoTurret.ApplyDamage` — турели.
-- `BasePlayer.StartSleeping`, `BasePlayer.ScheduledDeath` — убийство спящих.

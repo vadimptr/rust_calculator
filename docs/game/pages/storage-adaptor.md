@@ -18,13 +18,13 @@ code: [IndustrialStorageAdaptor.cs, StorageContainer.cs, ContainerIOEntity.cs, L
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 30 | `startHealth` в префабе |
-| Рецепт | 100 фрагментов металла, верстак 1, 30 с | чертёж `StorageAdaptor.item` |
-| Порты | вход 0 Industrial In, вход 1 Power In, выход 0 Industrial Out, выход 1 Passthrough | префаб |
-| Потребление | 1 (только для сортировки и проброса) | `IndustrialStorageAdaptor.ConsumptionAmount` |
-| Проброс тока | вход − 1 | `GetCurrentEnergy` |
+| Параметр | Значение |
+|----------|----------|
+| HP | 30 |
+| Рецепт | 100 фрагментов металла, верстак 1, 30 с |
+| Порты | вход 0 Industrial In, вход 1 Power In, выход 0 Industrial Out, выход 1 Passthrough |
+| Потребление | 1 (только для сортировки и проброса) |
+| Проброс тока | вход − 1 |
 
 ### Куда ставится
 
@@ -93,10 +93,3 @@ code: [IndustrialStorageAdaptor.cs, StorageContainer.cs, ContainerIOEntity.cs, L
   после каждого привоза склад сам наводит порядок.
 - Через адаптер на шкафу можно автоматически пополнять ресурсы на содержание из склада
   (лучше с фильтром Max).
-
-## Где в коде
-
-- `IndustrialStorageAdaptor.Container`, `InputSlotRange`, `OutputSlotRange`, `IOStateChanged`,
-  `RequestSort`, `ApplySorting`, `UpdatedStorageSettings`
-- `StorageContainer.OnIndustrialItemTransferBegins`, `OnInventoryDirty`, `HasAttachedStorageAdaptor`
-- `Locker.GetIndustrialSlotRange`, `Locker.ItemFilter`; `VendingMachine.CanAcceptItem`, `CanRotate`

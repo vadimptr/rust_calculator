@@ -86,9 +86,3 @@ code: [BaseOven.cs, ElectricOven.cs, ElectricFurnaceIO.cs, ItemModBurnable.cs, I
 - Электропечь удобна для автоматизации: она сама включается от питания и не останавливается
   намертво при полном выходе.
 - Держите печи подальше от разбрызгивателей: вода их гасит.
-
-## Где в коде
-
-- `BaseOven.SVSwitch`, `BaseOven.StartCooking`, `BaseOven.StopCooking`, `BaseOven.OvenFull` — включение и остановка.
-- `BaseOven.InputSlotRange`, `BaseOven.OutputSlotRange` — слоты для конвейеров.
-- `ElectricOven`, `ElectricFurnaceIO` — электропечь.

@@ -18,15 +18,15 @@ code: [IndustrialConveyor.cs, IndustrialEntity.cs, IOEntity.cs, ItemContainer.cs
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 200 | `startHealth` в префабе |
-| Рецепт | 75 фрагментов металла, верстак 1, 30 с | чертёж `industrialconveyor.item` |
-| Потребление | 1 | `IOEntity.ConsumptionAmount` |
-| Интервал | 5 с ± 2,5 с | `server.conveyorMoveFrequency`, `InvokeRandomized(…, freq × 0.5)` |
-| Порция | до 60 из стопки, делится на число получателей | `MaxStackSizePerMove` в префабе |
-| Фильтров | до 30 (RPC читает максимум 60 записей, дубли отбрасываются) | `MAX_FILTER_SIZE`, `RPC_ChangeFilters` |
-| Подбор | нужны права в шкафу и молоток, прочность −25 % | `pickup` в префабе |
+| Параметр | Значение |
+|----------|----------|
+| HP | 200 |
+| Рецепт | 75 фрагментов металла, верстак 1, 30 с |
+| Потребление | 1 |
+| Интервал | 5 с ± 2,5 с |
+| Порция | до 60 из стопки, делится на число получателей |
+| Фильтров | до 30 (RPC читает максимум 60 записей, дубли отбрасываются) |
+| Подбор | нужны права в шкафу и молоток, прочность −25 % |
 
 ### Порты
 
@@ -97,7 +97,7 @@ code: [IndustrialConveyor.cs, IndustrialEntity.cs, IOEntity.cs, ItemContainer.cs
 - **Буфер не сохраняется.** `activeBuffers` не пишется в сейв, после рестарта счёт начинается заново.
 - **Фильтр по чертежу** (`IsBlueprint`) ловит только бумажные чертежи этого предмета,
   а запись без флага — только сам предмет.
-- Ошибки в логике фильтров, найденные в коде, собраны в [[industrial-quirks]].
+- Ошибки в логике фильтров собраны в [[industrial-quirks]].
 
 ## На практике
 
@@ -113,10 +113,3 @@ code: [IndustrialConveyor.cs, IndustrialEntity.cs, IOEntity.cs, ItemContainer.cs
 - Хотите «включаться только по таймеру» — подайте сигнал на Turn On и Turn Off,
   а питание держите постоянным.
 - Выход Filter Pass удобно завести на счётчик или RF-передатчик: так видно, что линия работает.
-
-## Где в коде
-
-- `IndustrialConveyor.RunConveyor`, `CheckIfAnyInputPassesFilters`, `FilterHasItem`, `FilterMatches`,
-  `GetItemToMove`, `GetBufferRemainingForFilter`, `DeductBufferRemaining`
-- `IndustrialConveyor.IOStateChanged`, `SetSwitch`, `GetPassthroughAmount`, `ShouldDrainBattery`
-- `IndustrialConveyor.RPC_ChangeFilters`, `SvSwitch`, `Server_RequestUpToDateFilters`

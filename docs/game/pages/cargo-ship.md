@@ -98,12 +98,3 @@ code: [CargoShip.cs, HackableLockedCrate.cs, ConsoleGen.cs]
 - Садитесь на корабль на последней трети рейса, если хотите собрать все партии, но учтите
   риск: после ухода радиация растёт быстро.
 - Спасательная лодка на корабле уже заправлена 50 топлива.
-
-## Где в коде
-
-- `CargoShip.ServerInit` — первая партия, таймер ухода.
-- `CargoShip.RespawnLoot`, `SpawnCrate` — ящики.
-- `CargoShip.HandleNodeArrival`, `StartHarborApproach`, `OnArrivedAtHarbor`, `LeaveHarbor` — гавани.
-- `CargoShip.EndHarborApproach`, `GetTimeRemainingFromCrates` — расчёт ухода.
-- `CargoShip.StartEgress`, `UpdateRadiation` — уход и радиация.
-- `CargoShip.BuildingCheck` — уничтожение построек.

@@ -49,7 +49,7 @@ code: [BradleySpawner.cs, SamSite.cs, PlayerHelicopter.cs, ProceduralLift.cs, Pu
 ### Брэдли
 
 `BradleySpawner` ставит танк на случайную точку маршрута. Пауза до нового — `Random.Range(60 − 1,
-60 + 1)` минут: подсказка поля `respawnDelayVariance` обещает разброс 0–60 мин, а в коде это ±1
+60 + 1)` минут: подсказка поля `respawnDelayVariance` обещает разброс 0–60 мин, а на деле это ±1
 минута. Поля спаунера `min/maxRespawnTimeMinutes` (5) не используются. Механика танка —
 [[bradley]].
 
@@ -91,11 +91,3 @@ code: [BradleySpawner.cs, SamSite.cs, PlayerHelicopter.cs, ProceduralLift.cs, Pu
 - На вертолёте не подлетайте ближе 150 м к ЗРК Космодрома — они бьют по всем.
 - Топливо спутника — это ваши шаги наведения: большой спутник даёт больше лута, но у него
   всего 10–16 шагов.
-
-## Где в коде
-
-- `PuzzleReset` префаба, `SpawnGroup` (`launchsite_ai.prefab`).
-- `BradleySpawner`, `SamSite`, `PlayerHelicopter.IsValidSAMTarget`, `ProceduralLift`.
-- `SatelliteControlComputer.RPC_PowerUp`, `RPC_SelectSatellite`, `ApplyThrusterEffect`,
-  `EndControlPhase`, `RollCooldownSeconds`; `SatelliteData.Generate`; `SatelliteCrash`;
-  `SatelliteCrashRemains.GiveThrusterModules`.

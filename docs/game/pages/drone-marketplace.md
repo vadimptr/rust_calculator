@@ -79,16 +79,16 @@ code: [Marketplace.cs, MarketTerminal.cs, DeliveryDrone.cs, DeliveryDroneConfig.
 
 ## Числа и настройки
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Комиссия | 20 скрапа | `deliveryFeeAmount`, `deliveryFeeCurrency` в `marketterminal.prefab` |
-| Закрепление терминала за покупателем | 600 с | `lockToCustomerDuration` |
-| Таймаут заказа | 300 с | `orderTimeout` |
-| Терминалов на маркетплейс | 8 | `terminalPoints` |
-| Крейсерская высота дрона | 15 м | `preferredCruiseHeight` в `drone.delivery.prefab` |
-| Запас над препятствием | 5 м (+3 м) | `preferredHeightAboveObstacle`, `marginAbovePreferredHeight` (умолчания класса) |
-| Аварийное удаление дрона | 300 с в одном состоянии | `stateTimeout` |
-| Проверка неба над автоматом | коробка 0,5 м полуразмер, с высоты 200 м | `CobaltDeliveryDroneConfig` |
+| Параметр | Значение |
+|----------|----------|
+| Комиссия | 20 скрапа |
+| Закрепление терминала за покупателем | 600 с |
+| Таймаут заказа | 300 с |
+| Терминалов на маркетплейс | 8 |
+| Крейсерская высота дрона | 15 м |
+| Запас над препятствием | 5 м (+3 м) |
+| Аварийное удаление дрона | 300 с в одном состоянии |
+| Проверка неба над автоматом | коробка 0,5 м полуразмер, с высоты 200 м |
 
 ## Нюансы
 
@@ -109,10 +109,3 @@ code: [Marketplace.cs, MarketTerminal.cs, DeliveryDrone.cs, DeliveryDroneConfig.
 - 20 скрапа комиссии окупаются, если до автомата далеко или опасно идти. Мелкие покупки дешевле делать вживую.
 - Товар забирайте быстро: терминал закреплён за вами 10 минут, потом его может открыть кто угодно.
 - Хотите продавать через дрон — оставьте открытое небо над лицевой стороной автомата.
-
-## Где в коде
-
-- `MarketTerminal.Server_Purchase`, `GetDeliveryEligibleVendingMachines`, `CanPlayerInteract` — покупка и доступ.
-- `MarketTerminal.RegisterOrder`, `CompleteOrder`, `CheckForExpiredOrders` — заказы.
-- `Marketplace.ServerChargeTick`, `Server_GetChargeRate` — питание.
-- `DeliveryDrone.Think` — полёт.

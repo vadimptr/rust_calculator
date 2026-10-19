@@ -130,10 +130,3 @@ offset = 1 при 18–21 даёт 17–22.
 - Сразу после установки шкафа у вас час уязвимости. Ставить шкаф лучше прямо перед рестартом
   сервера или вне окна, когда рядом никого нет.
 - Если вы взяли чужой шкаф и авторизовались, можете ломать эту базу и вне окна.
-
-## Где в коде
-
-- `RaidWindow.IsWindowOpen`, `TryGetNextChange`, `BlocksDamage`, `IsFrameInsert`, `HasParentVehicle`.
-- `BaseCombatEntity.Hurt` — точка, где урон отбрасывается.
-- `GameModeSoftcore.UpdateRaidWindow`, `BuildingPrivlidge.UpdateRaidableFlag`, `SetDeployedBy`.
-- `MLRS.Fire`, `ConVar.Softcore`.

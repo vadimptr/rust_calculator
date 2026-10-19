@@ -20,13 +20,13 @@ code: [IOEntity.cs, Splitter.cs, ElectricalCombiner.cs, IndustrialConveyor.cs]
 
 ## Характеристики
 
-| Параметр | Сплиттер | Объединитель | Источник |
-|----------|----------|--------------|----------|
-| Порты | вход Industrial In; выходы Out 1–3 | входы In 1–3; выход Industrial Out | префабы `industrialsplitter.deployed`, `industrialcombiner.deployed` |
-| HP | 200 | 200 | `startHealth` |
-| Рецепт | 75 фрагментов, верстак 1 | 75 фрагментов, верстак 1 | чертежи `industrialsplitter.item`, `industrialcombiner.item` |
-| Питание | не нужно | не нужно | нет `Power In` |
-| Подбор | права в шкафу + молоток | то же | `pickup` |
+| Параметр | Сплиттер | Объединитель |
+|----------|----------|--------------|
+| Порты | вход Industrial In; выходы Out 1–3 | входы In 1–3; выход Industrial Out |
+| HP | 200 | 200 |
+| Рецепт | 75 фрагментов, верстак 1 | 75 фрагментов, верстак 1 |
+| Питание | не нужно | не нужно |
+| Подбор | права в шкафу + молоток | то же |
 
 ## Поведение
 
@@ -70,9 +70,3 @@ N = 4 → каждый ящик получает по 15 из стопки за 
   на каждое направление, а не дерево сплиттеров.
 - При 3 печах и 1 ящике руды порция руды на печь — 20 из каждой стопки за ~5 с.
   Для быстрой загрузки держите руду в нескольких стопках: каждая стопка отдаёт свою порцию.
-
-## Где в коде
-
-- `IOEntity.FindContainerSource`, `ContainerInputOutput`
-- `IndustrialConveyor.RunConveyor` (делитель `splitOutputs.Count`)
-- `IOEntity.UpdateFromInput` (промышленные входы → `IOStateChanged`)

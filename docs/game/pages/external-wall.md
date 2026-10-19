@@ -65,7 +65,7 @@ code: [SimpleBuildingBlock.cs, DecayEntity.cs, BuildingPrivlidge.cs, Upkeep.cs, 
 ### Апгрейд и внешний вид
 
 Стена реализует `ISimpleUpgradable`. Если в префабе задан список `UpgradeItems`, её можно
-заменить на другой вариант за один предмет. По ассетам список есть только у деревянных стен
+заменить на другой вариант за один предмет. Список есть только у деревянных стен
 (`wood` и `legacy`): их можно заменить на каменную, саманную или ледяную, отдав один предмет
 нужной стены. Апгрейд запрещён в первые 30 с после урона и в чужой зоне шкафа.
 
@@ -96,10 +96,3 @@ code: [SimpleBuildingBlock.cs, DecayEntity.cs, BuildingPrivlidge.cs, Upkeep.cs, 
 - Посчитать содержание стен: стоимость ресурсов стены × 0.2 × групповой множитель, в сутки.
   Рецепт делится на число стен за крафт (3): за каменную выходит 4000 / 3 × 0.2 ≈ 267 камня.
 - Битую стену апгрейдить бессмысленно: HP не восстановится.
-
-## Где в коде
-
-- `SimpleBuildingBlock` — апгрейд, варианты модели, перекраска.
-- `DecayEntity.GetNearbyBuildingBlock`, `DecayEntity.OnDecay` — привязка к зданию.
-- `BuildingPrivlidge.GetEntityUpkeepMultiplier`, `ConVar.Decay.high_wall_upkeep` — содержание.
-- `Upkeep.highWall` — флаг в префабе.

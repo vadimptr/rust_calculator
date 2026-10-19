@@ -18,15 +18,15 @@ code: [Beehive.cs, NucleusGrading.cs, ItemModBeehiveNucleus.cs, NaturalBeehive.c
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Слоты | 6: матка + 5 под соты | `inventorySlots`, `allowedItem`, `allowedItem2` |
-| Здоровье | 300 | `startHealth` в префабе |
-| Такт | 120 с | `beehive.updatehiveinterval` |
-| Проверка температуры, дождя, улицы | раз в 120 с (±5) | `beehive.updatehivestatsinterval` |
-| Множитель производства | 2 | `honeyCombProductionMultiplier` |
-| Опыт матки за соту | 2 | `beehive.xpincreaseperhoneycomb` |
-| Злые пчёлы после кражи | 2 с | `beeStingTime` |
+| Параметр | Значение |
+|----------|----------|
+| Слоты | 6: матка + 5 под соты |
+| Здоровье | 300 |
+| Такт | 120 с |
+| Проверка температуры, дождя, улицы | раз в 120 с (±5) |
+| Множитель производства | 2 |
+| Опыт матки за соту | 2 |
+| Злые пчёлы после кражи | 2 с |
 
 ### Скорость по температуре
 
@@ -103,10 +103,4 @@ code: [Beehive.cs, NucleusGrading.cs, ItemModBeehiveNucleus.cs, NaturalBeehive.c
 
 - Ставьте улей на улице в умеренном биоме и не трогайте до полного: соты забирайте разом.
 - Против пчёл: облейтесь водой, встаньте в воду, бросьте дымовую гранату или наденьте хим. защиту
-  (подсказка `bee.tip.help` в коде).
-
-## Где в коде
-
-- `Beehive.UpdateGrowthRate`, `GenerateHoneyComb`, `CheckNucleus`, `CalculateTemperature`, `DropItems`.
-- `NucleusGrading.XpToGrade` — пороги сортов.
-- `BeeSwarmMaster.ThinkAI`, `BeeSwarmAI.ThinkAI`, `ValidateTarget`, `FindTarget`.
+  (подсказка `bee.tip.help`).

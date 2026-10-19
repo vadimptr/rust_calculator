@@ -19,9 +19,9 @@ code: [SolarPanel.cs, BaseEntity.cs]
 
 | Параметр | Значение | Откуда |
 |---|---|---|
-| Максимальный выход | **20 rW** (умолчание кода 10) | `maximalPowerOutput` в префабе `solarpanel.large.deployed` |
-| Начало выработки | `dot_minimum` = **0.3** (≈72.5° от нормали панели; в коде 0.1) | префаб |
-| Полная выработка | `dot_maximum` = **0.7** (≈45.6° от нормали; в коде 0.6) | префаб |
+| Максимальный выход | **20 rW** (по умолчанию 10) | `maximalPowerOutput` в префабе `solarpanel.large.deployed` |
+| Начало выработки | `dot_minimum` = **0.3** (≈72.5° от нормали панели; по умолчанию 0.1) | префаб |
+| Полная выработка | `dot_maximum` = **0.7** (≈45.6° от нормали; по умолчанию 0.6) | префаб |
 | HP | 100 | `startHealth` префаба |
 | Период пересчёта | 5 с + случайная задержка 0–2 с | `SunUpdateWorkQueue` |
 | Бюджет очереди | `solarpanel.sunupdatebudgetms` = 0.05 мс | ConVar |
@@ -67,7 +67,3 @@ code: [SolarPanel.cs, BaseEntity.cs]
   в сторону солнца на всей дуге дня. Соседние панели и прочие деплоиблы не мешают.
 - Чините панели после рейда или погоды. Их выход прямо пропорционален HP.
 - Панели почти всегда работают через [[battery]]: ночью они дают ноль.
-
-## Где в коде
-
-`SolarPanel.SunUpdate`, `SolarPanel.GetPassthroughAmount`, `BaseEntity.IsVisible(Vector3, float)`

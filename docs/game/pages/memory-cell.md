@@ -79,8 +79,3 @@ UpdateState() вызывается:
 - Переключатель «одной кнопкой»: кнопка → Toggle.
 - Переключение между двумя ветками без потерь: Output и Inverted Output — на разные
   потребители.
-
-## Где в коде
-
-`ElectricalDFlipFlop.GetDesiredState`, `UpdateState`, `UpdateFromInput`, `UpdateOutputs`,
-`DetectShortCircuit`, `AllowDrainFrom`, `WantsPower`.

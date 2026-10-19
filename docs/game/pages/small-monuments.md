@@ -71,7 +71,7 @@ code: [MagnetCrane.cs, LargeShredder.cs, MagnetLiftable.cs, MiningQuarry.cs, Lif
 | Серный (`mining_quarry_a`) | Sulfur | 1000 серной руды |
 | Каменный (`mining_quarry_b`) | Basic | 1000 металлической руды + 5000 камня |
 | МВК (`mining_quarry_c`) | HQM | 50 МВК |
-| Нефтекачалки Электростанции, Депо, Водоочистной | жидкости | 60 сырой нефти и 170 топлива низкого качества (по коду обе жидкости добываются одновременно) |
+| Нефтекачалки Электростанции, Депо, Водоочистной | жидкости | 60 сырой нефти и 170 топлива низкого качества (обе жидкости добываются одновременно) |
 
 Если в бункере нет места, выработка пропадает и карьер выключается.
 
@@ -108,9 +108,3 @@ code: [MagnetCrane.cs, LargeShredder.cs, MagnetLiftable.cs, MiningQuarry.cs, Lif
 
 - Маршрут за зелёной картой: Свалка / Заправка / Супермаркет / Маяк — без радиации.
 - Каменный карьер на дизеле даёт и металл, и камень одновременно — лучший по «объёму».
-
-## Где в коде
-
-- `MagnetCrane`, `LargeShredder`, `MagnetLiftable`.
-- `MiningQuarry.ProcessResources`, `FuelCheck`, `UpdateStaticDeposit`.
-- `Lift.RPC_UseLift`, `SpawnGroup`.

@@ -11,7 +11,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_SpiralStairs.
 
 ## Кратко
 
-Лестница — блок постройки на целую секцию, который соединяет этажи. В коде это обычный
+Лестница — блок постройки на целую секцию, который соединяет этажи. Это обычный
 `BuildingBlock`. Вид, сокеты и множители задаются префабом. Для лестниц есть отдельные типы
 сокетов: `Stairs` — квадратная секция, `StairsTriangle` — треугольная. Но L- и U-образные
 лестницы держатся на сокете типа `Block`, а `Stairs` только занимают.
@@ -31,14 +31,14 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_SpiralStairs.
 у треугольного фундамента и треугольного пола. Поскольку каждая лестница занимает оба квадратных
 сокета, в одну секцию нельзя поставить сразу L/U и винтовую.
 
-Сокеты винтовых лестниц, упоминаемые в коде:
+Сокеты винтовых лестниц:
 
 | Сокет | Назначение |
 |---|---|
 | `sockets/stairs-female/1` | Следующая винтовая лестница этажом выше |
 | `sockets/floor-female/1` | Пол над лестницей |
 
-**HP и цена** — из ассета грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
+**HP и цена** — из параметров грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
 У всех четырёх лестниц `healthMultiplier` = 1 и `costMultiplier` = 1: HP 10 / 250 / 500 / 1000 / 2000,
 цена 50 соломы (Wood) / 200 дерева / 300 камня / 200 металла / 25 МВК — как сплошная стена.
 Треугольная винтовая стоит столько же, сколько квадратная.
@@ -72,8 +72,8 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_SpiralStairs.
   Нужен люк или отсутствие пола.
 - **Лестница — полноценный блок постройки.** Она входит в число блоков здания и стоит как стена,
   поэтому заметна при подсчёте upkeep.
-- **Странности в данных префабов.** У `block.stair.spiral` в ассетах нет атрибута распада
-  (`BuildingBlockDecay`), а у `block.stair.spiral.triangle` — атрибута `Upkeep`. Если дамп полный,
+- **Странности в данных префабов.** У `block.stair.spiral` нет атрибута распада
+  (`BuildingBlockDecay`), а у `block.stair.spiral.triangle` — атрибута `Upkeep`. Судя по всему,
   квадратная винтовая лестница не гниёт (`DecayEntity` без `Decay` пропускает тик), а треугольная
   винтовая не платит содержание ([[decay]], [[upkeep]]). Остальные лестницы имеют оба атрибута.
 
@@ -84,9 +84,3 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, ModelConditionTest_SpiralStairs.
 - Для шахты на много этажей удобны винтовые: каждая следующая ставится в сокет предыдущей.
 - Для лестницы в треугольной секции нужен треугольный вариант: квадратная в треугольный
   сокет не встанет, тип сокета не совпадёт.
-
-## Где в коде
-
-- `ConstructionSocket.Type.Stairs`, `ConstructionSocket.Type.StairsTriangle`, `ConstructionSocket.DoPlacement` (автоповорот).
-- `ModelConditionTest_SpiralStairs.DoTest`.
-- `BuildingBlock` — общий класс блока.

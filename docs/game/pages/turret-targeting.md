@@ -36,7 +36,7 @@ code: [AutoTurret.cs, NPCAutoTurret.cs, SamSite.cs, FlameTurret.cs, GunTrap.cs, 
 ### Автотурель: кто может стать целью
 
 Триггер (`TargetTrigger`) — сфера радиусом `sightRange`: 30 м в префабах `autoturret_deployed`
-и `industrial_autoturret_deployed` (как и умолчание кода). В `ServerInit` радиус коллайдера
+и `industrial_autoturret_deployed` (как и значение по умолчанию). В `ServerInit` радиус коллайдера
 выставляется равным `sightRange`. Сущность из триггера
 становится целью, если выполнены все условия:
 
@@ -175,7 +175,7 @@ ConVar `sentry.hostileduration` = 120 объявлен, но в логике с�
 | `sentry.scantimer` | 1 | Минимальный интервал полного скана триггера, с |
 | `sentry.interferenceradius` | 40 | Радиус взаимных помех, м |
 | `sentry.maxinterference` | 12 | Максимум активных турелей в радиусе помех |
-| `sentry.hostileduration` | 120 | Объявлен, в логике не используется (по найденному коду) |
+| `sentry.hostileduration` | 120 | Объявлен, в логике не используется |
 | `autoturret.scan_budget_ms` | 0.5 | Бюджет кадра на поиск целей |
 | `autoturret.tick_update_ms` | 1 | Бюджет кадра на тики турелей |
 | `autoturret.ammo_update_ms` | 0.1 | Бюджет кадра на пересчёт патронов |
@@ -214,10 +214,3 @@ ConVar `sentry.hostileduration` = 120 объявлен, но в логике с�
   враждебным (при наличии зоны предупреждения, см. выше). Убирайте оружие, проходя мимо
   чужих миролюбивых турелей.
 - У Аванпоста не засыпайте: через 20 минут сна турели начнут стрелять.
-
-## Где в коде
-
-`AutoTurret.TargetScan`, `ShouldTarget`, `ObjectVisible`, `AimOffset`, `InFiringArc`,
-`TargetTick`, `OnAttacked`, `RecalculateInterference`, `ShouldTurretOverload`;
-`NPCAutoTurret.IsEntityHostile`, `FireGun`; `SamSite.TargetScan`; `FlameTurret.CheckTrigger`;
-`GunTrap.CheckTrigger`; `BaseCombatEntity.MarkHostileFor`; `ConVar.Sentry`

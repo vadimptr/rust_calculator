@@ -60,10 +60,8 @@ ICONS = {
 def page(pid, title, group, summary, related, code, body):
     fm = (f'---\nid: {pid}\ntitle: {title}\nkind: data\ngroup: {group}\nicon: {ICONS[pid]}\nsummary: {summary}\n'
           f'related: [{", ".join(related)}]\ncode: [{", ".join(code)}]\n---\n\n')
-    note = (f'> Таблица собрана автоматически из ассетов сервера Rust от {DATE} '
-            f'скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.\n\n')
     with open(os.path.join(OUT, pid + '.md'), 'w') as f:
-        f.write(fm + note + body.strip() + '\n')
+        f.write(fm + body.strip() + '\n')
 
 # ---------- items ----------
 itemdef = {}       # pid -> record
@@ -129,12 +127,12 @@ for key in BLOCK_RU:
     brows.append([BLOCK_RU[key], f'`{key}`', fmt(f['healthMultiplier']), fmt(f['costMultiplier']), hp, cost])
 res_note = ' / '.join(f'{GRADES[i]} — {iname(grades[g]["baseCost"][0]["itemDef"])}' for i, g in enumerate(order))
 page('data-building-blocks', 'Таблица: HP и стоимость блоков', 'Строительство',
-     'HP и стоимость каждого блока постройки по грейдам, посчитанные из ассетов игры.',
+     'HP и стоимость каждого блока постройки по грейдам.',
      ['building-grades', 'foundation', 'wall', 'floor', 'roof', 'stairs', 'data-protection', 'upkeep'],
      ['BuildingGrade.cs', 'ConstructionGrade.cs', 'Construction.cs'], f"""
 ## Как считается
 
-У каждого грейда есть базовое HP и базовая стоимость (ассет `BuildingGrade`). У каждого блока —
+У каждого грейда есть базовое HP и базовая стоимость (`BuildingGrade`). У каждого блока —
 множители `healthMultiplier` и `costMultiplier` (компонент `Construction` на префабе).
 
 - HP блока = базовое HP грейда × `healthMultiplier` (`ConstructionGrade.maxHealth`).
@@ -206,7 +204,7 @@ page('data-protection', 'Таблица: защита по типам урона
      ['ProtectionProperties.cs', 'BaseCombatEntity.cs'], f"""
 ## Как читать
 
-Ассет `ProtectionProperties` хранит массив из 28 чисел — по одному на тип урона (`Rust.DamageType`).
+Защита `ProtectionProperties` — массив из 28 чисел — по одному на тип урона (`Rust.DamageType`).
 Число — доля урона, которую защита гасит: 90% значит, что проходит 10%. Отрицательное значение
 увеличивает урон. В таблицах показаны только типы урона, где хоть у одной колонки есть ненулевое
 значение; «—» значит 0%. Как защита применяется, см. [[protection]] и [[damage-system]].
@@ -258,7 +256,7 @@ for r in prefabs:
 prow = sorted([f'`{os.path.basename(p).replace(".prefab", "")}`', fmt(f.get('speed')), fmt(f.get('gravityModifier'))]
               for p, f in proj.items())
 page('data-explosives', 'Таблица: взрывчатка и ракеты', 'Урон и рейд',
-     'Урон по типам, радиус, таймер и шанс осечки для всей взрывчатки, ракет и снарядов из ассетов игры.',
+     'Урон по типам, радиус, таймер и шанс осечки для всей взрывчатки, ракет и снарядов.',
      ['explosions', 'c4', 'rocket', 'satchel-charge', 'beancan-grenade', 'explosive-ammo', 'data-protection'],
      ['TimedExplosive.cs', 'DudTimedExplosive.cs', 'ServerProjectile.cs'], f"""
 ## Как читать
@@ -324,14 +322,14 @@ for r in items:
     out_amt = f['amountToCreate'] if f['amountToCreate'] > 1 else ''
     bp_rows[cat].append([d['displayName']['legacyEnglish'] + (f' ×{out_amt}' if out_amt else ''), f'`{d["shortname"]}`',
                          ing, fmt(f['time']), wb, 'да' if f.get('defaultBlueprint') else ''])
-cbody = ['## Как читать\n\nРецепты из ассетов `ItemBlueprint` всех предметов, которые игрок может скрафтить. '
+cbody = ['## Как читать\n\nРецепты всех предметов, которые игрок может скрафтить. '
          'Время — базовое, без бонуса верстака, см. [[crafting]]. «Верстак» — нужный уровень. '
          '«Сразу» — чертёж известен с начала. Названия предметов — английские, как в игре.\n']
 for cat in sorted(bp_rows, key=lambda c: CAT.index(c) if c in CAT else 99):
     cbody.append(f'## {cat}\n\n' + table(['Предмет', 'Код', 'Ингредиенты', 'Время, с', 'Верстак', 'Сразу'],
                                           sorted(bp_rows[cat])) + '\n')
 page('data-crafting', 'Таблица: рецепты крафта', 'Предметы и производство',
-     'Ингредиенты, время и уровень верстака для каждого крафтового предмета из ассетов игры.',
+     'Ингредиенты, время и уровень верстака для каждого крафтового предмета.',
      ['crafting', 'research', 'workbench', 'recycling'], ['ItemBlueprint.cs', 'ItemCrafter.cs'], '\n'.join(cbody))
 
 # =============== data-smelting ===============

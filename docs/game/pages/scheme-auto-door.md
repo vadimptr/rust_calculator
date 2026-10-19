@@ -171,13 +171,3 @@ wire hbhf.Power Out -> dc.Power In "1 на игрока"
 - **Кнопка или HBHF через OR на таймер** работает плохо: если свой стоит в зоне сенсора дольше таймера,
   сигнал на «Toggle On» не меняется, и дверь закроется и больше не откроется, пока число игроков не изменится.
 - После рестарта сервера шедший таймер запускается заново на полный срок.
-
-## Где в коде
-
-- `CustomDoorManipulator.UpdateFromInput`, `DoAction`, `PairDoorAttempt`, `FindDoor` — игровой контроллер.
-- `DoorManipulator` — монументные манипуляторы.
-- `DoorCloser.Think`, `SendClose`; `Door.OnFlagsChanged`, `CloseRequest`, `SetOpen`, `CanCompletePickup`.
-- `TimerSwitch.UpdateFromInput`, `SwitchPressed`, `AdvanceTime`.
-- `ElectricalBlocker.UpdateBlocked`, `GetPassthroughAmount`; `Splitter.GetPassthroughAmount`; `Door.RPC_OpenDoor`, `SetOpen`.
-- `HBHFSensor.CountDetectedPlayers`, `GetPassthroughAmount`, `SetConfig`.
-- `BuildingPrivlidge.UnlinkDoorControllers`, `CodeLock.GetPlayerLockPermission`.

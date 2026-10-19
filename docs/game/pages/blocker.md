@@ -17,13 +17,13 @@ code: [ElectricalBlocker.cs, IOEntity.cs]
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Вход 0 | «Power In», основной | префаб |
-| Вход 1 | «Block Passthrough», **не** основной | префаб |
-| Выход | «Power Out» | префаб |
-| Потребление | 0 | `ConsumptionAmount` |
-| HP | 200 | префаб |
+| Параметр | Значение |
+|---|---|
+| Вход 0 | «Power In», основной |
+| Вход 1 | «Block Passthrough», **не** основной |
+| Выход | «Power Out» |
+| Потребление | 0 |
+| HP | 200 |
 
 ## Поведение
 
@@ -48,7 +48,3 @@ code: [ElectricalBlocker.cs, IOEntity.cs]
 - Инвертор: сигнал датчика на Block, постоянное питание на вход 0. Выход есть, пока датчик
   молчит.
 - Блокировка турелей по сигналу: «Has Target» одной турели на Block цепи другой.
-
-## Где в коде
-
-`ElectricalBlocker.UpdateFromInput`, `UpdateBlocked`, `GetPassthroughAmount`, `WantsPower`, `UpdateHasPower`.

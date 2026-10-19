@@ -54,14 +54,14 @@ code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs,
 5. Через 0,5 с считыватель включается (`GrantCard`), а карта теряет **1** единицу прочности.
    Неверная карта прочность не тратит — только звук отказа.
 
-Поле префаба `accessDuration = 10` (у всех считывателей в выгрузке) сохраняется и
+Поле префаба `accessDuration = 10` (у всех считывателей) сохраняется и
 передаётся клиенту, но **сервер его не использует**: включённый считыватель гаснет только
 при сбросе пазла (`ResetIOState → CancelAccess`).
 
 ### Щиток с предохранителем
 
 `ItemBasedFlowRestrictor` с `lootPanelName = fuse` пропускает ток, только если в его единственном
-слоте лежит допустимый предмет. В выгрузке у всех щитков монументов `validPassthroughItems` =
+слоте лежит допустимый предмет. У всех щитков монументов `validPassthroughItems` =
 обычный предохранитель `fuse` и тяжёлый `fuse.highgrade`.
 
 - Пока на щиток подан ток (флаг `On` = есть вход), предохранитель теряет
@@ -106,7 +106,7 @@ code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs,
 2. **Проверка игроков** (`PassesResetCheck`), если `playersBlockReset`:
    - либо по сфере: живые, **не спящие**, видимые игроки ближе `playerDetectionRadius` от точки
      пазла и не ниже `центр − радиус + minimumHeightOffset`; флаг `ignoreAboveGroundPlayers`
-     задуман как «считать только игроков под землёй», но условие в коде перевёрнуто (см. «Нюансы»);
+     задуман как «считать только игроков под землёй», но условие перевёрнуто (см. «Нюансы»);
    - либо по AI-зоне (`CheckSleepingAIZForPlayers`): сброс разрешён, когда «спит» зона ИИ
      (никого рядом) — так у подводных лабораторий и Арктической базы.
 3. Если проверка пройдена, к счётчику добавляется 10 с; если нет — время копится как
@@ -194,7 +194,7 @@ code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs,
 - **Таймер сброса стоит, пока лут не тронут.** Нетронутый монумент не сбрасывается никогда —
   но и не «портится». Открыли один ящик — пошёл отсчёт 30 минут.
 - **Подсказка ConVar `debug.puzzleResetTimeMultiplier` неверна:** в описании сказано, что
-  значения меньше 1 ускоряют сброс, но в коде множитель умножает прибавку к счётчику —
+  значения меньше 1 ускоряют сброс, но на деле множитель умножает прибавку к счётчику —
   ускоряют значения **больше** 1.
 - **Баг «подземных» пазлов.** В `PuzzleReset.AnyPlayersWithinDistance` игрок пропускается,
   если `ignoreAboveGroundPlayers && item.IsUnderground()` — то есть пропускаются как раз
@@ -205,7 +205,7 @@ code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs,
   используют правильное условие — спящих под землёй сброс убивает.
 - **Радиация сброса включается, только если игрок хоть раз зашёл в радиус.** Пазл, к
   которому никто не подходил, тикает обычным способом.
-- При `scaleWithServerPopulation` (в выгрузке не включён ни у одного пазла) интервал на
+- При `scaleWithServerPopulation` (не включён ни у одного пазла) интервал на
   полном сервере стремится к нулю: `1 − PlayerLerp(0.5, 1)` = 0 при 100 % заполнения.
 
 ## На практике
@@ -219,12 +219,3 @@ code: [CardReader.cs, Keycard.cs, ItemModKeycard.cs, ItemBasedFlowRestrictor.cs,
 - Видите тост «monument is resetting» и рост радиации — у вас ~5 минут. 3 рад/с без брони
   плюс 25 урона каждые 10 с на пике — уходите.
 - Хотите респаун элиток — откройте любой ящик и уйдите за радиус пазла на 30 минут.
-
-## Где в коде
-
-- `CardReader.ServerCardSwiped`, `GrantCard`, `ResetIOState`; `Keycard.accessLevel`.
-- `ItemBasedFlowRestrictor.GetPassthroughItem`, `TickPassthroughItemDecay`, `ResetIOState`.
-- `PressButton.Press`, `TimerSwitch.SwitchPressed`, `AdvanceTime`.
-- `ElectricGenerator.GetCurrentEnergy` (стадия энергосети), `PostServerLoad` → `ForcePuzzleReset`.
-- `PuzzleReset.ResetTick`, `PassesResetCheck`, `HasPuzzleBeenPartialLooted`, `DoReset`,
-  `CleanupSleepers`, `SetRadiusRadiationAmount`, `TryForceReset`.

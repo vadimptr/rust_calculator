@@ -42,8 +42,8 @@ code: [SleepingBag.cs, StaticRespawnArea.cs, SleepingBagCamper.cs, BasePlayer.cs
 `ServerMgr.FindSpawnPoint` → `SpawnHandler.GetSpawnPoint`:
 
 - До 60 попыток взять точку из распределения `CharDistribution`. Распределение строится
-  фильтром `CharacterSpawn` с порогом `CharacterSpawnCutoff`, оба заданы в ассете. По данным
-  сообщества это пляжи, в коде фильтр не расшифрован.
+  фильтром `CharacterSpawn` с порогом `CharacterSpawnCutoff`, оба заданы отдельно. По данным
+  сообщества это пляжи, точный смысл фильтра неизвестен.
 - Точка отбрасывается, если ближе **50 м** к любому памятнику (`monument.Distance(pos) < 50`).
 - На затопленной карте (уровень океана ≥ 0.5) работает `FloodedSpawnHandler`.
 - Если ничего не нашлось, берутся объекты с тегами `spawnpoint` / `SpawnPointFallback`.
@@ -139,7 +139,7 @@ code: [SleepingBag.cs, StaticRespawnArea.cs, SleepingBagCamper.cs, BasePlayer.cs
 - **Смерть сама по себе не ставит перезарядку.** `SleepingBag.OnPlayerDeath` вызывает
   `SetBagTimer` с причиной `Death`, но в обычном режиме эта причина ничего не делает. Влиять на
   неё может только режим игры (`EvaluateSleepingBagReset`). Подсказка `server.respawnresetrange`
-  («спальники рядом с местом смерти уходят на перезарядку») с кодом не совпадает. Блокируются
+  («спальники рядом с местом смерти уходят на перезарядку») с реальным поведением не совпадает. Блокируются
   только спальники рядом с местом, **где вы возродились**.
 - **Спальники дальше 50 м не трогаются.** Два спальника в разных концах базы (больше 50 м)
   дают два независимых возрождения подряд.
@@ -164,11 +164,3 @@ code: [SleepingBag.cs, StaticRespawnArea.cs, SleepingBagCamper.cs, BasePlayer.cs
 - После рестарта сервера все спальники доступны сразу. Это важно при обороне, которая
   совпала с вайпом или перезапуском.
 - Прежде чем полагаться на спальник у воды, проверьте, не уходит ли он под воду.
-
-## Где в коде
-
-- `BasePlayer.RespawnAt`, `BasePlayer.Respawn`, `BasePlayer.CanRespawn` / `MarkRespawn`.
-- `ServerMgr.FindSpawnPoint`, `SpawnHandler.GetSpawnPoint`, `GetSpawnPointStandard`, `GetSpawnPointForTeam`.
-- `SleepingBag.SpawnPlayer`, `TrySpawnPlayer`, `SetBagTimer`, `OnPlayerDeath`, `GetRespawnState`.
-- `StaticRespawnArea`, `SleepingBagCamper`.
-- `ConVar.Global.respawn`, `ConVar.Global.respawn_sleepingbag`.

@@ -20,7 +20,7 @@ code: [ElectricWindmill.cs]
 
 | Параметр | Значение | Откуда |
 |---|---|---|
-| Максимум | **150 rW** (умолчание кода 100) | `maxPowerGeneration` в префабе `electric.windmill.small` |
+| Максимум | **150 rW** (по умолчанию 100) | `maxPowerGeneration` в префабе `electric.windmill.small` |
 | HP | 250 | `startHealth` префаба |
 | Потребление | 0 | `ConsumptionAmount` |
 | Период пересчёта | 20 с (±2 с), первый через 1 с | `InvokeRandomized(WindUpdate, 1f, 20f, 2f)` |
@@ -77,7 +77,3 @@ code: [ElectricWindmill.cs]
 - Всегда заряжайте через [[battery]]. Выход может упасть почти до нуля на много минут.
 - После серьёзной перестройки базы под генератором его стоит переставить. Высота
   пересчитывается только при спавне.
-
-## Где в коде
-
-`ElectricWindmill.ServerInit`, `WindUpdate`, `GetWindSpeedScale`, `AmIVisible`, `GetWindAimDir`

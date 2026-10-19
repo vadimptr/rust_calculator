@@ -29,7 +29,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, DirectionProperties.cs, Weakpoin
 | Низкая стена | `wall.low` | — (нет сокетов сверху: ни стены, ни пола на неё не поставить) |
 | Стеновая рама | `wall.frame` | `WallFrame` ×2 — двойные двери, гаражная дверь, решётки камеры, сетка, витрина, забор; `DoubleDoorDressing` ×2 |
 
-Сокеты сплошной стены, которые упоминаются в коде:
+Сокеты сплошной стены:
 
 | Сокет | Назначение |
 |---|---|
@@ -39,7 +39,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, DirectionProperties.cs, Weakpoin
 | `wall/sockets/stability/1`, `stability/2` | Боковые `StabilitySocket`, `support` = 0,1 каждый — опора от соседних стен |
 | `wall/sockets/neighbour/1` | Соседняя крыша для треугольной обрезки |
 
-**HP и цена** задаются ассетом грейда и множителями префаба, см. [[building-grades]] и
+**HP и цена** задаются параметрами грейда и множителями префаба, см. [[building-grades]] и
 [[data-building-blocks]]. HP у всех видов одинаковое (`healthMultiplier` = 1):
 10 / 250 / 500 / 1000 / 2000 для соломы / дерева / камня / металла / МВК.
 
@@ -110,10 +110,3 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, DirectionProperties.cs, Weakpoin
   в раму нужно покупать отдельно.
 - Если стена под крышей не стала треугольной, что-то стоит на её верхних сокетах
   или крыша повёрнута не так.
-
-## Где в коде
-
-- `BuildingBlock` — общий класс; `DoRotation`, `Hurt` (обои), `CheckWallpaper`, `ShouldBlockProjectiles`.
-- `ConstructionSocket.ShouldInheritFemaleSocketRotation`.
-- `DirectionProperties.IsWeakspot`, `WeakpointProperties.BlockWhenRoofAttached`, `BaseCombatEntity` (применение `extraProtection`).
-- `ModelConditionTest_WallTriangleLeft/Right`, `ModelConditionTest_WallCornerLeft/Right`.

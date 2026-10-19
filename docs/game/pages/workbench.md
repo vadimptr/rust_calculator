@@ -26,8 +26,8 @@ code: [Workbench.cs, TriggerWorkbench.cs, ItemModWorkbenchUpgrade.cs, ItemModWor
 | Уровень | 1, 2 или 3 | `Workbench.Workbenchlevel` (префабы `workbench1/2/3.deployed`) |
 | Инженерный верстак | `io.table.deployed`: `isIOBench`, уровень 1, своё дерево `TechTreeIO` | префаб |
 | Слоты инвентаря | 0 — чертёж, 1 — эксперимент, 2…(2+N−1) — апгрейды | `blueprintSlot`, `experimentSlot`, `firstUpgradeSlot` |
-| Слотов апгрейдов | 10 у строимых верстаков и инженерного, 4 у статичных (в коде по умолчанию 4) | `Workbench.upgradeSlotCount` |
-| Размер зоны крафта | в префабе (коллайдер `TriggerWorkbench`, размер в выгрузку не попал) | — |
+| Слотов апгрейдов | 10 у строимых верстаков и инженерного, 4 у статичных (по умолчанию 4) | `Workbench.upgradeSlotCount` |
+| Размер зоны крафта | в префабе (коллайдер `TriggerWorkbench`, размер неизвестен) | — |
 | HP | верстак 1 — 500, верстак 2 — 500, верстак 3 — 750, инженерный — 500; апгрейд «Reinforced» добавляет | `startHealth`, `RefreshReinforcedHealth` |
 | Защита | верстак 1 и инженерный — `DeployableWood`, верстаки 2 и 3 — `DeployableMetal` | `baseProtection`, см. [[data-protection]] |
 | Деревья технологий | верстак 1 — `TechTreeT0`, верстак 2 — ещё `TechTreeT2`, верстак 3 — ещё `TechTreeT3` (плюс варианты `_Primitive`/`_Hardcore` для режимов) | `techTrees` |
@@ -47,14 +47,14 @@ code: [Workbench.cs, TriggerWorkbench.cs, ItemModWorkbenchUpgrade.cs, ItemModWor
 | `recyclebin` | `ItemModWorkbenchRecycleBin` | После каждой единицы возвращает случайно 0…10 % каждого ингредиента в отдельный контейнер-«корзину» апгрейда | `maxRefundFraction` 0,1 |
 | `surplus` | `ItemModWorkbenchSurplus` | Шанс получить дополнительные предметы из списка `surplusItems` рецепта | в рецепте |
 | `defensive` | `ItemModWorkbenchDefensive` | +1 слот для бронепластин у скрафченной брони | `bonusSlots` 1 |
-| `reinforced` | `ItemModWorkbenchReinforced` | +HP верстака и −доля урона от взрывов | +500 HP (верстаки 1, 2, инженерный), +750 HP (верстак 3); `explosiveResistance` **0,2** (в коде по умолчанию 0,5) |
+| `reinforced` | `ItemModWorkbenchReinforced` | +HP верстака и −доля урона от взрывов | +500 HP (верстаки 1, 2, инженерный), +750 HP (верстак 3); `explosiveResistance` **0,2** (по умолчанию 0,5) |
 | `range` | `ItemModWorkbenchRange` | Увеличивает зону крафта | ×2 |
 | `comfort` | `ItemModWorkbenchComfort` | Включает триггер комфорта с минимальным уровнем | `comfortLevel` 1 (100 %) |
 | `salvage` | `ItemModWorkbenchSalvage` | Скидка в дереве технологий | `costReduction` 0,2 (−20 %) |
-| `prototype` | `ItemModWorkbenchPrototype` | Открыть узел дерева без пути: цена ×, шанс провала | `costMultiplier` 2, `failChance` **0,25** (в коде по умолчанию 0,1) |
+| `prototype` | `ItemModWorkbenchPrototype` | Открыть узел дерева без пути: цена ×, шанс провала | `costMultiplier` 2, `failChance` **0,25** (по умолчанию 0,1) |
 
-В коде есть ещё класс `ItemModWorkbenchCraftSpeed` (время крафта ×0,75 по умолчанию), но ни
-один предмет в ассетах его не использует: апгрейда «просто быстрее» в игре нет.
+Есть ещё класс `ItemModWorkbenchCraftSpeed` (время крафта ×0,75 по умолчанию), но ни
+один предмет его не использует: апгрейда «просто быстрее» в игре нет.
 
 ## Поведение
 
@@ -92,7 +92,7 @@ code: [Workbench.cs, TriggerWorkbench.cs, ItemModWorkbenchUpgrade.cs, ItemModWor
   в момент старта единицы. Если вы отошли, следующая единица уже без апгрейдов.
 - **Reinforced спасает от взрывчатки.** `ScaleDamage` умножает урон типа `Explosion` на
   `1 − explosiveResistance`. В префабе апгрейда `explosiveResistance` = 0,2, так что верстак
-  получает 80 % урона от C4 и ракет (в коде по умолчанию было бы 50 %). Главная польза —
+  получает 80 % урона от C4 и ракет (по умолчанию было бы 50 %). Главная польза —
   прибавка HP.
 - **Скидки дерева технологий считаются от верстака, у которого вы стоите**, а не от лучшего
   верстака в базе.
@@ -106,11 +106,3 @@ code: [Workbench.cs, TriggerWorkbench.cs, ItemModWorkbenchUpgrade.cs, ItemModWor
   ради лишения уровня крафта.
 - Апгрейды недоступны на верстаках монументов: на базе их нужно ставить на собственный
   верстак.
-
-## Где в коде
-
-- `Workbench.GetCraftSpeedMultiplier`, `Workbench.ApplyUpgradesToCraftedItem`, `Workbench.GiveBonusItems` — апгрейды в крафте.
-- `Workbench.ItemFilter`, `ItemModWorkbenchUpgrade.CanInstallInWorkbench`, `Workbench.IsUpgradeBlockedByClearanceZone` — установка.
-- `Workbench.RefreshCraftRange`, `Workbench.RefreshComfort`, `Workbench.RefreshReinforcedHealth`, `Workbench.ScaleDamage` — эффекты на верстак.
-- `Workbench.RPC_TechTreeUnlock`, `Workbench.ScrapForResearch` — дерево технологий.
-- `BasePlayer.currentCraftLevel`, `TriggerWorkbench` — зона.

@@ -11,7 +11,7 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, SimpleU
 
 ## Кратко
 
-Деревянная, металлическая, бронированная, одинарная или двойная дверь — в коде это один
+Деревянная, металлическая, бронированная, одинарная или двойная дверь — это один
 класс `Door`. Различаются они префабами: моделью, HP, защитой, набором слотов и
 списком апгрейдов. Общая механика описана в [[doors]].
 
@@ -74,7 +74,7 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, SimpleU
 - **Ближний бой — без «урона по деплойаблам».** `BaseMelee.GetAttackStats` не применяет
   `deployableDamageOverrides` к дверям. Оружие ближнего боя бьёт дверь своим обычным профилем урона.
 - **Есть снаряды «только по дверям».** У `ItemModProjectileRadialDamage` есть флаг `onlyDoors`:
-  радиальный урон такого снаряда задевает только двери. По ассетам флаг включён у одного
+  радиальный урон такого снаряда задевает только двери. Флаг включён у одного
   боеприпаса — болта баллисты «молот» (`ballista.bolt.hammerhead`): 25 урона взрывом
   в радиусе 1 м, только по дверям.
 - **Стоимость содержания — только ресурсы.** `DecayEntity.CalculateUpkeepCostAmounts` берёт
@@ -90,10 +90,3 @@ code: [Door.cs, AnimatedBuildingBlock.cs, DoorCloser.cs, DoorKnocker.cs, SimpleU
 - Двойная дверь — одна цель для рейда, а не две.
 - Ставьте дверь сразу и сразу на неё замок: пустой проём или дверь без замка в зоне без шкафа
   может занять кто угодно.
-
-## Где в коде
-
-- `Door` — всё поведение двери.
-- `Door.HasSlot` — какие слоты есть.
-- `Door.DoSimpleUpgrade`, `SimpleUpgrade` — апгрейд.
-- `BaseMelee.GetAttackStats`, `ItemModProjectileRadialDamage.ServerProjectileHit` — особенности урона.

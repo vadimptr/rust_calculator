@@ -43,7 +43,7 @@ code: [ExcavatorArm.cs, DieselEngine.cs, ExcavatorOutputPile.cs, ExcavatorSignal
    набирается хотя бы по 1 штуке на кучу, целая часть раскладывается по кучам. Не влезло в
    кучу — выпадает рядом.
 4. Компьютер связи заряжается на 1 за секунду, пока на него подан ток (`IsPowered`; по данным
-   сообщества — пока работает экскаватор, в выгрузке сцены его проводка не видна); при 600
+   сообщества — пока работает экскаватор, точная проводка неизвестна); при 600
    можно вызвать грузовой самолёт с аирдропом в одну из точек сброса экскаватора (±3 м).
 
 ## Нюансы
@@ -62,9 +62,3 @@ code: [ExcavatorArm.cs, DieselEngine.cs, ExcavatorOutputPile.cs, ExcavatorSignal
 - Сера — самый «плотный» выбор по ценности: 2000 серной руды за дизель.
 - Забирайте из обеих куч: ресурс делится поровну.
 - Вызывайте аирдроп каждые 5 дизелей — заряд не копится выше 600.
-
-## Где в коде
-
-- `DieselEngine.EngineSwitch`, `FixedUpdate`, `ConsumeFuelItem`.
-- `ExcavatorArm.BeginMining`, `ProduceResources`, `RPC_SetResourceTarget`.
-- `ExcavatorSignalComputer.ChargeThink`, `RequestSupplies`.

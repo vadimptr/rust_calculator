@@ -55,8 +55,3 @@ code: [GenerateDungeonBase.cs, DungeonBaseInfo.cs, DungeonBaseLink.cs, DungeonBa
 
 - Ищите модуль с красным считывателем первым — в нём весь ценный лут, но и радиация `HIGH`.
 - Подлодка или водолазное снаряжение + предохранители + все три карты.
-
-## Где в коде
-
-- `GenerateDungeonBase.Process`, `PlaceSegments`, `SetupAI`.
-- `TriggerSubmarineMoonpool`, `UnderwaterDweller`, `NPCDwelling`, `PuzzleReset`.

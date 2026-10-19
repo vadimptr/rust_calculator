@@ -9,8 +9,6 @@ related: [door, external-wall, auto-turret, storage-boxes, tool-cupboard, data-p
 code: [BaseCombatEntity.cs]
 ---
 
-> Таблица собрана автоматически из ассетов сервера Rust от 2026-10-16 скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.
-
 ## Как читать
 
 HP — поле `startHealth` префаба (`BaseCombatEntity`). Таблица защиты — `baseProtection`, её значения в [[data-protection]]. Показаны префабы из `assets/prefabs`, разбитые по назначению по имени префаба.

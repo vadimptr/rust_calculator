@@ -13,7 +13,7 @@ code: [BuildingBlock.cs, DirectionProperties.cs, WeakpointProperties.cs, ModelCo
 
 Крыша — наклонный блок, который ставится поверх стен. Она закрывает здание сверху, и поэтому
 блоки и деплои внутри считаются «внутри» для проверок гниения и постановки. Соседние крыши
-сливаются визуально в один скат, а стена под скатом обрезается в треугольник. В коде это
+сливаются визуально в один скат, а стена под скатом обрезается в треугольник. Это
 обычный `BuildingBlock` с префабом `roof` или `roof.triangle`.
 
 ## Характеристики
@@ -23,7 +23,7 @@ code: [BuildingBlock.cs, DirectionProperties.cs, WeakpointProperties.cs, ModelCo
 | Квадратная | `roof` | «папа» `wall-male` (тип `Wall`, `support` 0,3); «мамы» `wall-female` (`Wall`) и `floor-female/1..4` (`Floor`); `neighbour/1..6` |
 | Треугольная | `roof.triangle` | «папа» `wall-male` (`Wall`, 0,3); «мамы» `floor-female/1..2`; `neighbour/1..6` |
 
-**HP и цена** — из ассета грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
+**HP и цена** — из параметров грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
 У обеих крыш `healthMultiplier` = 1 и `costMultiplier` = 0,5: HP 10 / 250 / 500 / 1000 / 2000,
 цена 25 соломы (Wood) / 100 дерева / 150 камня / 100 металла / 13 МВК — половина цены стены.
 Треугольная крыша стоит столько же, сколько квадратная, — это подтверждают префабы.
@@ -83,10 +83,3 @@ code: [BuildingBlock.cs, DirectionProperties.cs, WeakpointProperties.cs, ModelCo
   деплои «только внутри».
 - Улучшайте соседние сегменты крыши вместе, иначе останутся торцы посреди ската.
 - Если стена под скатом не обрезалась, проверьте, не стоит ли что-то на её верхних сокетах.
-
-## Где в коде
-
-- `BuildingBlock.IsOutside`, `SocketMod_Inside.IsOutside`, `ConstructionSocket.IsOutside`.
-- `DirectionProperties.CheckWeakpointRoof`, `WeakpointProperties.BlockWhenRoofAttached`.
-- `ModelConditionTest_RoofLeft/Right/Top/Bottom/Triangle`, `ModelConditionTest_WallTriangleLeft/Right`.
-- `BuildingBlock.CheckForPipes`.

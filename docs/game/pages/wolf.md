@@ -4,7 +4,7 @@ title: Волк
 kind: object
 group: NPC и животные
 icon: skull.wolf
-summary: Стайный хищник Gen2 — воет, созывая стаю, кружит, лает и бросается в атаку; боится огня (и, из-за особенности кода, голосового чата), убегает при HP ниже 25 % и от воды.
+summary: Стайный хищник Gen2 — воет, созывая стаю, кружит, лает и бросается в атаку; боится огня (и, из-за особенности игры, голосового чата), убегает при HP ниже 25 % и от воды.
 related: [animals, animal-behaviour, npc-perception, npc-ai, tiger, gathering]
 code: [Rust.Ai.Gen2/Wolf2.cs, Rust.Ai.Gen2/Wolf2FSM.cs, Rust.Ai.Gen2/State_Howl.cs, Rust.Ai.Gen2/State_Bark.cs, Rust.Ai.Gen2/State_WolfHurt.cs, Rust.Ai.Gen2/Trans_TargetIsNearFire.cs, Rust.Ai.Gen2/NpcNoiseManager.cs]
 ---
@@ -63,9 +63,3 @@ code: [Rust.Ai.Gen2/Wolf2.cs, Rust.Ai.Gen2/Wolf2FSM.cs, Rust.Ai.Gen2/State_Howl.
 - Зажжённый факел в руке — лучшая защита: ближе 12 м волк убегает, а сам рывок с огнём заканчивается отходом на 8–16 м.
 - Встаньте в воду глубже 0,3 м — стая сразу уйдёт.
 - Обходите стаю на машине: в транспорте терпение кончается в 12 раз быстрее (≈10 с).
-
-## Где в коде
-
-- `Rust.Ai.Gen2/Wolf2FSM.InitShared` (всё дерево), `Hurt`, `Intimidate`, `Howl`, `Bark`.
-- `State_Howl.OnStateEnter`, `State_Bark.OnStateEnter`, `State_WolfHurt`, `Trans_InitialAlliesNotFighting`, `State_Attack.DoDamage`.
-- `Trans_TargetIsNearFire.Test`, `NpcNoiseManager.HasPlayerSpokenNear`, `NpcFireManager.DidMeleeWithFireRecently`.

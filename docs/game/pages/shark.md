@@ -47,7 +47,3 @@ code: [SimpleShark.cs]
 
 - Ныряете за лутом — смотрите на интервал: после укуса у вас 7 с до следующего, этого хватает, чтобы всплыть и сесть в лодку.
 - 148 HP с 50 % защиты от холодного оружия: под водой эффективнее гарпун и огнестрел.
-
-## Где в коде
-
-- `SimpleShark.IdleState`, `AttackState`, `ValidTarget`, `UpdateTarget`, `DoAttack`, `OnAttacked`, `CheckSleepState`, `WaterClamp`.

@@ -147,10 +147,10 @@ code: [ResourceDispenser.cs, OreResourceEntity.cs, OreHotSpot.cs, TreeEntity.cs,
 
 ### 5. Инструменты без мини-игры
 
-Ассет `ResourceGatherItemConfig` перечисляет предметы, которые «обходят» мини-игру для каждого
+`ResourceGatherItemConfig` перечисляет предметы, которые «обходят» мини-игру для каждого
 типа ресурса (`CanItemBypassHotspotGathering`). Для них каждый удар считается попаданием в
 точку, а потолок бонуса умножается на `hotspotGatherBonusScale` предмета: на руде
-`1 + Min(0.5 × n, 2 × scale)`, на дереве `1 + Min(0.125 × n, 1 × scale)`. В ассете ровно
+`1 + Min(0.5 × n, 2 × scale)`, на дереве `1 + Min(0.125 × n, 1 × scale)`. В нём ровно
 два предмета:
 
 | Предмет | Ресурс | `hotspotGatherBonusScale` | Потолок бонуса |
@@ -218,13 +218,3 @@ code: [ResourceDispenser.cs, OreResourceEntity.cs, OreHotSpot.cs, TreeEntity.cs,
 - Не стреляйте и не взрывайте ресурсы: потеряете часть запаса.
 - Камнем добывать «расточительно»: если у инструмента большой `destroyFraction`, часть узла
   сгорает и бонуса за последний удар нет.
-
-## Где в коде
-
-- `ResourceDispenser.DoGather`, `GiveResourceFromItem`, `AssignFinishBonus`,
-  `CalculateGatherBonus`, `ScaleGatherAmount`.
-- `ResourceDispenser.GatherProperties / GatherPropertyEntry` — параметры инструмента.
-- `OreResourceEntity.OnAttacked`, `OreHotSpot` — горячие точки.
-- `TreeEntity.OnAttacked`, `DidHitMarker`, `StartBonusGame / StopBonusGame` — крестик.
-- `ResourceGatherItemConfig.CanItemBypassHotspotGathering`.
-- `ResourceEntity.OnAttacked` — урон узлу без добычи.

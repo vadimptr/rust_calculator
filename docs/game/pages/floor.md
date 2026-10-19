@@ -13,7 +13,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, StabilityEntity.cs, ModelConditi
 
 Пол — горизонтальный блок второго и следующих этажей. Он садится на верх стены
 (у стены четыре сокета `floor-female/1..4`) или пристраивается к краю соседнего пола.
-Сам пол служит основанием для стен следующего этажа, лестниц и деплоев. В коде это обычный
+Сам пол служит основанием для стен следующего этажа, лестниц и деплоев. Это обычный
 `BuildingBlock`, вид определяется префабом.
 
 ## Характеристики
@@ -25,7 +25,7 @@ code: [BuildingBlock.cs, ConstructionSocket.cs, StabilityEntity.cs, ModelConditi
 | Квадратная рама пола | `floor.frame` | `FloorFrame` ×4 | Под люк с лестницей, решётку пола и т. п. |
 | Треугольная рама пола | `floor.triangle.frame` | `FloorFrameTriangle` ×3 | Под треугольный люк |
 
-**HP и цена** — из ассета грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
+**HP и цена** — из параметров грейда и множителей префаба, см. [[building-grades]] и [[data-building-blocks]].
 HP у всех полов одинаковое (`healthMultiplier` = 1): 10 / 250 / 500 / 1000 / 2000.
 
 | | `costMultiplier` | Солома | Дерево | Камень | Металл | МВК |
@@ -87,10 +87,3 @@ HP у всех полов одинаковое (`healthMultiplier` = 1): 10 / 25
   пол далеко за край.
 - Треугольный пол — самый дешёвый блок для закрытия щелей в треугольных секциях.
 - Для люка ставьте раму пола, а не сплошной пол: в сплошной пол люк не встанет, нужен сокет `FloorFrame`.
-
-## Где в коде
-
-- `BuildingBlock` — общий класс блока.
-- `ConstructionSocket.Type.Floor`, `FloorFrame`, `FloorFrameTriangle`, `ShouldInheritFemaleSocketRotation`.
-- `StabilityEntity.InitializeSupports` — опоры от сокетов.
-- `WallpaperSettings.GetSideThatMustBeInside`, `BuildingBlock.CheckWallpaper`.

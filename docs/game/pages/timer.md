@@ -17,15 +17,15 @@ code: [TimerSwitch.cs, CustomTimerSwitch.cs]
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|---|---|---|
-| Вход 0 | Power In (основной) | префаб |
-| Вход 1 | Toggle On (не основной) | префаб |
-| Выход | Power Out | префаб |
-| `timerLength` | 10 с по умолчанию | префаб `timer` |
-| Шаг отсчёта | 0.1 с (`InvokeRepeating(AdvanceTime, 0, 0.1)`) | `StartTimer` |
-| Потребление | 0 | `ConsumptionAmount` |
-| HP | 200 | префаб |
+| Параметр | Значение |
+|---|---|
+| Вход 0 | Power In (основной) |
+| Вход 1 | Toggle On (не основной) |
+| Выход | Power Out |
+| `timerLength` | 10 с по умолчанию |
+| Шаг отсчёта | 0.1 с (`InvokeRepeating(AdvanceTime, 0, 0.1)`) |
+| Потребление | 0 |
+| HP | 200 |
 
 Время меняет игрок с правом строительства (`CanBuild`) и только пока таймер **не идёт**
 (`CanPlayerAdmin`). Сервер принимает любое число, кроме NaN и бесконечности
@@ -65,8 +65,3 @@ AdvanceTime (каждые 0.1 с): если прошло ≥ timerLength → с�
   через [[blocker|блокировщик]] не даёт следующему импульсу пройти, пока идёт. Нужен один блокировщик,
   схема — в [[scheme-pulse-watering]]. Вариант «первый запускает второй и наоборот» требует двух блокировщиков.
 - Длинные таймеры (часы) ненадёжны: рестарт отсчитывает время заново.
-
-## Где в коде
-
-`TimerSwitch.UpdateFromInput`, `SwitchPressed`, `StartTimer`, `AdvanceTime`, `EndTimer`,
-`PostServerLoad`, `WantsPassthroughPower`; `CustomTimerSwitch.SERVER_SetTime`, `CanPlayerAdmin`.

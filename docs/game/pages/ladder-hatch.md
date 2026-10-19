@@ -46,7 +46,7 @@ HP и защита — `startHealth` и `baseProtection` префабов ([[dat
 
 - **Флаг `hasHatch` — не про этот люк.** В `Door` есть отдельный механизм «окошка» (`hasHatch`,
   `RPC_ToggleHatch`, флаг `Reserved3`). Он открывает маленькую створку в двери и тоже проверяет
-  замок. По ассетам он включён только у бронированных дверей `door.hinged.toptier` и
+  замок. Он включён только у бронированных дверей `door.hinged.toptier` и
   `door.double.hinged.toptier` ([[door]]); у люков он выключен.
 - **Ставится в раму пола.** Квадратный люк — в `floor.frame`, треугольный — в `floor.triangle.frame`
   ([[floor]]). В сплошной пол люк не встанет.
@@ -54,8 +54,3 @@ HP и защита — `startHealth` и `baseProtection` префабов ([[dat
   300 Metal Fragments или 35 HQM ([[upkeep]]).
 - **Игрок на люке не мешает его закрыть.** Сервер проверяет помехи только от транспорта
   и только у дверей с триггерами `vehiclePhysBoxes` ([[doors]]).
-
-## Где в коде
-
-- `Door.RPC_OpenDoor`, `Door.RPC_CloseDoor` — открытие.
-- `Door.RPC_ToggleHatch` — «окошко» в двери (не люк в полу).

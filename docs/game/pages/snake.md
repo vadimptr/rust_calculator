@@ -45,8 +45,3 @@ code: [SnakeHazard.cs, WildlifeHazard.cs, TriggerQTE.cs, Modifier.cs]
 
 - В джунглях держите палец на прыжке: шипение = жми пробел.
 - Замедление на 6 с в джунглях с тигром — опаснее самого укуса.
-
-## Где в коде
-
-- `WildlifeHazard.ShouldStartHazard`, `OnHazardStarted`, `GetReactionTime`, `OnHazardEnded`, `FindSuitableReposition`.
-- `SnakeHazard.OnHazardFailed`, `ApplyAttackToPlayer`, `StartReposition`.

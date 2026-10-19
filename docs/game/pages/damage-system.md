@@ -167,8 +167,8 @@ code: [BaseCombatEntity.cs, HitInfo.cs, Rust/DamageType.cs, Rust/DamageTypeList.
   | `napalm` | 6 | 0.5 | 2 | 60–90 |
   | `oilfireball2`, `oilfireballsmall` (разлив нефти) | 8 | 0.5 | 3 | 180–300 |
 
-  Какой именно шар создаёт каждое оружие, по дампу ассетов не видно (ссылки на префабы
-  хранятся по GUID); соответствие в скобках — по именам префабов.
+  Какой именно шар создаёт каждое оружие, точно неизвестно;
+  соответствие в скобках — по именам префабов.
 - **Гниение** — периодический `Hurt(…, DamageType.Decay)` (см. [[decay]]).
 - **Кровотечение** у игроков — через метаболизм, множитель `server.bleedingdamage`.
 
@@ -189,11 +189,11 @@ code: [BaseCombatEntity.cs, HitInfo.cs, Rust/DamageType.cs, Rust/DamageTypeList.
 ## Нюансы
 
 - **Для взрывов нет серверного множителя.** Есть `meleedamage`, `bulletdamage`, `arrowdamage`,
-  но нет `explosiondamage`. Сервер может ускорить или замедлить рейд только правкой ассетов защиты.
+  но нет `explosiondamage`. Сервер может ускорить или замедлить рейд только правкой профилей защиты.
   Исключение — отладочный `server.explosive_testing_mode`.
 - **Защита может усиливать урон.** В `ProtectionProperties.Scale` множитель равен
   `1 − clamp(amount, −1, 1)`. Отрицательная защита увеличивает урон, максимум вдвое.
-  Редактор ассета разрешает значения от −4 до 3, но код всё равно обрезает их до [−1, 1].
+  В редакторе можно задать значения от −4 до 3, но игра всё равно обрезает их до [−1, 1].
 - **PvE-режим отражает урон.** При `server.pve = true` удар игрока по строительному блоку не
   ранит блок: игрок сам получает `Total()` как `Generic` (`BuildingBlock.Hurt`).
 - **Игрок в обучении** не может повредить строительный блок: `BuildingBlock.Hurt` сразу выходит.
@@ -223,15 +223,3 @@ code: [BaseCombatEntity.cs, HitInfo.cs, Rust/DamageType.cs, Rust/DamageTypeList.
 - Серверные «x2 урона пуль» на рейд взрывчаткой не влияют. На рейд разрывными патронами влияют
   частично: `bulletdamage` масштабирует прямое попадание пули, если у него тип Bullet,
   а радиальная часть разрывного — тип Explosion (см. [[explosive-ammo]]).
-
-## Где в коде
-
-- `BaseCombatEntity.Hurt(HitInfo)` — весь конвейер; `OnAttacked`, `Die`, `OnDied`, `MaxHealth`, `SetJustAttacked`, `MarkHostileFor`.
-- `HitInfo` — поля удара, `Init`, `InitiatorPlayer`.
-- `Rust.DamageType`, `DamageTypeList` (`Total`, `ScaleAll`, `GetMajorityDamageType`), `DamageTypeEx`.
-- `ProtectionProperties.Scale` — формула защиты.
-- `BuildingBlock.Hurt` — PvE, обучение, обои; `BuildingBlock.MaxHealth`.
-- `ConstructionGrade.maxHealth` — HP блока от грейда.
-- `ConVar.Server` — `meleedamage`, `bulletdamage`, `arrowdamage`, `bleedingdamage`, `pve`, `explosive_testing_mode`.
-- `RaidWindow.BlocksDamage` — окно рейда в Softcore.
-- `FireBall.Think` — урон огнём.

@@ -18,16 +18,16 @@ code: [Sprinkler.cs, LiquidContainer.cs, PlanterBox.cs, ISplashable.cs, ConVar/S
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Потребление | 2 потока / 2 воды в секунду из бака | `Sprinkler.ConsumptionAmount` |
-| Период полива | 5 с (±20 %), первый — через 2,5 с после включения | `SplashFrequency` в префабе, `InvokeRandomized(DoSplash, 0.5×, 1×, 0.2×)` |
-| Вода за полив | 15, делится между целями | `WaterPerSplash` в префабе (в коде 1) |
-| Радиус | 3 м | `server.sprinklerRadius` |
-| Высота «глаз» | 3 м × наклон | `server.sprinklerEyeHeightOffset` |
-| Износ за полив | 0 | `DecayPerSplash` в префабе (в коде по умолчанию 0,8) |
-| Выход | «Passthrough», отдаёт `вход − 2` | слоты префаба |
-| Здоровье | 200 | `startHealth` |
+| Параметр | Значение |
+|----------|----------|
+| Потребление | 2 потока / 2 воды в секунду из бака |
+| Период полива | 5 с (±20 %), первый — через 2,5 с после включения |
+| Вода за полив | 15, делится между целями |
+| Радиус | 3 м |
+| Высота «глаз» | 3 м × наклон |
+| Износ за полив | 0 |
+| Выход | «Passthrough», отдаёт `вход − 2` |
+| Здоровье | 200 |
 
 ## Поведение
 
@@ -91,9 +91,3 @@ code: [Sprinkler.cs, LiquidContainer.cs, PlanterBox.cs, ISplashable.cs, ConVar/S
 - Ставьте разбрызгиватель вплотную к грядке и в прямой видимости: стенка между ними отменяет полив.
 - Никогда не подключайте полив к морскому насосу без очистителя.
 - Разбрызгиватель тушит костры и печи в радиусе — не ставьте его рядом с печами.
-
-## Где в коде
-
-- `Sprinkler.DoSplash`, `RefreshSprinklerState`, `SetFuelType`, `BlockFluidDraining`.
-- `PlanterBox.WantsSplash`, `DoSplash` — реакция грядки.
-- `BasePlayer.WantsSplash`, `BaseOven.DoSplash`, `Beehive.DoSplash` и др. — прочие цели.

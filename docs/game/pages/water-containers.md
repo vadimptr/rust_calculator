@@ -37,16 +37,16 @@ code: [LiquidContainer.cs, BaseLiquidVessel.cs, WaterWell.cs, WaterResource.cs, 
 
 ### Переносные ёмкости
 
-| Предмет | Ёмкость | Источник |
-|---------|---------|----------|
-| Бутылка для воды | 250 | `ItemModContainer.maxStackSize` |
-| Кувшин для воды | 5000 | `waterjug` |
-| Ведро | 2000 | `bucket.water` |
-| Водяной пистолет / ружьё | 250 / 1000 | `pistol.water`, `gun.water` |
+| Предмет | Ёмкость |
+|---------|---------|
+| Бутылка для воды | 250 |
+| Кувшин для воды | 5000 |
+| Ведро | 2000 |
+| Водяной пистолет / ружьё | 250 / 1000 |
 
 ## Поведение
 
-- **Наполнение фляги.** `BaseLiquidVessel.FillCheck`: скорость `fillMlPerSec` (500 в коде по
+- **Наполнение фляги.** `BaseLiquidVessel.FillCheck`: скорость `fillMlPerSec` (500 по
   умолчанию). Если смотрите на бак в 2 м — набирается из бака, иначе — из воды под ногами
   (нужно стоять в воде, `WaterFactor ≥ 0,05`, и не в искусственном водоёме). Из бака с сырой нефтью
   набрать нельзя.
@@ -74,9 +74,3 @@ code: [LiquidContainer.cs, BaseLiquidVessel.cs, WaterWell.cs, WaterResource.cs, 
 - Ставьте бочку между насосом и поливом: запас 20000 — это почти 3 часа работы одного
   разбрызгивателя (2 в секунду).
 - Не заливайте в общую бочку воду из моря «на время» — она испортит всю бочку.
-
-## Где в коде
-
-- `LiquidContainer.SVDrink`, `GetLiquidItem`, `PushLiquidThroughOutputs`.
-- `BaseLiquidVessel.FillCheck`, `AddLiquid`, `DoThrow`; `WaterBall.DoSplash`.
-- `WaterWell.RPC_Pump`, `Produce`.

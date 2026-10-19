@@ -105,12 +105,6 @@ code: [Rust.Ai.Gen2/SenseComponent.cs, Rust.Ai.Gen2/NpcNoiseManager.cs, AIBrainS
 
 ## На практике
 
-- Подкрадывайтесь к зверям присев, шагом и со спины (ветра в коде нет): у зверей конус ±100–143°, сзади их «касание» 4–6 м, а присевшего — около половины длины корпуса.
+- Подкрадывайтесь к зверям присев, шагом и со спины (ветер не учитывается): у зверей конус ±100–143°, сзади их «касание» 4–6 м, а присевшего — около половины длины корпуса.
 - Охоту на волка или тигра с глушителем начинайте дальше 20 м — тогда сам выстрел не слышен.
 - Дымовая граната прячет вас от зверей и учёных Gen2 полностью, если вы дальше их зоны «касания».
-
-## Где в коде
-
-- `Rust.Ai.Gen2/SenseComponent`: `IsInAnyRange`, `GetModifiedSenses`, `UpdateEntityVisibility`, `VisibilityStatus.UpdateVisibility`, `TickHearing`, `TickTargeting`, `Hurt`, `CanTarget`.
-- `Rust.Ai.Gen2/NpcNoiseManager`: `OnWeaponShot`, `OnProjectileHit`, `OnExplosion`, `OnVoiceChat`, `OnMeleeHit`.
-- `AIBrainSenses.AiCaresAbout`, `IsTargetInVision`, `GetNearest`; `BaseCombatEntity.MakeNoise`, `CanLastNoiseBeHeard`; `HumanNPC.GetBestTarget`.

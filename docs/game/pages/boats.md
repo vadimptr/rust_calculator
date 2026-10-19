@@ -27,10 +27,10 @@ code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, P
 
 | Параметр | Лодка | RHIB | PT-катер | Буксир | Каяк |
 |---|---|---|---|---|---|
-| HP (`startHealth`) | нет в выгрузке | 500 (`rhib.deepsea`) | 1000 | 3000 | 200 |
+| HP (`startHealth`) | неизвестно | 500 (`rhib.deepsea`) | 1000 | 3000 | 200 |
 | Защита (`baseProtection`) | вероятно `RowBoatProtection` | `RHIBProtection` | `RHIBProtection` | `TugboatProtection` | `DeployableWood` |
-| Тяга `engineThrust` | нет в выгрузке | 6000 | 4000 | 200 000 | весло (см. ниже) |
-| Расход `fuelPerSec` на газу | нет в выгрузке | 0,25 | 0,3 | 0,33 | — |
+| Тяга `engineThrust` | неизвестно | 6000 | 4000 | 200 000 | весло (см. ниже) |
+| Расход `fuelPerSec` на газу | неизвестно | 0,25 | 0,3 | 0,33 | — |
 | Бак | 1 слот | 1 слот | 1 слот | 1 слот | — |
 | Ящик | есть | 36 слотов (`rhib_storage`) | 36 слотов | нет | — |
 | Места (`mountPoints`) | — | 6, водитель 1 | 7, водитель 1 | 1 (штурвал) | 2, оба гребут |
@@ -39,15 +39,15 @@ code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, P
 | Под крышей | не гниёт | не гниёт | не гниёт | гниёт (`preventDecayIndoors = 0`) | не гниёт |
 | Остов исчезает через | 300 с | 300 с | 300 с | 7200 с | — |
 
-Префабы обычной лодки, обычного RHIB, подлодок и самодельного корабля в выгрузку ассетов
-не попали; RHIB взят в варианте Deep Sea (`rhib.deepsea`). По данным сообщества, у обычной
-лодки 300 HP, у одноместной подлодки 200, у двухместной 300 — в коде не подтверждено.
+Часть параметров обычной лодки, обычного RHIB, подлодок и самодельного корабля неизвестна;
+RHIB взят в варианте Deep Sea (`rhib.deepsea`). По данным сообщества, у обычной
+лодки 300 HP, у одноместной подлодки 200, у двухместной 300 — это не подтверждено.
 Стартовое топливо — `MotorRowboat.StartingFuelUnits` (50), у буксира переопределено в 0
 (`Tugboat.StartingFuelUnits`), у подлодки 50 (`BaseSubmarine.StartingFuelUnits`).
 
 ### Защита
 
-Доля поглощённого урона (из ассетов `ProtectionProperties`, см. [[data-protection]]).
+Доля поглощённого урона (`ProtectionProperties`, см. [[data-protection]]).
 Отрицательное число — урон увеличивается.
 
 | Тип урона | `RowBoatProtection` | `RHIBProtection` | `TugboatProtection` | `SubmarineProtection` | `BlockPlayerBoatWood` | `WaterInflatable` |
@@ -67,9 +67,9 @@ code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, P
 | Параметр | Подлодка (обе) | Подводный скутер (DPV) | Надувной круг |
 |---|---|---|---|
 | Класс | `BaseSubmarine` / `SubmarineDuo` | `DiverPropulsionVehicle` | `WaterInflatable` |
-| HP | нет в выгрузке | 150 | 20 |
-| Защита | нет в выгрузке | `SubmarineProtection` | `WaterInflatable` |
-| Сила двигателя | `engineKW × 40` (по умолчанию в коде 200) | `engineKW` = 35 | толчок 0,42 вперёд, 0,18 назад |
+| HP | неизвестно | 150 | 20 |
+| Защита | неизвестно | `SubmarineProtection` | `WaterInflatable` |
+| Сила двигателя | `engineKW × 40` (по умолчанию 200) | `engineKW` = 35 | толчок 0,42 вперёд, 0,18 назад |
 | Расход | 0,03 → 0,15 ед./с по газу | 0,03 → 0,15 ед./с | — |
 | Бак | 1 слот | 1 слот, стопка до 100 | — |
 | Предел скорости | — | — | `maxSpeed` = 1,8 м/с |
@@ -190,7 +190,7 @@ code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, P
 всплывает (`GetUpDownInput` возвращает 0,15). С выключенным двигателем погружаться нельзя.
 
 **Торпеды** (`submarine.torpedo.straight`): стреляет водитель ЛКМ, только под водой, не чаще
-раза в 1,5 с (`reloadTime`, значение кода), торпеды берутся из отдельного отсека. В мирной
+раза в 1,5 с (`reloadTime`, значение по умолчанию), торпеды берутся из отдельного отсека. В мирной
 зоне выстрел молча не происходит. Выстрел делает водителя враждебным (`MarkHostileFor`).
 Торпеда (`TorpedoServerProjectile`) идёт 20 м/с, держится не выше 0,5 м под поверхностью,
 дальность не ограничена, взрывается через 15–20 с или при ударе: радиус 5 м,
@@ -313,22 +313,3 @@ code: [BaseBoat.cs, MotorRowboat.cs, RHIB.cs, PTBoat.cs, Kayak.cs, Tugboat.cs, P
   на секунду — запас сразу поднимется до половины.
 - Не погибайте в подлодке от взрыва: если её добьют торпедой или ракетой, умрут все внутри.
 - Скутер не даёт воздуха — берите баллон и не лезьте на мелководье.
-
-## Где в коде
-
-- `BaseBoat.VehicleFixedUpdate`, `DriverInput`, `WaterVehicleDecay`, `CheckDriftToShore` — общая
-  физика, распад, дрейф.
-- `MotorRowboat.VehicleFixedUpdate`, `EngineToggle`, `OnDied`, `EnterCorpseState`,
-  `SeatClippedWorld`, `MountEligable`, `CanPushNow` — моторные лодки.
-- `RHIB.VehicleFixedUpdate`, `Server_Release`; `PTBoat` — наследник RHIB.
-- `Kayak.DriverInput`, `CalculateDesiredDrag`, `BoatDecay`.
-- `Tugboat.BoatDecay`, `EnterCorpseState`, `CanPushNow`; `BasePlayer.GetVehicleBuildingPrivilege`.
-- `BaseSubmarine.VehicleFixedUpdate`, `PlayerServerInput`, `ProcessCollision`, `OnDied`,
-  `GetUpDownInput`, `CanBeLooted`; `PlayerMetabolism` — урон при нехватке кислорода.
-- `TorpedoServerProjectile.DoMovement`.
-- `DiverPropulsionVehicle.VehicleFixedUpdate`, `AttemptMount`; `WaterInflatable.OnCollision`.
-- `PlayerBoat.Init`, `VehicleFixedUpdate`, `CalculateAdjustedMaxVelocity`, `TakeDamage`,
-  `OnDied`, `HandleBeachedPushing`, `OnAnchoredChanged`, `IsPlayerAuthed`.
-- `BoatBuildingStation.FinishBuilding`, `ValidBoat`, `ConvertPlayerBoatToConstruction`.
-- `Sail.CurrentThrust`, `SmallEngine.TryUseFuel`, `Anchor.LowerAnchor`, `PlayerBoatLock.TryOpenWithCode`,
-  `Cannon.LightFuse`.

@@ -9,11 +9,9 @@ related: [protection, damage-system, data-building-blocks, data-entity-health, a
 code: [ProtectionProperties.cs, BaseCombatEntity.cs]
 ---
 
-> Таблица собрана автоматически из ассетов сервера Rust от 2026-10-16 скриптом `tools/game-data/build_pages.py`. Не правьте её руками — перегенерируйте.
-
 ## Как читать
 
-Ассет `ProtectionProperties` хранит массив из 28 чисел — по одному на тип урона (`Rust.DamageType`).
+Защита `ProtectionProperties` — массив из 28 чисел — по одному на тип урона (`Rust.DamageType`).
 Число — доля урона, которую защита гасит: 90% значит, что проходит 10%. Отрицательное значение
 увеличивает урон. В таблицах показаны только типы урона, где хоть у одной колонки есть ненулевое
 значение; «—» значит 0%. Как защита применяется, см. [[protection]] и [[damage-system]].

@@ -16,7 +16,7 @@ code: [Recycler.cs, RecyclerConfig.cs, ItemBlueprint.cs, ItemModRecycleInto.cs, 
 эффективность. Дробные остатки разыгрываются случайно, так что в среднем вы получаете ровно
 эту долю. Скрап считается отдельно через поле рецепта `scrapFromRecycle`.
 
-Эффективность и длительность тика задаёт не код, а ассет
+Эффективность и длительность тика задаёт файл настроек
 `assets/prefabs/deployable/recycler/config/recyclerconfig.asset` — для трёх типов переработчика
 (зелёный, жёлтый, красный).
 
@@ -76,7 +76,7 @@ code: [Recycler.cs, RecyclerConfig.cs, ItemBlueprint.cs, ItemModRecycleInto.cs, 
 (`Recycler.IsInSafeZone`); зона с активным боем (`TriggerSafeZoneOverride.IsCombatActive`)
 не считается безопасной.
 
-Значения из ассета `RecyclerConfig` (`recyclerTypeConfigs`):
+Значения `RecyclerConfig` (`recyclerTypeConfigs`):
 
 | Тип (префаб) | Эффективность | Тик, с | С энергосетью | Скрап от `scrapFromRecycle` |
 |--------------|---------------|--------|---------------|-----------------------------|
@@ -104,7 +104,7 @@ code: [Recycler.cs, RecyclerConfig.cs, ItemBlueprint.cs, ItemModRecycleInto.cs, 
 
 Некоторые предметы имеют `ItemModRecycleInto`: команда `recycle_item` превращает предмет
 в `numRecycledItemMin..numRecycledItemMax` штук другого предмета без переработчика.
-Какие предметы это умеют — задано в ассетах.
+Какие предметы это умеют — задано у самих предметов.
 
 ## Числа и настройки
 
@@ -157,11 +157,3 @@ code: [Recycler.cs, RecyclerConfig.cs, ItemBlueprint.cs, ItemModRecycleInto.cs, 
   на земле, где их подберёт кто угодно.
 - Мелкие дробные остатки скрапа выгоднее «добирать» одной большой партией на одном
   переработчике.
-
-## Где в коде
-
-- `Recycler.RecycleThink` — формулы выхода.
-- `Recycler.CanBeRecycled`, `Recycler.RecyclerItemFilter` — что принимается.
-- `Recycler.GetRecyclerStats`, `Recycler.GetRecyclerType`, `Recycler.IsInSafeZone` — тип и параметры.
-- `RecyclerConfig` — структура конфига типов.
-- `ItemModRecycleInto.ServerCommand` — переработка в инвентаре.

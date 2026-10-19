@@ -21,9 +21,9 @@ code: [BuildingGrade.cs, ConstructionGrade.cs, BuildingBlock.cs, DecayEntity.cs,
 
 ## Как работает
 
-### Грейд = ассет + множители префаба
+### Грейд = базовые параметры + множители префаба
 
-`BuildingGrade` — ассет (ScriptableObject) с полями:
+`BuildingGrade` — набор параметров (ScriptableObject) с полями:
 
 | Поле | Смысл |
 |---|---|
@@ -36,7 +36,7 @@ code: [BuildingGrade.cs, ConstructionGrade.cs, BuildingBlock.cs, DecayEntity.cs,
 | `supportsColourChange` | можно ли перекрашивать (контейнерный скин) |
 | `alwaysUnlock` | скин доступен без владения предметом в Steam |
 
-Конкретные числа `baseHealth` и `baseCost` лежат в ассетах, **в коде их нет**. Значения из ассетов
+Конкретные числа `baseHealth` и `baseCost` задаются для каждого грейда отдельно. Значения
 (полная таблица по блокам — [[data-building-blocks]]):
 
 | Грейд | `baseHealth` | `baseCost` | `damageProtecton` |
@@ -85,7 +85,7 @@ RPC от игрока, дистанция до блока не больше **3 
    Флаг включён у квадратного и треугольного фундамента, ступеней фундамента и пандуса.
 3. **Хватает ресурсов** и грейд не отключён ConVar-ом `decay.upgrade_*_enabled`.
    Иначе — молчаливый отказ.
-4. **Блок не атакован последние 30 с** (`SecondsSinceAttacked < 30f`, константа в коде):
+4. **Блок не атакован последние 30 с** (`SecondsSinceAttacked < 30f`, константа):
    `Recently damaged, upgradable in N seconds`.
 5. **Скин:** если у грейда ненулевой скин и нет `alwaysUnlock`, игрок должен владеть этим
    предметом в Steam-инвентаре (`Skin not owned`).
@@ -117,7 +117,7 @@ RPC от игрока, дистанция до блока не больше **3 
   `wall.half`, `wall.low`, `wall.doorway`, `wall.window`, `wall.frame`. Фундаменты, полы, крыши,
   лестницы и пандус после постановки не поворачиваются.
 - Флаг ставится при спавне блока и при каждой **смене грейда** и снимается через **600 с**
-  (`StartBeingRotatable` → `Invoke(StopBeingRotatable, 600f)`, константа в коде).
+  (`StartBeingRotatable` → `Invoke(StopBeingRotatable, 600f)`, константа).
 - Нужно, чтобы `IsBuildingBlocked` было ложно. Значит, без шкафа повернуть может кто угодно.
 - Поворот запрещён, если к блоку прикреплена взрывчатка (`TimedExplosive` среди детей).
   Если в префабе стоит `checkVolumeOnRotate`, то и тогда, когда объёмы блока что-то задевают.
@@ -152,7 +152,7 @@ RPC от игрока, дистанция до блока не больше **3 
 | Разрешить улучшение до дерева, камня, металла, МВК | `decay.upgrade_wood_enabled`, `decay.upgrade_stone_enabled`, `decay.upgrade_metal_enabled`, `decay.upgrade_hqm_enabled` = true | `ConVar.Decay` |
 | Множитель цены соломы | `decay.build_twig_cost_multiplier` = 1 | `ConVar.Decay` |
 | Множители цены улучшения | `decay.upgrade_wood_cost_multiplier`, `decay.upgrade_stone_cost_multiplier`, `decay.upgrade_metal_cost_multiplier`, `decay.upgrade_hqm_cost_multiplier` = 1 | `ConVar.Decay` |
-| HP и цена грейда | 10 / 250 / 500 / 1000 / 2000 HP; 50 Wood / 200 Wood / 300 Stones / 200 Metal Fragments / 25 HQM | ассеты `BuildingGrade`, см. [[data-building-blocks]] |
+| HP и цена грейда | 10 / 250 / 500 / 1000 / 2000 HP; 50 Wood / 200 Wood / 300 Stones / 200 Metal Fragments / 25 HQM | `BuildingGrade`, см. [[data-building-blocks]] |
 | Множители блока | `healthMultiplier` = 1 у всех; `costMultiplier` 0,25…1 (таблица выше) | префаб, поля `Construction` |
 
 ## Нюансы
@@ -176,7 +176,7 @@ RPC от игрока, дистанция до блока не больше **3 
 - **Окно поворота обновляется, окно сноса — нет.** Каждый `ChangeGrade` на новый грейд
   снова включает поворот. Таймер сноса запускается только при спавне.
   Перезапускается ли таймер поворота с нуля, или остаётся старый вызов, зависит от
-  `InvokeHandler`, которого в этих исходниках нет. Это не проверено.
+  `InvokeHandler`. Это не проверено.
 - **C4 на блоке блокирует поворот.** Пока к блоку прилеплена взрывчатка, поворот запрещён.
 - **Понизить грейд нельзя.** `iGrade < grade` — отказ. Единственный способ — снести и поставить
   заново, если ещё открыто окно сноса.
@@ -192,12 +192,3 @@ RPC от игрока, дистанция до блока не больше **3 
 - Для калькулятора стоимости: цена блока на грейде X = цена соломы + цена X, без вычетов.
   Если сначала улучшали до дерева, прибавьте и его.
 - Улучшение — способ мгновенно отхилить блок в рейд, если его не били последние 30 секунд.
-
-## Где в коде
-
-- `BuildingGrade` — ассет грейда, перечисление `BuildingGrade.Enum`.
-- `ConstructionGrade.maxHealth`, `ConstructionGrade.UpdateCosts`, `ConstructionGrade.CostToBuild`.
-- `BuildingBlock.DoUpgradeToGrade`, `HasUpgradePrivilege`, `IsUpgradeBlocked`, `CanAffordUpgrade`, `ChangeGrade`, `PayForUpgrade`.
-- `BuildingBlock.DoRotation`, `CanRotate`, `IsRotationBlocked`, `StartBeingRotatable`.
-- `DecayEntity.DoDemolish`, `IsDemolishable`, `HasDemolishPrivilege`, `StartBeingDemolishable`.
-- `ConVar.Decay.GetCostMultiplier`, `ConVar.Decay.CanUpgradeToGrade`.

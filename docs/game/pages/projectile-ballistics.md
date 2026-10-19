@@ -34,7 +34,7 @@ code: [Projectile.cs, ItemModProjectile.cs, BaseProjectile.cs, BasePlayer.cs, Co
            × BaseProjectile.projectileVelocityScale
 ```
 
-- `projectileVelocity` — поле патрона, по умолчанию в коде `100` м/с. Реальные значения —
+- `projectileVelocity` — поле патрона, по умолчанию `100` м/с. Реальные значения —
   в таблице «Патроны» ниже: от 40 м/с у зажигательной стрелы до 450 м/с у скоростного 5.56.
 - `projectileVelocitySpread` — случайный разброс скорости (`GetRandomVelocity`), обычно 0.
 - `projectileVelocityScale` — множитель оружия (по умолчанию `1`). Поэтому один и тот же
@@ -43,7 +43,7 @@ code: [Projectile.cs, ItemModProjectile.cs, BaseProjectile.cs, BasePlayer.cs, Co
   `projectileVelocityScale + stringBonusVelocity × натяжение`, где натяжение растёт от 0 до 1 за
   `stringHoldDurationMax = 3` с и уменьшается штрафом за движение.
 
-Модификатор скорости модулей (`ProjectileWeaponMod.projectileVelocity`) в серверном коде
+Модификатор скорости модулей (`ProjectileWeaponMod.projectileVelocity`) на сервере
 объявлен, но не используется: скорость с модулями применяет клиент. См. [[weapon-attachments]].
 
 ### 2. Дробь и разброс
@@ -78,7 +78,7 @@ code: [Projectile.cs, ItemModProjectile.cs, BaseProjectile.cs, BasePlayer.cs, Co
 При попадании сервер вызывает `Projectile.CalculateDamage(info, modifier, integrity)`.
 Префаб снаряда хранит:
 
-| Поле `Projectile` | По умолчанию в коде | Смысл |
+| Поле `Projectile` | По умолчанию | Смысл |
 |---|---|---|
 | `damageTypes` | — (префаб) | базовый урон по типам (Bullet, Arrow, …) |
 | `damageDistances` | `(10, 100)` | ближняя и дальняя дистанции |
@@ -94,7 +94,7 @@ k       = Lerp(mult.x, farDamageScale или mult.y, InverseLerp(ближняя,
 ```
 
 - До ближней дистанции урон полный (×`mult.x`), после дальней — постоянный (×`mult.y`),
-  между ними — линейно. С дефолтами кода это «100 % до 10 м, 80 % после 100 м».
+  между ними — линейно. Со значениями по умолчанию это «100 % до 10 м, 80 % после 100 м».
 - `damageScale` = произведение множителей урона всех модулей × `BaseProjectile.damageScale`
   оружия (по умолчанию `1`). `distanceScale` — то же для дистанций. Оба собираются в
   `BaseProjectile.GetProjectileModifier`.
@@ -107,7 +107,7 @@ k       = Lerp(mult.x, farDamageScale или mult.y, InverseLerp(ближняя,
 
 ### Патроны
 
-Скорость и дробь — из `ItemModProjectile` патрона (`items.jsonl`), остальное — из префаба
+Скорость и дробь — из `ItemModProjectile` патрона, остальное — из префаба
 снаряда `Projectile`. Дистанции — `damageDistances`, «×дальн.» — `damageMultipliers.y`
 (на ближней дистанции у всех ×1).
 
@@ -178,7 +178,7 @@ integrity -= PenetrationResistance(цель) / penetrationPower
 - `PenetrationResistance`:
   - игрок (`BasePlayer`) — `100`: тело всегда останавливает пулю;
   - обычная сущность без защиты (`BaseEntity`) — `100`;
-  - боевая сущность (`BaseCombatEntity`) — `baseProtection.density` из её ассета защиты
+  - боевая сущность (`BaseCombatEntity`) — `baseProtection.density` из её профиля защиты
     (0–100, по умолчанию `1`);
   - транспорт — `0.5`, если у снаряда стоит флаг `penetratesVehicles`, иначе как у боевой
     сущности.
@@ -210,8 +210,8 @@ integrity -= PenetrationResistance(цель) / penetrationPower
 |---|---|---|
 | Шаг симуляции | `1/32` с | `Projectile.moveDeltaTime` |
 | Время жизни снаряда | `8` с | `Projectile.lifeTime` |
-| Скорость патрона | 40–450 м/с (умолчание кода 100) | `ItemModProjectile.projectileVelocity`, таблица «Патроны» |
-| Дистанции падения урона | 20–100 м у 5.56, 10–60 м у пистолетных, 10–40 м у картечи (умолчание кода 10–100) | `Projectile.damageDistances` |
+| Скорость патрона | 40–450 м/с (по умолчанию 100) | `ItemModProjectile.projectileVelocity`, таблица «Патроны» |
+| Дистанции падения урона | 20–100 м у 5.56, 10–60 м у пистолетных, 10–40 м у картечи (по умолчанию 10–100) | `Projectile.damageDistances` |
 | Множители падения урона | `1 / 0.8` у пуль и стрел, `1 / 0.25` у дроби, `1 / 0.5` у пули 12 калибра | `Projectile.damageMultipliers` |
 | Сила пробития | `2` у 5.56 и пули 12 калибра, `1` у прочих пуль, `0.5` у стрел | `Projectile.penetrationPower` |
 | Потеря в воде | `0.1` | `Projectile.waterIntegrityLoss` |
@@ -251,19 +251,8 @@ integrity -= PenetrationResistance(цель) / penetrationPower
 
 - Чем дальше цель, тем меньше урон — но только между двумя порогами дистанции. Внутри ближней
   дистанции стрелять «ещё ближе» бесполезно.
-- Пробитие тонких объектов реально и зависит от `density` в ассете защиты цели; через игрока
+- Пробитие тонких объектов реально и зависит от `density` в профиле защиты цели; через игрока
   пуля не проходит никогда. 5.56 и пуля 12 калибра пробивают вдвое лучше прочих пуль
   (`penetrationPower = 2`).
 - Не стреляйте по рикошету: урона он не даст.
 - Стрелы и копья остаются в мире после попадания — их можно подобрать.
-
-## Где в коде
-
-- `Projectile.CalculateDamage` — формула урона с падением по дистанции.
-- `BasePlayer.SimulateProjectile` — шаг движения снаряда (гравитация и `drag`).
-- `BasePlayer.OnProjectileAttack` — учёт целостности и пробития после попадания.
-- `BaseEntity / BaseCombatEntity / BasePlayer / BaseVehicle.PenetrationResistance`.
-- `BaseProjectile.GetProjectileModifier`, `GetDamageScale`, `GetProjectileVelocityScale`.
-- `BaseProjectile.ServerUse` — стрельба турелей и NPC.
-- `ItemModProjectile` — скорость, дробь, разброс; `ItemModProjectileRadialDamage`,
-  `ItemModProjectileSpawn` — эффекты при остановке снаряда.

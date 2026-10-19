@@ -11,7 +11,7 @@ code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable
 
 ## Кратко
 
-У каждой надеваемой вещи (`ItemModWearable`) есть три ассета:
+У каждой надеваемой вещи (`ItemModWearable`) есть три набора параметров:
 
 - `protectionProperties` — сколько она защищает от каждого из 28 типов урона;
 - `armorProperties` — какие зоны тела она закрывает (голова, грудь, живот, руки, кисти, ноги,
@@ -53,15 +53,15 @@ code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable
 - **Защита складывается, а не перемножается.** Две вещи по 40 % на одной зоне дают 80 %,
   а не 64 %.
 - **Потолок — 100 %.** Сумма больше 1 обрезается до 1, и урон этого типа обнуляется.
-- **Отрицательная защита возможна** (вплоть до −1 → урон ×2). Поле `amounts` в ассете
+- **Отрицательная защита возможна** (вплоть до −1 → урон ×2). Поле `amounts`
   размечено диапазоном от −4 до 3, но в расчёте всё равно обрезается до [−1, 1].
 - **Важна только зона попадания.** Шлем не участвует в попадании в ногу, штаны — в голову.
 
 ### Какие зоны закрывает вещь
 
-`armorProperties` у всех вещей — один из шести ассетов `ArmorProperties`:
+`armorProperties` у всех вещей — один из шести профилей `ArmorProperties`:
 
-| Ассет | Зоны | Примеры |
+| Профиль | Зоны | Примеры |
 |-------|------|---------|
 | `Armor.Head` | голова | маски, шлемы, шапки, очки |
 | `Armor.Body` | грудь, живот, руки, **кисти** | куртки, футболки, нагрудники, **перчатки** |
@@ -75,9 +75,9 @@ code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable
 
 ### Защита популярных вещей
 
-Значения из ассетов `ProtectionProperties` вещей; полная таблица — [[data-protection]].
+Значения `ProtectionProperties` вещей; полная таблица — [[data-protection]].
 
-| Вещь | Ассет защиты | Зоны | Bullet | Arrow | Slash | Blunt | Stab | Explosion |
+| Вещь | Профиль защиты | Зоны | Bullet | Arrow | Slash | Blunt | Stab | Explosion |
 |------|--------------|------|--------|-------|-------|-------|------|-----------|
 | Металлическая маска | `metal_facemask` | голова | 50 % | 50 % | 70 % | 70 % | 70 % | 50 % |
 | Тяжёлый шлем | `heavyplate_helmet` | голова | 90 % | 90 % | 80 % | 80 % | 80 % | 100 % |
@@ -221,12 +221,3 @@ code: [ItemModWearable.cs, ProtectionProperties.cs, ArmorProperties.cs, Wearable
 - Чините броню до поломки: сломанная защищает лишь на четверть (кроме вставок).
 - От взрывов и огня одежда помогает «в среднем по телу», а не по зонам, а защита от взрывов
   ограничена 75 %.
-
-## Где в коде
-
-- `ItemModWearable.ProtectsArea / CollectProtection / ConditionProtectionScale / OnAttacked / CanExistWith`.
-- `ProtectionProperties.Add / Scale`.
-- `BasePlayer.ScaleDamage`, `BasePlayer.UpdateProtectionFromClothing`, `BasePlayer.OnAttacked`,
-  `BasePlayer.UpdateMoveSpeedFromClothing`.
-- `ItemModContainerArmorSlot.GetRandomSlotCount / CollectProtection`, `ItemModArmorInsert`.
-- `PlayerInventory.WearItemCheck`, `Wearable.OccupationSlots`.

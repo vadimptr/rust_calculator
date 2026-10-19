@@ -36,15 +36,15 @@ code: [BasePlayer.cs, ConVar/Server.cs, ConVar/Player.cs, PlayerInventory.cs, Me
 
 Если ничего из этого не сработало, решает источник урона:
 
-| Источник | Результат |
-|----------|-----------|
-| Любое оружие ближнего боя (`BaseMelee`), включая удар в голову | Ранение |
-| Огнестрел, лук, арбалет (`BaseProjectile`) не в голову | Ранение |
-| То же **в голову** (`info.isHeadshot`) | Смерть |
-| Падение, укус, кровотечение, голод, жажда, яд | Ранение |
-| Самоубийство | Смерть |
-| Атака NPC (`BaseNPC2`, не животное) | Ранение |
-| Всё прочее: взрыв, огонь, холод, жара, радиация, утопление, электричество | Смерть |
+| Результат |
+|-----------|
+| Ранение |
+| Ранение |
+| Смерть |
+| Ранение |
+| Смерть |
+| Ранение |
+| Смерть |
 
 Для случаев без оружия смотрится преобладающий тип урона (`GetMajorityDamageType`).
 
@@ -63,7 +63,7 @@ code: [BasePlayer.cs, ConVar/Server.cs, ConVar/Player.cs, PlayerInventory.cs, Me
 
 В обоих случаях кровотечение обнуляется. Перед ранением `Die` выбрасывает предмет из рук
 (`Belt.DropActive`). Если `player.dropbackpackondowned = true` и у рюкзака в префабе стоит
-`DropWhenDowned`, рюкзак тоже падает. Флаг стоит у всех рюкзаков в выгрузке
+`DropWhenDowned`, рюкзак тоже падает. Флаг стоит у всех рюкзаков
 (`smallbackpack`, `largebackpack`, `kriegbackpack`, `minigunammopack`, флаг `twitch_rivals_flag`),
 у парашюта — нет. В безопасной зоне рюкзак не падает.
 
@@ -145,11 +145,3 @@ code: [BasePlayer.cs, ConVar/Server.cs, ConVar/Player.cs, PlayerInventory.cs, Me
   падения.
 - Сытость перед боем — +25 % к шансу встать.
 - Соклановца поднимают кнопкой помощи вплотную. Нет времени — «держись» даёт ещё 10 секунд.
-
-## Где в коде
-
-- `BasePlayer.Die` → `WoundInsteadOfDying` → `EligibleForWounding` → `BecomeWounded`.
-- `BasePlayer.GoToCrawling`, `GoToIncapacitated`, `WoundingTick`, `CalculateRecoveryChance`, `RecoverFromWounded`.
-- `BasePlayer.RPC_Assist`, `RPC_KeepAlive`, `ProlongWounding`, `OnMedicalToolApplied`.
-- `BasePlayer.OnStartBeingLooted` — обыск ползущего.
-- `PlayerInventory.DropBackpackOnDeath(wounded: true)`.

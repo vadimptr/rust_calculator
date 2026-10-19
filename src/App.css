@@ -2288,15 +2288,6 @@
 .docs-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .docs-chips .docs-nav__link { border: 1px solid var(--card-border); background: var(--bg); }
 
-.docs-code-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.docs-code-list code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.78rem;
-  background: #2a221c;
-  color: #f0c58a;
-  border-radius: 4px;
-  padding: 0.15rem 0.45rem;
-}
 
 @media (max-width: 900px) {
   .docs { grid-template-columns: 1fr; }

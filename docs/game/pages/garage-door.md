@@ -44,8 +44,3 @@ code: [Door.cs, DoorCloser.cs, DoorManipulator.cs]
 - **Игрок закрытие не останавливает.** В базовом `Door` помехой считается только транспорт.
 - **Сани не мешают.** У `Sled` переопределено `BlocksDoors => false`.
 - **С контроллером ворота открываются мимо замка.** См. [[doors]].
-
-## Где в коде
-
-- `Door.OnObjects`, `Door.StartCheckingForBlockages` — проверка транспорта.
-- `BaseMountable.BlocksDoors`, `Sled.BlocksDoors` — кто считается помехой.

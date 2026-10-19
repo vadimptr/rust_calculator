@@ -57,7 +57,7 @@ code: [MonumentInfo.cs, MonumentTier.cs, MonumentType.cs, PlaceMonuments.cs, Spa
 полос — `World.Config.PercentageTier0..2`). `MonumentInfo.Tier` — битовая маска: в каких
 полосах монумент разрешено ставить (`MonumentInfo.CheckPlacement`, нужно минимум 3 угла
 из 4 в нужной полосе). Значения `Tier0 = 1, Tier1 = 2, Tier2 = 4`; `−1` — где угодно.
-По данным сообщества, `TIER0` — «безопасная» полоса у края карты, `TIER2` — центр; в коде
+По данным сообщества, `TIER0` — «безопасная» полоса у края карты, `TIER2` — центр; официально
 это не подписано.
 
 Та же маска есть у `SpawnGroup.Tier`: группа спауна в `Awake` включается, только если её
@@ -86,7 +86,7 @@ code: [MonumentInfo.cs, MonumentTier.cs, MonumentType.cs, PlaceMonuments.cs, Spa
 
 ### Все монументы
 
-Сводка по префабам (`monuments.jsonl`, только компоненты внутри префаба монумента;
+Сводка по префабам (только компоненты внутри префаба монумента;
 вложенные префабы вроде AI-спаунеров и модулей лаборатории посчитаны на страницах монументов).
 Ящики — сумма `min(maxPopulation, число точек)` по группам; «воен./обычн.» — группа, которая
 случайно выбирает `crate_normal` или `crate_normal_2`. Обозначения: **воен.** —
@@ -178,10 +178,3 @@ code: [MonumentInfo.cs, MonumentTier.cs, MonumentType.cs, PlaceMonuments.cs, Spa
   Маяке, Хижинах, Нефтевышках, Паромном терминале и Электростанции; синие — в Гаванях,
   Паромном терминале, Канализационном отводе, Радтауне, Спутниковой тарелке и Куполе;
   красные — на Аэродроме, Электростанции, Депо, Водоочистной и Арктической базе.
-
-## Где в коде
-
-- `MonumentInfo` — тип, тир, границы, `IsSafeZone`, `AllowPatrolHeliCrash`, `MinWorldSize`.
-- `PlaceMonuments.Process` — расстановка; `MonumentInfo.CheckPlacement`, `TierToMask` — тиры.
-- `SpawnGroup.Spawn`, `GetSpawnDelta`, `WantsTimedSpawn`, `SpawnHandler.PlayerScale` — респаун.
-- `PreventBuildingMonumentTag`, `ConstructionErrors.IsBuildBlockedByMonument` — запрет стройки.

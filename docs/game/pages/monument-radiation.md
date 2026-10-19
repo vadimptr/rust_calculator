@@ -33,7 +33,7 @@ code: [TriggerRadiation.cs, Radiation.cs, RadiationSphere.cs, PuzzleReset.cs, Tw
 
 ### Постоянные зоны по монументам
 
-Из `monuments.jsonl`, компонент `TriggerRadiation` внутри префаба монумента: уровень × количество
+Компонент `TriggerRadiation` внутри префаба монумента: уровень × количество
 зон, `falloff` (доля радиуса у края, где доза спадает до нуля).
 
 | Монумент | Зоны | `falloff` | Нужно защиты, чтобы не облучаться |
@@ -55,7 +55,7 @@ code: [TriggerRadiation.cs, Radiation.cs, RadiationSphere.cs, PuzzleReset.cs, Tw
 | Модули [[underwater-labs|подводной лаборатории]] | `HIGH` в красных комнатах | — | 50 |
 | Гавани, Паромный терминал, Свалка, Маяк, Аванпост, Лагерь бандитов, карьеры, придорожные кроме Радтауна, пещеры | нет | — | 0 |
 
-Все триггеры монументов в выгрузке имеют `IncreaseDamageNearCenter = 1`, `UseLOSCheck = 0`,
+Все триггеры монументов имеют `IncreaseDamageNearCenter = 1`, `UseLOSCheck = 0`,
 `IgnoreAboveGroundPlayers = 0`, то есть доза одинакова во внутренней части сферы и падает до
 нуля в крайних `falloff` радиуса; стены от радиации не закрывают.
 
@@ -92,10 +92,3 @@ code: [TriggerRadiation.cs, Radiation.cs, RadiationSphere.cs, PuzzleReset.cs, Tw
   Водоочистной, Депо и Электростанции — 25; Космодром — костюм химзащиты (50).
 - В Ракетной шахте считайте время в зоне 80: 30 рад/с — это 30 отравления в секунду, то есть
   около 30 HP отложенного урона за каждую секунду внутри.
-
-## Где в коде
-
-- `TriggerRadiation.GetRadiationAmount` (`RadiationAmountOverride` или уровень),
-  `GetRadiationForPosition` (`falloff`, `BypassArmor`).
-- `RadiationSphere.UpdateRadiation`, `OnEntityMessage`, `OnPuzzleReset` — нефтевышка.
-- `PuzzleReset.SetRadiusRadiationAmount`, `InitialiseRadiationTriggers` — радиация сброса.

@@ -18,16 +18,16 @@ code: [WaterPump.cs, LiquidContainer.cs, WaterResource.cs, IOEntity.cs]
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| Потребление тока | 5 | `PowerConsumption` в префабе `water.pump.deployed` |
-| Производительность | 85 воды раз в 10 с (±10 %) | `AmountPerPump`, `PumpInterval` в префабе; в коде по умолчанию 30 / 20 с |
-| То же в минуту | ≈ 510 | 85 × 6 |
-| Ёмкость бака | 2000 | `maxStackSize` в префабе |
-| Поток на выходе | до 12 | `maxOutputFlow` |
-| Перелив | 24 за ~2 с | `autofillTickAmount`, `autofillTickRate` |
-| Здоровье | 300 | `startHealth` в префабе |
-| Входы / выходы | «Power In» (ток), «Water Output» (вода) | слоты префаба |
+| Параметр | Значение |
+|----------|----------|
+| Потребление тока | 5 |
+| Производительность | 85 воды раз в 10 с (±10 %) |
+| То же в минуту | ≈ 510 |
+| Ёмкость бака | 2000 |
+| Поток на выходе | до 12 |
+| Перелив | 24 за ~2 с |
+| Здоровье | 300 |
+| Входы / выходы | «Power In» (ток), «Water Output» (вода) |
 
 ## Поведение
 
@@ -63,8 +63,3 @@ code: [WaterPump.cs, LiquidContainer.cs, WaterResource.cs, IOEntity.cs]
   ([[electricity]]).
 - Насос → бочка → разбрызгиватели: насос копит воду в бочке, а разбрызгиватели тянут из бочки.
   Бочка соблюдает гравитацию, поэтому ставьте её не ниже грядок.
-
-## Где в коде
-
-- `WaterPump.CreateWater`, `OnFlagsChanged`, `GetPassthroughAmount`, `UpdateOutputs`.
-- `WaterResource.SV_GetAtPoint` — тип воды.

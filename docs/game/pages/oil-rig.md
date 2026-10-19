@@ -105,10 +105,3 @@ code: [RadiationSphere.cs, OilRigResetNotification.cs, ScientistBoatOilrigManage
   малой / большой вышке.
 - Хотите «свежую» вышку — отплывите дальше 200 м (большая) и ждите уведомления о сбросе.
 - После старта взлома у вас 45 минут до радиации; полный взлом — 15 минут.
-
-## Где в коде
-
-- `PuzzleReset.ResetTick`, `DoReset`, `TryForceReset`; `ElectricGenerator.PostServerLoad`.
-- `RadiationSphere.UpdateRadiation`, `OnEntityMessage`, `OnPuzzleReset`.
-- `OilRigResetNotification.Server_HandlePuzzleReset`, `ScientistBoatOilrigManager.OnPuzzleReset`.
-- `OilSwitchBroadcast.GetHasPower`, `WaterCatcher.OnOilSwitchToggled`.

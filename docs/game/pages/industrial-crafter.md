@@ -25,15 +25,15 @@ code: [IndustrialCrafter.cs, ItemBlueprint.cs, Workbench.cs, ItemCrafter.cs, Con
 
 ## Характеристики
 
-| Параметр | Значение | Источник |
-|----------|----------|----------|
-| HP | 200 | `startHealth` в префабе |
-| Рецепт | 3 МВК, 2 техмусора, верстак 2, 30 с | чертёж `industrialcrafter.item` |
-| Потребление | 1 | `IOEntity.ConsumptionAmount` |
-| Интервал проверки | 5 с ± 2,5 с | `server.industrialCrafterFrequency` |
-| Сокеты | 2 на верстаке 1, 2 и 3 уровня; 1 на IO-исследовательском столе (это `Workbench` 1 уровня) | `Socket_Specific_Female industrialcrafter*` в префабах |
-| Права на открытие | не нужны | `NeedsBuildingPrivilegeToUse = 0` в префабе |
-| Подбор | только с пустым инвентарём | `CanCompletePickup` |
+| Параметр | Значение |
+|----------|----------|
+| HP | 200 |
+| Рецепт | 3 МВК, 2 техмусора, верстак 2, 30 с |
+| Потребление | 1 |
+| Интервал проверки | 5 с ± 2,5 с |
+| Сокеты | 2 на верстаке 1, 2 и 3 уровня; 1 на IO-исследовательском столе (это `Workbench` 1 уровня) |
+| Права на открытие | не нужны |
+| Подбор | только с пустым инвентарём |
 
 ### Порты
 
@@ -114,9 +114,3 @@ Crafter.Industrial Out ─► Конвейер ─► адаптер-[Ящик �
   от того же источника через таймер.
 - Для быстрых крафтов один крафтер упирается в ~5-секундный тик. Два крафтера на одном
   верстаке удваивают выпуск.
-
-## Где в коде
-
-- `IndustrialCrafter.RunJob`, `CompleteCraft`, `GetInputAmount`, `ConsumeInputIngredient`, `TryInsertToOutput`
-- `IndustrialCrafter.IOStateChanged`, `SetSwitch`, `InputSlotRange`, `OutputSlotRange`, `Load`, `CanAcceptItem`
-- `ItemBlueprint.GetCraftTime`, `ItemCrafter.GetScaledDuration`, `Workbench.GetCraftSpeedMultiplier`

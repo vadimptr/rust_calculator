@@ -64,10 +64,3 @@ code: [Recycler.cs, RecyclerConfig.cs, Powergrid.cs]
 - Не оставляйте выход забитым: переработчик остановится, а излишек упадёт на землю.
 - Если на сервере работает энергосеть, проверяйте, запитан ли переработчик: без
   нужной стадии он не включится вовсе.
-
-## Где в коде
-
-- `Recycler.SVSwitch`, `Recycler.StartRecycling`, `Recycler.StopRecycling` — включение.
-- `Recycler.GetRecyclerType`, `Recycler.IsInSafeZone`, `Recycler.UpdateInSafeZone` — тип.
-- `Recycler.Server_RefreshPowergridState`, `Recycler.GetRecyclerState`, `Recycler.GetRecyclerStats` — энергосеть.
-- `RecyclerConfig` — параметры типов.

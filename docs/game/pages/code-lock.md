@@ -91,10 +91,3 @@ code: [CodeLock.cs, BaseLock.cs, BuildingPrivlidge.cs, ConVar/Decay.cs]
 - Чтобы выгнать всех, отоприте замок и задайте новый основной код.
 - Если ввод заблокирован, а вы в списке, дверь всё равно откроется. Ждать 15 минут нужно
   только тем, кому надо ввести код.
-
-## Где в коде
-
-- `CodeLock.RPC_ChangeCode`, `UnlockWithCode`, `TryLock`, `TryUnlock` — основное поведение.
-- `CodeLock.OnTryToOpen`, `OnTryToClose`, `GetPlayerLockPermission` — допуск.
-- `CodeLock.ClearCodeEntryBlocked`, `PostServerLoad` — блокировка ввода.
-- `CodeLock.Save`, `Load`, `Reskin_Preserve`, `Reskin_Restore` — сохранение и перенос.
