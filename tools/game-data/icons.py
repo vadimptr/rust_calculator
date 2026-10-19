@@ -15,7 +15,8 @@ bundles = os.path.join(client, 'Bundles')
 items_dir = os.path.join(bundles, 'items')
 available_items = {f[:-4] for f in os.listdir(items_dir) if f.endswith('.png') and ' ' not in f}
 
-wanted = {'items': set(), 'ui': set(), 'build': set()}
+UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined'}
+wanted = {'items': set(UI_ITEMS), 'ui': set(), 'build': set()}
 for path in glob.glob(os.path.join(docs, 'pages', '*.md')):
     text = open(path, encoding='utf8').read()
     explicit = ICON_FIELD_RE.findall(text) + SCHEME_ICON_RE.findall(text)

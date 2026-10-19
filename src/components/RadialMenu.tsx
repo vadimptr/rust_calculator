@@ -54,7 +54,7 @@ function Pict({ id }: { id: string }) {
 }
 
 /** Грейды киянки — иконки материалов из раздела строительства. */
-const GRADE_IMG: Record<string, string> = { wood: '/icons/wood.png', stone: '/icons/stones.png', metal: '/icons/metal.fragments.png', armored: '/icons/metal.refined.png' };
+const GRADE_IMG: Record<string, string> = { wood: '/icons/items/wood.webp', stone: '/icons/items/stones.webp', metal: '/icons/items/metal.fragments.webp', armored: '/icons/items/metal.refined.webp' };
 
 function segmentPath(a0: number, a1: number, r0: number, r1: number): string {
   // углы от «вверх» по часовой; SVG: x = sin, y = −cos
