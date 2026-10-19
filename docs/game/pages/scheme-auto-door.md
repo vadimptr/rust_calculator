@@ -23,10 +23,10 @@ code: [CustomDoorManipulator.cs, DoorManipulator.cs, DoorCloser.cs, Door.cs, Tim
 ## Схема: кнопка и таймер
 
 ```scheme
-node bat 10,20 "Батарея" "любая, ≥ 1 rW" out: Power Output
-node btn 10,120 "Кнопка" "импульс 2 rW на 0,5 с" out: Power Out
-node tmr 290,50 "Таймер" "по умолчанию 10 с" in: Power In, Toggle On out: Power Out
-node dc 560,40 "Контроллер двери" "на двери, потребляет 1" in: Power In, Open, Close out: Passthrough
+node bat 10,20 icon=electric.battery.rechargable.medium "Батарея" "любая, ≥ 1 rW" out: Power Output
+node btn 10,120 icon=electric.button "Кнопка" "импульс 2 rW на 0,5 с" out: Power Out
+node tmr 290,50 icon=electric.timer "Таймер" "по умолчанию 10 с" in: Power In, Toggle On out: Power Out
+node dc 560,40 icon=electric.doorcontroller "Контроллер двери" "на двери, потребляет 1" in: Power In, Open, Close out: Passthrough
 wire bat.Power Output -> tmr.Power In
 wire btn.Power Out -> tmr.Toggle On "нажатие"
 wire tmr.Power Out -> dc.Power In "ток = открыто"
@@ -45,9 +45,9 @@ wire tmr.Power Out -> dc.Power In "ток = открыто"
 ## Схема: HBHF — открыто, пока свои рядом
 
 ```scheme
-node bat 10,30 "Батарея" "любая, ≥ 2 rW" out: Power Output
-node hbhf 280,30 "HBHF-сенсор" "выход = число игроков" in: Power In out: Power Out
-node dc 560,20 "Контроллер двери" "потребляет 1" in: Power In, Open, Close out: Passthrough
+node bat 10,30 icon=electric.battery.rechargable.medium "Батарея" "любая, ≥ 2 rW" out: Power Output
+node hbhf 280,30 icon=electric.hbhfsensor "HBHF-сенсор" "выход = число игроков" in: Power In out: Power Out
+node dc 560,20 icon=electric.doorcontroller "Контроллер двери" "потребляет 1" in: Power In, Open, Close out: Passthrough
 wire bat.Power Output -> hbhf.Power In "≥ 2"
 wire hbhf.Power Out -> dc.Power In "1 на игрока"
 ```

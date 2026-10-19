@@ -2002,6 +2002,7 @@
 .sch-node { fill: #241e1a; stroke: #5a4d42; stroke-width: 1.2; }
 .sch-node__title { fill: var(--text-primary); font-size: 13px; font-weight: 700; }
 .sch-node__sub { fill: var(--text-secondary); font-size: 11px; }
+.sch-node__icon-bg { fill: #3a3029; stroke: #5a4d42; stroke-width: 1; }
 .sch-port { fill: #120f0d; stroke: #8a7a66; stroke-width: 1.5; }
 .sch-port__label { fill: #cbbd98; font-size: 11px; }
 .sch-link { fill: none; stroke-width: 2.4; stroke-linecap: round; }

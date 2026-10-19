@@ -21,13 +21,13 @@ code: [ElectricBattery.cs, IOEntity.cs, ElectricalDFlipFlop.cs, ElectricalBlocke
 ## Схема
 
 ```scheme
-node panel 10,140 "Солнечная панель" "до 20 rW" out: Electric Output
-node branch 220,140 "Ветвитель" "Branch = 2" in: Power In out: Power Out, Branch Out
-node cell 450,40 "Ячейка памяти" "весь вход на один выход" in: Power In, Toggle out: Output, Inverted Output
-node bata 700,10 "Батарея A" "14,4 rWs/с" in: Power In
-node batb 700,110 "Батарея B" "14,4 rWs/с" in: Power In
-node blocker 450,230 "Блокировщик" "инвертор, 0,1 с" in: Power In, Block Passthrough out: Power Out
-node splitter 720,230 "Сплиттер" "2 → 1 / 1" in: Power In out: Power Out 1, Power Out 2
+node panel 10,140 icon=electric.solarpanel.large "Солнечная панель" "до 20 rW" out: Electric Output
+node branch 220,140 icon=electrical.branch "Ветвитель" "Branch = 2" in: Power In out: Power Out, Branch Out
+node cell 450,40 icon=electrical.memorycell "Ячейка памяти" "весь вход на один выход" in: Power In, Toggle out: Output, Inverted Output
+node bata 700,10 icon=electric.battery.rechargable.medium "Батарея A" "14,4 rWs/с" in: Power In
+node batb 700,110 icon=electric.battery.rechargable.medium "Батарея B" "14,4 rWs/с" in: Power In
+node blocker 450,230 icon=electric.blocker "Блокировщик" "инвертор, 0,1 с" in: Power In, Block Passthrough out: Power Out
+node splitter 720,230 icon=electric.splitter "Сплиттер" "2 → 1 / 1" in: Power In out: Power Out 1, Power Out 2
 wire panel.Electric Output -> branch.Power In "20"
 wire branch.Power Out -> cell.Power In "18"
 wire branch.Branch Out -> blocker.Power In "2"

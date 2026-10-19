@@ -23,15 +23,15 @@ code: [IndustrialConveyor.cs, IOEntity.cs, BaseOven.cs, IndustrialStorageAdaptor
 ## Схема
 
 ```scheme
-node box 10,20 "Ящик: руда и дерево" "адаптер" out: Industrial Out
-node bat1 10,150 "Батарея" "≥ 1 rW" out: Power Output
-node feed 230,20 "Конвейер подачи" "фильтр Any + Max" in: Industrial Input, Power In out: Industrial Output, Passthrough
-node f1 560,0 "Большая печь 1" "адаптер" in: Industrial In out: Industrial Out
-node f2 560,110 flip "Большая печь 2" "адаптер" in: Industrial In out: Industrial Out
-node f3 560,220 "Большая печь 3" "адаптер" in: Industrial In out: Industrial Out
-node unload 520,340 flip "Конвейер выгрузки" "без фильтра" in: Industrial Input, Power In out: Industrial Output
-node out 230,350 flip "Ящик выхода" "металл, сера, МВК, уголь" in: Industrial In
-node bat2 230,450 "Батарея" "или Passthrough подачи" out: Power Output
+node box 10,20 icon=box.wooden.large "Ящик: руда и дерево" "адаптер" out: Industrial Out
+node bat1 10,150 icon=electric.battery.rechargable.medium "Батарея" "≥ 1 rW" out: Power Output
+node feed 270,20 icon=industrial.conveyor "Конвейер подачи" "фильтр Any + Max" in: Industrial Input, Power In out: Industrial Output, Passthrough
+node f1 610,0 icon=furnace.large "Большая печь 1" "адаптер" in: Industrial In out: Industrial Out
+node f2 610,110 flip icon=furnace.large "Большая печь 2" "адаптер" in: Industrial In out: Industrial Out
+node f3 610,220 icon=furnace.large "Большая печь 3" "адаптер" in: Industrial In out: Industrial Out
+node unload 570,340 flip icon=industrial.conveyor "Конвейер выгрузки" "без фильтра" in: Industrial Input, Power In out: Industrial Output
+node out 270,350 flip icon=box.wooden.large "Ящик выхода" "металл, сера, МВК, уголь" in: Industrial In
+node bat2 270,450 icon=electric.battery.rechargable.medium "Батарея" "или Passthrough подачи" out: Power Output
 wire bat1.Power Output -> feed.Power In "1"
 wire bat2.Power Output -> unload.Power In "1"
 belt box.Industrial Out -> feed.Industrial Input

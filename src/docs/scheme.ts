@@ -14,6 +14,7 @@ export interface SchemeNode {
   y: number;
   w: number;
   flip: boolean;
+  icon: string;
   title: string;
   sub: string;
   ins: string[];
@@ -48,8 +49,11 @@ const HEAD_H = 26;
 const SUB_H = 16;
 const PORT_H = 22;
 const PAD_B = 8;
+const ICON = 40;
+const ICON_PAD = 6;
+export const ICON_DIR = '/icons/scheme/';
 
-const NODE_RE = /^node\s+([a-z0-9_-]+)\s+(-?\d+)\s*,\s*(-?\d+)(?:\s+w=(\d+))?(\s+flip)?\s+"([^"]*)"(?:\s+"([^"]*)")?(.*)$/i;
+const NODE_RE = /^node\s+([a-z0-9_-]+)\s+(-?\d+)\s*,\s*(-?\d+)(?:\s+w=(\d+))?(\s+flip)?(?:\s+icon=([a-z0-9._-]+))?\s+"([^"]*)"(?:\s+"([^"]*)")?(.*)$/i;
 const LINK_RE = /^(wire|pipe|belt)\s+([a-z0-9_-]+)\.(.+?)\s*->\s*([a-z0-9_-]+)\.(.+?)(?:\s+"([^"]*)")?$/i;
 const NOTE_RE = /^note\s+(-?\d+)\s*,\s*(-?\d+)\s+"([^"]*)"$/i;
 const SIZE_RE = /^size\s+(\d+)\s*x\s*(\d+)$/i;
@@ -79,10 +83,11 @@ export function parseScheme(src: string): Scheme {
         y: Number(m[3]),
         w: m[4] ? Number(m[4]) : NODE_W,
         flip: !!m[5],
-        title: m[6],
-        sub: m[7] ?? '',
-        ins: portList(m[8], 'in'),
-        outs: portList(m[8], 'out'),
+        icon: m[6] ?? '',
+        title: m[7],
+        sub: m[8] ?? '',
+        ins: portList(m[9], 'in'),
+        outs: portList(m[9], 'out'),
       };
       for (const list of [node.ins, node.outs]) {
         if (new Set(list).size !== list.length) throw new Error(`${where}: у узла «${node.id}» повторяются порты`);
@@ -127,15 +132,21 @@ function minNodeWidth(n: SchemeNode): number {
   for (let i = 0; i < Math.max(n.ins.length, n.outs.length); i++) {
     ports = Math.max(ports, textWidth(n.ins[i] ?? '', 11) + textWidth(n.outs[i] ?? '', 11) + 40);
   }
-  return Math.ceil(Math.max(textWidth(n.title, 13.5) + 24, textWidth(n.sub, 11) + 20, ports));
+  const head = n.icon ? ICON + ICON_PAD * 2 + 12 : 24;
+  return Math.ceil(Math.max(textWidth(n.title, 13.5) + head, textWidth(n.sub, 11) + head - 4, ports));
+}
+
+function headHeight(n: SchemeNode): number {
+  const text = HEAD_H + (n.sub ? SUB_H : 0);
+  return n.icon ? Math.max(text, ICON + ICON_PAD * 2) : text;
 }
 
 export function nodeHeight(n: SchemeNode): number {
-  return HEAD_H + (n.sub ? SUB_H : 0) + PORT_H * Math.max(n.ins.length, n.outs.length, 1) + PAD_B;
+  return headHeight(n) + PORT_H * Math.max(n.ins.length, n.outs.length, 1) + PAD_B;
 }
 
 function portY(n: SchemeNode, index: number): number {
-  return n.y + HEAD_H + (n.sub ? SUB_H : 0) + PORT_H * index + PORT_H / 2 + 2;
+  return n.y + headHeight(n) + PORT_H * index + PORT_H / 2 + 2;
 }
 
 function esc(s: string): string {
@@ -254,11 +265,22 @@ export function renderScheme(s: Scheme): string {
 
   const nodes = s.nodes.map(n => {
     const h = nodeHeight(n);
-    const parts = [
-      `<rect class="sch-node" x="${n.x}" y="${n.y}" width="${n.w}" height="${h}" rx="6"/>`,
-      `<text class="sch-node__title" x="${n.x + n.w / 2}" y="${n.y + 17}" text-anchor="middle">${esc(n.title)}</text>`,
-    ];
-    if (n.sub) parts.push(`<text class="sch-node__sub" x="${n.x + n.w / 2}" y="${n.y + HEAD_H + 9}" text-anchor="middle">${esc(n.sub)}</text>`);
+    const parts = [`<rect class="sch-node" x="${n.x}" y="${n.y}" width="${n.w}" height="${h}" rx="6"/>`];
+    if (n.icon) {
+      const ix = n.x + ICON_PAD;
+      const iy = n.y + ICON_PAD;
+      const tx = ix + ICON + 10;
+      const ty = n.y + (headHeight(n) - (n.sub ? SUB_H : 0)) / 2 + 5;
+      parts.push(
+        `<rect class="sch-node__icon-bg" x="${ix}" y="${iy}" width="${ICON}" height="${ICON}" rx="5"/>`,
+        `<image class="sch-node__icon" href="${ICON_DIR}${esc(n.icon)}.png" x="${ix + 2}" y="${iy + 2}" width="${ICON - 4}" height="${ICON - 4}"/>`,
+        `<text class="sch-node__title" x="${tx}" y="${ty}">${esc(n.title)}</text>`,
+      );
+      if (n.sub) parts.push(`<text class="sch-node__sub" x="${tx}" y="${ty + SUB_H}">${esc(n.sub)}</text>`);
+    } else {
+      parts.push(`<text class="sch-node__title" x="${n.x + n.w / 2}" y="${n.y + 17}" text-anchor="middle">${esc(n.title)}</text>`);
+      if (n.sub) parts.push(`<text class="sch-node__sub" x="${n.x + n.w / 2}" y="${n.y + HEAD_H + 9}" text-anchor="middle">${esc(n.sub)}</text>`);
+    }
     const port = (p: string, i: number, key: string, left: boolean) => {
       const y = portY(n, i);
       const kind = portKind.get(`${n.id}${key}${p}`);

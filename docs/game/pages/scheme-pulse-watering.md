@@ -20,16 +20,16 @@ code: [Sprinkler.cs, FluidSwitch.cs, TimerSwitch.cs, ElectricalBlocker.cs, Plant
 ## Схема
 
 ```scheme
-node bat 10,60 "Малая батарея" "15 rW, расход 0" out: Power Output
-node spa 210,50 "Сплиттер A" "15 → 5 / 5 / 5" in: Power In out: Power Out 1, Power Out 2, Power Out 3
-node blk 430,0 "Блокировщик" "инвертор T2" in: Power In, Block Passthrough out: Power Out
-node spb 670,0 "Сплиттер B" "стартовый импульс" in: Power In out: Power Out 1, Power Out 2
-node t2 430,140 "Таймер T2" "цикл X + Y" in: Power In, Toggle On out: Power Out
-node t1 430,290 "Таймер T1" "полив X" in: Power In, Toggle On out: Power Out
-node src 10,420 "Водосборник" "или бочка" out: Water Out
-node fs 670,410 "Жидкостный переключатель" "кран, расход 0" in: Fluid Input, Toggle, Pump Power out: Fluid Output
-node sp1 670,560 flip "Разбрызгиватель 1" "2 воды/с" in: Water In out: Passthrough
-node sp2 360,560 flip "Разбрызгиватель 2" "2 воды/с" in: Water In out: Passthrough
+node bat 10,60 icon=electric.battery.rechargable.small "Малая батарея" "15 rW, расход 0" out: Power Output
+node spa 210,50 icon=electric.splitter "Сплиттер A" "15 → 5 / 5 / 5" in: Power In out: Power Out 1, Power Out 2, Power Out 3
+node blk 430,0 icon=electric.blocker "Блокировщик" "инвертор T2" in: Power In, Block Passthrough out: Power Out
+node spb 670,0 icon=electric.splitter "Сплиттер B" "стартовый импульс" in: Power In out: Power Out 1, Power Out 2
+node t2 430,140 icon=electric.timer "Таймер T2" "цикл X + Y" in: Power In, Toggle On out: Power Out
+node t1 430,290 icon=electric.timer "Таймер T1" "полив X" in: Power In, Toggle On out: Power Out
+node src 10,420 icon=water.catcher.large "Водосборник" "или бочка" out: Water Out
+node fs 670,410 icon=fluid.switch "Жидкостный переключатель" "кран, расход 0" in: Fluid Input, Toggle, Pump Power out: Fluid Output
+node sp1 670,560 flip icon=electric.sprinkler "Разбрызгиватель 1" "2 воды/с" in: Water In out: Passthrough
+node sp2 360,560 flip icon=electric.sprinkler "Разбрызгиватель 2" "2 воды/с" in: Water In out: Passthrough
 wire bat.Power Output -> spa.Power In "15"
 wire spa.Power Out 1 -> blk.Power In
 wire spa.Power Out 2 -> t2.Power In

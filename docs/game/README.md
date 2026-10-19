@@ -70,16 +70,16 @@ code: [StabilityEntity.cs, BuildingBlock.cs]
 
 ````markdown
 ```scheme
-node panel 10,20 "Солнечная панель" "до 20 rW" out: Electric Output
-node bat 240,20 "Батарея" "малая" in: Power In out: Power Output
-node out 240,140 flip "Ящик выхода" in: Industrial In
+node panel 10,20 icon=electric.solarpanel.large "Солнечная панель" "до 20 rW" out: Electric Output
+node bat 240,20 icon=electric.battery.rechargable.small "Батарея" "малая" in: Power In out: Power Output
+node out 240,140 flip icon=box.wooden.large "Ящик выхода" in: Industrial In
 wire panel.Electric Output -> bat.Power In "20"
 ```
 ````
 
 | Строка | Что значит |
 |---|---|
-| `node id X,Y [w=Ш] [flip] "Название" ["подпись"] in: …, … out: …, …` | Узел с левым верхним углом в X,Y. Ширина подстраивается под текст, `w=` задаёт минимум. Входы слева, выходы справа; `flip` меняет стороны — для ряда, который идёт справа налево |
+| `node id X,Y [w=Ш] [flip] [icon=shortname] "Название" ["подпись"] in: …, … out: …, …` | Узел с левым верхним углом в X,Y. Ширина подстраивается под текст, `w=` задаёт минимум. Входы слева, выходы справа; `flip` меняет стороны — для ряда, который идёт справа налево. `icon=` — shortname предмета, картинка берётся из `public/icons/scheme/<shortname>.png` (96×96, с wiki.rustclash.com/img/items180/); в страницах документации иконка обязательна, тест проверяет наличие файла |
 | `wire a.Порт -> b.Порт ["подпись"]` | Провод (электричество) |
 | `pipe a.Порт -> b.Порт ["подпись"]` | Труба с водой |
 | `belt a.Порт -> b.Порт ["подпись"]` | Промышленная труба (предметы) |
