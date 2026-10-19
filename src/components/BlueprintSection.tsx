@@ -230,6 +230,8 @@ const BlueprintSection: React.FC = () => {
   }, []);
 
   const { blueprint, resolved, issues } = result;
+  const hasCupboard = !!resolved?.deployables.some(d => d.kind === 'tool-cupboard');
+  const raidActive = raidOn && hasCupboard;
 
   const editor = useMemo<EditorState | null>(() => {
     if (!blueprint && source.data !== null) return null;
@@ -267,17 +269,17 @@ const BlueprintSection: React.FC = () => {
     return () => { w.terminate(); workerRef.current = null; };
   }, []);
   useEffect(() => {
-    if (!raidOn || !blueprint || !resolved || !workerRef.current) { setRaid(null); return; }
+    if (!raidActive || !blueprint || !resolved || !workerRef.current) { setRaid(null); return; }
     const id = ++requestId.current;
     setRaidBusy(true);
     const req: RaidRequest = { id, blueprint, method: raidMethod };
     workerRef.current.postMessage(req);
-  }, [raidOn, blueprint, resolved, raidMethod]);
+  }, [raidActive, blueprint, resolved, raidMethod]);
 
   const sim = raid?.sim ?? null;
 
   const raidView = useMemo<RaidView | null>(() => {
-    if (!raidOn || !raid || !sim) return null;
+    if (!raidActive || !raid || !sim) return null;
     const line: [number, number, number][] = [
       ...sim.stages.map(st => st.shot.point),
       [raid.targetPos[0], raid.targetPos[1] + 0.8, raid.targetPos[2]],
@@ -285,7 +287,7 @@ const BlueprintSection: React.FC = () => {
     const view: RaidView = { ids: sim.broken, line, stages: sim.stages.map(st => ({ ids: st.broken })) };
     if (!showImpacts) return view;
     return { ...view, impacts: sim.stages.map(st => ({ point: st.shot.point, count: st.shot.count })) };
-  }, [raidOn, raid, sim, showImpacts]);
+  }, [raidActive, raid, sim, showImpacts]);
 
   const describeUnits = (units: Partial<Record<string, number>>) =>
     Object.entries(units).filter(([, n]) => (n ?? 0) > 0)
@@ -350,7 +352,7 @@ const BlueprintSection: React.FC = () => {
 
             {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
 
-            {resolved && raidBusy && (
+            {resolved && hasCupboard && raidBusy && (
               <section className="raid-panel">
                 <label className="bp__toggle raid-panel__toggle">
                   <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -359,7 +361,7 @@ const BlueprintSection: React.FC = () => {
                 <p className="raid-panel__hint">Считаю рейд…</p>
               </section>
             )}
-            {resolved && !raidBusy && !raid && (
+            {resolved && hasCupboard && !raidBusy && !raid && (
               <section className="raid-panel">
                 <label className="bp__toggle raid-panel__toggle">
                   <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -367,7 +369,7 @@ const BlueprintSection: React.FC = () => {
                 </label>
               </section>
             )}
-            {resolved && !raidBusy && raid && sim && (
+            {resolved && hasCupboard && !raidBusy && raid && sim && (
               <section className="raid-panel">
                 <label className="bp__toggle raid-panel__toggle">
                   <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
@@ -454,7 +456,7 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidOn ? raidPlay : 0} frameKey={source.label} editor={editor} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} />
             <div className="bp__camera" role="group" aria-label="Камера">
               <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
