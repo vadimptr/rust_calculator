@@ -41,20 +41,17 @@ test('placing a wall occupies the edge: the next wall has three edges, two sides
   assert.ok(floors.every(f => f.transform.position[1] === 3));
 });
 
-test('removing a wall re-attaches the floor to another wall under it; removing the last support drops the floor too', () => {
+test('removing a wall keeps the floor that still rests on other walls; removing the last support drops the floor too', () => {
   const { bp } = load('sealed-triangle-tc');
-  // c1 висит на w1; после сноса w1 он должен перецепиться к w2 или w3 и остаться на месте
-  const after = removeElement(bp, 'w1');
-  const c1 = after.elements.find(e => e.id === 'c1')!;
-  assert.ok(c1, 'ceiling kept');
-  assert.ok(['w2', 'w3'].includes(c1.attach!.to), c1.attach!.to);
+  const after = settle(removeElement(bp, 'w1')).blueprint;
+  assert.ok(after.elements.find(e => e.id === 'c1'), 'ceiling kept');
   const pos = resolveBlueprint(after).resolved.elements.find(e => e.id === 'c1')!.position;
   assert.deepEqual(pos, [0, 3, 0]);
   // сносим и остальные стены — потолок без опоры обрушивается (по стабильности)
   const bare = settle(removeElement(removeElement(after, 'w2'), 'w3')).blueprint;
   assert.ok(!bare.elements.some(e => e.id === 'c1'));
   assert.deepEqual(resolveBlueprint(bare).issues.filter(i => i.level === 'error'), []);
-  assert.equal(removeElement(bp, 'f1').elements.length, 0);
+  assert.equal(settle(removeElement(bp, 'f1')).blueprint.elements.length, 0);
 });
 
 test('removing a doorway removes its door; upgrade sets the grade', () => {
@@ -98,7 +95,7 @@ test('new kinds resolve: ramp and foundation steps on a foundation edge, spiral 
   assert.equal(candidatePlacements(bp, r.resolved, 'square-foundation', 'f1').length, 6); // 2 ребра × 3 высоты
 });
 
-test('removing a foundation keeps a doorway on the shared edge: it re-attaches to the other cell, door and floor stay in place', () => {
+test('removing a foundation keeps a doorway on the shared edge: it rests on the other cell, door and floor stay in place', () => {
   let bp = newBlueprint();
   bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2' });
   bp = addElement(bp, 'doorway', { to: 'f2', socket: 'edge:2' });
@@ -113,12 +110,10 @@ test('removing a foundation keeps a doorway on the shared edge: it re-attaches t
   assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
   // w1 стояла на f2, но держится боком на проёме (0.1 × 0.7 = 7% > 5%) — как в игре; остальное на месте
   assert.deepEqual(after.elements.map(e => e.id).sort(), ['c1', 'dw1', 'f1', 'w1', 'w2']);
-  assert.equal(after.elements.find(e => e.id === 'dw1')!.attach!.to, 'f1');
   for (const id of ['dw1', 'c1', 'w2']) {
     const a = before.elements.find(e => e.id === id)!, b = r.resolved.elements.find(e => e.id === id)!;
     assert.deepEqual(b.position, a.position, id);
   }
-  // проём переподключается той же стороной (вариант с flip), поэтому пол, проём, дверь и дроп-бокс не меняются
   assert.equal(r.resolved.elements.find(e => e.id === 'c1')!.rotation, before.elements.find(e => e.id === 'c1')!.rotation);
   assert.equal(((r.resolved.elements.find(e => e.id === 'dw1')!.rotation % 360) + 360) % 360, ((before.elements.find(e => e.id === 'dw1')!.rotation % 360) + 360) % 360);
   const door = after.deployables!.find(d => d.id === 'd1')!;
@@ -157,7 +152,6 @@ test('foundations are ground-level only: none can be placed on a wall top, floor
   assert.equal(candidatePlacements(bp, resolved, 'square-foundation', 'w1').length, 0);
   assert.equal(candidatePlacements(bp, resolved, 'triangle-foundation', 'w1').length, 0);
   assert.equal(candidatePlacements(bp, resolved, 'square-floor', 'w1').length, 2);
-  assert.ok(resolveBlueprint(addElement(bp, 'square-foundation', { to: 'w1', socket: 'top', selfSocket: 'edge:0' })).issues.some(i => i.code === 'V04'));
 });
 
 test('roof needs support under its low edge: both sides of a wall top are fine, a roof beside another roof past the corner is not', () => {
@@ -212,9 +206,8 @@ test('foundation heights: a neighbour foundation can sit at ground, half-wall or
   assert.ok(fromRaised.every(y => [0, 1.5, 3].includes(y)), fromRaised.join(','));
   // на месте поднятого фундамента нельзя поставить ещё один ни на какой высоте
   assert.ok(candidatePlacements(raised, r2.resolved, 'square-foundation', 'f1').every(c => Math.abs(c.transform.position[0] - 3) > 0.01));
-  // недопустимая высота и rise не у фундамента — ошибки
+  // недопустимая высота — ошибка
   assert.ok(resolveBlueprint(addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: -1.5 })).issues.some(i => i.code === 'V12'));
-  assert.ok(resolveBlueprint(addElement(bp, 'wall', { to: 'f1', socket: 'edge:0', rise: 1.5 })).issues.some(i => i.code === 'V04'));
 });
 
 test('raid graph: a wall-height foundation is a space at level 1, its walls and floor work as usual', async () => {
@@ -297,7 +290,7 @@ test('triangle roofs in a row merge automatically (roof.straight.right): a copla
   bp.elements.find(e => e.id === 'tr2')!.grade = 'metal';
   assert.equal(triangleRoofFillers(resolveBlueprint(bp).resolved).length, 0);
 });
-test('removing a middle foundation keeps everything else: the far foundation is anchored by offset, only unsupported blocks fall', () => {
+test('removing a middle foundation keeps everything else in place, only unsupported blocks fall', () => {
   let bp = newBlueprint();
   bp = addElement(bp, 'square-foundation', { to: 'f1', socket: 'edge:1', selfSocket: 'edge:3' });
   bp = addElement(bp, 'square-foundation', { to: 'f2', socket: 'edge:1', selfSocket: 'edge:3' });
@@ -315,9 +308,8 @@ test('removing a middle foundation keeps everything else: the far foundation is 
   assert.deepEqual(settle(removeElement(lone, 'f2')).collapsed, ['w1']);
   const r = resolveBlueprint(blueprint);
   assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
-  assert.equal(blueprint.elements.find(e => e.id === 'f3')!.attach!.socket, 'offset');
   for (const id of ['f3', 'w1']) assert.deepEqual(r.resolved.elements.find(e => e.id === id)!.position, before.elements.find(e => e.id === id)!.position);
-  // к закреплённому смещением фундаменту можно строить дальше
+  // к оставшемуся фундаменту можно строить дальше
   assert.ok(candidatePlacements(blueprint, r.resolved, 'wall', 'f3').length > 0);
 });
 
@@ -373,22 +365,21 @@ test('game sockets: the high edge of a roof takes a wall, a floor and another ro
   }
 });
 
-test('the last block can be removed: the root foundation goes when nothing else stands, otherwise it stays', () => {
+test('any block can be removed, the first foundation too: what stood only on it falls', () => {
   const single = removeElement(newBlueprint(), 'f1');
   assert.equal(single.elements.length, 0);
   assert.equal(single.deployables!.length, 0);
   let bp = newBlueprint();
   bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
-  assert.equal(removeElement(bp, 'f1').elements.length, 0);
+  assert.equal(settle(removeElement(bp, 'f1')).blueprint.elements.length, 0);
 });
 
-test('removing the root foundation hands the root to a neighbour foundation; nothing moves in the world', () => {
+test('removing the first foundation of a house leaves every other block where it was', () => {
   const { bp } = load('house-2x2');
   const before = resolveBlueprint(bp).resolved;
   const after = removeElement(bp, 'f1');
   const r = resolveBlueprint(after);
   assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
-  assert.equal(after.elements.filter(e => e.root).length, 1);
   assert.ok(!after.elements.some(e => e.id === 'f1'));
   for (const e of r.resolved.elements) {
     const was = before.elements.find(b => b.id === e.id)!;

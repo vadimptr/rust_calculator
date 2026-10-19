@@ -58,10 +58,22 @@ export interface Element {
   id: string;
   kind: ElementKind;
   grade?: Grade;
+  position: [number, number, number];
+  rotation: number;
+  inverted?: boolean;
+  /** Крыша-затвор роф-бункера: хозяин убирает её, ломая опору. Только для крыш. */
+  bunker?: boolean;
+  label?: string;
+  notes?: string;
+}
+
+export interface LegacyElement {
+  id: string;
+  kind: ElementKind;
+  grade?: Grade;
   root?: true;
   origin?: { position: [number, number, number]; rotation: number };
   attach?: Attach;
-  /** Крыша-затвор роф-бункера: хозяин убирает её, ломая опору. Только для крыш. */
   bunker?: boolean;
   label?: string;
   notes?: string;
@@ -85,7 +97,7 @@ export interface Deployable {
 
 export interface Blueprint {
   $schema?: string;
-  formatVersion: '1.0';
+  formatVersion: '2.0';
   meta: {
     name: string;
     description?: string;
@@ -98,6 +110,11 @@ export interface Blueprint {
   elements: Element[];
   deployables?: Deployable[];
   resolved?: unknown;
+}
+
+export interface LegacyBlueprint extends Omit<Blueprint, 'formatVersion' | 'elements'> {
+  formatVersion: '1.0';
+  elements: LegacyElement[];
 }
 
 /** Мировое положение элемента. position = [x, y, z], rotation — угол в плане (§4.1). */

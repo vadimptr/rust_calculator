@@ -1,14 +1,14 @@
 /**
  * Разбор и проверка документа: JSON → схема (ajv) → структурные правила и геометрия.
  */
-import Ajv2020 from 'ajv/dist/2020';
+import Ajv2020 from 'ajv/dist/2020.js';
 import type { ErrorObject } from 'ajv';
-import schema from '../../docs/blueprint/schema/blueprint.schema.json';
-import { resolveBlueprint } from './geometry.ts';
-import type { Blueprint, Issue, Resolved } from './types.ts';
+import schema from '../../docs/blueprint/schema/blueprint.schema.json' with { type: 'json' };
+import { isLegacy, resolveBlueprint, upgradeLegacy } from './geometry.ts';
+import type { Blueprint, Issue, LegacyBlueprint, Resolved } from './types.ts';
 
 const ajv = new Ajv2020({ strict: true, strictRequired: false, validateFormats: false, allErrors: true });
-const validateSchema = ajv.compile<Blueprint>(schema);
+const validateSchema = ajv.compile<Blueprint | LegacyBlueprint>(schema);
 
 export interface LoadResult {
   blueprint: Blueprint | null;
@@ -27,9 +27,17 @@ export function loadBlueprint(data: unknown): LoadResult {
     const issues = (validateSchema.errors ?? []).slice(0, 20).map(schemaIssue);
     return { blueprint: null, resolved: null, issues };
   }
-  const { resolved, issues } = resolveBlueprint(data);
+  let blueprint: Blueprint;
+  if (isLegacy(data)) {
+    const up = upgradeLegacy(data);
+    if (!up.blueprint) return { blueprint: null, resolved: null, issues: up.issues };
+    blueprint = up.blueprint;
+  } else {
+    blueprint = data;
+  }
+  const { resolved, issues } = resolveBlueprint(blueprint);
   const hasErrors = issues.some(i => i.level === 'error');
-  return { blueprint: data, resolved: hasErrors ? null : resolved, issues };
+  return { blueprint, resolved: hasErrors ? null : resolved, issues };
 }
 
 /** Разобрать текст файла. */

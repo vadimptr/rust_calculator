@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/blueprint.schema.json",
-  "formatVersion": "1.0",
+  "formatVersion": "2.0",
   "meta": {
     "name": "Шкаф в треугольном бункере",
     "description": "Шкаф, закатанный в каменный треугольник: треугольный фундамент, три стены, треугольный пол сверху. Двери нет.",
@@ -17,40 +17,32 @@
     {
       "id": "f1",
       "kind": "triangle-foundation",
-      "root": true
+      "position": [0, 0, 0],
+      "rotation": 0
     },
     {
       "id": "w1",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0"
-      }
+      "position": [0.866, 0, 0],
+      "rotation": 0
     },
     {
       "id": "w2",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1"
-      }
+      "position": [-0.433, 0, 0.75],
+      "rotation": 120
     },
     {
       "id": "w3",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:2"
-      }
+      "position": [-0.433, 0, -0.75],
+      "rotation": 240
     },
     {
       "id": "c1",
       "kind": "triangle-floor",
-      "attach": {
-        "to": "w1",
-        "socket": "top",
-        "selfSocket": "edge:0"
-      }
+      "position": [0, 3, 0],
+      "rotation": 0
     }
   ],
   "deployables": [
@@ -61,10 +53,7 @@
         "to": "f1",
         "socket": "top"
       },
-      "offset": [
-        -0.22,
-        0.382
-      ],
+      "offset": [-0.22, 0.382],
       "rotation": 300,
       "notes": "Спинкой к стене w2, фронтом к центру."
     }

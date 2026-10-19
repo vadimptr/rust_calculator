@@ -5,7 +5,8 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
 import type { DoorAnim } from '../blueprint/meshes.ts';
 import { onModelLoaded, pieceManifest } from '../blueprint/models.ts';
-import { activePieces } from '../blueprint/pieces.ts';
+import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
+import type { AimBox } from '../blueprint/pieces.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
@@ -284,16 +285,43 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return state.raycaster.ray.intersectPlane(GROUND_PLANE, p) ? world.worldToLocal(p) : null;
     };
 
-    /** Выбрать размещение, ближайшее к точке прицела (с гистерезисом и перебором по R), и показать призрак. */
-    const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number]) => {
+    const boxes = new WeakMap<Placement, AimBox | null>();
+    const boxOf = (kind: ElementKind, c: Placement, res: Resolved): AimBox | null => {
+      if (boxes.has(c)) return boxes.get(c)!;
+      const manifest = pieceManifest();
+      const hostEl = res.elements.find(e => e.id === c.attach.to);
+      const child: ResolvedElement = { id: '__aim__', kind, grade: 'twig', ...c.transform };
+      const hm = hostEl && entityMatrix(hostEl), cm = entityMatrix(child);
+      const box = manifest && hostEl && hm && cm && manifest[hostEl.kind] && manifest[kind]
+        ? aimBox({ el: hostEl, def: manifest[hostEl.kind], matrix: hm }, { el: child, def: manifest[kind], matrix: cm }) : null;
+      if (manifest) boxes.set(c, box);
+      return box;
+    };
+    const aimRay = (): { origin: [number, number, number]; dir: [number, number, number] } => {
+      const o = world.worldToLocal(state.raycaster.ray.origin.clone());
+      const d = state.raycaster.ray.direction;
+      return { origin: [o.x, o.y, o.z], dir: [d.x, d.y, -d.z] };
+    };
+
+    /** Выбрать размещение по прицелу, как в игре: луч против зон выбора сокетов, иначе ближайшее к точке (с гистерезисом и перебором по R). */
+    const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number] | null, reach: number) => {
       if (cands.length === 0) return false;
-      // ближайший к точке прицела; прежнее место держится, пока новое не станет ближе на заметную величину —
-      // точка прицела при движении гуляет, и без гистерезиса призрак прыгал между соседними сокетами
-      const dist = (p: Placement) => aimDistance(ed.kind, p, pt);
-      const sorted = [...cands].sort((a, b) => dist(a) - dist(b));
+      const res = resolvedRef.current;
+      const ray = aimRay();
+      const tOf = (c: Placement) => {
+        const box = res ? boxOf(ed.kind, c, res) : null;
+        const t = box ? rayBox(ray.origin, ray.dir, box) : null;
+        return t !== null && t <= reach ? t : Infinity;
+      };
+      const byRay = cands.map(c => ({ c, t: tOf(c) })).filter(x => x.t < Infinity).sort((a, b) => a.t - b.t);
+      const aim = pt ?? (byRay.length ? ray.origin.map((v, i) => v + ray.dir[i] * byRay[0].t) as [number, number, number] : null);
+      if (!aim) return false;
+      const dist = (p: Placement) => aimDistance(ed.kind, p, aim);
+      const sorted = byRay.length ? [...byRay.map(x => x.c), ...cands.filter(c => tOf(c) === Infinity)] : [...cands].sort((a, b) => dist(a) - dist(b));
+      if (!byRay.length && !pt) return false;
       let p = sorted[0];
       const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
-      if (prev && dist(prev) <= dist(p) + 0.4) p = prev;
+      if (prev && (byRay.length ? tOf(prev) < Infinity && tOf(prev) <= tOf(p) + 0.3 : dist(prev) <= dist(p) + 0.4)) p = prev;
       // R перебирает варианты с тем же якорем (ребром опоры): крыша над зданием или наружу, пол по ту или
       // другую сторону стены, поворот лестницы — а не другие рёбра. Смена якоря сбрасывает перебор.
       const anchor = placementAnchor(ed.kind, p);
@@ -316,16 +344,16 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return true;
     };
 
-    const candidatesOf = (ed: EditorState, res: Resolved, hostId: string, pt: [number, number, number]) => {
+    const candidatesOf = (ed: EditorState, res: Resolved, hostId: string, pt: [number, number, number] | null) => {
       const key = `${hostId}|${ed.kind}`;
       let cands = state.candCache.get(key);
-      if (!cands) { cands = ed.blueprint ? placementsNear(ed.blueprint, res, ed.kind, hostId, pt) : []; state.candCache.set(key, cands); }
+      if (!cands) { cands = ed.blueprint ? placementsNear(ed.blueprint, res, ed.kind, hostId, pt ?? res.elements.find(e => e.id === hostId)!.position) : []; state.candCache.set(key, cands); }
       return cands;
     };
 
     /** Кандидаты от всех блоков рядом с точкой прицела, без дублей по положению: один и тот же сокет
      *  (ребро пола и верх стены под ним) принадлежит нескольким блокам. */
-    const candidatesAround = (ed: EditorState, res: Resolved, hostIds: string[], pt: [number, number, number]) => {
+    const candidatesAround = (ed: EditorState, res: Resolved, hostIds: string[], pt: [number, number, number] | null) => {
       const seen = new Set<string>();
       const out: Placement[] = [];
       for (const id of hostIds) for (const c of candidatesOf(ed, res, id, pt)) {
@@ -362,7 +390,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         const pt: [number, number, number] = [g.x, 0, g.z];
         const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6).map(e => e.id);
         host.dataset.hover = hit?.id ?? 'ground';
-        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt) ? undefined : none();
+        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt, Infinity) ? undefined : none();
+      }
+      if (!hit && ed.tool === 'build') {
+        const ray = aimRay();
+        const hosts = res.elements.filter(e => {
+          const v = e.position.map((x, i) => x - ray.origin[i]);
+          const t = v[0] * ray.dir[0] + v[1] * ray.dir[1] + v[2] * ray.dir[2];
+          const d = Math.hypot(v[0] - ray.dir[0] * t, v[1] - ray.dir[1] * t, v[2] - ray.dir[2] * t);
+          return t > 0 && d < 4 && KINDS[e.kind].category !== 'stairs';
+        }).map(e => e.id);
+        return showPlacement(ed, candidatesAround(ed, res, hosts, null), null, 80) ? undefined : none();
       }
       if (!hit) return none();
       // что под курсором и что будет сделано по клику: для тестов и отладки
@@ -386,7 +424,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
           .filter(e => KINDS[e.kind].category !== 'stairs' && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 3.3 && Math.abs(e.position[1] - pt[1]) < 3.6)
           .map(e => e.id);
         if (!hosts.includes(hit.id)) hosts.unshift(hit.id);
-        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt) ? undefined : none();
+        const hitT = state.raycaster.ray.origin.distanceTo(world.localToWorld(hit.point.clone()));
+        return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt, hitT + 1.5) ? undefined : none();
       }
       // объект
       const local = toLocal(hostEl, hit.point);
@@ -433,7 +472,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (ed.tool === 'hammer') { refreshGhost(); if (state.pending?.type !== 'hammer') return; }
       const p = state.pending;
       const target = p?.type === 'hammer' && !p.deployable ? ed.blueprint?.elements.find(e => e.id === p.id) : undefined;
-      const items = ed.radial[ed.tool].filter(it => it.id !== 'rotate' || (target && !target.root && rotatable(target.kind)));
+      const items = ed.radial[ed.tool].filter(it => it.id !== 'rotate' || (target && rotatable(target.kind)));
       const r: RadialState = { x, y, items, sel: -1, tool: ed.tool, targetId: p?.type === 'hammer' ? p.id : null, targetDeployable: p?.type === 'hammer' ? p.deployable : false };
       radialRef.current = r; setRadial(r);
       fly.pointerSpeed = 0;
@@ -465,7 +504,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       fly.pointerSpeed = 1;
       if (radialPointer >= 0 && renderer.domElement.hasPointerCapture(radialPointer)) renderer.domElement.releasePointerCapture(radialPointer);
       radialPointer = -1;
-      renderer.domElement.style.cursor = '';
+      renderer.domElement.style.cursor = editorRef.current ? 'crosshair' : '';
       const ed = editorRef.current;
       if (r && ed && r.sel >= 0) ed.onRadial(r.tool, r.items[r.sel].id, r.targetId, r.targetDeployable);
       state.candCache.clear();
@@ -473,12 +512,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     };
     const onLockedMove = (e: MouseEvent) => {
       if (!fly.isLocked || !radialRef.current) return;
+      if ((e.buttons & 2) === 0) { closeRadial(); return; }
       radialMove(e.movementX, e.movementY);
     };
     document.addEventListener('mousemove', onLockedMove);
     const onPointerMove = (e: PointerEvent) => {
       if (fly.isLocked) return;
-      if (radialRef.current) { radialMove(e.movementX, e.movementY); return; }
+      if (radialRef.current) {
+        if ((e.buttons & 2) === 0) closeRadial();
+        else radialMove(e.movementX, e.movementY);
+        return;
+      }
       const r = renderer.domElement.getBoundingClientRect();
       state.pointer = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       state.hoverDirty = true;
@@ -507,6 +551,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
       act(e.button);
     };
+    const dropRadial = () => { if (radialRef.current) { const r = radialRef.current; radialRef.current = { ...r, sel: -1 }; closeRadial(); } };
+    const onWindowUp = (e: MouseEvent) => { if (e.button === 2 && radialRef.current) closeRadial(); };
+    window.addEventListener('blur', dropRadial);
+    window.addEventListener('mouseup', onWindowUp);
+    renderer.domElement.addEventListener('pointercancel', dropRadial);
+    renderer.domElement.addEventListener('lostpointercapture', () => { if (radialPointer >= 0) closeRadial(); });
+    fly.addEventListener('unlock', dropRadial);
     const onContextMenu = (e: Event) => { if (editorRef.current) e.preventDefault(); };
     const onLeave = () => { if (!fly.isLocked) { state.pointer = null; state.hoverDirty = true; } };
     renderer.domElement.addEventListener('pointermove', onPointerMove);
@@ -580,6 +631,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('mousemove', onLockedMove);
+      window.removeEventListener('blur', dropRadial);
+      window.removeEventListener('mouseup', onWindowUp);
+      fly.removeEventListener('unlock', dropRadial);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
@@ -663,7 +717,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     s.camera.position.set(
       center.x + dist * 0.8 * Math.cos(az),
       center.y + dist * 0.6,
-      center.z + dist * 0.8 * Math.sin(az),
+      center.z - dist * 0.8 * Math.sin(az),
     );
     s.controls.update();
   }, [resolved, modelsVersion]);

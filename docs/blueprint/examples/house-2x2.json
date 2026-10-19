@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/blueprint.schema.json",
-  "formatVersion": "1.0",
+  "formatVersion": "2.0",
   "meta": {
     "name": "Дом 2×2 с запрыгом",
     "description": "Классический 2×2 без выхода на первом этаже. Комната со шкафом закрыта двойной дверью, за ней тамбур с ещё одной двойной дверью, дальше третья ячейка с двойной дверью в ячейку запрыга. В ячейке запрыга квадратный пол на полустене делит комнату пополам по высоте: с земли запрыгиваем на него через верхнюю половину проёма, с него — в тамбур 1×1 на втором этаже, пола над ячейкой запрыга нет. Из тамбура двойная дверь на крышу. Вход в базу только с крыши. Все двери двойные металлические.",
@@ -19,235 +19,178 @@
     {
       "id": "f1",
       "kind": "square-foundation",
-      "root": true,
+      "position": [0, 0, 0],
+      "rotation": 0,
       "label": "Комната со шкафом"
     },
     {
       "id": "f2",
       "kind": "square-foundation",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      },
+      "position": [3, 0, 0],
+      "rotation": 0,
       "label": "Тамбур"
     },
     {
       "id": "f3",
       "kind": "square-foundation",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
+      "position": [3, 0, 3],
+      "rotation": 0,
       "label": "Третья ячейка"
     },
     {
       "id": "f4",
       "kind": "square-foundation",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
+      "position": [0, 0, 3],
+      "rotation": 0,
       "label": "Ячейка запрыга"
     },
     {
       "id": "w1",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:2"
-      }
+      "position": [-1.5, 0, 0],
+      "rotation": 180
     },
     {
       "id": "w2",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:3"
-      }
+      "position": [0, 0, -1.5],
+      "rotation": 270
     },
     {
       "id": "w3",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1"
-      },
+      "position": [0, 0, 1.5],
+      "rotation": 90,
       "label": "Стена между шкафом и запрыгом"
     },
     {
       "id": "fr_tc",
       "kind": "wall-frame",
+      "position": [1.5, 0, 0],
+      "rotation": 0,
       "grade": "metal",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0"
-      },
       "label": "Рама под двойную дверь шкафа"
     },
     {
       "id": "w4",
       "kind": "wall",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:0"
-      }
+      "position": [4.5, 0, 0],
+      "rotation": 0
     },
     {
       "id": "w5",
       "kind": "wall",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:3"
-      }
+      "position": [3, 0, -1.5],
+      "rotation": 270
     },
     {
       "id": "fr_hall",
       "kind": "wall-frame",
+      "position": [3, 0, 1.5],
+      "rotation": 90,
       "grade": "metal",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:1"
-      },
       "label": "Рама под двойную дверь тамбура"
     },
     {
       "id": "w6",
       "kind": "wall",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:0"
-      }
+      "position": [4.5, 0, 3],
+      "rotation": 0
     },
     {
       "id": "w7",
       "kind": "wall",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:1"
-      }
+      "position": [3, 0, 4.5],
+      "rotation": 90
     },
     {
       "id": "d_jump",
       "kind": "wall-frame",
+      "position": [1.5, 0, 3],
+      "rotation": 180,
       "grade": "metal",
-      "attach": {
-        "to": "f3",
-        "socket": "edge:2"
-      },
       "label": "Рама под двойную дверь в ячейку запрыга"
     },
     {
       "id": "hw1",
       "kind": "half-wall",
-      "attach": {
-        "to": "f4",
-        "socket": "edge:2"
-      },
+      "position": [-1.5, 0, 3],
+      "rotation": 180,
       "label": "Полустена под пол запрыга"
     },
     {
       "id": "hw2",
       "kind": "half-wall",
-      "attach": {
-        "to": "hw1",
-        "socket": "top"
-      },
+      "position": [-1.5, 1.5, 3],
+      "rotation": 180,
       "label": "Полустена сверху — стена до потолка"
     },
     {
       "id": "w8",
       "kind": "wall",
-      "attach": {
-        "to": "f4",
-        "socket": "edge:1"
-      }
+      "position": [0, 0, 4.5],
+      "rotation": 90
     },
     {
       "id": "m4",
       "kind": "square-floor",
-      "attach": {
-        "to": "hw1",
-        "socket": "top",
-        "selfSocket": "edge:2"
-      },
+      "position": [0, 1.5, 3],
+      "rotation": 0,
       "label": "Пол запрыга на половинной высоте",
       "notes": "Квадратный пол на половинной высоте накрывает всю ячейку. С земли запрыгиваем на его край через верхнюю половину дверного проёма, с него — прямо в тамбур второго этажа: пола над ячейкой нет."
     },
     {
       "id": "c1",
       "kind": "square-floor",
-      "attach": {
-        "to": "w2",
-        "socket": "top",
-        "selfSocket": "edge:3"
-      },
+      "position": [0, 3, 0],
+      "rotation": 0,
       "label": "Крыша"
     },
     {
       "id": "c2",
       "kind": "square-floor",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      },
+      "position": [3, 3, 0],
+      "rotation": 0,
       "label": "Крыша"
     },
     {
       "id": "c3",
       "kind": "square-floor",
-      "attach": {
-        "to": "c2",
-        "socket": "edge:1",
-        "selfSocket": "edge:3"
-      },
+      "position": [3, 3, 3],
+      "rotation": 0,
       "label": "Крыша"
     },
     {
       "id": "u1",
       "kind": "wall",
-      "attach": {
-        "to": "hw2",
-        "socket": "top"
-      }
+      "position": [-1.5, 3, 3],
+      "rotation": 180
     },
     {
       "id": "u2",
       "kind": "wall",
-      "attach": {
-        "to": "w8",
-        "socket": "top"
-      }
+      "position": [0, 3, 4.5],
+      "rotation": 90
     },
     {
       "id": "u3",
       "kind": "wall",
-      "attach": {
-        "to": "w3",
-        "socket": "top"
-      }
+      "position": [0, 3, 1.5],
+      "rotation": 90
     },
     {
       "id": "d_roof",
       "kind": "wall-frame",
+      "position": [1.5, 3, 3],
+      "rotation": 180,
       "grade": "metal",
-      "attach": {
-        "to": "d_jump",
-        "socket": "top"
-      },
       "label": "Рама под двойную дверь на крышу"
     },
     {
       "id": "r4",
       "kind": "square-floor",
-      "attach": {
-        "to": "u1",
-        "socket": "top",
-        "selfSocket": "edge:2"
-      },
+      "position": [0, 6, 3],
+      "rotation": 0,
       "label": "Потолок тамбура"
     }
   ],
@@ -297,10 +240,7 @@
         "to": "f1",
         "socket": "top"
       },
-      "offset": [
-        -1.075,
-        -0.825
-      ],
+      "offset": [-1.075, -0.825],
       "rotation": 0,
       "notes": "Прижат спинкой и боком к стенам дальнего угла."
     }

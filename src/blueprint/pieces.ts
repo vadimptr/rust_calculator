@@ -91,6 +91,38 @@ function worldSockets(e: Entity): WorldSocket[] {
   });
 }
 
+export interface AimBox { center: Vec3; axes: [Vec3, Vec3, Vec3]; half: Vec3 }
+
+export function aimBox(host: Entity, child: Entity): AimBox | null {
+  const females = worldSockets(host).filter(x => x.def.female && x.def.cls === 'ConstructionSocket');
+  const males = worldSockets(child).filter(x => x.def.male && x.def.cls === 'ConstructionSocket');
+  let best: WorldSocket | null = null;
+  let bestD = 0.06;
+  for (const f of females) for (const m of males) {
+    const d = len(sub(f.pos, m.pos));
+    if (d < bestD) { bestD = d; best = f; }
+  }
+  return best && { center: best.center, axes: best.axes, half: best.half };
+}
+
+export function rayBox(origin: Vec3, dir: Vec3, box: AimBox): number | null {
+  let tmin = -Infinity, tmax = Infinity;
+  const toCenter = sub(box.center, origin);
+  for (let i = 0; i < 3; i++) {
+    const e = dot(box.axes[i], toCenter);
+    const f = dot(box.axes[i], dir);
+    const h = box.half[i];
+    if (Math.abs(f) > 1e-9) {
+      let t1 = (e - h) / f, t2 = (e + h) / f;
+      if (t1 > t2) [t1, t2] = [t2, t1];
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax || tmax < 0) return null;
+    } else if (Math.abs(e) > h) return null;
+  }
+  return Math.max(0, tmin);
+}
+
 function obbIntersects(a: WorldSocket, b: WorldSocket): boolean {
   const t = sub(b.center, a.center);
   const axes: Vec3[] = [...a.axes, ...b.axes];

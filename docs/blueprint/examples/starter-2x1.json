@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/blueprint.schema.json",
-  "formatVersion": "1.0",
+  "formatVersion": "2.0",
   "meta": {
     "name": "Дом 2×1 с аирлоком",
     "description": "Два квадратных фундамента: корневая ячейка со шкафом и тамбур-аирлок. Внутренний проём у шкафа — рама стены с двойной металлической дверью, которая открывается в тамбур; внешний одиночный проём стоит на боковой стене тамбура в том же углу. Открытая двойная дверь перекрывает проход от наружной двери, поэтому в тамбур не зайти, пока дверь у шкафа открыта.",
@@ -18,97 +18,75 @@
     {
       "id": "f1",
       "kind": "square-foundation",
-      "root": true,
+      "position": [0, 0, 0],
+      "rotation": 0,
       "label": "Ячейка со шкафом"
     },
     {
       "id": "f2",
       "kind": "square-foundation",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      },
+      "position": [3, 0, 0],
+      "rotation": 0,
       "label": "Аирлок"
     },
     {
       "id": "w1",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1"
-      }
+      "position": [0, 0, 1.5],
+      "rotation": 90
     },
     {
       "id": "w2",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:2"
-      }
+      "position": [-1.5, 0, 0],
+      "rotation": 180
     },
     {
       "id": "w3",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:3"
-      }
+      "position": [0, 0, -1.5],
+      "rotation": 270
     },
     {
       "id": "d_inner",
       "kind": "wall-frame",
+      "position": [1.5, 0, 0],
+      "rotation": 0,
       "grade": "metal",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0"
-      },
       "label": "Внутренний проём (рама стены под двойную дверь)",
       "notes": "Двойная дверь открывается в тамбур и ложится поперёк прохода от внешней двери."
     },
     {
       "id": "w4",
       "kind": "wall",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:0"
-      }
+      "position": [4.5, 0, 0],
+      "rotation": 0
     },
     {
       "id": "w5",
       "kind": "wall",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:3"
-      }
+      "position": [3, 0, -1.5],
+      "rotation": 270
     },
     {
       "id": "d_outer",
       "kind": "doorway",
+      "position": [3, 0, 1.5],
+      "rotation": 90,
       "grade": "metal",
-      "attach": {
-        "to": "f2",
-        "socket": "edge:1"
-      },
       "label": "Внешний проём (боковая стена тамбура)"
     },
     {
       "id": "c1",
       "kind": "square-floor",
-      "attach": {
-        "to": "w1",
-        "socket": "top",
-        "selfSocket": "edge:1"
-      }
+      "position": [0, 3, 0],
+      "rotation": 0
     },
     {
       "id": "c2",
       "kind": "square-floor",
-      "attach": {
-        "to": "c1",
-        "socket": "edge:0",
-        "selfSocket": "edge:2"
-      }
+      "position": [3, 3, 0],
+      "rotation": 0
     }
   ],
   "deployables": [
@@ -139,10 +117,7 @@
         "to": "f1",
         "socket": "top"
       },
-      "offset": [
-        -1.075,
-        -0.825
-      ],
+      "offset": [-1.075, -0.825],
       "rotation": 0,
       "notes": "Прижат спинкой и боком к стенам дальнего угла."
     }

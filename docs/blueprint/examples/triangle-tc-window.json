@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/blueprint.schema.json",
-  "formatVersion": "1.0",
+  "formatVersion": "2.0",
   "meta": {
     "name": "Шкаф в треугольнике с окном",
     "description": "Треугольный каменный фундамент, две стены и оконный проём с укреплённым стеклом, треугольный пол сверху. Шкаф стоит в дальнем углу фронтом к окну, чтобы пополнять его через окно.",
@@ -18,41 +18,33 @@
     {
       "id": "f1",
       "kind": "triangle-foundation",
-      "root": true
+      "position": [0, 0, 0],
+      "rotation": 0
     },
     {
       "id": "win",
       "kind": "window-frame",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:0"
-      },
+      "position": [0.866, 0, 0],
+      "rotation": 0,
       "label": "Окно к шкафу"
     },
     {
       "id": "w2",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:1"
-      }
+      "position": [-0.433, 0, 0.75],
+      "rotation": 120
     },
     {
       "id": "w3",
       "kind": "wall",
-      "attach": {
-        "to": "f1",
-        "socket": "edge:2"
-      }
+      "position": [-0.433, 0, -0.75],
+      "rotation": 240
     },
     {
       "id": "c1",
       "kind": "triangle-floor",
-      "attach": {
-        "to": "w2",
-        "socket": "top",
-        "selfSocket": "edge:1"
-      }
+      "position": [0, 3, 0],
+      "rotation": 0
     }
   ],
   "deployables": [
@@ -71,10 +63,7 @@
         "to": "f1",
         "socket": "top"
       },
-      "offset": [
-        -0.23,
-        0
-      ],
+      "offset": [-0.23, 0],
       "rotation": 0,
       "notes": "В дальнем углу между стенами w2 и w3, фронтом к окну."
     }
