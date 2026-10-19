@@ -11,8 +11,7 @@ code: [Climate.cs, WeatherPreset.cs, ConVar/Weather.cs, ConVar/Env.cs, EnvSync.c
 
 ## Кратко
 
-Время суток ведёт компонент неба `TOD_Sky` (библиотека Time of Day, сборка
-`Assembly-CSharp-firstpass`) на префабе `assets/prefabs/engine/sky dome.prefab`. Погоду — синглтон
+Время суток ведёт компонент неба `TOD_Sky` (библиотека Time of Day) на префабе `assets/prefabs/engine/sky dome.prefab`. Погоду — синглтон
 `Climate` на префабе `assets/bundled/prefabs/world/climate.prefab`.
 
 - Сутки: **80 реальных минут** (`TOD_Time.DayLengthInMinutes` = 80 в префабе).
