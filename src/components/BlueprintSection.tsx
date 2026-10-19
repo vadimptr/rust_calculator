@@ -278,18 +278,161 @@ const BlueprintSection: React.FC = () => {
   return (
     <section className="bp">
       <div className="bp__layout">
-        <nav className="bp__side" aria-label="Постройки">
-          <div className="bp__side-title">Шаблоны</div>
-          <ul className="bp__list">
-            {BLUEPRINT_PRESETS.map(p => (
-              <li key={p.id}>
-                <button type="button" className={`bp__list-item${p.id === activePreset ? ' bp__list-item--active' : ''}`} onClick={() => choosePreset(p.id)} aria-pressed={p.id === activePreset}>
-                  {p.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="bp__left">
+          <label className="bp__preset">
+            <span className="bp__side-title">Шаблон</span>
+            <select className="bp__preset-select" value={activePreset ?? ''} onChange={e => choosePreset(e.target.value)}>
+              {activePreset === null && <option value="" disabled>{source.label}</option>}
+              {BLUEPRINT_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+            </select>
+          </label>
+          <aside className="bp__panel">
+            <div className="bp__panel-title">{blueprint?.meta.name ?? source.label}</div>
+            <div className="bp__meta">
+              Источник: {source.label}
+              {blueprint?.meta.gameVersion && <> · игра {blueprint.meta.gameVersion}</>}
+            </div>
+
+            {errors.length > 0 && (
+              <div className="bp__issues bp__issues--error">
+                <div className="bp__issues-title">Ошибки ({errors.length})</div>
+                <ul>
+                  {errors.map((i, idx) => (
+                    <li key={idx}><code>{i.code}</code>{i.id ? <> «{i.id}»</> : null}: {i.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {warnings.length > 0 && (
+              <div className="bp__issues bp__issues--warning">
+                <div className="bp__issues-title">Предупреждения ({warnings.length})</div>
+                <ul>
+                  {warnings.map((i, idx) => (
+                    <li key={idx}><code>{i.code}</code>{i.id ? <> «{i.id}»</> : null}: {i.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
+
+            {resolved && raidBusy && (
+              <section className="raid-panel">
+                <label className="bp__toggle raid-panel__toggle">
+                  <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                  Показать рейд
+                </label>
+                <p className="raid-panel__hint">Считаю рейд…</p>
+              </section>
+            )}
+            {resolved && !raidBusy && !raid && (
+              <section className="raid-panel">
+                <label className="bp__toggle raid-panel__toggle">
+                  <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                  Показать рейд
+                </label>
+              </section>
+            )}
+            {resolved && !raidBusy && raid && sim && (
+              <section className="raid-panel">
+                <label className="bp__toggle raid-panel__toggle">
+                  <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
+                  Показать рейд
+                </label>
+
+                {raidOn && (
+                  <>
+                    <div className="bp__presets raid-panel__methods" role="group" aria-label="Чем рейдим">
+                      {RAID_METHODS.map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={`raid-tier__btn raid-tier__btn--sm${m.id === raidMethod ? ' raid-tier__btn--active' : ''}`}
+                          onClick={() => { setRaidMethod(m.id); setRaidPlay(0); }}
+                          aria-pressed={m.id === raidMethod}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="raid-panel__best">
+                      <div className="raid-panel__best-line">
+                        <b>{formatNum(sim!.sulfur)}</b> серы · {describeUnits(sim!.units)}
+                      </div>
+                      <div className="raid-panel__best-line">
+                        открывает {sim!.openedIds.length} {sim!.openedIds.length === 1 ? 'полость' : sim!.openedIds.length < 5 ? 'полости' : 'полостей'} · ценность {raid.value} · этапов {sim!.stages.length}
+                      </div>
+                    </div>
+
+                    <label className="bp__toggle">
+                      <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
+                      Показать точки удара
+                    </label>
+
+                    {sim && sim.stages.length > 0 && (
+                      <div className="raid-panel__actions">
+                        <button type="button" className="bp__upload-btn" onClick={() => setRaidPlay(n => n + 1)}>Воспроизвести</button>
+                        <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
+                      </div>
+                    )}
+                    <p className="raid-panel__hint">Урон по правилам и данным игры: защита грейда и дверей, падение урона до ближайшей точки коробки блока, видимость по двум лучам. C4 и сачель сажаются на блок, ракета и разрывные бьют по области. «Оптимально» смешивает ракеты, C4 и разрывные.</p>
+                  </>
+                )}
+              </section>
+            )}
+
+            {resolved && counts.length > 0 && (
+              <>
+                <div className="bp__section-title">Состав</div>
+                <table className="bp__counts">
+                  <tbody>
+                    {counts.map(c => (
+                      <tr key={c.key}>
+                        <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
+                        <td className="bp__counts-n">×{c.n}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
+            {cost && (
+              <section className="cost">
+                <div className="bp__section-title">Стоимость постройки</div>
+                <div className="cost__row">
+                  {RESOURCE_KEYS.filter(k => cost.build[k] > 0).map(k => (
+                    <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
+                  ))}
+                </div>
+                <div className="bp__section-title">Содержание в сутки</div>
+                <div className="cost__row">
+                  {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
+                    <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(Math.ceil(cost.upkeep[k]))}</span>
+                  ))}
+                </div>
+                <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
+                <table className="cost__days">
+                  <thead>
+                    <tr>
+                      <th>Дней</th>
+                      {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {UPKEEP_DAYS.map(d => (
+                      <tr key={d}>
+                        <td>{d}</td>
+                        {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <td key={k}>{formatNum(Math.ceil(cost.upkeep[k] * d))}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )}
+          </aside>
+        </div>
 
         <div className="bp__center">
           <div className="bp__viewer">
@@ -320,152 +463,6 @@ const BlueprintSection: React.FC = () => {
           </div>
         </div>
 
-        <aside className="bp__panel">
-          <div className="bp__panel-title">{blueprint?.meta.name ?? source.label}</div>
-          <div className="bp__meta">
-            Источник: {source.label}
-            {blueprint?.meta.gameVersion && <> · игра {blueprint.meta.gameVersion}</>}
-          </div>
-
-          {errors.length > 0 && (
-            <div className="bp__issues bp__issues--error">
-              <div className="bp__issues-title">Ошибки ({errors.length})</div>
-              <ul>
-                {errors.map((i, idx) => (
-                  <li key={idx}><code>{i.code}</code>{i.id ? <> «{i.id}»</> : null}: {i.message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {warnings.length > 0 && (
-            <div className="bp__issues bp__issues--warning">
-              <div className="bp__issues-title">Предупреждения ({warnings.length})</div>
-              <ul>
-                {warnings.map((i, idx) => (
-                  <li key={idx}><code>{i.code}</code>{i.id ? <> «{i.id}»</> : null}: {i.message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
-
-          {resolved && raidBusy && (
-            <section className="raid-panel">
-              <label className="bp__toggle raid-panel__toggle">
-                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
-                Показать рейд
-              </label>
-              <p className="raid-panel__hint">Считаю рейд…</p>
-            </section>
-          )}
-          {resolved && !raidBusy && !raid && (
-            <section className="raid-panel">
-              <label className="bp__toggle raid-panel__toggle">
-                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
-                Показать рейд
-              </label>
-            </section>
-          )}
-          {resolved && !raidBusy && raid && sim && (
-            <section className="raid-panel">
-              <label className="bp__toggle raid-panel__toggle">
-                <input type="checkbox" checked={raidOn} onChange={e => toggleRaid(e.target.checked)} />
-                Показать рейд
-              </label>
-
-              {raidOn && (
-                <>
-                  <div className="bp__presets raid-panel__methods" role="group" aria-label="Чем рейдим">
-                    {RAID_METHODS.map(m => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className={`raid-tier__btn raid-tier__btn--sm${m.id === raidMethod ? ' raid-tier__btn--active' : ''}`}
-                        onClick={() => { setRaidMethod(m.id); setRaidPlay(0); }}
-                        aria-pressed={m.id === raidMethod}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="raid-panel__best">
-                    <div className="raid-panel__best-line">
-                      <b>{formatNum(sim!.sulfur)}</b> серы · {describeUnits(sim!.units)}
-                    </div>
-                    <div className="raid-panel__best-line">
-                      открывает {sim!.openedIds.length} {sim!.openedIds.length === 1 ? 'полость' : sim!.openedIds.length < 5 ? 'полости' : 'полостей'} · ценность {raid.value} · этапов {sim!.stages.length}
-                    </div>
-                  </div>
-
-                  <label className="bp__toggle">
-                    <input type="checkbox" checked={showImpacts} onChange={e => setShowImpacts(e.target.checked)} />
-                    Показать точки удара
-                  </label>
-
-                  {sim && sim.stages.length > 0 && (
-                    <div className="raid-panel__actions">
-                      <button type="button" className="bp__upload-btn" onClick={() => setRaidPlay(n => n + 1)}>Воспроизвести</button>
-                      <button type="button" className="raid-tier__btn" onClick={() => setRaidPlay(0)} disabled={raidPlay === 0}>Сбросить</button>
-                    </div>
-                  )}
-                  <p className="raid-panel__hint">Урон по правилам и данным игры: защита грейда и дверей, падение урона до ближайшей точки коробки блока, видимость по двум лучам. C4 и сачель сажаются на блок, ракета и разрывные бьют по области. «Оптимально» смешивает ракеты, C4 и разрывные.</p>
-                </>
-              )}
-            </section>
-          )}
-
-          {resolved && counts.length > 0 && (
-            <>
-              <div className="bp__section-title">Состав</div>
-              <table className="bp__counts">
-                <tbody>
-                  {counts.map(c => (
-                    <tr key={c.key}>
-                      <td className="bp__counts-label">{c.label}{c.grade ? <span className="bp__counts-grade"> · {c.grade}</span> : null}</td>
-                      <td className="bp__counts-n">×{c.n}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-
-          {cost && (
-            <section className="cost">
-              <div className="bp__section-title">Стоимость постройки</div>
-              <div className="cost__row">
-                {RESOURCE_KEYS.filter(k => cost.build[k] > 0).map(k => (
-                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
-                ))}
-              </div>
-              <div className="bp__section-title">Содержание в сутки</div>
-              <div className="cost__row">
-                {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
-                  <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(Math.ceil(cost.upkeep[k]))}</span>
-                ))}
-              </div>
-              <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
-              <table className="cost__days">
-                <thead>
-                  <tr>
-                    <th>Дней</th>
-                    {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <th key={k}><img src={RES_ICONS[k]} alt={RES_LABELS[k]} title={RES_LABELS[k]} /></th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {UPKEEP_DAYS.map(d => (
-                    <tr key={d}>
-                      <td>{d}</td>
-                      {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => <td key={k}>{formatNum(Math.ceil(cost.upkeep[k] * d))}</td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          )}
-        </aside>
       </div>
     </section>
   );
