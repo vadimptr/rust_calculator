@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, setDoorOpen } from '../blueprint/meshes.ts';
+import { onModelLoaded } from '../blueprint/models.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
@@ -567,6 +568,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
     return undefined;
   }, [mode]);
 
+  const [modelsVersion, setModelsVersion] = useState(0);
+  useEffect(() => onModelLoaded(() => setModelsVersion(v => v + 1)), []);
+
   useEffect(() => {
     const s = refs.current;
     if (!s) return;
@@ -611,7 +615,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, doorsOpen, raid, ra
       center.z + dist * 0.8 * Math.sin(az),
     );
     s.controls.update();
-  }, [resolved]);
+  }, [resolved, modelsVersion]);
 
   // Смена инструмента или типа — призрак пересчитывается
   useEffect(() => {

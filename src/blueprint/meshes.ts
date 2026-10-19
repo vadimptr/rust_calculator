@@ -6,7 +6,8 @@ import * as THREE from 'three';
 import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
-import type { DeployableKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
+import { gameModel } from './models.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
 export const GRADE_COLORS: Record<Grade, number> = {
@@ -56,6 +57,61 @@ function texture(name: string, color = true, mirror = false): THREE.Texture | nu
     textureCache.set(key, t);
   }
   return t;
+}
+
+interface Placement { yaw: number; offset?: [number, number, number] }
+const DEG = Math.PI / 180;
+const SQUARE: Placement = { yaw: 0 };
+const TRIANGLE: Placement = { yaw: -90 * DEG, offset: [TRI_CIRCUM / 2, 0, 0] };
+const WALL: Placement = { yaw: 0 };
+const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
+  'square-foundation': SQUARE, 'square-floor': SQUARE, 'floor-frame': SQUARE,
+  'triangle-foundation': TRIANGLE, 'triangle-floor': TRIANGLE, 'triangle-floor-frame': TRIANGLE,
+  'wall': WALL, 'half-wall': WALL, 'low-wall': WALL, 'doorway': WALL, 'window-frame': WALL, 'wall-frame': WALL,
+  'stairs-l-shape': { yaw: 0 }, 'u-shaped-stairs': { yaw: 0 }, 'spiral-stairs': { yaw: 0 },
+  'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
+  'ramp': { yaw: 0, offset: [-1.5, -0.77, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -1.54, 0] },
+};
+const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
+  'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
+};
+
+function hideProxy(root: THREE.Object3D): void {
+  root.traverse(n => { if ((n as THREE.Mesh).isMesh || (n as THREE.LineSegments).isLineSegments) n.visible = false; });
+}
+
+function placeModel(model: THREE.Object3D, p: Placement): THREE.Group {
+  const g = new THREE.Group();
+  g.rotation.y = p.yaw;
+  if (p.offset) g.position.set(...p.offset);
+  g.add(model);
+  return g;
+}
+
+function fitModel(model: THREE.Object3D, yaw: number, box: THREE.Box3, mirror = false): THREE.Group {
+  const inner = new THREE.Group();
+  inner.rotation.y = yaw;
+  if (mirror) inner.scale.z = -1;
+  inner.add(model);
+  inner.updateMatrixWorld(true);
+  const mb = new THREE.Box3().setFromObject(inner);
+  const ms = mb.getSize(new THREE.Vector3()), ts = box.getSize(new THREE.Vector3());
+  const outer = new THREE.Group();
+  outer.scale.set(ts.x / ms.x, ts.y / ms.y, ts.z / ms.z);
+  outer.position.set(box.min.x - mb.min.x * outer.scale.x, box.min.y - mb.min.y * outer.scale.y, box.min.z - mb.min.z * outer.scale.z);
+  outer.add(inner);
+  return outer;
+}
+
+function withModel(proxy: THREE.Group, name: string, yaw: number, mirror = false): THREE.Group {
+  const model = gameModel(name);
+  if (!model) return proxy;
+  const box = new THREE.Box3().setFromObject(proxy);
+  hideProxy(proxy);
+  const g = new THREE.Group();
+  g.add(proxy);
+  g.add(fitModel(model, yaw, box, mirror));
+  return g;
 }
 
 const gradeMaterials = new Map<string, THREE.MeshStandardMaterial>();
@@ -500,12 +556,14 @@ const DOOR_SPEED = 3.2;
  * взгляде снаружи по нормали). Полотно тянется от петли к центру проёма. Открытая дверь
  * повёрнута на 90° вокруг петли: outward — в сторону +x, inward — в сторону −x.
  */
-function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward' | 'inward', faces: THREE.Material[]): THREE.Group {
+function doorLeaf(width: number, height: number, hingeZ: number, opens: 'outward' | 'inward', faces: THREE.Material[], model?: string, mirror = false): THREE.Group {
   const pivot = new THREE.Group();
   pivot.position.set(0, 0, hingeZ);
   const toCenter = hingeZ > 0 ? -1 : 1;
-  pivot.add(faceBox(DOOR_T, height, width, 0, height / 2, toCenter * width / 2, faces));
-  pivot.add(withEdges(box(0.18, height, 0.14, 0, height / 2, 0), 0x1a1a1a));
+  const leaf = faceBox(DOOR_T, height, width, 0, height / 2, toCenter * width / 2, faces);
+  const fitted = model ? withModel(leaf, model, 0, mirror) : leaf;
+  pivot.add(fitted);
+  if (fitted === leaf) pivot.add(withEdges(box(0.18, height, 0.14, 0, height / 2, 0), 0x1a1a1a));
   const sign = hingeZ > 0 ? -1 : 1; // полотно вдоль −z → +x при −90°, вдоль +z → +x при +90°
   const anim: DoorAnim = { type: 'leaf', closed: 0, open: (opens === 'outward' ? sign : -sign) * (Math.PI / 2), target: false };
   pivot.userData.door = anim;
@@ -518,7 +576,7 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
   switch (d.kind) {
     case 'garage-door': {
       const lift = new THREE.Group();
-      lift.add(faceBox(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0, doorFaces(kind)));
+      lift.add(withModel(faceBox(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0, doorFaces(kind)), kind, 0));
       const anim: DoorAnim = { type: 'lift', closed: 0, open: FRAME_H - 0.3, target: false };
       lift.userData.door = anim;
       g.add(lift);
@@ -527,12 +585,12 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
     case 'wooden-double-door':
     case 'sheet-metal-double-door':
     case 'armored-double-door':
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, doorFaces(kind)));
-      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, doorFaces(kind, true)));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, FRAME_W / 2, d.opens, doorFaces(kind), kind, true));
+      g.add(doorLeaf(FRAME_W / 2, DOUBLE_LEAF_H, -FRAME_W / 2, d.opens, doorFaces(kind, true), kind));
       g.add(gradeMesh(box(DOOR_T, FRAME_H - DOUBLE_LEAF_H, FRAME_W, 0, DOUBLE_LEAF_H + (FRAME_H - DOUBLE_LEAF_H) / 2, 0), DOOR_GRADE[d.kind]!));
       return g;
     default:
-      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, doorFaces(kind, d.hinge === 'left')));
+      g.add(doorLeaf(DOORWAY_W, DOORWAY_H, d.hinge === 'left' ? DOORWAY_W / 2 : -DOORWAY_W / 2, d.opens, doorFaces(kind, d.hinge === 'left'), kind, d.hinge === 'left'));
       return g;
   }
 }
@@ -582,7 +640,13 @@ export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 
   const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)]
     : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
   const topFace = KINDS[el.kind].category === 'roof' ? 'roof' : 'top';
-  const parts = geos.map(part => gradeMesh(part, el.grade, topFace));
+  const parts: THREE.Object3D[] = geos.map(part => gradeMesh(part, el.grade, topFace));
+  const placement = BLOCK_MODELS[el.kind];
+  const model = placement && !gable && !hips?.length && !el.inverted ? gameModel(`${el.kind}.${el.grade}`) : null;
+  if (model) {
+    for (const p of parts) hideProxy(p);
+    parts.push(placeModel(model, placement!));
+  }
   if (el.bunker) {
     // крыша-затвор: по переключателю «Открыть двери» проваливается под землю, как будто хозяин убрал опору
     const drop = new THREE.Group();
@@ -609,7 +673,7 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
   const front = objectMaterial('drop-box', 'front'), back = objectMaterial('drop-box', 'back');
   const side = objectMaterial('drop-box', 'side'), top = objectMaterial('drop-box', 'top');
   const loadOutside = d.direction === 'in';
-  g.add(faceBox(DROP_D, DROP_H, DROP_W, 0, 0, 0, [loadOutside ? front : back, loadOutside ? back : front, top, top, side, side]));
+  g.add(withModel(faceBox(DROP_D, DROP_H, DROP_W, 0, 0, 0, [loadOutside ? front : back, loadOutside ? back : front, top, top, side, side]), 'drop-box', (loadOutside ? -1 : 1) * OBJECT_YAW['drop-box']!));
   // out: из −x (внутри) в +x (снаружи); in — наоборот. Стрелка от середины ящика чуть за его грань
   const toward = d.direction === 'in' ? -1 : 1;
   const arrowLen = DROP_D / 2 + 0.12;
@@ -637,9 +701,16 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
     g = new THREE.Group();
     // Шкаф: TC_W вдоль стены, TC_D в глубину, TC_H высотой; спинка — локальный −x
     const side = objectMaterial('tool-cupboard', 'side'), top = objectMaterial('tool-cupboard', 'top');
-    g.add(faceBox(TC_D, TC_H, TC_W, 0, TC_H / 2, 0, [objectMaterial('tool-cupboard', 'front'), objectMaterial('tool-cupboard', 'back'), top, top, side, side]));
+    const proxy = faceBox(TC_D, TC_H, TC_W, 0, TC_H / 2, 0, [objectMaterial('tool-cupboard', 'front'), objectMaterial('tool-cupboard', 'back'), top, top, side, side]);
+    const model = gameModel('tool-cupboard');
+    if (model) {
+      hideProxy(proxy);
+      g.add(placeModel(model, { yaw: OBJECT_YAW['tool-cupboard']! }));
+    }
+    g.add(proxy);
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
+    if (d.kind !== 'strengthened-glass-window') g = withModel(g, d.kind, 0);
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);

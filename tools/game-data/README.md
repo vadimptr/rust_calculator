@@ -54,6 +54,13 @@ venv/bin/python -I tools/game-data/icons.py \
 #    по смещению, весь бандл в память не грузится
 venv/bin/python -I tools/game-data/textures.py \
   ~/Library/Application\ Support/Steam/steamapps/common/Rust public/textures/game
+
+# 8. Модели 3D-просмотра: блоки всех грейдов, двери, гаражная дверь, шкаф, дроп-бокс, решётки
+#    и укреплённое стекло в glTF (public/models/*.glb, текстуры в public/models/tex).
+#    Условные части блоков разрешаются по GUID из assets/manifest.asset; берутся варианты для
+#    отдельно стоящего блока (full, боковины фундамента, окантовка крыши)
+venv/bin/python -I tools/game-data/models.py \
+  ~/Library/Application\ Support/Steam/steamapps/common/Rust public/models
 ```
 
 Русские описания настроек лежат в `docs/game/convars.ru.json` и пишутся вручную. Новые настройки,
