@@ -200,7 +200,7 @@ const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const fileRef = useRef<HTMLInputElement>(null);
-  const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);

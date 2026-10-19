@@ -194,18 +194,19 @@ class Exporter:
                                 return hit
         return None
 
-    def export(self, prefab, sub, name):
-        root = self.roots.get(prefab.lower())
-        if root is None:
-            return None
-        start = root if sub is None else self.find(root, sub)
-        if start is None:
-            return None
+    def export(self, prefabs, sub, name):
         items = []
         excluded = set()
-        if sub is not None:
-            self.collect(root, np.eye(4), [], excluded, root=True)
-        self.collect(start, np.eye(4), items, excluded, root=True)
+        for prefab in [prefabs] if isinstance(prefabs, str) else prefabs:
+            root = self.roots.get(prefab.lower())
+            if root is None:
+                return None
+            start = root if sub is None else self.find(root, sub)
+            if start is None:
+                return None
+            if sub is not None:
+                self.collect(root, np.eye(4), [], excluded, root=True)
+            self.collect(start, np.eye(4), items, excluded, root=True)
         prims = []
         for world, mf, mr in items:
             if mr.path_id in excluded:
@@ -344,6 +345,8 @@ for kind, paths in BLOCKS.items():
         options = [CORE + p.format(g=gname) for p in ([paths] if isinstance(paths, str) else paths)]
         jobs.append((f'{kind}.{grade}', next((p for p in options if p.lower() in ex.roots), options[0]), None))
 jobs += [(kind, prefab, sub) for kind, (prefab, sub) in OBJECTS.items()]
+jobs += [(f'roof-triangle-down.{grade}', [CORE + f'roof.triangle/roof.triangle.{gname}.down.prefab', CORE + f'roof.triangle/roof.triangle.{gname}.down.top.line.prefab'], None)
+         for grade, gname in GRADE_NAMES.items()]
 for name, prefab, sub in jobs:
     if only and not any(name.startswith(o) for o in only):
         continue

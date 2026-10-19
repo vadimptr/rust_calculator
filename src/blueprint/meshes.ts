@@ -72,6 +72,7 @@ const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
   'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
   'ramp': { yaw: 0, offset: [-1.5, -RAMP_MALE_H.ramp!, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -RAMP_MALE_H['foundation-steps']!, 0] },
 };
+const INVERTED_TRIANGLE_ROOF: Placement = { yaw: -90 * DEG };
 const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
 };
@@ -641,8 +642,9 @@ export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 
     : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
   const topFace = KINDS[el.kind].category === 'roof' ? 'roof' : 'top';
   const parts: THREE.Object3D[] = geos.map(part => gradeMesh(part, el.grade, topFace));
-  const placement = BLOCK_MODELS[el.kind];
-  const model = placement && !gable && !hips?.length && !el.inverted ? gameModel(`${el.kind}.${el.grade}`) : null;
+  const placement = el.inverted ? (el.kind === 'roof-triangle' ? INVERTED_TRIANGLE_ROOF : undefined) : BLOCK_MODELS[el.kind];
+  const name = el.inverted ? `roof-triangle-down.${el.grade}` : `${el.kind}.${el.grade}`;
+  const model = placement && !gable && !hips?.length ? gameModel(name) : null;
   if (model) {
     for (const p of parts) hideProxy(p);
     parts.push(placeModel(model, placement!));
