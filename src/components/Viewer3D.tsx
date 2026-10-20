@@ -528,17 +528,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     };
     const onLockedMove = (e: MouseEvent) => {
       if (!fly.isLocked || !radialRef.current) return;
-      if ((e.buttons & 2) === 0) { closeRadial(); return; }
       radialMove(e.movementX, e.movementY);
     };
     document.addEventListener('mousemove', onLockedMove);
     const onPointerMove = (e: PointerEvent) => {
       if (fly.isLocked) return;
-      if (radialRef.current) {
-        if ((e.buttons & 2) === 0) closeRadial();
-        else radialMove(e.movementX, e.movementY);
-        return;
-      }
+      if (radialRef.current) { radialMove(e.movementX, e.movementY); return; }
       const r = renderer.domElement.getBoundingClientRect();
       state.pointer = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       state.hoverDirty = true;
@@ -570,7 +565,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     const dropRadial = () => { if (radialRef.current) { const r = radialRef.current; radialRef.current = { ...r, sel: -1 }; closeRadial(); } };
     const onWindowUp = (e: MouseEvent) => { if (e.button === 2 && radialRef.current) closeRadial(); };
     window.addEventListener('blur', dropRadial);
-    window.addEventListener('mouseup', onWindowUp);
+    window.addEventListener('mouseup', onWindowUp, true);
     renderer.domElement.addEventListener('pointercancel', dropRadial);
     renderer.domElement.addEventListener('lostpointercapture', () => { if (radialPointer >= 0) closeRadial(); });
     fly.addEventListener('unlock', dropRadial);
@@ -648,7 +643,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('mousemove', onLockedMove);
       window.removeEventListener('blur', dropRadial);
-      window.removeEventListener('mouseup', onWindowUp);
+      window.removeEventListener('mouseup', onWindowUp, true);
       fly.removeEventListener('unlock', dropRadial);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
