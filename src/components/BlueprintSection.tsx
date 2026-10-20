@@ -7,8 +7,8 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, newBlueprint, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved } from '../blueprint/types.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, newBlueprint, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved, Transform } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import type { RaidSimulation } from '../blueprint/splash.ts';
@@ -240,7 +240,7 @@ const BlueprintSection: React.FC = () => {
       tool, kind: buildKind, deployKind, blueprint, radial: RADIAL,
       // новые блоки — из веток, как в игре; грейд меняется киянкой
       onPlace: (kind: ElementKind, attach: Attach) => blueprint && applyDoc(addElement(blueprint, kind, attach, 'twig')),
-      onPlaceRoot: (kind: ElementKind) => applyDoc(newBlueprint('Новая постройка', kind)),
+      onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(blueprint ? addElementAt(blueprint, kind, t, 'twig') : newBlueprint('Новая постройка', kind, t.position, t.rotation)),
       onDeploy: (d: Omit<Deployable, 'id'>) => blueprint && applyDoc(addDeployable(blueprint, d)),
       onRemove: (id: string, deployable: boolean) => blueprint && applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
       onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {

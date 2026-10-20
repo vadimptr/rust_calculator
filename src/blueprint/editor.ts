@@ -51,12 +51,12 @@ export function freshId(bp: Blueprint, kind: ElementKind | DeployableKind): stri
 }
 
 /** Пустая постройка: один квадратный фундамент из веток, как первый блок в игре. */
-export function newBlueprint(name = 'Новая постройка', foundation: ElementKind = 'square-foundation'): Blueprint {
+export function newBlueprint(name = 'Новая постройка', foundation: ElementKind = 'square-foundation', position: [number, number, number] = [0, 0, 0], rotation = 0): Blueprint {
   return {
     formatVersion: '2.0',
     meta: { name, gameVersion: '2026-09', tags: ['custom'] },
     defaults: { grade: 'twig' },
-    elements: [{ id: 'f1', kind: foundation, position: [0, 0, 0], rotation: 0 }],
+    elements: [{ id: 'f1', kind: foundation, position: position.map(round3) as [number, number, number], rotation: round3(norm360(rotation)) }],
     deployables: [],
   };
 }
@@ -200,6 +200,17 @@ export function addElement(bp: Blueprint, kind: ElementKind, attach: Attach, gra
   const t = socketPose(host, kind, attach);
   const el: Element = { id: freshId(bp, kind), kind, position: t.position.map(round3) as [number, number, number], rotation: round3(t.rotation) };
   if (t.inverted) el.inverted = true;
+  if (grade && grade !== bp.defaults?.grade) el.grade = grade;
+  return { ...bp, elements: [...bp.elements, el] };
+}
+
+export function freePlacement(resolved: Resolved, kind: ElementKind, position: [number, number, number], rotation: number): Transform | null {
+  const t: Transform = { position: position.map(round3) as [number, number, number], rotation: round3(norm360(rotation)), level: round3(position[1] / 3) };
+  return overlaps(kind, t, resolved) ? null : t;
+}
+
+export function addElementAt(bp: Blueprint, kind: ElementKind, t: Transform, grade?: Grade): Blueprint {
+  const el: Element = { id: freshId(bp, kind), kind, position: t.position, rotation: t.rotation };
   if (grade && grade !== bp.defaults?.grade) el.grade = grade;
   return { ...bp, elements: [...bp.elements, el] };
 }

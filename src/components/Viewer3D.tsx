@@ -8,11 +8,12 @@ import { onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
+import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
-import { aimDistance, deployPlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
+import { aimDistance, deployPlacement, freePlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
+import { footprint } from '../blueprint/geometry.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import type { Placement } from '../blueprint/editor.ts';
@@ -36,7 +37,7 @@ export interface EditorState {
   radial: Record<EditorTool, RadialItem[]>;
   onPlace: (kind: ElementKind, attach: Attach) => void;
   /** Первый фундамент на пустом участке. */
-  onPlaceRoot: (kind: ElementKind) => void;
+  onPlaceFree: (kind: ElementKind, t: Transform) => void;
   onDeploy: (d: Omit<Deployable, 'id'>) => void;
   onRemove: (id: string, deployable: boolean) => void;
   /** Выбор в радиальном меню: блок плана, объект или (киянка) грейд / снос для блока под курсором. */
@@ -70,7 +71,7 @@ type Pending =
   | { type: 'element'; kind: ElementKind; attach: Attach }
   | { type: 'deploy'; d: Omit<Deployable, 'id'> }
   | { type: 'hammer'; id: string; deployable: boolean }
-  | { type: 'root'; kind: ElementKind }
+  | { type: 'free'; kind: ElementKind; t: Transform }
   | null;
 
 interface SceneRefs {
@@ -120,6 +121,18 @@ const SOCKET_SEL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparen
 const SOCKET_EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.7, depthWrite: false });
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
 const UNIT_EDGES = new THREE.EdgesGeometry(UNIT_BOX);
+
+function insidePolygon(poly: [number, number][], x: number, z: number): boolean {
+  let sign = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const [x1, z1] = poly[i], [x2, z2] = poly[(i + 1) % poly.length];
+    const c = (x2 - x1) * (z - z1) - (z2 - z1) * (x - x1);
+    if (Math.abs(c) < 1e-9) continue;
+    if (sign === 0) sign = Math.sign(c);
+    else if (Math.sign(c) !== sign) return false;
+  }
+  return true;
+}
 
 function socketBoxMesh(box: AimBox, selected: boolean): THREE.Object3D {
   const g = new THREE.Group();
@@ -422,14 +435,53 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       label.textContent = '';
       label.className = 'viewer3d__label';
       if (!ed || !res || ed.tool === 'view') return none();
-      // пустой участок: первый фундамент — корень постройки в начале координат
+      const showFree = (kind: ElementKind, at: THREE.Vector3 | null) => {
+        if (!at) return none();
+        const ray = aimRay();
+        const yaw = (Math.atan2(-ray.dir[2], -ray.dir[0]) * 180) / Math.PI + 90 * state.alt;
+        const t = freePlacement(res, kind, [at.x, 0, at.z], yaw);
+        if (!t) return none();
+        host.dataset.hover = 'ground';
+        drawSockets([], null);
+        label.textContent = 'Стабильность 100%';
+        showGhost(`free|${kind}`, { type: 'free', kind, t }, () => {
+          const el: ResolvedElement = { id: '__ghost__', kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };
+          return ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), GHOST_MAT);
+        });
+        state.pending = { type: 'free', kind, t };
+        const g = ghost.children[0];
+        if (g) { g.position.set(...t.position); g.rotation.set(0, (-t.rotation * Math.PI) / 180, 0); }
+      };
       if (res.elements.length === 0) {
         if (ed.tool !== 'build' || !KINDS[ed.kind].isFoundation) return none();
-        const el: ResolvedElement = { id: '__ghost__', kind: ed.kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };
-        host.dataset.hover = 'ground';
-        return showGhost(`root|${ed.kind}`, { type: 'root', kind: ed.kind }, () => ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), GHOST_MAT));
+        return showFree(ed.kind, groundPoint());
       }
       const hit = pick();
+      if (ed.tool === 'build' && KINDS[ed.kind].isFoundation) {
+        const ground = groundPoint();
+        const ray = aimRay();
+        const near = ground ?? (hit ? hit.point : null);
+        if (!near) return none();
+        const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - near.x, e.position[2] - near.z) < 9).map(e => e.id);
+        let best: Placement | null = null;
+        let bestScore = Infinity;
+        for (const c of candidatesAround(ed, res, hosts, [near.x, 0, near.z])) {
+          const y = c.transform.position[1];
+          if (Math.abs(ray.dir[1]) < 1e-6) continue;
+          const tt = (y - ray.origin[1]) / ray.dir[1];
+          if (tt <= 0) continue;
+          const px = ray.origin[0] + ray.dir[0] * tt, pz = ray.origin[2] + ray.dir[2] * tt;
+          const poly = footprint(ed.kind, c.transform);
+          if (!insidePolygon(poly, px, pz)) continue;
+          const score = y * 100 + Math.hypot(px - c.transform.position[0], pz - c.transform.position[2]);
+          if (score < bestScore) { bestScore = score; best = c; }
+        }
+        if (best) {
+          host.dataset.hover = hit?.id ?? 'ground';
+          return showPlacement(ed, [best], [best.transform.position[0], best.transform.position[1], best.transform.position[2]], Infinity) ? undefined : none();
+        }
+        return showFree(ed.kind, ground);
+      }
       // Фундаменты, съезды и ступени ставятся как в игре — прицелом в землю рядом с постройкой: хозяином
       // становится любой фундамент поблизости, а не только тот, в который попал луч
       const ramp = KINDS[ed.kind].category === 'ramp';
@@ -518,7 +570,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (hit && (hit.deployable || !p) && toggleDoorsOf(state, hit.id)) return;
       if (!p) return;
       if (p.type === 'element') ed.onPlace(p.kind, p.attach);
-      else if (p.type === 'root') ed.onPlaceRoot(p.kind);
+      else if (p.type === 'free') ed.onPlaceFree(p.kind, p.t);
       else if (p.type === 'deploy') ed.onDeploy(p.d);
       state.candCache.clear();
       state.hoverDirty = true;
@@ -664,7 +716,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (state.hoverDirty) {
         refreshGhost();
         const p = state.pending;
-        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'root' ? p.kind : p.d.kind + (p.d.offset ? JSON.stringify(p.d.offset) : '') + (p.d.rotation ? `@${p.d.rotation}` : '')}` : '';
+        host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'free' ? p.kind + JSON.stringify(p.t.position) : p.d.kind + (p.d.offset ? JSON.stringify(p.d.offset) : '') + (p.d.rotation ? `@${p.d.rotation}` : '')}` : '';
       }
       renderer.render(scene, camera);
       state.frame = requestAnimationFrame(tick);

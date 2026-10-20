@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolveBlueprint } from './geometry.ts';
-import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, rotateElement, settle, upgradeElement } from './editor.ts';
+import { addDeployable, addElement, addElementAt, freePlacement, candidatePlacements, deployPlacement, newBlueprint, placementsNear, removeElement, rotateElement, settle, upgradeElement } from './editor.ts';
 import type { Blueprint } from './types.ts';
 
 function load(name: string) {
@@ -459,4 +459,18 @@ test('a ramp does not hang in the air: on a floor it falls with the floor, by a 
   const st = computeStability(resolveBlueprint(raised).resolved);
   assert.ok(st.get('rp1')! > 0.05 && st.get('rp1')! < 1, String(st.get('rp1')));
   assert.equal(st.get('rp2'), 1);
+});
+
+test('a foundation can stand anywhere on free ground at any angle, but not into another block', () => {
+  const bp = newBlueprint();
+  const resolved = resolveBlueprint(bp).resolved;
+  const free = freePlacement(resolved, 'square-foundation', [7.3, 0, -4.1], 33);
+  assert.ok(free);
+  const r = resolveBlueprint(addElementAt(bp, 'square-foundation', free!));
+  assert.deepEqual(r.issues.filter(i => i.level === 'error'), []);
+  assert.deepEqual(r.resolved.elements[1].position, [7.3, 0, -4.1]);
+  assert.equal(freePlacement(resolved, 'square-foundation', [1.2, 0, 0.4], 10), null);
+  const first = newBlueprint('x', 'triangle-foundation', [-5, 0, 2], 400);
+  assert.deepEqual(first.elements[0].position, [-5, 0, 2]);
+  assert.equal(first.elements[0].rotation, 40);
 });
