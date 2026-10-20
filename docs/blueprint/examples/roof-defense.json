@@ -3,7 +3,7 @@
   "formatVersion": "2.0",
   "meta": {
     "name": "Дом с обороной крыши",
-    "description": "Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные. Вход — шлюз из двух треугольников кольца с гаражкой наружу, затем гаражка в узловой зал; из зала по гаражке в каждую комнату: к шкафу (центр и задняя клетка), в лут (левая колонка) и в лестничную (правая колонка). Второй этаж — стрелковый, с амбразурами по центру каждой стороны. Два подъёма на крышу в передних углах — утопленные пики: со второго этажа гаражка в угловую комнату, в ней две винтовые лестницы. Стоя на первой (на 1,5 м ниже крыши), видишь поверхность крыши на уровне глаз через щель на всю ширину клетки и отстреливаешь высадившихся, торчит только голова; над щелью потолок на полустенах-козырьках. Вторая лестница выводит прямо на крышу. Твёрдая сторона каждой стены смотрит от более защищённой комнаты к менее защищённой.",
+    "description": "Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные. Вход — шлюз из двух треугольников кольца с гаражкой наружу, затем гаражка в узловой зал; из зала по гаражке в каждую комнату: к шкафу, в лут и в лестничную. Второй этаж стрелковый, с амбразурами по сторонам. Над передним рядом второго этажа — стрелковая галерея на три клетки: её пол на 1,5 м ниже крыши, в задней стене два оконных проёма с амбразурами, щель которых приходится ровно на уровень крыши — защитник видит всю крышу на уровне глаз. Подъём в галерею — винтовая лестница со второго этажа. Два выхода на крышу в задних углах: U-лестницы в будки с гаражками, обращёнными к галерее, так что выходящего прикрывают из амбразур. Твёрдая сторона каждой стены смотрит от более защищённой комнаты к менее защищённой.",
     "gameVersion": "2026-09",
     "tags": [
       "example",
@@ -422,7 +422,7 @@
     {
       "id": "us1",
       "kind": "u-shaped-stairs",
-      "position": [3, 0, 3],
+      "position": [3, 0, 0],
       "rotation": 180
     },
     {
@@ -458,7 +458,7 @@
     {
       "id": "c6",
       "kind": "square-floor",
-      "position": [3, 3, 0],
+      "position": [3, 3, 3],
       "rotation": 0
     },
     {
@@ -670,138 +670,207 @@
       "rotation": 270
     },
     {
-      "id": "fr6",
-      "kind": "wall-frame",
-      "position": [-1.5, 3, -3],
-      "rotation": 180,
-      "label": "Вход в пик"
+      "id": "hw1",
+      "kind": "half-wall",
+      "position": [-3, 3, -1.5],
+      "rotation": 90,
+      "label": "Опора галереи"
     },
     {
-      "id": "w41",
-      "kind": "wall",
-      "position": [-3, 3, -1.5],
-      "rotation": 270
+      "id": "c9",
+      "kind": "square-floor",
+      "position": [-3, 4.5, -3],
+      "rotation": 90,
+      "label": "Пол галереи"
+    },
+    {
+      "id": "wf5",
+      "kind": "window-frame",
+      "position": [-3, 4.5, -1.5],
+      "rotation": 90,
+      "label": "Амбразура на крышу"
+    },
+    {
+      "id": "hw2",
+      "kind": "half-wall",
+      "position": [3, 3, -1.5],
+      "rotation": 90,
+      "label": "Опора галереи"
+    },
+    {
+      "id": "c10",
+      "kind": "square-floor",
+      "position": [3, 4.5, -3],
+      "rotation": 90,
+      "label": "Пол галереи"
+    },
+    {
+      "id": "wf6",
+      "kind": "window-frame",
+      "position": [3, 4.5, -1.5],
+      "rotation": 90,
+      "label": "Амбразура на крышу"
     },
     {
       "id": "ss1",
       "kind": "spiral-stairs",
-      "position": [-3, 3, -3],
-      "rotation": 180
+      "position": [0, 3, -3],
+      "rotation": 270,
+      "label": "Подъём в галерею"
     },
     {
-      "id": "ss2",
-      "kind": "spiral-stairs",
-      "position": [-3, 4.5, -3],
-      "rotation": 0
-    },
-    {
-      "id": "fr7",
-      "kind": "wall-frame",
-      "position": [1.5, 3, -3],
-      "rotation": 0,
-      "label": "Вход в пик"
-    },
-    {
-      "id": "w42",
-      "kind": "wall",
-      "position": [3, 3, -1.5],
-      "rotation": 270
-    },
-    {
-      "id": "ss3",
-      "kind": "spiral-stairs",
-      "position": [3, 3, -3],
-      "rotation": 270
-    },
-    {
-      "id": "ss4",
-      "kind": "spiral-stairs",
-      "position": [3, 4.5, -3],
-      "rotation": 90
-    },
-    {
-      "id": "c9",
+      "id": "c11",
       "kind": "square-floor",
       "position": [-3, 6, 0],
       "rotation": 180
     },
     {
-      "id": "c10",
-      "kind": "square-floor",
-      "position": [-3, 6, 3],
-      "rotation": 90
-    },
-    {
-      "id": "c11",
-      "kind": "square-floor",
-      "position": [0, 6, -3],
-      "rotation": 270
-    },
-    {
       "id": "c12",
-      "kind": "square-floor",
-      "position": [0, 6, 3],
-      "rotation": 90
-    },
-    {
-      "id": "c13",
       "kind": "square-floor",
       "position": [3, 6, 0],
       "rotation": 0
     },
     {
-      "id": "c14",
+      "id": "c13",
       "kind": "square-floor",
-      "position": [3, 6, 3],
-      "rotation": 0
+      "position": [0, 6, 3],
+      "rotation": 90
     },
     {
-      "id": "c15",
+      "id": "c14",
       "kind": "square-floor",
       "position": [0, 6, 0],
       "rotation": 180
     },
     {
-      "id": "hw1",
-      "kind": "half-wall",
-      "position": [-4.5, 6, -3],
-      "rotation": 180,
-      "label": "Козырёк пика"
-    },
-    {
-      "id": "hw2",
-      "kind": "half-wall",
-      "position": [-3, 6, -4.5],
-      "rotation": 270,
-      "label": "Козырёк пика"
-    },
-    {
-      "id": "c16",
-      "kind": "square-floor",
-      "position": [-3, 7.5, -3],
-      "rotation": 180,
-      "label": "Потолок пика"
-    },
-    {
       "id": "hw3",
       "kind": "half-wall",
-      "position": [3, 6, -4.5],
-      "rotation": 270,
-      "label": "Козырёк пика"
+      "position": [0, 6, -1.5],
+      "rotation": 90
     },
     {
       "id": "hw4",
       "kind": "half-wall",
+      "position": [0, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "hw5",
+      "kind": "half-wall",
+      "position": [3, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "hw6",
+      "kind": "half-wall",
       "position": [4.5, 6, -3],
-      "rotation": 0,
-      "label": "Козырёк пика"
+      "rotation": 0
+    },
+    {
+      "id": "hw7",
+      "kind": "half-wall",
+      "position": [-4.5, 6, -3],
+      "rotation": 180
+    },
+    {
+      "id": "hw8",
+      "kind": "half-wall",
+      "position": [-3, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c15",
+      "kind": "square-floor",
+      "position": [-3, 7.5, -3],
+      "rotation": 90
+    },
+    {
+      "id": "c16",
+      "kind": "square-floor",
+      "position": [3, 7.5, -3],
+      "rotation": 90
     },
     {
       "id": "c17",
       "kind": "square-floor",
-      "position": [3, 7.5, -3],
+      "position": [0, 7.5, -3],
+      "rotation": 90
+    },
+    {
+      "id": "us2",
+      "kind": "u-shaped-stairs",
+      "position": [-3, 3, 3],
+      "rotation": 90,
+      "label": "Выход на крышу"
+    },
+    {
+      "id": "us3",
+      "kind": "u-shaped-stairs",
+      "position": [3, 3, 3],
+      "rotation": 0,
+      "label": "Выход на крышу"
+    },
+    {
+      "id": "w41",
+      "kind": "wall",
+      "position": [-3, 6, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w42",
+      "kind": "wall",
+      "position": [-4.5, 6, 3],
+      "rotation": 180
+    },
+    {
+      "id": "fr6",
+      "kind": "wall-frame",
+      "position": [-3, 6, 1.5],
       "rotation": 270,
-      "label": "Потолок пика"
+      "label": "Гаражка на крышу"
+    },
+    {
+      "id": "w43",
+      "kind": "wall",
+      "position": [-1.5, 6, 3],
+      "rotation": 0
+    },
+    {
+      "id": "c18",
+      "kind": "square-floor",
+      "position": [-3, 9, 3],
+      "rotation": 90
+    },
+    {
+      "id": "w44",
+      "kind": "wall",
+      "position": [4.5, 6, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w45",
+      "kind": "wall",
+      "position": [3, 6, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "fr7",
+      "kind": "wall-frame",
+      "position": [3, 6, 1.5],
+      "rotation": 270,
+      "label": "Гаражка на крышу"
+    },
+    {
+      "id": "w46",
+      "kind": "wall",
+      "position": [1.5, 6, 3],
+      "rotation": 180
+    },
+    {
+      "id": "c19",
+      "kind": "square-floor",
+      "position": [3, 9, 3],
+      "rotation": 0
     }
   ],
   "deployables": [
@@ -907,6 +976,26 @@
     },
     {
       "id": "d10",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf5",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d11",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf6",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d12",
       "kind": "garage-door",
       "attach": {
         "to": "fr6",
@@ -916,7 +1005,7 @@
       "opens": "inward"
     },
     {
-      "id": "d11",
+      "id": "d13",
       "kind": "garage-door",
       "attach": {
         "to": "fr7",
