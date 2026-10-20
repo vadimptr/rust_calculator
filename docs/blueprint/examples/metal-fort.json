@@ -503,63 +503,63 @@
       "id": "fr2",
       "kind": "wall-frame",
       "position": [-1.5, 0, -3],
-      "rotation": 90,
+      "rotation": 270,
       "label": "Дверь в хранилище"
     },
     {
       "id": "w36",
       "kind": "wall",
       "position": [1.5, 0, -3],
-      "rotation": 90
+      "rotation": 270
     },
     {
       "id": "w37",
       "kind": "wall",
       "position": [-3, 0, -1.5],
-      "rotation": 0
+      "rotation": 180
     },
     {
       "id": "w38",
       "kind": "wall",
       "position": [-3, 0, 1.5],
-      "rotation": 0
+      "rotation": 180
     },
     {
       "id": "w39",
       "kind": "wall",
       "position": [3, 0, -1.5],
-      "rotation": 180
+      "rotation": 0
     },
     {
       "id": "w40",
       "kind": "wall",
       "position": [3, 0, 1.5],
-      "rotation": 180
+      "rotation": 0
     },
     {
       "id": "w41",
       "kind": "wall",
       "position": [-1.5, 0, 3],
-      "rotation": 270
+      "rotation": 90
     },
     {
       "id": "w42",
       "kind": "wall",
       "position": [1.5, 0, 3],
-      "rotation": 270
+      "rotation": 90
     },
     {
       "id": "fr3",
       "kind": "wall-frame",
       "position": [-3, 0, -4.5],
-      "rotation": 180,
+      "rotation": 0,
       "label": "Дверь в лут"
     },
     {
       "id": "w43",
       "kind": "wall",
       "position": [0, 0, -4.5],
-      "rotation": 0
+      "rotation": 180
     },
     {
       "id": "fr4",

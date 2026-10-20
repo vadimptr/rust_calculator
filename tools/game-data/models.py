@@ -60,6 +60,7 @@ OBJECTS = {
     'metal-window-bars': ('assets/prefabs/building/wall.window.bars/wall.window.bars.metal.prefab', None),
     'strengthened-glass-window': ('assets/prefabs/building/wall.window.reinforcedglass/wall.window.glass.reinforced.prefab', None),
     'reinforced-glass-window': ('assets/prefabs/building/wall.window.bars/wall.window.bars.toptier.prefab', None),
+    'metal-embrasure': ('assets/prefabs/building/wall.window.embrasure/shutter.metal.embrasure.a.prefab', None),
 }
 SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3', 'destruct', 'debris', 'fade', 'wallpaper')
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',

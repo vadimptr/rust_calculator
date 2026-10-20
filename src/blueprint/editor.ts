@@ -27,7 +27,7 @@ export const BUILD_PLAN: { group: string; kinds: ElementKind[] }[] = [
 export const DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
   { group: 'Двойные и гаражные', kinds: ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'] },
-  { group: 'В окно', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars'] },
+  { group: 'В окно', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
   { group: 'Прочее', kinds: ['tool-cupboard', 'drop-box'] },
 ];
 
@@ -278,7 +278,7 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
     if (taken.length > 0) return null;
     const accepts = info.opening === 'single' ? ['wooden-door', 'sheet-metal-door', 'armored-door']
       : info.opening === 'frame' ? ['garage-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door']
-        : ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars'];
+        : ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'];
     if (!accepts.includes(kind)) return null;
     deployable = { kind, attach: { to: hostId, socket: 'opening' } };
     if (info.opening !== 'window') {

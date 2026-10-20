@@ -57,6 +57,7 @@ const KIND_LABELS: Record<string, string> = {
   'strengthened-glass-window': 'Укреплённое стекло',
   'reinforced-glass-window': 'Усиленное стекло',
   'metal-window-bars': 'Металлическая решётка',
+  'metal-embrasure': 'Металлическая амбразура',
   'drop-box': 'Дроп-бокс',
 };
 
@@ -72,7 +73,7 @@ const SHORT_LABELS: Record<string, string> = {
   'stairs-l-shape': 'Лестн. L', 'u-shaped-stairs': 'Лестн. U', 'spiral-stairs': 'Винтовая', 'roof': 'Крыша', 'roof-triangle': 'Тр. крыша',
   'wooden-door': 'Дер. дверь', 'sheet-metal-door': 'Мет. дверь', 'armored-door': 'МВК дверь',
   'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
-  'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка',
+  'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка', 'metal-embrasure': 'Амбразура',
   'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
 };
 
@@ -99,7 +100,7 @@ const DEPLOY_ICONS: Record<DeployableKind, string> = {
   'wooden-door': 'door.hinged.wood', 'sheet-metal-door': 'door.hinged.metal', 'armored-door': 'door.hinged.toptier',
   'wooden-double-door': 'door.double.hinged.wood', 'sheet-metal-double-door': 'door.double.hinged.metal', 'armored-double-door': 'door.double.hinged.toptier',
   'garage-door': 'wall.frame.garagedoor', 'strengthened-glass-window': 'wall.window.glass.reinforced', 'reinforced-glass-window': 'wall.window.bars.toptier',
-  'metal-window-bars': 'wall.window.bars.metal', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
+  'metal-window-bars': 'wall.window.bars.metal', 'metal-embrasure': 'shutter.metal.embrasure.a', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
 };
 
 /** Радиальные меню: блоки строительного плана, объекты, апгрейд и снос киянкой. */

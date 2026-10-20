@@ -37,6 +37,7 @@ export type DeployableKind =
   | 'strengthened-glass-window'
   | 'reinforced-glass-window'
   | 'metal-window-bars'
+  | 'metal-embrasure'
   | 'drop-box';
 
 export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face' | 'offset';

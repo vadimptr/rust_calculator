@@ -32,6 +32,7 @@ const DOOR_COLORS: Record<DeployableKind, number> = {
   'strengthened-glass-window': 0x9fd3e6,
   'reinforced-glass-window': 0x7fb6cc,
   'metal-window-bars': 0x3a3f45,
+  'metal-embrasure': 0x5a4a3e,
 };
 
 const TEX_DIR = '/textures/game/';
@@ -270,6 +271,13 @@ const GLASS_REINFORCED = new THREE.MeshStandardMaterial({ color: 0x7fb6cc, trans
 function buildWindowInsert(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
   const y = WINDOW_SILL + WINDOW_H / 2;
+  if (d.kind === 'metal-embrasure') {
+    const slit = 0.18;
+    const part = (WINDOW_H - slit) / 2;
+    g.add(gradeMesh(box(0.06, part, WINDOW_W, 0, WINDOW_SILL + part / 2, 0), 'metal'));
+    g.add(gradeMesh(box(0.06, part, WINDOW_W, 0, WINDOW_SILL + WINDOW_H - part / 2, 0), 'metal'));
+    return g;
+  }
   if (d.kind === 'metal-window-bars') {
     const n = 5;
     for (let i = 0; i < n; i++) {

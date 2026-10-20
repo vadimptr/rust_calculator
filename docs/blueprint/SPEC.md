@@ -414,7 +414,7 @@ y_T   = y_P
 | `tool-cupboard` | `top` фундамента или пола | `offset` [x, z] от центра ячейки, `rotation` |
 | `wooden-door`, `sheet-metal-door`, `armored-door` | `opening` элемента `doorway` | `hinge`, `opens`, `open` |
 | `garage-door`, `wooden-double-door`, `sheet-metal-double-door`, `armored-double-door` | `opening` элемента `wall-frame` | `opens`, `open` (`hinge` игнорируется: у двойной двери петли с обеих сторон, гаражная поднимается) |
-| `strengthened-glass-window`, `reinforced-glass-window`, `metal-window-bars` | `opening` элемента `window-frame` | нет (`hinge`, `opens`, `open` игнорируются) |
+| `strengthened-glass-window`, `reinforced-glass-window`, `metal-window-bars`, `metal-embrasure` | `opening` элемента `window-frame` | нет (`hinge`, `opens`, `open` игнорируются) |
 | `drop-box` | `face` стены или половинной стены | `offset` [вдоль стены, высота] от середины низа стены, `direction` обязателен: `out` — передача изнутри наружу (по нормали стены), `in` — снаружи внутрь |
 
 Поля дверей:
@@ -585,6 +585,7 @@ fragments, armored 25 HQM. `costMultiplier`: фундамент, стена, п�
 | `strengthened-glass-window` | 50 metal fragments | 350 |
 | `reinforced-glass-window` | 4 HQM | 500 |
 | `metal-window-bars` | 25 metal fragments | 500 |
+| `metal-embrasure` | 100 metal fragments | 500 |
 | `drop-box` | 100 metal fragments | — |
 
 ### 9.3 Рейд
@@ -604,7 +605,7 @@ explosiveAmmo / optimal для wood, stone, metal, armored. `twig`
 | `garage-door` | 9 | 3 | 2 | 150 | explosiveAmmo 150 |
 | `armored-door`, `armored-double-door` | 15 | 5 | 3 | 250 | explosiveAmmo 250 |
 | `strengthened-glass-window` | 9 | 3 | 2 | 140 | explosiveAmmo 140 |
-| `reinforced-glass-window`, `metal-window-bars` | 12 | 4 | 2 | 200 | c4 2 |
+| `reinforced-glass-window`, `metal-window-bars`, `metal-embrasure` | 12 | 4 | 2 | 200 | c4 2 |
 
 `optimal` здесь — минимум серы при крафт-костах из `EXPLOSIVE_COSTS`
 (explosive ammo 25, satchel 480, rocket 1400, c4 2200 серы): для всех
@@ -864,6 +865,18 @@ ammo дешевле двух C4 в стену.
 этажа четыре гаражки ведут на стрелковую галерею по верхнему ярусу кольца с
 решётками на каждой ровной грани. Лестницы в разных углах, выход на крышу —
 будка с гаражкой, по краю крыши бруствер из полустен.
+
+### 10.9 Дом с обороной крыши (`examples/roof-defense.json`)
+
+Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные.
+Вход через треугольник-шлюз в узловой зал; из зала по гаражке в каждую
+комнату — к шкафу, в лут и в лестничную, без тупиковых проходов. Второй этаж
+стрелковый, с амбразурами (`metal-embrasure`, горизонтальная металлическая
+амбразура `shutter.metal.embrasure.a`) по центру каждой стороны. Два подъёма
+на крышу в передних углах выходят в будки: гаражка наружу и оконный проём с
+амбразурой, смотрящий через крышу, — высадившихся можно отстрелить, не
+открывая дверь. Твёрдая сторона каждой стены (нормаль, §4.1) смотрит от более
+защищённой комнаты к менее защищённой.
 
 ## 11. Как проверить документ
 

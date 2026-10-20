@@ -1,0 +1,922 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "Дом с обороной крыши",
+    "description": "Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные. Вход через треугольник-шлюз в узловой зал, из зала по гаражке в каждую комнату: к шкафу (центр и задняя клетка), в лут (левая колонка) и в лестничную (правая колонка). Второй этаж — стрелковый, с амбразурами по центру каждой стороны. Два подъёма на крышу в передних углах, каждый выходит в будку с гаражкой наружу и оконным проёмом с амбразурой, который смотрит через крышу: высадившихся можно отстрелить, не открывая дверь, будки прикрывают друг друга. Твёрдая сторона каждой стены смотрит от более защищённой комнаты к менее защищённой.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "example",
+      "metal",
+      "garage",
+      "roof-defense",
+      "3x3"
+    ]
+  },
+  "defaults": {
+    "grade": "metal"
+  },
+  "elements": [
+    {
+      "id": "f1",
+      "kind": "square-foundation",
+      "position": [0, 0, 0],
+      "rotation": 0,
+      "label": "Шкаф"
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "position": [-3, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "f3",
+      "kind": "square-foundation",
+      "position": [-3, 0, 3],
+      "rotation": 270
+    },
+    {
+      "id": "f4",
+      "kind": "square-foundation",
+      "position": [0, 0, -3],
+      "rotation": 90
+    },
+    {
+      "id": "f5",
+      "kind": "square-foundation",
+      "position": [0, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "f6",
+      "kind": "square-foundation",
+      "position": [3, 0, -3],
+      "rotation": 180
+    },
+    {
+      "id": "f7",
+      "kind": "square-foundation",
+      "position": [3, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "f8",
+      "kind": "square-foundation",
+      "position": [3, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "f9",
+      "kind": "square-foundation",
+      "position": [-3, 0, -3],
+      "rotation": 0
+    },
+    {
+      "id": "tf1",
+      "kind": "triangle-foundation",
+      "position": [-5.366, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tf2",
+      "kind": "triangle-foundation",
+      "position": [-3, 0, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tf3",
+      "kind": "triangle-foundation",
+      "position": [-5.366, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "tf4",
+      "kind": "triangle-foundation",
+      "position": [0, 0, -5.366],
+      "rotation": 90
+    },
+    {
+      "id": "tf5",
+      "kind": "triangle-foundation",
+      "position": [0, 0, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tf6",
+      "kind": "triangle-foundation",
+      "position": [3, 0, -5.366],
+      "rotation": 90
+    },
+    {
+      "id": "tf7",
+      "kind": "triangle-foundation",
+      "position": [5.366, 0, -3],
+      "rotation": 180
+    },
+    {
+      "id": "tf8",
+      "kind": "triangle-foundation",
+      "position": [5.366, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tf9",
+      "kind": "triangle-foundation",
+      "position": [5.366, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "tf10",
+      "kind": "triangle-foundation",
+      "position": [3, 0, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tf11",
+      "kind": "triangle-foundation",
+      "position": [-5.366, 0, -3],
+      "rotation": 0
+    },
+    {
+      "id": "tf12",
+      "kind": "triangle-foundation",
+      "position": [-3, 0, -5.366],
+      "rotation": 90
+    },
+    {
+      "id": "tf13",
+      "kind": "triangle-foundation",
+      "position": [-6.232, 0, 1.5],
+      "rotation": 300
+    },
+    {
+      "id": "tf14",
+      "kind": "triangle-foundation",
+      "position": [-6.232, 0, -1.5],
+      "rotation": 60
+    },
+    {
+      "id": "tf15",
+      "kind": "triangle-foundation",
+      "position": [-1.5, 0, 6.232],
+      "rotation": 210
+    },
+    {
+      "id": "tf16",
+      "kind": "triangle-foundation",
+      "position": [-1.5, 0, -6.232],
+      "rotation": 30
+    },
+    {
+      "id": "tf17",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, -6.232],
+      "rotation": 150
+    },
+    {
+      "id": "tf18",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, 6.232],
+      "rotation": 210
+    },
+    {
+      "id": "tf19",
+      "kind": "triangle-foundation",
+      "position": [6.232, 0, -1.5],
+      "rotation": 240
+    },
+    {
+      "id": "tf20",
+      "kind": "triangle-foundation",
+      "position": [6.232, 0, 1.5],
+      "rotation": 240
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "position": [-0.75, 0, -5.799],
+      "rotation": 30
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "position": [0.75, 0, -5.799],
+      "rotation": 150
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "position": [-3.75, 0, 5.799],
+      "rotation": 150
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "position": [-5.799, 0, 3.75],
+      "rotation": 120
+    },
+    {
+      "id": "w5",
+      "kind": "wall",
+      "position": [3.75, 0, -5.799],
+      "rotation": 330
+    },
+    {
+      "id": "w6",
+      "kind": "wall",
+      "position": [5.799, 0, -3.75],
+      "rotation": 300
+    },
+    {
+      "id": "w7",
+      "kind": "wall",
+      "position": [5.799, 0, 3.75],
+      "rotation": 60
+    },
+    {
+      "id": "w8",
+      "kind": "wall",
+      "position": [3.75, 0, 5.799],
+      "rotation": 30
+    },
+    {
+      "id": "w9",
+      "kind": "wall",
+      "position": [-5.799, 0, -3.75],
+      "rotation": 240
+    },
+    {
+      "id": "w10",
+      "kind": "wall",
+      "position": [-3.75, 0, -5.799],
+      "rotation": 210
+    },
+    {
+      "id": "w11",
+      "kind": "wall",
+      "position": [-7.098, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w12",
+      "kind": "wall",
+      "position": [-7.098, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w13",
+      "kind": "wall",
+      "position": [-1.5, 0, 7.098],
+      "rotation": 90
+    },
+    {
+      "id": "w14",
+      "kind": "wall",
+      "position": [-1.5, 0, -7.098],
+      "rotation": 270
+    },
+    {
+      "id": "w15",
+      "kind": "wall",
+      "position": [1.5, 0, -7.098],
+      "rotation": 270
+    },
+    {
+      "id": "w16",
+      "kind": "wall",
+      "position": [1.5, 0, 7.098],
+      "rotation": 90
+    },
+    {
+      "id": "w17",
+      "kind": "wall",
+      "position": [7.098, 0, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w18",
+      "kind": "wall",
+      "position": [7.098, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w19",
+      "kind": "wall",
+      "position": [-4.5, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w20",
+      "kind": "wall",
+      "position": [-3, 0, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w21",
+      "kind": "wall",
+      "position": [-4.5, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "fr1",
+      "kind": "wall-frame",
+      "position": [0, 0, -4.5],
+      "rotation": 270,
+      "label": "Шлюз → зал"
+    },
+    {
+      "id": "w22",
+      "kind": "wall",
+      "position": [0, 0, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w23",
+      "kind": "wall",
+      "position": [3, 0, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "w24",
+      "kind": "wall",
+      "position": [4.5, 0, -3],
+      "rotation": 0
+    },
+    {
+      "id": "w25",
+      "kind": "wall",
+      "position": [4.5, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w26",
+      "kind": "wall",
+      "position": [4.5, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w27",
+      "kind": "wall",
+      "position": [3, 0, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w28",
+      "kind": "wall",
+      "position": [-4.5, 0, -3],
+      "rotation": 180
+    },
+    {
+      "id": "w29",
+      "kind": "wall",
+      "position": [-3, 0, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "fr2",
+      "kind": "wall-frame",
+      "position": [0, 0, -1.5],
+      "rotation": 270,
+      "label": "Зал → шкаф"
+    },
+    {
+      "id": "fr3",
+      "kind": "wall-frame",
+      "position": [-1.5, 0, -3],
+      "rotation": 0,
+      "label": "Зал → лут"
+    },
+    {
+      "id": "fr4",
+      "kind": "wall-frame",
+      "position": [1.5, 0, -3],
+      "rotation": 180,
+      "label": "Зал → лестница"
+    },
+    {
+      "id": "w30",
+      "kind": "wall",
+      "position": [-1.5, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w31",
+      "kind": "wall",
+      "position": [1.5, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w32",
+      "kind": "wall",
+      "position": [-1.5, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "w33",
+      "kind": "wall",
+      "position": [1.5, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "us1",
+      "kind": "u-shaped-stairs",
+      "position": [3, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "c1",
+      "kind": "square-floor",
+      "position": [-3, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "c2",
+      "kind": "square-floor",
+      "position": [-3, 3, 3],
+      "rotation": 90
+    },
+    {
+      "id": "c3",
+      "kind": "square-floor",
+      "position": [0, 3, -3],
+      "rotation": 270
+    },
+    {
+      "id": "c4",
+      "kind": "square-floor",
+      "position": [0, 3, 3],
+      "rotation": 90
+    },
+    {
+      "id": "c5",
+      "kind": "square-floor",
+      "position": [3, 3, -3],
+      "rotation": 270
+    },
+    {
+      "id": "c6",
+      "kind": "square-floor",
+      "position": [3, 3, 0],
+      "rotation": 0
+    },
+    {
+      "id": "c7",
+      "kind": "square-floor",
+      "position": [-3, 3, -3],
+      "rotation": 180
+    },
+    {
+      "id": "c8",
+      "kind": "square-floor",
+      "position": [0, 3, 0],
+      "rotation": 270
+    },
+    {
+      "id": "tc1",
+      "kind": "triangle-floor",
+      "position": [-5.366, 3, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tc2",
+      "kind": "triangle-floor",
+      "position": [-3, 3, 5.366],
+      "rotation": 150
+    },
+    {
+      "id": "tc3",
+      "kind": "triangle-floor",
+      "position": [-5.366, 3, 3],
+      "rotation": 120
+    },
+    {
+      "id": "tc4",
+      "kind": "triangle-floor",
+      "position": [0, 3, -5.366],
+      "rotation": 210
+    },
+    {
+      "id": "tc5",
+      "kind": "triangle-floor",
+      "position": [0, 3, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tc6",
+      "kind": "triangle-floor",
+      "position": [3, 3, -5.366],
+      "rotation": 330
+    },
+    {
+      "id": "tc7",
+      "kind": "triangle-floor",
+      "position": [5.366, 3, -3],
+      "rotation": 300
+    },
+    {
+      "id": "tc8",
+      "kind": "triangle-floor",
+      "position": [5.366, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tc9",
+      "kind": "triangle-floor",
+      "position": [5.366, 3, 3],
+      "rotation": 60
+    },
+    {
+      "id": "tc10",
+      "kind": "triangle-floor",
+      "position": [3, 3, 5.366],
+      "rotation": 30
+    },
+    {
+      "id": "tc11",
+      "kind": "triangle-floor",
+      "position": [-5.366, 3, -3],
+      "rotation": 240
+    },
+    {
+      "id": "tc12",
+      "kind": "triangle-floor",
+      "position": [-3, 3, -5.366],
+      "rotation": 210
+    },
+    {
+      "id": "tc13",
+      "kind": "triangle-floor",
+      "position": [-6.232, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc14",
+      "kind": "triangle-floor",
+      "position": [-6.232, 3, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc15",
+      "kind": "triangle-floor",
+      "position": [-1.5, 3, 6.232],
+      "rotation": 90
+    },
+    {
+      "id": "tc16",
+      "kind": "triangle-floor",
+      "position": [-1.5, 3, -6.232],
+      "rotation": 30
+    },
+    {
+      "id": "tc17",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, -6.232],
+      "rotation": 150
+    },
+    {
+      "id": "tc18",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, 6.232],
+      "rotation": 90
+    },
+    {
+      "id": "tc19",
+      "kind": "triangle-floor",
+      "position": [6.232, 3, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc20",
+      "kind": "triangle-floor",
+      "position": [6.232, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "wf1",
+      "kind": "window-frame",
+      "position": [-4.5, 3, 0],
+      "rotation": 180,
+      "label": "Бойница второго этажа"
+    },
+    {
+      "id": "w34",
+      "kind": "wall",
+      "position": [-3, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w35",
+      "kind": "wall",
+      "position": [-4.5, 3, 3],
+      "rotation": 180
+    },
+    {
+      "id": "wf2",
+      "kind": "window-frame",
+      "position": [0, 3, -4.5],
+      "rotation": 270,
+      "label": "Бойница второго этажа"
+    },
+    {
+      "id": "wf3",
+      "kind": "window-frame",
+      "position": [0, 3, 4.5],
+      "rotation": 90,
+      "label": "Бойница второго этажа"
+    },
+    {
+      "id": "w36",
+      "kind": "wall",
+      "position": [3, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "w37",
+      "kind": "wall",
+      "position": [4.5, 3, -3],
+      "rotation": 0
+    },
+    {
+      "id": "wf4",
+      "kind": "window-frame",
+      "position": [4.5, 3, 0],
+      "rotation": 0,
+      "label": "Бойница второго этажа"
+    },
+    {
+      "id": "w38",
+      "kind": "wall",
+      "position": [4.5, 3, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w39",
+      "kind": "wall",
+      "position": [3, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w40",
+      "kind": "wall",
+      "position": [-4.5, 3, -3],
+      "rotation": 180
+    },
+    {
+      "id": "w41",
+      "kind": "wall",
+      "position": [-3, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "us2",
+      "kind": "u-shaped-stairs",
+      "position": [-3, 3, -3],
+      "rotation": 180
+    },
+    {
+      "id": "us3",
+      "kind": "u-shaped-stairs",
+      "position": [3, 3, -3],
+      "rotation": 270
+    },
+    {
+      "id": "c9",
+      "kind": "square-floor",
+      "position": [-3, 6, 0],
+      "rotation": 180
+    },
+    {
+      "id": "c10",
+      "kind": "square-floor",
+      "position": [-3, 6, 3],
+      "rotation": 90
+    },
+    {
+      "id": "c11",
+      "kind": "square-floor",
+      "position": [0, 6, -3],
+      "rotation": 270
+    },
+    {
+      "id": "c12",
+      "kind": "square-floor",
+      "position": [0, 6, 3],
+      "rotation": 90
+    },
+    {
+      "id": "c13",
+      "kind": "square-floor",
+      "position": [3, 6, 0],
+      "rotation": 0
+    },
+    {
+      "id": "c14",
+      "kind": "square-floor",
+      "position": [3, 6, 3],
+      "rotation": 0
+    },
+    {
+      "id": "c15",
+      "kind": "square-floor",
+      "position": [0, 6, 0],
+      "rotation": 180
+    },
+    {
+      "id": "fr5",
+      "kind": "wall-frame",
+      "position": [-1.5, 6, -3],
+      "rotation": 0,
+      "label": "Выход на крышу"
+    },
+    {
+      "id": "wf5",
+      "kind": "window-frame",
+      "position": [-3, 6, -1.5],
+      "rotation": 90,
+      "label": "Амбразура на крышу"
+    },
+    {
+      "id": "w42",
+      "kind": "wall",
+      "position": [-4.5, 6, -3],
+      "rotation": 180
+    },
+    {
+      "id": "w43",
+      "kind": "wall",
+      "position": [-3, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c16",
+      "kind": "square-floor",
+      "position": [-3, 9, -3],
+      "rotation": 0
+    },
+    {
+      "id": "fr6",
+      "kind": "wall-frame",
+      "position": [1.5, 6, -3],
+      "rotation": 180,
+      "label": "Выход на крышу"
+    },
+    {
+      "id": "wf6",
+      "kind": "window-frame",
+      "position": [3, 6, -1.5],
+      "rotation": 90,
+      "label": "Амбразура на крышу"
+    },
+    {
+      "id": "w44",
+      "kind": "wall",
+      "position": [4.5, 6, -3],
+      "rotation": 0
+    },
+    {
+      "id": "w45",
+      "kind": "wall",
+      "position": [3, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c17",
+      "kind": "square-floor",
+      "position": [3, 9, -3],
+      "rotation": 180
+    }
+  ],
+  "deployables": [
+    {
+      "id": "d1",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr1",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d2",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr2",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d3",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr3",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d4",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr4",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "cup1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [0.8, 0],
+      "rotation": 90
+    },
+    {
+      "id": "d5",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf1",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d6",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf2",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d7",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf3",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d8",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf4",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d9",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr5",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d10",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf5",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d11",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr6",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d12",
+      "kind": "metal-embrasure",
+      "attach": {
+        "to": "wf6",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    }
+  ]
+}

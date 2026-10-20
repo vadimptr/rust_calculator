@@ -21,6 +21,7 @@ export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | '
   'strengthened-glass-window': { blockId: 'strengthened-glass-window', blockName: 'Укреплённое стекло', satchel: 9, rocket: 3, c4: 2, explosiveAmmo: 140, optimal: { explosiveAmmo: 140 } },
   'reinforced-glass-window':   { blockId: 'reinforced-glass-window', blockName: 'Усиленное стекло', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
   'metal-window-bars':         { blockId: 'metal-window-bars', blockName: 'Металлическая решётка', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
+  'metal-embrasure':           { blockId: 'metal-embrasure', blockName: 'Металлическая амбразура', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
 };
 
 /** Ветки ломаются инструментом: взрывчатки 0. */

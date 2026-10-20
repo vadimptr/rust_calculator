@@ -53,6 +53,7 @@ export const DEPLOYABLE_STATS: Partial<Record<DeployableKind, { hp: number; prot
   'strengthened-glass-window': { hp: 350, protection: BLOCK_PROTECTION.metal },
   'reinforced-glass-window': { hp: 500, protection: BLOCK_PROTECTION.metal },
   'metal-window-bars': { hp: 500, protection: BLOCK_PROTECTION.metal },
+  'metal-embrasure': { hp: 500, protection: { Bullet: 0.99, Blunt: 0.99, Stab: 0.99, Explosion: 0.5, Heat: 0.95 } },
 };
 
 export interface ExplosiveData {

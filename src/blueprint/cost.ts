@@ -33,7 +33,7 @@ const DEPLOYABLE_COST: Partial<Record<DeployableKind, Partial<Res>>> = {
   'sheet-metal-door': { metal: 150 }, 'sheet-metal-double-door': { metal: 200 },
   'garage-door': { metal: 300 },
   'armored-door': { hqm: 20 }, 'armored-double-door': { hqm: 30 },
-  'strengthened-glass-window': { metal: 50 }, 'reinforced-glass-window': { hqm: 4 }, 'metal-window-bars': { metal: 25 },
+  'strengthened-glass-window': { metal: 50 }, 'reinforced-glass-window': { hqm: 4 }, 'metal-window-bars': { metal: 25 }, 'metal-embrasure': { metal: 100 },
 };
 /** Объекты вне содержания, но со стоимостью постройки. */
 const BUILD_ONLY: Partial<Record<DeployableKind, Partial<Res>>> = {

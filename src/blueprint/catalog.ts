@@ -58,7 +58,7 @@ export const FRAME_DOORS: DeployableKind[] = [
   'garage-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door',
 ];
 export const WINDOW_INSERTS: DeployableKind[] = [
-  'strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars',
+  'strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure',
 ];
 
 /** Что принимает opening данного типа проёма. */
