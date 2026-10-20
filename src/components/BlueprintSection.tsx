@@ -183,6 +183,7 @@ const BlueprintSection: React.FC = () => {
   const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
+  const [showSockets, setShowSockets] = useState(false);
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
@@ -457,8 +458,11 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} />
             <div className="bp__camera" role="group" aria-label="Камера">
+              <button type="button" className={`bp__icon-btn${showSockets ? ' bp__icon-btn--active' : ''}`} onClick={() => setShowSockets(v => !v)} aria-pressed={showSockets} aria-label="Сокеты" data-tip="Сокеты: зелёным — зоны выбора, куда встанет блок; ярче — выбранная" data-tip-pos="left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" /><path d="M4 7.5l8 4.5 8-4.5M12 12v9" /></svg>
+              </button>
               <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
               </button>

@@ -57,6 +57,7 @@ interface Viewer3DProps {
   frameKey: string;
   /** Режим стройки; null — только просмотр. */
   editor: EditorState | null;
+  showSockets?: boolean;
 }
 
 interface Hit {
@@ -86,6 +87,8 @@ interface SceneRefs {
   raid: RaidOverlay;
   frame: number;
   ghost: THREE.Group;
+  sockets: THREE.Group;
+  socketKey: string;
   raycaster: THREE.Raycaster;
   /** Последняя позиция курсора в NDC (орбита); в полёте — центр экрана. */
   pointer: THREE.Vector2 | null;
@@ -112,6 +115,21 @@ interface SceneRefs {
 const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.FrontSide });
 const FALL_MAT = new THREE.MeshStandardMaterial({ color: 0xff8a3d, emissive: 0x8a3a10, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
+const SOCKET_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide });
+const SOCKET_SEL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide });
+const SOCKET_EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.7, depthWrite: false });
+const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+const UNIT_EDGES = new THREE.EdgesGeometry(UNIT_BOX);
+
+function socketBoxMesh(box: AimBox, selected: boolean): THREE.Object3D {
+  const g = new THREE.Group();
+  g.matrixAutoUpdate = false;
+  const [a, b, c] = box.axes.map(v => new THREE.Vector3(...v));
+  g.matrix.makeBasis(a, b, c).scale(new THREE.Vector3(...box.half.map(h => Math.max(h * 2, 0.02)) as [number, number, number])).setPosition(...box.center);
+  g.add(new THREE.Mesh(UNIT_BOX, selected ? SOCKET_SEL_MAT : SOCKET_MAT), new THREE.LineSegments(UNIT_EDGES, SOCKET_EDGE_MAT));
+  g.traverse(n => { n.raycast = () => {}; n.renderOrder = 2; });
+  return g;
+}
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -164,7 +182,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -173,6 +191,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
   const radialRef = useRef<RadialState | null>(null);
   const resolvedRef = useRef<Resolved | null>(resolved);
   editorRef.current = editor;
+  const showSocketsRef = useRef(showSockets);
+  showSocketsRef.current = showSockets;
   resolvedRef.current = resolved;
 
   useEffect(() => {
@@ -233,6 +253,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     world.add(content);
     const ghost = new THREE.Group();
     world.add(ghost);
+    const sockets = new THREE.Group();
+    world.add(sockets);
     const label = document.createElement('div');
     label.className = 'viewer3d__label';
     host.appendChild(label);
@@ -242,7 +264,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
 
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
-      raid: new RaidOverlay(content, world), frame: 0, ghost, raycaster: new THREE.Raycaster(), pointer: null,
+      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
@@ -303,6 +325,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return { origin: [o.x, o.y, o.z], dir: [d.x, d.y, -d.z] };
     };
 
+    const drawSockets = (list: AimBox[], chosen: AimBox | null) => {
+      const k = (b: AimBox) => b.center.map(v => v.toFixed(2)).join(',') + '|' + b.axes[2].map(v => v.toFixed(2)).join(',');
+      const uniq = new Map(list.map(b => [k(b), b]));
+      const key = [...uniq.keys()].sort().join(';') + '#' + (chosen && uniq.size ? k(chosen) : '');
+      if (key === state.socketKey) return;
+      state.socketKey = key;
+      state.sockets.clear();
+      const sel = chosen ? k(chosen) : '';
+      for (const [bk, b] of uniq) state.sockets.add(socketBoxMesh(b, bk === sel));
+    };
+
     /** Выбрать размещение по прицелу, как в игре: луч против зон выбора сокетов, иначе ближайшее к точке (с гистерезисом и перебором по R). */
     const showPlacement = (ed: EditorState, cands: Placement[], pt: [number, number, number] | null, reach: number) => {
       if (cands.length === 0) return false;
@@ -355,6 +388,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (st < COLLAPSE) label.className = 'viewer3d__label viewer3d__label--bad';
       if (KINDS[ed.kind].category === 'ramp' && p.attach.socket === 'top') label.textContent += p.attach.rise ? ' · высокий съезд, R — низкий' : ' · низкий съезд, R — высокий';
       else if (KINDS[ed.kind].isFoundation && group.length > 1) label.textContent += ` · высота ${p.transform.position[1]} м, R — сменить`;
+      drawSockets(showSocketsRef.current && res ? cands.map(c => boxOf(ed.kind, c, res)).filter((b): b is AimBox => !!b) : [], res ? boxOf(ed.kind, p, res) : null);
       showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable, undefined, piecesWith(cur ?? EMPTY, el)), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
       return true;
     };
@@ -382,7 +416,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       state.hoverDirty = false;
       const ed = editorRef.current;
       const res = resolvedRef.current;
-      const none = () => { ghost.clear(); state.ghostKey = ''; state.pending = null; state.lastAttach = ''; };
+      const none = () => { ghost.clear(); state.ghostKey = ''; state.pending = null; state.lastAttach = ''; drawSockets([], null); };
       host.dataset.hover = '';
       host.dataset.pending = '';
       label.textContent = '';
@@ -743,6 +777,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     );
     s.controls.update();
   }, [resolved, modelsVersion]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    s.socketKey = '';
+    if (!showSockets) s.sockets.clear();
+    s.hoverDirty = true;
+  }, [showSockets]);
 
   // Смена инструмента или типа — призрак пересчитывается
   useEffect(() => {
