@@ -324,6 +324,7 @@ const WINDOW_H = 1.3;
 const WINDOW_SILL = 0.95;
 const SHUTTERS_Y = 1;
 const DOOR_T = 0.1;
+const DOOR_HIT_MAT = new THREE.MeshBasicMaterial({ visible: false });
 /** Шкаф: ширина вдоль стены, глубина, высота (≈ по пропорциям модели). */
 export const TC_W = 1.1;
 export const TC_D = 0.6;
@@ -762,6 +763,11 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);
+    const wide = d.kind === 'garage-door' || d.kind.includes('double');
+    const [w, h] = wide ? [FRAME_W, FRAME_H] : [DOORWAY_W, DOORWAY_H];
+    const hit = new THREE.Mesh(box(0.4, h, w, 0, h / 2, 0), DOOR_HIT_MAT);
+    hit.visible = false;
+    g.add(hit);
   }
   g.userData = { ...g.userData, id: d.id, kind: d.kind, open: d.open };
   return place(g, d.position, d.rotation);

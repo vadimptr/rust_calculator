@@ -116,6 +116,38 @@ class Exporter:
             self.textures[key] = 'tex/' + name
         return self.textures[key]
 
+    def specgloss(self, main_ptr, spec_ptr, gloss_scale, alpha):
+        main, spec = main_ptr.read(), spec_ptr.read()
+        key = f'{main.m_Name}+{spec.m_Name}-sg{"-a" if alpha else ""}'
+        if key not in self.textures:
+            base = main.image.convert('RGBA')
+            base.thumbnail((MAX_TEX, MAX_TEX), Image.LANCZOS)
+            sg = spec.image.convert('RGBA').resize(base.size, Image.LANCZOS)
+            a = np.asarray(base, dtype=np.float32) / 255
+            g = np.asarray(sg, dtype=np.float32) / 255
+            lin = lambda c: np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+            srgb = lambda c: np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(np.clip(c, 0, None), 1 / 2.4) - 0.055)
+            diffuse, specular = lin(a[..., :3]), lin(g[..., :3])
+            bright = lambda c: np.sqrt(0.299 * c[..., 0] ** 2 + 0.587 * c[..., 1] ** 2 + 0.114 * c[..., 2] ** 2)
+            one_minus = 1 - specular.max(-1)
+            d, sp, k = bright(diffuse), bright(specular), 0.04
+            bq = d * one_minus / (1 - k) + sp - 2 * k
+            metal = np.where(sp < k, 0, np.clip((-bq + np.sqrt(np.maximum(bq * bq - 4 * k * (k - sp), 0))) / (2 * k), 0, 1))
+            m = metal[..., None]
+            from_diffuse = diffuse * (one_minus / (1 - k) / np.maximum(1 - metal, 1e-4))[..., None]
+            from_spec = (specular - k * (1 - m)) / np.maximum(m, 1e-4)
+            color = np.clip(from_diffuse + (from_spec - from_diffuse) * m * m, 0, 1)
+            rgb = (np.clip(srgb(color), 0, 1) * 255).astype(np.uint8)
+            out = Image.fromarray(np.concatenate([rgb, (a[..., 3:] * 255).astype(np.uint8)], -1), 'RGBA')
+            rough = 1 - np.clip(g[..., 3] * gloss_scale, 0, 1)
+            mr = np.stack([np.zeros_like(rough), rough, metal], -1)
+            mr_img = Image.fromarray((mr * 255).astype(np.uint8), 'RGB').resize((max(1, base.size[0] // 2), max(1, base.size[1] // 2)), Image.LANCZOS)
+            name = f'{key}.webp'
+            out.convert('RGBA' if alpha else 'RGB').save(os.path.join(self.out, 'tex', name), 'WEBP', quality=82, method=6)
+            mr_img.save(os.path.join(self.out, 'tex', f'{key}-mr.webp'), 'WEBP', quality=90, method=6)
+            self.textures[key] = ('tex/' + name, f'tex/{key}-mr.webp')
+        return self.textures[key]
+
     def material(self, mat):
         props = {k: v for k, v in mat.m_SavedProperties.m_TexEnvs}
         floats = {k: v for k, v in mat.m_SavedProperties.m_Floats}
@@ -135,8 +167,14 @@ class Exporter:
         elif '_ALPHATEST_ON' in keywords or 'cutout' in shader.lower() or 'twig' in mat.m_Name.lower():
             out['cutoff'] = float(floats.get('_Cutoff', 0.5))
         alpha = 'blend' in out or 'cutoff' in out
+        spec = props.get('_SpecGlossMap')
+        if spec is not None and spec.m_Texture.path_id and main is not None and main.m_Texture.path_id:
+            try:
+                out['map'], out['mr'] = self.specgloss(main.m_Texture, spec.m_Texture, float(floats.get('_GlossMapScale', 1)), alpha)
+            except FileNotFoundError:
+                pass
         for key, ptr, kind in (('map', main, 'color'), ('normal', bump, 'normal')):
-            if ptr is None or not ptr.m_Texture.path_id:
+            if ptr is None or not ptr.m_Texture.path_id or key in out:
                 continue
             try:
                 out[key] = self.texture(ptr.m_Texture, kind, alpha and kind == 'color')
@@ -418,6 +456,10 @@ class Exporter:
                     m['pbrMetallicRoughness']['baseColorTexture'] = {'index': tex_index(mat['map'])}
                 if 'normal' in mat:
                     m['normalTexture'] = {'index': tex_index(mat['normal'])}
+                if 'mr' in mat:
+                    m['pbrMetallicRoughness']['metallicRoughnessTexture'] = {'index': tex_index(mat['mr'])}
+                    m['pbrMetallicRoughness']['metallicFactor'] = 1
+                    m['pbrMetallicRoughness']['roughnessFactor'] = 1
                 if 'cutoff' in mat:
                     m['alphaMode'] = 'MASK'
                     m['alphaCutoff'] = mat['cutoff']
@@ -502,7 +544,7 @@ if manifest:
     with open(os.path.join(out, 'conditionals.json'), 'w') as f:
         json.dump(manifest, f, ensure_ascii=False, separators=(',', ':'))
 if not only:
-    used = set(ex.textures.values())
+    used = {t for v in ex.textures.values() for t in (v if isinstance(v, tuple) else (v,))}
     for name in os.listdir(os.path.join(out, 'tex')):
         if 'tex/' + name not in used:
             os.remove(os.path.join(out, 'tex', name))

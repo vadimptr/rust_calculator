@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
 import type { DoorAnim } from '../blueprint/meshes.ts';
 import { onModelLoaded, pieceManifest } from '../blueprint/models.ts';
@@ -234,6 +235,10 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     // правая кнопка — радиальное меню стройки; сдвиг камеры — средней кнопкой
     controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: null as unknown as THREE.MOUSE };
 
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.45;
+    pmrem.dispose();
     scene.add(new THREE.HemisphereLight(0xfff4e0, 0x3a3024, 1.6));
     scene.add(new THREE.AmbientLight(0xffffff, 0.35));
     const sun = new THREE.DirectionalLight(0xfff1d6, 2.4);
