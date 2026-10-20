@@ -442,3 +442,21 @@ test('a ramp on an upper floor: low and high variants share one anchor, so R swi
   assert.equal(anchors.size, 4);
   for (const rises of anchors.values()) assert.deepEqual(rises.sort(), [0, 0.75]);
 });
+
+test('a ramp does not hang in the air: on a floor it falls with the floor, by a raised foundation it rests on its edge, at the ground it stands', async () => {
+  const { computeStability } = await import('./stability.ts');
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'square-floor', { to: 'w1', socket: 'top', selfSocket: 'edge:0' });
+  bp = addElement(bp, 'ramp', { to: 'c1', socket: 'top' });
+  const { blueprint, collapsed } = settle(removeElement(bp, 'w1'));
+  assert.deepEqual(collapsed.sort(), ['c1', 'rp1']);
+  assert.deepEqual(blueprint.elements.map(e => e.id), ['f1']);
+  let raised = newBlueprint();
+  raised = addElement(raised, 'square-foundation', { to: 'f1', socket: 'edge:0', selfSocket: 'edge:2', rise: 1.5 });
+  raised = addElement(raised, 'ramp', { to: 'f2', socket: 'edge:0', selfSocket: 'edge:0' });
+  raised = addElement(raised, 'ramp', { to: 'rp1', socket: 'edge:2' });
+  const st = computeStability(resolveBlueprint(raised).resolved);
+  assert.ok(st.get('rp1')! > 0.05 && st.get('rp1')! < 1, String(st.get('rp1')));
+  assert.equal(st.get('rp2'), 1);
+});

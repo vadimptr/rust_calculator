@@ -11,7 +11,7 @@
  * каждое ребро (верх стены, соседний пол, конёк крыши); крыши — её низкое ребро; лестницы — ячейка
  * под ней.
  */
-import { BLOCK_FEMALE_Y, KINDS, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
+import { BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedElement } from './types.ts';
 
 /** Коэффициенты `support` из префабов игры (2026-09). */
@@ -56,12 +56,16 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
   const wallTop = new Map<string, string[]>();
   const roofHigh = new Map<string, string[]>();
   const cellAt = new Map<string, string[]>();
+  const rampLow = new Map<string, string[]>();
   const push = (m: Map<string, string[]>, p: [number, number, number], id: string) => { const k = key(p); m.set(k, [...(m.get(k) ?? []), id]); };
   for (const e of els) {
     const info = KINDS[e.kind];
     if (info.category === 'cell') {
       for (let k = 0; k < edgeCount(info.shape!); k++) push(cellEdge, edgeMid(e, k), e.id);
       push(cellAt, e.position, e.id);
+    } else if (info.category === 'ramp') {
+      const low = edgeMid(e, 2);
+      push(rampLow, [low[0], low[1] - RAMP_DROP[e.kind]!, low[2]], e.id);
     } else if (info.category === 'wallType') {
       push(wallTop, [e.position[0], e.position[1] + wallHeight(e.kind), e.position[2]], e.id);
     } else if (info.category === 'roof' && info.shape === 'square') {
@@ -77,7 +81,10 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
     if (info.category === 'ramp') {
       const base = e.position[1] - BLOCK_FEMALE_Y - RAMP_MALE_H[e.kind]!;
       const under = [...(cellAt.get(key([e.position[0], base, e.position[2]])) ?? []), ...(e.kind === 'ramp' ? cellAt.get(key([e.position[0], base - RAMP_HIGH_RISE, e.position[2]])) ?? [] : [])];
-      out.set(e.id, under.length ? [{ factor: SUPPORT.stairs, candidates: under }] : null);
+      if (under.length) { out.set(e.id, [{ factor: SUPPORT.stairs, candidates: under }]); continue; }
+      if (e.position[1] - RAMP_DROP[e.kind]! <= 0.01) { out.set(e.id, null); continue; }
+      const high = edgeMid(e, 0);
+      out.set(e.id, [{ factor: SUPPORT.stairs, candidates: [...(cellEdge.get(key(high)) ?? []), ...(rampLow.get(key(high)) ?? [])].filter(id => id !== e.id) }]);
       continue;
     }
     const not = (ids: string[] | undefined) => (ids ?? []).filter(id => id !== e.id);
