@@ -3,7 +3,7 @@
   "formatVersion": "2.0",
   "meta": {
     "name": "Дом с обороной крыши",
-    "description": "Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные. Вход через треугольник-шлюз в узловой зал, из зала по гаражке в каждую комнату: к шкафу (центр и задняя клетка), в лут (левая колонка) и в лестничную (правая колонка). Второй этаж — стрелковый, с амбразурами по центру каждой стороны. Два подъёма на крышу в передних углах, каждый выходит в будку с гаражкой наружу и оконным проёмом с амбразурой, который смотрит через крышу: высадившихся можно отстрелить, не открывая дверь, будки прикрывают друг друга. Между будками — крытый пик на фасад: полустена по краю, над ней щель для стрельбы, снаружи на верхе полустены пол-козырёк против огня снизу, сверху потолок; обе будки выходят гаражками прямо в него. Твёрдая сторона каждой стены смотрит от более защищённой комнаты к менее защищённой.",
+    "description": "Металлический дом 3×3 с хонейкомбом по первому этажу, все двери гаражные. Вход — шлюз из двух треугольников кольца с гаражкой наружу, затем гаражка в узловой зал; из зала по гаражке в каждую комнату: к шкафу (центр и задняя клетка), в лут (левая колонка) и в лестничную (правая колонка). Второй этаж — стрелковый, с амбразурами по центру каждой стороны. Два подъёма на крышу в передних углах — утопленные пики: со второго этажа гаражка в угловую комнату, в ней две винтовые лестницы. Стоя на первой (на 1,5 м ниже крыши), видишь поверхность крыши на уровне глаз через щель на всю ширину клетки и отстреливаешь высадившихся, торчит только голова; над щелью потолок на полустенах-козырьках. Вторая лестница выводит прямо на крышу. Твёрдая сторона каждой стены смотрит от более защищённой комнаты к менее защищённой.",
     "gameVersion": "2026-09",
     "tags": [
       "example",
@@ -201,8 +201,8 @@
     {
       "id": "w2",
       "kind": "wall",
-      "position": [0.75, 0, -5.799],
-      "rotation": 150
+      "position": [2.25, 0, -5.799],
+      "rotation": 210
     },
     {
       "id": "w3",
@@ -277,143 +277,144 @@
       "rotation": 270
     },
     {
-      "id": "w15",
-      "kind": "wall",
+      "id": "fr1",
+      "kind": "wall-frame",
       "position": [1.5, 0, -7.098],
-      "rotation": 270
+      "rotation": 270,
+      "label": "Вход"
     },
     {
-      "id": "w16",
+      "id": "w15",
       "kind": "wall",
       "position": [1.5, 0, 7.098],
       "rotation": 90
     },
     {
-      "id": "w17",
+      "id": "w16",
       "kind": "wall",
       "position": [7.098, 0, -1.5],
       "rotation": 0
     },
     {
-      "id": "w18",
+      "id": "w17",
       "kind": "wall",
       "position": [7.098, 0, 1.5],
       "rotation": 0
     },
     {
-      "id": "w19",
+      "id": "w18",
       "kind": "wall",
       "position": [-4.5, 0, 0],
       "rotation": 180
     },
     {
-      "id": "w20",
+      "id": "w19",
       "kind": "wall",
       "position": [-3, 0, 4.5],
       "rotation": 90
     },
     {
-      "id": "w21",
+      "id": "w20",
       "kind": "wall",
       "position": [-4.5, 0, 3],
       "rotation": 180
     },
     {
-      "id": "fr1",
+      "id": "fr2",
       "kind": "wall-frame",
       "position": [0, 0, -4.5],
       "rotation": 270,
       "label": "Шлюз → зал"
     },
     {
-      "id": "w22",
+      "id": "w21",
       "kind": "wall",
       "position": [0, 0, 4.5],
       "rotation": 90
     },
     {
-      "id": "w23",
+      "id": "w22",
       "kind": "wall",
       "position": [3, 0, -4.5],
       "rotation": 270
     },
     {
-      "id": "w24",
+      "id": "w23",
       "kind": "wall",
       "position": [4.5, 0, -3],
       "rotation": 0
     },
     {
-      "id": "w25",
+      "id": "w24",
       "kind": "wall",
       "position": [4.5, 0, 0],
       "rotation": 0
     },
     {
-      "id": "w26",
+      "id": "w25",
       "kind": "wall",
       "position": [4.5, 0, 3],
       "rotation": 0
     },
     {
-      "id": "w27",
+      "id": "w26",
       "kind": "wall",
       "position": [3, 0, 4.5],
       "rotation": 90
     },
     {
-      "id": "w28",
+      "id": "w27",
       "kind": "wall",
       "position": [-4.5, 0, -3],
       "rotation": 180
     },
     {
-      "id": "w29",
+      "id": "w28",
       "kind": "wall",
       "position": [-3, 0, -4.5],
       "rotation": 270
     },
     {
-      "id": "fr2",
+      "id": "fr3",
       "kind": "wall-frame",
       "position": [0, 0, -1.5],
       "rotation": 270,
       "label": "Зал → шкаф"
     },
     {
-      "id": "fr3",
+      "id": "fr4",
       "kind": "wall-frame",
       "position": [-1.5, 0, -3],
       "rotation": 0,
       "label": "Зал → лут"
     },
     {
-      "id": "fr4",
+      "id": "fr5",
       "kind": "wall-frame",
       "position": [1.5, 0, -3],
       "rotation": 180,
       "label": "Зал → лестница"
     },
     {
-      "id": "w30",
+      "id": "w29",
       "kind": "wall",
       "position": [-1.5, 0, 0],
       "rotation": 180
     },
     {
-      "id": "w31",
+      "id": "w30",
       "kind": "wall",
       "position": [1.5, 0, 0],
       "rotation": 0
     },
     {
-      "id": "w32",
+      "id": "w31",
       "kind": "wall",
       "position": [-1.5, 0, 3],
       "rotation": 180
     },
     {
-      "id": "w33",
+      "id": "w32",
       "kind": "wall",
       "position": [1.5, 0, 3],
       "rotation": 0
@@ -506,7 +507,7 @@
       "id": "tc6",
       "kind": "triangle-floor",
       "position": [3, 3, -5.366],
-      "rotation": 330
+      "rotation": 210
     },
     {
       "id": "tc7",
@@ -572,7 +573,7 @@
       "id": "tc17",
       "kind": "triangle-floor",
       "position": [1.5, 3, -6.232],
-      "rotation": 150
+      "rotation": 30
     },
     {
       "id": "tc18",
@@ -600,13 +601,13 @@
       "label": "Бойница второго этажа"
     },
     {
-      "id": "w34",
+      "id": "w33",
       "kind": "wall",
       "position": [-3, 3, 4.5],
       "rotation": 90
     },
     {
-      "id": "w35",
+      "id": "w34",
       "kind": "wall",
       "position": [-4.5, 3, 3],
       "rotation": 180
@@ -626,13 +627,13 @@
       "label": "Бойница второго этажа"
     },
     {
-      "id": "w36",
+      "id": "w35",
       "kind": "wall",
       "position": [3, 3, -4.5],
       "rotation": 270
     },
     {
-      "id": "w37",
+      "id": "w36",
       "kind": "wall",
       "position": [4.5, 3, -3],
       "rotation": 0
@@ -645,40 +646,78 @@
       "label": "Бойница второго этажа"
     },
     {
-      "id": "w38",
+      "id": "w37",
       "kind": "wall",
       "position": [4.5, 3, 3],
       "rotation": 0
     },
     {
-      "id": "w39",
+      "id": "w38",
       "kind": "wall",
       "position": [3, 3, 4.5],
       "rotation": 90
     },
     {
-      "id": "w40",
+      "id": "w39",
       "kind": "wall",
       "position": [-4.5, 3, -3],
       "rotation": 180
     },
     {
-      "id": "w41",
+      "id": "w40",
       "kind": "wall",
       "position": [-3, 3, -4.5],
       "rotation": 270
     },
     {
-      "id": "us2",
-      "kind": "u-shaped-stairs",
+      "id": "fr6",
+      "kind": "wall-frame",
+      "position": [-1.5, 3, -3],
+      "rotation": 180,
+      "label": "Вход в пик"
+    },
+    {
+      "id": "w41",
+      "kind": "wall",
+      "position": [-3, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "ss1",
+      "kind": "spiral-stairs",
       "position": [-3, 3, -3],
       "rotation": 180
     },
     {
-      "id": "us3",
-      "kind": "u-shaped-stairs",
+      "id": "ss2",
+      "kind": "spiral-stairs",
+      "position": [-3, 4.5, -3],
+      "rotation": 0
+    },
+    {
+      "id": "fr7",
+      "kind": "wall-frame",
+      "position": [1.5, 3, -3],
+      "rotation": 0,
+      "label": "Вход в пик"
+    },
+    {
+      "id": "w42",
+      "kind": "wall",
+      "position": [3, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "ss3",
+      "kind": "spiral-stairs",
       "position": [3, 3, -3],
       "rotation": 270
+    },
+    {
+      "id": "ss4",
+      "kind": "spiral-stairs",
+      "position": [3, 4.5, -3],
+      "rotation": 90
     },
     {
       "id": "c9",
@@ -723,88 +762,46 @@
       "rotation": 180
     },
     {
-      "id": "fr5",
-      "kind": "wall-frame",
-      "position": [-1.5, 6, -3],
-      "rotation": 0,
-      "label": "Выход на крышу"
-    },
-    {
-      "id": "wf5",
-      "kind": "window-frame",
-      "position": [-3, 6, -1.5],
-      "rotation": 90,
-      "label": "Амбразура на крышу"
-    },
-    {
-      "id": "w42",
-      "kind": "wall",
+      "id": "hw1",
+      "kind": "half-wall",
       "position": [-4.5, 6, -3],
-      "rotation": 180
+      "rotation": 180,
+      "label": "Козырёк пика"
     },
     {
-      "id": "w43",
-      "kind": "wall",
+      "id": "hw2",
+      "kind": "half-wall",
       "position": [-3, 6, -4.5],
-      "rotation": 270
+      "rotation": 270,
+      "label": "Козырёк пика"
     },
     {
       "id": "c16",
       "kind": "square-floor",
-      "position": [-3, 9, -3],
-      "rotation": 0
-    },
-    {
-      "id": "fr6",
-      "kind": "wall-frame",
-      "position": [1.5, 6, -3],
+      "position": [-3, 7.5, -3],
       "rotation": 180,
-      "label": "Выход на крышу"
+      "label": "Потолок пика"
     },
     {
-      "id": "wf6",
-      "kind": "window-frame",
-      "position": [3, 6, -1.5],
-      "rotation": 90,
-      "label": "Амбразура на крышу"
-    },
-    {
-      "id": "w44",
-      "kind": "wall",
-      "position": [4.5, 6, -3],
-      "rotation": 0
-    },
-    {
-      "id": "w45",
-      "kind": "wall",
+      "id": "hw3",
+      "kind": "half-wall",
       "position": [3, 6, -4.5],
-      "rotation": 270
+      "rotation": 270,
+      "label": "Козырёк пика"
+    },
+    {
+      "id": "hw4",
+      "kind": "half-wall",
+      "position": [4.5, 6, -3],
+      "rotation": 0,
+      "label": "Козырёк пика"
     },
     {
       "id": "c17",
       "kind": "square-floor",
-      "position": [3, 9, -3],
-      "rotation": 180
-    },
-    {
-      "id": "hw1",
-      "kind": "half-wall",
-      "position": [0, 6, -4.5],
+      "position": [3, 7.5, -3],
       "rotation": 270,
-      "label": "Пик"
-    },
-    {
-      "id": "c18",
-      "kind": "square-floor",
-      "position": [0, 7.5, -6],
-      "rotation": 90,
-      "label": "Козырёк пика"
-    },
-    {
-      "id": "c19",
-      "kind": "square-floor",
-      "position": [0, 9, -3],
-      "rotation": 180
+      "label": "Потолок пика"
     }
   ],
   "deployables": [
@@ -849,6 +846,16 @@
       "opens": "inward"
     },
     {
+      "id": "d5",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr5",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
       "id": "cup1",
       "kind": "tool-cupboard",
       "attach": {
@@ -859,7 +866,7 @@
       "rotation": 90
     },
     {
-      "id": "d5",
+      "id": "d6",
       "kind": "metal-embrasure",
       "attach": {
         "to": "wf1",
@@ -869,7 +876,7 @@
       "opens": "inward"
     },
     {
-      "id": "d6",
+      "id": "d7",
       "kind": "metal-embrasure",
       "attach": {
         "to": "wf2",
@@ -879,7 +886,7 @@
       "opens": "inward"
     },
     {
-      "id": "d7",
+      "id": "d8",
       "kind": "metal-embrasure",
       "attach": {
         "to": "wf3",
@@ -889,7 +896,7 @@
       "opens": "inward"
     },
     {
-      "id": "d8",
+      "id": "d9",
       "kind": "metal-embrasure",
       "attach": {
         "to": "wf4",
@@ -899,27 +906,7 @@
       "opens": "inward"
     },
     {
-      "id": "d9",
-      "kind": "garage-door",
-      "attach": {
-        "to": "fr5",
-        "socket": "opening"
-      },
-      "hinge": "left",
-      "opens": "inward"
-    },
-    {
       "id": "d10",
-      "kind": "metal-embrasure",
-      "attach": {
-        "to": "wf5",
-        "socket": "opening"
-      },
-      "hinge": "left",
-      "opens": "inward"
-    },
-    {
-      "id": "d11",
       "kind": "garage-door",
       "attach": {
         "to": "fr6",
@@ -929,10 +916,10 @@
       "opens": "inward"
     },
     {
-      "id": "d12",
-      "kind": "metal-embrasure",
+      "id": "d11",
+      "kind": "garage-door",
       "attach": {
-        "to": "wf6",
+        "to": "fr7",
         "socket": "opening"
       },
       "hinge": "left",

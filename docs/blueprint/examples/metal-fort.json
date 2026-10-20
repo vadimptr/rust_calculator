@@ -361,227 +361,228 @@
       "rotation": 270
     },
     {
-      "id": "w14",
-      "kind": "wall",
+      "id": "fr1",
+      "kind": "wall-frame",
       "position": [0, 0, -8.598],
-      "rotation": 270
+      "rotation": 270,
+      "label": "Внешняя гаражка"
     },
     {
-      "id": "w15",
+      "id": "w14",
       "kind": "wall",
       "position": [0, 0, 8.598],
       "rotation": 90
     },
     {
-      "id": "w16",
+      "id": "w15",
       "kind": "wall",
       "position": [3, 0, -8.598],
       "rotation": 270
     },
     {
-      "id": "w17",
+      "id": "w16",
       "kind": "wall",
       "position": [3, 0, 8.598],
       "rotation": 90
     },
     {
-      "id": "w18",
+      "id": "w17",
       "kind": "wall",
       "position": [8.598, 0, -3],
       "rotation": 0
     },
     {
-      "id": "w19",
+      "id": "w18",
       "kind": "wall",
       "position": [8.598, 0, 0],
       "rotation": 0
     },
     {
-      "id": "w20",
+      "id": "w19",
       "kind": "wall",
       "position": [8.598, 0, 3],
       "rotation": 0
     },
     {
-      "id": "w21",
+      "id": "w20",
       "kind": "wall",
       "position": [-6, 0, -1.5],
       "rotation": 180
     },
     {
-      "id": "w22",
+      "id": "w21",
       "kind": "wall",
       "position": [-6, 0, 1.5],
       "rotation": 180
     },
     {
-      "id": "w23",
+      "id": "w22",
       "kind": "wall",
       "position": [-4.5, 0, 6],
       "rotation": 90
     },
     {
-      "id": "w24",
+      "id": "w23",
       "kind": "wall",
       "position": [-6, 0, 4.5],
       "rotation": 180
     },
     {
-      "id": "fr1",
+      "id": "fr2",
       "kind": "wall-frame",
       "position": [-1.5, 0, -6],
       "rotation": 270,
       "label": "Шлюз"
     },
     {
-      "id": "w25",
+      "id": "w24",
       "kind": "wall",
       "position": [-1.5, 0, 6],
       "rotation": 90
     },
     {
-      "id": "w26",
+      "id": "w25",
       "kind": "wall",
       "position": [1.5, 0, -6],
       "rotation": 270
     },
     {
-      "id": "w27",
+      "id": "w26",
       "kind": "wall",
       "position": [1.5, 0, 6],
       "rotation": 90
     },
     {
-      "id": "w28",
+      "id": "w27",
       "kind": "wall",
       "position": [4.5, 0, -6],
       "rotation": 270
     },
     {
-      "id": "w29",
+      "id": "w28",
       "kind": "wall",
       "position": [6, 0, -4.5],
       "rotation": 0
     },
     {
-      "id": "w30",
+      "id": "w29",
       "kind": "wall",
       "position": [6, 0, -1.5],
       "rotation": 0
     },
     {
-      "id": "w31",
+      "id": "w30",
       "kind": "wall",
       "position": [6, 0, 1.5],
       "rotation": 0
     },
     {
-      "id": "w32",
+      "id": "w31",
       "kind": "wall",
       "position": [6, 0, 4.5],
       "rotation": 0
     },
     {
-      "id": "w33",
+      "id": "w32",
       "kind": "wall",
       "position": [4.5, 0, 6],
       "rotation": 90
     },
     {
-      "id": "w34",
+      "id": "w33",
       "kind": "wall",
       "position": [-6, 0, -4.5],
       "rotation": 180
     },
     {
-      "id": "w35",
+      "id": "w34",
       "kind": "wall",
       "position": [-4.5, 0, -6],
       "rotation": 270
     },
     {
-      "id": "fr2",
+      "id": "fr3",
       "kind": "wall-frame",
       "position": [-1.5, 0, -3],
       "rotation": 270,
       "label": "Дверь в хранилище"
     },
     {
-      "id": "w36",
+      "id": "w35",
       "kind": "wall",
       "position": [1.5, 0, -3],
       "rotation": 270
     },
     {
-      "id": "w37",
+      "id": "w36",
       "kind": "wall",
       "position": [-3, 0, -1.5],
       "rotation": 180
     },
     {
-      "id": "w38",
+      "id": "w37",
       "kind": "wall",
       "position": [-3, 0, 1.5],
       "rotation": 180
     },
     {
-      "id": "w39",
+      "id": "w38",
       "kind": "wall",
       "position": [3, 0, -1.5],
       "rotation": 0
     },
     {
-      "id": "w40",
+      "id": "w39",
       "kind": "wall",
       "position": [3, 0, 1.5],
       "rotation": 0
     },
     {
-      "id": "w41",
+      "id": "w40",
       "kind": "wall",
       "position": [-1.5, 0, 3],
       "rotation": 90
     },
     {
-      "id": "w42",
+      "id": "w41",
       "kind": "wall",
       "position": [1.5, 0, 3],
       "rotation": 90
     },
     {
-      "id": "fr3",
+      "id": "fr4",
       "kind": "wall-frame",
       "position": [-3, 0, -4.5],
       "rotation": 0,
       "label": "Дверь в лут"
     },
     {
-      "id": "w43",
+      "id": "w42",
       "kind": "wall",
       "position": [0, 0, -4.5],
       "rotation": 180
     },
     {
-      "id": "fr4",
+      "id": "fr5",
       "kind": "wall-frame",
       "position": [0, 0, -1.5],
       "rotation": 0,
       "label": "Внутренняя дверь хранилища"
     },
     {
-      "id": "w44",
+      "id": "w43",
       "kind": "wall",
       "position": [0, 0, 1.5],
       "rotation": 0
     },
     {
-      "id": "w45",
+      "id": "w44",
       "kind": "wall",
       "position": [-1.5, 0, 0],
       "rotation": 90
     },
     {
-      "id": "fr5",
+      "id": "fr6",
       "kind": "wall-frame",
       "position": [1.5, 0, 0],
       "rotation": 90
@@ -851,265 +852,265 @@
       "rotation": 0
     },
     {
-      "id": "w46",
+      "id": "w45",
       "kind": "wall",
       "position": [-6, 3, -1.5],
       "rotation": 180
     },
     {
-      "id": "w47",
+      "id": "w46",
       "kind": "wall",
       "position": [-6, 3, 1.5],
       "rotation": 180
     },
     {
-      "id": "w48",
+      "id": "w47",
       "kind": "wall",
       "position": [-4.5, 3, 6],
       "rotation": 90
     },
     {
-      "id": "w49",
+      "id": "w48",
       "kind": "wall",
       "position": [-6, 3, 4.5],
       "rotation": 180
     },
     {
-      "id": "w50",
+      "id": "w49",
       "kind": "wall",
       "position": [-1.5, 3, -6],
       "rotation": 270
     },
     {
-      "id": "w51",
+      "id": "w50",
       "kind": "wall",
       "position": [-1.5, 3, 6],
       "rotation": 90
     },
     {
-      "id": "w52",
+      "id": "w51",
       "kind": "wall",
       "position": [1.5, 3, -6],
       "rotation": 270
     },
     {
-      "id": "w53",
+      "id": "w52",
       "kind": "wall",
       "position": [1.5, 3, 6],
       "rotation": 90
     },
     {
-      "id": "w54",
+      "id": "w53",
       "kind": "wall",
       "position": [4.5, 3, -6],
       "rotation": 270
     },
     {
-      "id": "w55",
+      "id": "w54",
       "kind": "wall",
       "position": [6, 3, -4.5],
       "rotation": 0
     },
     {
-      "id": "w56",
+      "id": "w55",
       "kind": "wall",
       "position": [6, 3, -1.5],
       "rotation": 0
     },
     {
-      "id": "w57",
+      "id": "w56",
       "kind": "wall",
       "position": [6, 3, 1.5],
       "rotation": 0
     },
     {
-      "id": "w58",
+      "id": "w57",
       "kind": "wall",
       "position": [6, 3, 4.5],
       "rotation": 0
     },
     {
-      "id": "w59",
+      "id": "w58",
       "kind": "wall",
       "position": [4.5, 3, 6],
       "rotation": 90
     },
     {
-      "id": "w60",
+      "id": "w59",
       "kind": "wall",
       "position": [-6, 3, -4.5],
       "rotation": 180
     },
     {
-      "id": "w61",
+      "id": "w60",
       "kind": "wall",
       "position": [-4.5, 3, -6],
       "rotation": 270
     },
     {
-      "id": "w62",
+      "id": "w61",
       "kind": "wall",
       "position": [-5.25, 3, 7.299],
       "rotation": 150
     },
     {
-      "id": "w63",
+      "id": "w62",
       "kind": "wall",
       "position": [-7.299, 3, 5.25],
       "rotation": 120
     },
     {
-      "id": "w64",
+      "id": "w63",
       "kind": "wall",
       "position": [5.25, 3, -7.299],
       "rotation": 330
     },
     {
-      "id": "w65",
+      "id": "w64",
       "kind": "wall",
       "position": [7.299, 3, -5.25],
       "rotation": 300
     },
     {
-      "id": "w66",
+      "id": "w65",
       "kind": "wall",
       "position": [7.299, 3, 5.25],
       "rotation": 60
     },
     {
-      "id": "w67",
+      "id": "w66",
       "kind": "wall",
       "position": [5.25, 3, 7.299],
       "rotation": 30
     },
     {
-      "id": "w68",
+      "id": "w67",
       "kind": "wall",
       "position": [-7.299, 3, -5.25],
       "rotation": 240
     },
     {
-      "id": "w69",
+      "id": "w68",
       "kind": "wall",
       "position": [-5.25, 3, -7.299],
       "rotation": 210
     },
     {
-      "id": "w70",
+      "id": "w69",
       "kind": "wall",
       "position": [-8.598, 3, 0],
       "rotation": 180
     },
     {
-      "id": "w71",
+      "id": "w70",
       "kind": "wall",
       "position": [-8.598, 3, -3],
       "rotation": 180
     },
     {
-      "id": "w72",
+      "id": "w71",
       "kind": "wall",
       "position": [-8.598, 3, 3],
       "rotation": 180
     },
     {
-      "id": "w73",
+      "id": "w72",
       "kind": "wall",
       "position": [-3, 3, 8.598],
       "rotation": 90
     },
     {
-      "id": "w74",
+      "id": "w73",
       "kind": "wall",
       "position": [-3, 3, -8.598],
       "rotation": 270
     },
     {
-      "id": "w75",
+      "id": "w74",
       "kind": "wall",
       "position": [0, 3, -8.598],
       "rotation": 270
     },
     {
-      "id": "w76",
+      "id": "w75",
       "kind": "wall",
       "position": [0, 3, 8.598],
       "rotation": 90
     },
     {
-      "id": "w77",
+      "id": "w76",
       "kind": "wall",
       "position": [3, 3, -8.598],
       "rotation": 270
     },
     {
-      "id": "w78",
+      "id": "w77",
       "kind": "wall",
       "position": [3, 3, 8.598],
       "rotation": 90
     },
     {
-      "id": "w79",
+      "id": "w78",
       "kind": "wall",
       "position": [8.598, 3, -3],
       "rotation": 0
     },
     {
-      "id": "w80",
+      "id": "w79",
       "kind": "wall",
       "position": [8.598, 3, 0],
       "rotation": 0
     },
     {
-      "id": "w81",
+      "id": "w80",
       "kind": "wall",
       "position": [8.598, 3, 3],
       "rotation": 0
     },
     {
-      "id": "w82",
+      "id": "w81",
       "kind": "wall",
       "position": [-3, 3, -1.5],
       "rotation": 180
     },
     {
-      "id": "w83",
+      "id": "w82",
       "kind": "wall",
       "position": [-3, 3, 1.5],
       "rotation": 180
     },
     {
-      "id": "w84",
+      "id": "w83",
       "kind": "wall",
       "position": [3, 3, -1.5],
       "rotation": 0
     },
     {
-      "id": "w85",
+      "id": "w84",
       "kind": "wall",
       "position": [3, 3, 1.5],
       "rotation": 0
     },
     {
-      "id": "w86",
+      "id": "w85",
       "kind": "wall",
       "position": [-1.5, 3, -3],
       "rotation": 270
     },
     {
-      "id": "w87",
+      "id": "w86",
       "kind": "wall",
       "position": [1.5, 3, -3],
       "rotation": 270
     },
     {
-      "id": "w88",
+      "id": "w87",
       "kind": "wall",
       "position": [-1.5, 3, 3],
       "rotation": 90
     },
     {
-      "id": "w89",
+      "id": "w88",
       "kind": "wall",
       "position": [1.5, 3, 3],
       "rotation": 90
@@ -1379,149 +1380,149 @@
       "rotation": 0
     },
     {
-      "id": "w90",
+      "id": "w89",
       "kind": "wall",
       "position": [-6, 6, -1.5],
       "rotation": 180
     },
     {
-      "id": "fr6",
+      "id": "fr7",
       "kind": "wall-frame",
       "position": [-6, 6, 1.5],
       "rotation": 180,
       "label": "Выход на галерею"
     },
     {
-      "id": "w91",
+      "id": "w90",
       "kind": "wall",
       "position": [-4.5, 6, 6],
       "rotation": 90
     },
     {
-      "id": "w92",
+      "id": "w91",
       "kind": "wall",
       "position": [-6, 6, 4.5],
       "rotation": 180
     },
     {
-      "id": "w93",
+      "id": "w92",
       "kind": "wall",
       "position": [-1.5, 6, -6],
       "rotation": 270
     },
     {
-      "id": "w94",
+      "id": "w93",
       "kind": "wall",
       "position": [-1.5, 6, 6],
       "rotation": 90
     },
     {
-      "id": "fr7",
+      "id": "fr8",
       "kind": "wall-frame",
       "position": [1.5, 6, -6],
       "rotation": 270,
       "label": "Выход на галерею"
     },
     {
-      "id": "fr8",
+      "id": "fr9",
       "kind": "wall-frame",
       "position": [1.5, 6, 6],
       "rotation": 90,
       "label": "Выход на галерею"
     },
     {
-      "id": "w95",
+      "id": "w94",
       "kind": "wall",
       "position": [4.5, 6, -6],
       "rotation": 270
     },
     {
-      "id": "w96",
+      "id": "w95",
       "kind": "wall",
       "position": [6, 6, -4.5],
       "rotation": 0
     },
     {
-      "id": "w97",
+      "id": "w96",
       "kind": "wall",
       "position": [6, 6, -1.5],
       "rotation": 0
     },
     {
-      "id": "fr9",
+      "id": "fr10",
       "kind": "wall-frame",
       "position": [6, 6, 1.5],
       "rotation": 0,
       "label": "Выход на галерею"
     },
     {
-      "id": "w98",
+      "id": "w97",
       "kind": "wall",
       "position": [6, 6, 4.5],
       "rotation": 0
     },
     {
-      "id": "w99",
+      "id": "w98",
       "kind": "wall",
       "position": [4.5, 6, 6],
       "rotation": 90
     },
     {
-      "id": "w100",
+      "id": "w99",
       "kind": "wall",
       "position": [-6, 6, -4.5],
       "rotation": 180
     },
     {
-      "id": "w101",
+      "id": "w100",
       "kind": "wall",
       "position": [-4.5, 6, -6],
       "rotation": 270
     },
     {
-      "id": "w102",
+      "id": "w101",
       "kind": "wall",
       "position": [-5.25, 6, 7.299],
       "rotation": 150
     },
     {
-      "id": "w103",
+      "id": "w102",
       "kind": "wall",
       "position": [-7.299, 6, 5.25],
       "rotation": 120
     },
     {
-      "id": "w104",
+      "id": "w103",
       "kind": "wall",
       "position": [5.25, 6, -7.299],
       "rotation": 330
     },
     {
-      "id": "w105",
+      "id": "w104",
       "kind": "wall",
       "position": [7.299, 6, -5.25],
       "rotation": 300
     },
     {
-      "id": "w106",
+      "id": "w105",
       "kind": "wall",
       "position": [7.299, 6, 5.25],
       "rotation": 60
     },
     {
-      "id": "w107",
+      "id": "w106",
       "kind": "wall",
       "position": [5.25, 6, 7.299],
       "rotation": 30
     },
     {
-      "id": "w108",
+      "id": "w107",
       "kind": "wall",
       "position": [-7.299, 6, -5.25],
       "rotation": 240
     },
     {
-      "id": "w109",
+      "id": "w108",
       "kind": "wall",
       "position": [-5.25, 6, -7.299],
       "rotation": 210
@@ -1995,38 +1996,38 @@
       "rotation": 0
     },
     {
-      "id": "w110",
+      "id": "w109",
       "kind": "wall",
       "position": [-2.25, 0, -7.299],
+      "rotation": 30
+    },
+    {
+      "id": "w110",
+      "kind": "wall",
+      "position": [0.75, 0, -7.299],
       "rotation": 210
     },
     {
-      "id": "w111",
-      "kind": "wall",
-      "position": [-0.75, 0, -7.299],
-      "rotation": 330
-    },
-    {
-      "id": "fr10",
+      "id": "fr11",
       "kind": "wall-frame",
       "position": [-3, 9, -4.5],
       "rotation": 0,
       "label": "Выход на крышу"
     },
     {
-      "id": "w112",
+      "id": "w111",
       "kind": "wall",
       "position": [-4.5, 9, -3],
       "rotation": 90
     },
     {
-      "id": "w113",
+      "id": "w112",
       "kind": "wall",
       "position": [-6, 9, -4.5],
       "rotation": 180
     },
     {
-      "id": "w114",
+      "id": "w113",
       "kind": "wall",
       "position": [-4.5, 9, -6],
       "rotation": 270
@@ -2090,16 +2091,6 @@
       "opens": "inward"
     },
     {
-      "id": "cup1",
-      "kind": "tool-cupboard",
-      "attach": {
-        "to": "f1",
-        "socket": "top"
-      },
-      "offset": [-0.8, 0.8],
-      "rotation": 0
-    },
-    {
       "id": "d6",
       "kind": "garage-door",
       "attach": {
@@ -2108,6 +2099,16 @@
       },
       "hinge": "left",
       "opens": "inward"
+    },
+    {
+      "id": "cup1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [-0.8, 0.8],
+      "rotation": 0
     },
     {
       "id": "d7",
@@ -2134,6 +2135,16 @@
       "kind": "garage-door",
       "attach": {
         "to": "fr9",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d10",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr10",
         "socket": "opening"
       },
       "hinge": "left",
@@ -2236,10 +2247,10 @@
       }
     },
     {
-      "id": "d10",
+      "id": "d11",
       "kind": "garage-door",
       "attach": {
-        "to": "fr10",
+        "to": "fr11",
         "socket": "opening"
       },
       "hinge": "left",
