@@ -318,9 +318,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const aim = pt ?? (byRay.length ? ray.origin.map((v, i) => v + ray.dir[i] * tMin) as [number, number, number] : null);
       if (!aim) return false;
       const along = Math.hypot(ray.dir[0], ray.dir[2]) || 1;
-      const uphill = (p: Placement) => KINDS[ed.kind].category === 'ramp' && p.attach.socket === 'top'
-        ? (Math.cos((p.transform.rotation * Math.PI) / 180) * ray.dir[0] + Math.sin((p.transform.rotation * Math.PI) / 180) * ray.dir[2]) / along : 0;
-      const dist = (p: Placement) => aimDistance(ed.kind, p, aim) - uphill(p);
+      const facing = (p: Placement) => {
+        const cat = KINDS[ed.kind].category;
+        if (!(cat === 'wallType' || (cat === 'ramp' && p.attach.socket === 'top'))) return 0;
+        const a = (p.transform.rotation * Math.PI) / 180;
+        return (Math.cos(a) * ray.dir[0] + Math.sin(a) * ray.dir[2]) / along;
+      };
+      const dist = (p: Placement) => aimDistance(ed.kind, p, aim) - 0.5 * facing(p);
       byRay.sort((a, b) => (Math.abs(a.t - b.t) < 0.05 ? dist(a.c) - dist(b.c) : a.t - b.t));
       const sorted = byRay.length ? [...byRay.map(x => x.c), ...cands.filter(c => tOf(c) === Infinity)] : [...cands].sort((a, b) => dist(a) - dist(b));
       if (!byRay.length && !pt) return false;
@@ -441,6 +445,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
           .map(e => e.id);
         if (!hosts.includes(hit.id)) hosts.unshift(hit.id);
         const hitT = state.raycaster.ray.origin.distanceTo(world.localToWorld(hit.point.clone()));
+        const ray = aimRay();
+        for (const e of res.elements) {
+          if (hosts.includes(e.id) || KINDS[e.kind].category === 'stairs') continue;
+          const v = e.position.map((x, i) => x - ray.origin[i]);
+          const t = v[0] * ray.dir[0] + v[1] * ray.dir[1] + v[2] * ray.dir[2];
+          if (t > 0 && t < hitT + 3 && Math.hypot(v[0] - ray.dir[0] * t, v[1] - ray.dir[1] * t, v[2] - ray.dir[2] * t) < 4) hosts.push(e.id);
+        }
         return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt, hitT + 1.5) ? undefined : none();
       }
       // объект
