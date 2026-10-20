@@ -4,6 +4,7 @@ import house2x2 from '../../docs/blueprint/examples/house-2x2.json';
 import triangleWindow from '../../docs/blueprint/examples/triangle-tc-window.json';
 import bunker30 from '../../docs/blueprint/examples/bunker-30-rockets.json';
 import roofBunker from '../../docs/blueprint/examples/roof-bunker.json';
+import honeycomb2x2 from '../../docs/blueprint/examples/honeycomb-2x2.json';
 
 export interface BlueprintPreset {
   id: string;
@@ -21,4 +22,5 @@ export const BLUEPRINT_PRESETS: BlueprintPreset[] = [
   { id: 'triangle-tc-window', label: 'Шкаф в треугольнике с окном', data: triangleWindow },
   { id: 'bunker-30-rockets', label: 'Бункер на 30 ракет', data: bunker30 },
   { id: 'roof-bunker', label: 'Роф-бункер', data: roofBunker },
+  { id: 'honeycomb-2x2', label: 'Хонейкомб 2×2 (гайд)', data: honeycomb2x2 },
 ];

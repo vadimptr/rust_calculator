@@ -1,0 +1,523 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "Хонейкомб 2×2 в два этажа",
+    "description": "Соло-дом 2×2 по гайду rust-survival.com («2x2 honeycombed»): два этажа, хонейкомб по внешнему кольцу первого этажа (треугольные фундаменты с потолками), шкаф в углу первого этажа за металлической дверью, лут за второй дверью, U-лестница на второй этаж к бронированной двери, две бойницы с решётками у входа. Вход — через треугольник кольца, затем дверь в ядро.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "example",
+      "honeycomb",
+      "2x2",
+      "solo"
+    ]
+  },
+  "defaults": {
+    "grade": "stone"
+  },
+  "elements": [
+    {
+      "id": "f1",
+      "kind": "square-foundation",
+      "position": [0, 0, 0],
+      "rotation": 0,
+      "label": "Шкаф"
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "position": [3, 0, 0],
+      "rotation": 180,
+      "label": "Вход"
+    },
+    {
+      "id": "f3",
+      "kind": "square-foundation",
+      "position": [0, 0, 3],
+      "rotation": 270,
+      "label": "Лут"
+    },
+    {
+      "id": "f4",
+      "kind": "square-foundation",
+      "position": [3, 0, 3],
+      "rotation": 270,
+      "label": "Лестница"
+    },
+    {
+      "id": "tf1",
+      "kind": "triangle-foundation",
+      "position": [-2.366, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tf2",
+      "kind": "triangle-foundation",
+      "position": [0, 0, -2.366],
+      "rotation": 90
+    },
+    {
+      "id": "tf3",
+      "kind": "triangle-foundation",
+      "position": [3, 0, -2.366],
+      "rotation": 90
+    },
+    {
+      "id": "tf4",
+      "kind": "triangle-foundation",
+      "position": [5.366, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tf5",
+      "kind": "triangle-foundation",
+      "position": [0, 0, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tf6",
+      "kind": "triangle-foundation",
+      "position": [-2.366, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "tf7",
+      "kind": "triangle-foundation",
+      "position": [5.366, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "tf8",
+      "kind": "triangle-foundation",
+      "position": [3, 0, 5.366],
+      "rotation": 270
+    },
+    {
+      "id": "tf9",
+      "kind": "triangle-foundation",
+      "position": [-3.232, 0, 1.5],
+      "rotation": 300
+    },
+    {
+      "id": "tf10",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, -3.232],
+      "rotation": 150
+    },
+    {
+      "id": "tf11",
+      "kind": "triangle-foundation",
+      "position": [6.232, 0, 1.5],
+      "rotation": 240
+    },
+    {
+      "id": "tf12",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, 6.232],
+      "rotation": 210
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "position": [-2.799, 0, -0.75],
+      "rotation": 240
+    },
+    {
+      "id": "w2",
+      "kind": "window-frame",
+      "position": [-0.75, 0, -2.799],
+      "rotation": 210,
+      "grade": "metal"
+    },
+    {
+      "id": "dw1",
+      "kind": "doorway",
+      "position": [3.75, 0, -2.799],
+      "rotation": 330,
+      "grade": "metal"
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "position": [5.799, 0, -0.75],
+      "rotation": 300
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "position": [-0.75, 0, 5.799],
+      "rotation": 150
+    },
+    {
+      "id": "w5",
+      "kind": "wall",
+      "position": [-2.799, 0, 3.75],
+      "rotation": 120
+    },
+    {
+      "id": "w6",
+      "kind": "wall",
+      "position": [5.799, 0, 3.75],
+      "rotation": 60
+    },
+    {
+      "id": "w7",
+      "kind": "wall",
+      "position": [3.75, 0, 5.799],
+      "rotation": 30
+    },
+    {
+      "id": "w8",
+      "kind": "wall",
+      "position": [-4.098, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w9",
+      "kind": "window-frame",
+      "position": [1.5, 0, -4.098],
+      "rotation": 270,
+      "grade": "metal"
+    },
+    {
+      "id": "w10",
+      "kind": "wall",
+      "position": [7.098, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w11",
+      "kind": "wall",
+      "position": [1.5, 0, 7.098],
+      "rotation": 90
+    },
+    {
+      "id": "w12",
+      "kind": "wall",
+      "position": [-1.5, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w13",
+      "kind": "wall",
+      "position": [0, 0, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "dw2",
+      "kind": "doorway",
+      "position": [3, 0, -1.5],
+      "rotation": 270,
+      "grade": "metal"
+    },
+    {
+      "id": "w14",
+      "kind": "wall",
+      "position": [4.5, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w15",
+      "kind": "wall",
+      "position": [0, 0, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w16",
+      "kind": "wall",
+      "position": [-1.5, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "w17",
+      "kind": "wall",
+      "position": [4.5, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w18",
+      "kind": "wall",
+      "position": [3, 0, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "dw3",
+      "kind": "doorway",
+      "position": [1.5, 0, 0],
+      "rotation": 180,
+      "grade": "metal"
+    },
+    {
+      "id": "w19",
+      "kind": "wall",
+      "position": [0, 0, 1.5],
+      "rotation": 90
+    },
+    {
+      "id": "dw4",
+      "kind": "doorway",
+      "position": [1.5, 0, 3],
+      "rotation": 180,
+      "grade": "metal"
+    },
+    {
+      "id": "us1",
+      "kind": "u-shaped-stairs",
+      "position": [3, 0, 3],
+      "rotation": 270
+    },
+    {
+      "id": "c1",
+      "kind": "square-floor",
+      "position": [0, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "c2",
+      "kind": "square-floor",
+      "position": [3, 3, 0],
+      "rotation": 270
+    },
+    {
+      "id": "c3",
+      "kind": "square-floor",
+      "position": [0, 3, 3],
+      "rotation": 90
+    },
+    {
+      "id": "tc1",
+      "kind": "triangle-floor",
+      "position": [-2.366, 3, 0],
+      "rotation": 240
+    },
+    {
+      "id": "tc2",
+      "kind": "triangle-floor",
+      "position": [0, 3, -2.366],
+      "rotation": 210
+    },
+    {
+      "id": "tc3",
+      "kind": "triangle-floor",
+      "position": [3, 3, -2.366],
+      "rotation": 330
+    },
+    {
+      "id": "tc4",
+      "kind": "triangle-floor",
+      "position": [5.366, 3, 0],
+      "rotation": 300
+    },
+    {
+      "id": "tc5",
+      "kind": "triangle-floor",
+      "position": [0, 3, 5.366],
+      "rotation": 150
+    },
+    {
+      "id": "tc6",
+      "kind": "triangle-floor",
+      "position": [-2.366, 3, 3],
+      "rotation": 120
+    },
+    {
+      "id": "tc7",
+      "kind": "triangle-floor",
+      "position": [5.366, 3, 3],
+      "rotation": 60
+    },
+    {
+      "id": "tc8",
+      "kind": "triangle-floor",
+      "position": [3, 3, 5.366],
+      "rotation": 30
+    },
+    {
+      "id": "tc9",
+      "kind": "triangle-floor",
+      "position": [-3.232, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc10",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, -3.232],
+      "rotation": 270
+    },
+    {
+      "id": "tc11",
+      "kind": "triangle-floor",
+      "position": [6.232, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc12",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, 6.232],
+      "rotation": 90
+    },
+    {
+      "id": "w20",
+      "kind": "wall",
+      "position": [-1.5, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w21",
+      "kind": "wall",
+      "position": [0, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "w22",
+      "kind": "wall",
+      "position": [3, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "w23",
+      "kind": "wall",
+      "position": [4.5, 3, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w24",
+      "kind": "wall",
+      "position": [0, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "w25",
+      "kind": "wall",
+      "position": [-1.5, 3, 3],
+      "rotation": 180
+    },
+    {
+      "id": "w26",
+      "kind": "wall",
+      "position": [4.5, 3, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w27",
+      "kind": "wall",
+      "position": [3, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "dw5",
+      "kind": "doorway",
+      "position": [1.5, 3, 3],
+      "rotation": 180,
+      "grade": "metal"
+    },
+    {
+      "id": "w28",
+      "kind": "wall",
+      "position": [3, 3, 1.5],
+      "rotation": 90
+    },
+    {
+      "id": "c4",
+      "kind": "square-floor",
+      "position": [0, 6, 0],
+      "rotation": 180
+    },
+    {
+      "id": "c5",
+      "kind": "square-floor",
+      "position": [3, 6, 0],
+      "rotation": 270
+    },
+    {
+      "id": "c6",
+      "kind": "square-floor",
+      "position": [0, 6, 3],
+      "rotation": 90
+    },
+    {
+      "id": "c7",
+      "kind": "square-floor",
+      "position": [3, 6, 3],
+      "rotation": 0
+    }
+  ],
+  "deployables": [
+    {
+      "id": "d1",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "dw1",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d2",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "dw2",
+        "socket": "opening"
+      },
+      "hinge": "right",
+      "opens": "inward"
+    },
+    {
+      "id": "d3",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "dw3",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d4",
+      "kind": "sheet-metal-door",
+      "attach": {
+        "to": "dw4",
+        "socket": "opening"
+      },
+      "hinge": "right",
+      "opens": "inward"
+    },
+    {
+      "id": "cup1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [-0.82, -0.57],
+      "rotation": 90
+    },
+    {
+      "id": "d5",
+      "kind": "armored-door",
+      "attach": {
+        "to": "dw5",
+        "socket": "opening"
+      },
+      "hinge": "right",
+      "opens": "inward"
+    },
+    {
+      "id": "win1",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "w2",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win2",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "w9",
+        "socket": "opening"
+      }
+    }
+  ]
+}
