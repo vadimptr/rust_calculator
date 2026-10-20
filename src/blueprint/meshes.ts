@@ -151,6 +151,16 @@ function withModel(proxy: THREE.Group, name: string, yaw: number, mirror = false
   return g;
 }
 
+function withModelAt(proxy: THREE.Group, name: string, p: Placement): THREE.Group {
+  const model = gameModel(name);
+  if (!model) return proxy;
+  hideProxy(proxy);
+  const g = new THREE.Group();
+  g.add(proxy);
+  g.add(placeModel(model, p));
+  return g;
+}
+
 const gradeMaterials = new Map<string, THREE.MeshStandardMaterial>();
 function gradeMaterial(grade: Grade, face: GradeFace): THREE.MeshStandardMaterial {
   const key = `${grade}|${face}`;
@@ -312,6 +322,7 @@ const DOUBLE_LEAF_H = 2.3;
 const WINDOW_W = 2.2;
 const WINDOW_H = 1.3;
 const WINDOW_SILL = 0.95;
+const SHUTTERS_Y = 1;
 const DOOR_T = 0.1;
 /** Шкаф: ширина вдоль стены, глубина, высота (≈ по пропорциям модели). */
 export const TC_W = 1.1;
@@ -620,7 +631,7 @@ function buildDoor(d: ResolvedDeployable): THREE.Group {
   switch (d.kind) {
     case 'garage-door': {
       const lift = new THREE.Group();
-      lift.add(withModel(faceBox(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0, doorFaces(kind)), kind, 0));
+      lift.add(withModelAt(faceBox(DOOR_T, FRAME_H, FRAME_W, 0, FRAME_H / 2, 0, doorFaces(kind)), kind, { yaw: 0 }));
       const anim: DoorAnim = { type: 'lift', closed: 0, open: FRAME_H - 0.3, target: false };
       lift.userData.door = anim;
       g.add(lift);
@@ -747,7 +758,7 @@ export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
     g.add(proxy);
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
-    g = withModel(g, d.kind, 0);
+    g = d.kind === 'metal-embrasure' ? withModelAt(g, d.kind, { yaw: 0, offset: [0, SHUTTERS_Y, 0] }) : withModel(g, d.kind, 0);
   } else {
     g = buildDoor(d);
     for (const door of collectDoors(g)) setDoorOpen(door, d.open, true);
