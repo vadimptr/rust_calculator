@@ -1,0 +1,2249 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "Металлический форт на ящик",
+    "description": "База на один большой ящик металла (~48 тыс. фрагментов), всё из листового металла, все двери гаражные. Ядро 4×4 в три этажа, вокруг — хонейкомб из треугольников на всю высоту. Вход: гаражка в треугольнике кольца (одноклеточный шлюз), затем гаражка в ядро. На первом этаже в центре хранилище 2×2 за двумя гаражками, шкаф внутри, вокруг — лут; над хранилищем на втором этаже внутренний хонейкомб. Третий этаж — штаб обороны: четыре гаражки на стрелковую галерею по верхнему ярусу кольца с бойницами-решётками на каждой грани. Лестницы в разных углах; выход на крышу — будка с гаражкой, по краю крыши бруствер из полустен.",
+    "gameVersion": "2026-09",
+    "tags": [
+      "example",
+      "metal",
+      "garage",
+      "defense",
+      "4x4"
+    ]
+  },
+  "defaults": {
+    "grade": "metal"
+  },
+  "elements": [
+    {
+      "id": "f1",
+      "kind": "square-foundation",
+      "position": [-1.5, 0, -1.5],
+      "rotation": 0,
+      "label": "Шкаф"
+    },
+    {
+      "id": "f2",
+      "kind": "square-foundation",
+      "position": [-4.5, 0, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "f3",
+      "kind": "square-foundation",
+      "position": [-4.5, 0, 1.5],
+      "rotation": 270
+    },
+    {
+      "id": "f4",
+      "kind": "square-foundation",
+      "position": [-4.5, 0, 4.5],
+      "rotation": 270
+    },
+    {
+      "id": "f5",
+      "kind": "square-foundation",
+      "position": [-1.5, 0, -4.5],
+      "rotation": 90
+    },
+    {
+      "id": "f6",
+      "kind": "square-foundation",
+      "position": [-1.5, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "f7",
+      "kind": "square-foundation",
+      "position": [-1.5, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "f8",
+      "kind": "square-foundation",
+      "position": [1.5, 0, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "f9",
+      "kind": "square-foundation",
+      "position": [1.5, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "f10",
+      "kind": "square-foundation",
+      "position": [1.5, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "f11",
+      "kind": "square-foundation",
+      "position": [1.5, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "f12",
+      "kind": "square-foundation",
+      "position": [4.5, 0, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "f13",
+      "kind": "square-foundation",
+      "position": [4.5, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "f14",
+      "kind": "square-foundation",
+      "position": [4.5, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "f15",
+      "kind": "square-foundation",
+      "position": [4.5, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "f16",
+      "kind": "square-foundation",
+      "position": [-4.5, 0, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tf1",
+      "kind": "triangle-foundation",
+      "position": [-6.866, 0, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tf2",
+      "kind": "triangle-foundation",
+      "position": [-6.866, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tf3",
+      "kind": "triangle-foundation",
+      "position": [-4.5, 0, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tf4",
+      "kind": "triangle-foundation",
+      "position": [-6.866, 0, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tf5",
+      "kind": "triangle-foundation",
+      "position": [-1.5, 0, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tf6",
+      "kind": "triangle-foundation",
+      "position": [-1.5, 0, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tf7",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tf8",
+      "kind": "triangle-foundation",
+      "position": [1.5, 0, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tf9",
+      "kind": "triangle-foundation",
+      "position": [4.5, 0, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tf10",
+      "kind": "triangle-foundation",
+      "position": [6.866, 0, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tf11",
+      "kind": "triangle-foundation",
+      "position": [6.866, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tf12",
+      "kind": "triangle-foundation",
+      "position": [6.866, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tf13",
+      "kind": "triangle-foundation",
+      "position": [6.866, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tf14",
+      "kind": "triangle-foundation",
+      "position": [4.5, 0, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tf15",
+      "kind": "triangle-foundation",
+      "position": [-6.866, 0, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tf16",
+      "kind": "triangle-foundation",
+      "position": [-4.5, 0, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tf17",
+      "kind": "triangle-foundation",
+      "position": [-7.732, 0, 0],
+      "rotation": 300
+    },
+    {
+      "id": "tf18",
+      "kind": "triangle-foundation",
+      "position": [-7.732, 0, -3],
+      "rotation": 60
+    },
+    {
+      "id": "tf19",
+      "kind": "triangle-foundation",
+      "position": [-7.732, 0, 3],
+      "rotation": 300
+    },
+    {
+      "id": "tf20",
+      "kind": "triangle-foundation",
+      "position": [-3, 0, 7.732],
+      "rotation": 210
+    },
+    {
+      "id": "tf21",
+      "kind": "triangle-foundation",
+      "position": [-3, 0, -7.732],
+      "rotation": 30
+    },
+    {
+      "id": "tf22",
+      "kind": "triangle-foundation",
+      "position": [0, 0, -7.732],
+      "rotation": 150
+    },
+    {
+      "id": "tf23",
+      "kind": "triangle-foundation",
+      "position": [0, 0, 7.732],
+      "rotation": 210
+    },
+    {
+      "id": "tf24",
+      "kind": "triangle-foundation",
+      "position": [3, 0, -7.732],
+      "rotation": 150
+    },
+    {
+      "id": "tf25",
+      "kind": "triangle-foundation",
+      "position": [3, 0, 7.732],
+      "rotation": 210
+    },
+    {
+      "id": "tf26",
+      "kind": "triangle-foundation",
+      "position": [7.732, 0, -3],
+      "rotation": 240
+    },
+    {
+      "id": "tf27",
+      "kind": "triangle-foundation",
+      "position": [7.732, 0, 0],
+      "rotation": 240
+    },
+    {
+      "id": "tf28",
+      "kind": "triangle-foundation",
+      "position": [7.732, 0, 3],
+      "rotation": 240
+    },
+    {
+      "id": "w1",
+      "kind": "wall",
+      "position": [-5.25, 0, 7.299],
+      "rotation": 150
+    },
+    {
+      "id": "w2",
+      "kind": "wall",
+      "position": [-7.299, 0, 5.25],
+      "rotation": 120
+    },
+    {
+      "id": "w3",
+      "kind": "wall",
+      "position": [5.25, 0, -7.299],
+      "rotation": 330
+    },
+    {
+      "id": "w4",
+      "kind": "wall",
+      "position": [7.299, 0, -5.25],
+      "rotation": 300
+    },
+    {
+      "id": "w5",
+      "kind": "wall",
+      "position": [7.299, 0, 5.25],
+      "rotation": 60
+    },
+    {
+      "id": "w6",
+      "kind": "wall",
+      "position": [5.25, 0, 7.299],
+      "rotation": 30
+    },
+    {
+      "id": "w7",
+      "kind": "wall",
+      "position": [-7.299, 0, -5.25],
+      "rotation": 240
+    },
+    {
+      "id": "w8",
+      "kind": "wall",
+      "position": [-5.25, 0, -7.299],
+      "rotation": 210
+    },
+    {
+      "id": "w9",
+      "kind": "wall",
+      "position": [-8.598, 0, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w10",
+      "kind": "wall",
+      "position": [-8.598, 0, -3],
+      "rotation": 180
+    },
+    {
+      "id": "w11",
+      "kind": "wall",
+      "position": [-8.598, 0, 3],
+      "rotation": 180
+    },
+    {
+      "id": "w12",
+      "kind": "wall",
+      "position": [-3, 0, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w13",
+      "kind": "wall",
+      "position": [-3, 0, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w14",
+      "kind": "wall",
+      "position": [0, 0, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w15",
+      "kind": "wall",
+      "position": [0, 0, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w16",
+      "kind": "wall",
+      "position": [3, 0, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w17",
+      "kind": "wall",
+      "position": [3, 0, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w18",
+      "kind": "wall",
+      "position": [8.598, 0, -3],
+      "rotation": 0
+    },
+    {
+      "id": "w19",
+      "kind": "wall",
+      "position": [8.598, 0, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w20",
+      "kind": "wall",
+      "position": [8.598, 0, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w21",
+      "kind": "wall",
+      "position": [-6, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w22",
+      "kind": "wall",
+      "position": [-6, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w23",
+      "kind": "wall",
+      "position": [-4.5, 0, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w24",
+      "kind": "wall",
+      "position": [-6, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "fr1",
+      "kind": "wall-frame",
+      "position": [-1.5, 0, -6],
+      "rotation": 270,
+      "label": "Шлюз"
+    },
+    {
+      "id": "w25",
+      "kind": "wall",
+      "position": [-1.5, 0, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w26",
+      "kind": "wall",
+      "position": [1.5, 0, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w27",
+      "kind": "wall",
+      "position": [1.5, 0, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w28",
+      "kind": "wall",
+      "position": [4.5, 0, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w29",
+      "kind": "wall",
+      "position": [6, 0, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w30",
+      "kind": "wall",
+      "position": [6, 0, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w31",
+      "kind": "wall",
+      "position": [6, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w32",
+      "kind": "wall",
+      "position": [6, 0, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w33",
+      "kind": "wall",
+      "position": [4.5, 0, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w34",
+      "kind": "wall",
+      "position": [-6, 0, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w35",
+      "kind": "wall",
+      "position": [-4.5, 0, -6],
+      "rotation": 270
+    },
+    {
+      "id": "fr2",
+      "kind": "wall-frame",
+      "position": [-1.5, 0, -3],
+      "rotation": 90,
+      "label": "Дверь в хранилище"
+    },
+    {
+      "id": "w36",
+      "kind": "wall",
+      "position": [1.5, 0, -3],
+      "rotation": 90
+    },
+    {
+      "id": "w37",
+      "kind": "wall",
+      "position": [-3, 0, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w38",
+      "kind": "wall",
+      "position": [-3, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w39",
+      "kind": "wall",
+      "position": [3, 0, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w40",
+      "kind": "wall",
+      "position": [3, 0, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w41",
+      "kind": "wall",
+      "position": [-1.5, 0, 3],
+      "rotation": 270
+    },
+    {
+      "id": "w42",
+      "kind": "wall",
+      "position": [1.5, 0, 3],
+      "rotation": 270
+    },
+    {
+      "id": "fr3",
+      "kind": "wall-frame",
+      "position": [-3, 0, -4.5],
+      "rotation": 180,
+      "label": "Дверь в лут"
+    },
+    {
+      "id": "w43",
+      "kind": "wall",
+      "position": [0, 0, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "fr4",
+      "kind": "wall-frame",
+      "position": [0, 0, -1.5],
+      "rotation": 0,
+      "label": "Внутренняя дверь хранилища"
+    },
+    {
+      "id": "w44",
+      "kind": "wall",
+      "position": [0, 0, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w45",
+      "kind": "wall",
+      "position": [-1.5, 0, 0],
+      "rotation": 90
+    },
+    {
+      "id": "fr5",
+      "kind": "wall-frame",
+      "position": [1.5, 0, 0],
+      "rotation": 90
+    },
+    {
+      "id": "us1",
+      "kind": "u-shaped-stairs",
+      "position": [4.5, 0, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "c1",
+      "kind": "square-floor",
+      "position": [-4.5, 3, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c2",
+      "kind": "square-floor",
+      "position": [-4.5, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c3",
+      "kind": "square-floor",
+      "position": [-4.5, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c4",
+      "kind": "square-floor",
+      "position": [-1.5, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c5",
+      "kind": "square-floor",
+      "position": [-1.5, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c6",
+      "kind": "square-floor",
+      "position": [1.5, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c7",
+      "kind": "square-floor",
+      "position": [1.5, 3, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c8",
+      "kind": "square-floor",
+      "position": [4.5, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c9",
+      "kind": "square-floor",
+      "position": [4.5, 3, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c10",
+      "kind": "square-floor",
+      "position": [4.5, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c11",
+      "kind": "square-floor",
+      "position": [-4.5, 3, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "c12",
+      "kind": "square-floor",
+      "position": [-1.5, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "c13",
+      "kind": "square-floor",
+      "position": [-1.5, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c14",
+      "kind": "square-floor",
+      "position": [1.5, 3, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "c15",
+      "kind": "square-floor",
+      "position": [1.5, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc1",
+      "kind": "triangle-floor",
+      "position": [-6.866, 3, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc2",
+      "kind": "triangle-floor",
+      "position": [-6.866, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc3",
+      "kind": "triangle-floor",
+      "position": [-4.5, 3, 6.866],
+      "rotation": 150
+    },
+    {
+      "id": "tc4",
+      "kind": "triangle-floor",
+      "position": [-6.866, 3, 4.5],
+      "rotation": 120
+    },
+    {
+      "id": "tc5",
+      "kind": "triangle-floor",
+      "position": [-1.5, 3, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc6",
+      "kind": "triangle-floor",
+      "position": [-1.5, 3, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc7",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc8",
+      "kind": "triangle-floor",
+      "position": [1.5, 3, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc9",
+      "kind": "triangle-floor",
+      "position": [4.5, 3, -6.866],
+      "rotation": 330
+    },
+    {
+      "id": "tc10",
+      "kind": "triangle-floor",
+      "position": [6.866, 3, -4.5],
+      "rotation": 300
+    },
+    {
+      "id": "tc11",
+      "kind": "triangle-floor",
+      "position": [6.866, 3, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc12",
+      "kind": "triangle-floor",
+      "position": [6.866, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc13",
+      "kind": "triangle-floor",
+      "position": [6.866, 3, 4.5],
+      "rotation": 60
+    },
+    {
+      "id": "tc14",
+      "kind": "triangle-floor",
+      "position": [4.5, 3, 6.866],
+      "rotation": 30
+    },
+    {
+      "id": "tc15",
+      "kind": "triangle-floor",
+      "position": [-6.866, 3, -4.5],
+      "rotation": 240
+    },
+    {
+      "id": "tc16",
+      "kind": "triangle-floor",
+      "position": [-4.5, 3, -6.866],
+      "rotation": 210
+    },
+    {
+      "id": "tc17",
+      "kind": "triangle-floor",
+      "position": [-7.732, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tc18",
+      "kind": "triangle-floor",
+      "position": [-7.732, 3, -3],
+      "rotation": 180
+    },
+    {
+      "id": "tc19",
+      "kind": "triangle-floor",
+      "position": [-7.732, 3, 3],
+      "rotation": 180
+    },
+    {
+      "id": "tc20",
+      "kind": "triangle-floor",
+      "position": [-3, 3, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc21",
+      "kind": "triangle-floor",
+      "position": [-3, 3, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc22",
+      "kind": "triangle-floor",
+      "position": [0, 3, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc23",
+      "kind": "triangle-floor",
+      "position": [0, 3, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc24",
+      "kind": "triangle-floor",
+      "position": [3, 3, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc25",
+      "kind": "triangle-floor",
+      "position": [3, 3, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc26",
+      "kind": "triangle-floor",
+      "position": [7.732, 3, -3],
+      "rotation": 0
+    },
+    {
+      "id": "tc27",
+      "kind": "triangle-floor",
+      "position": [7.732, 3, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tc28",
+      "kind": "triangle-floor",
+      "position": [7.732, 3, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w46",
+      "kind": "wall",
+      "position": [-6, 3, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w47",
+      "kind": "wall",
+      "position": [-6, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w48",
+      "kind": "wall",
+      "position": [-4.5, 3, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w49",
+      "kind": "wall",
+      "position": [-6, 3, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w50",
+      "kind": "wall",
+      "position": [-1.5, 3, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w51",
+      "kind": "wall",
+      "position": [-1.5, 3, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w52",
+      "kind": "wall",
+      "position": [1.5, 3, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w53",
+      "kind": "wall",
+      "position": [1.5, 3, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w54",
+      "kind": "wall",
+      "position": [4.5, 3, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w55",
+      "kind": "wall",
+      "position": [6, 3, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w56",
+      "kind": "wall",
+      "position": [6, 3, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w57",
+      "kind": "wall",
+      "position": [6, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w58",
+      "kind": "wall",
+      "position": [6, 3, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w59",
+      "kind": "wall",
+      "position": [4.5, 3, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w60",
+      "kind": "wall",
+      "position": [-6, 3, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w61",
+      "kind": "wall",
+      "position": [-4.5, 3, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w62",
+      "kind": "wall",
+      "position": [-5.25, 3, 7.299],
+      "rotation": 150
+    },
+    {
+      "id": "w63",
+      "kind": "wall",
+      "position": [-7.299, 3, 5.25],
+      "rotation": 120
+    },
+    {
+      "id": "w64",
+      "kind": "wall",
+      "position": [5.25, 3, -7.299],
+      "rotation": 330
+    },
+    {
+      "id": "w65",
+      "kind": "wall",
+      "position": [7.299, 3, -5.25],
+      "rotation": 300
+    },
+    {
+      "id": "w66",
+      "kind": "wall",
+      "position": [7.299, 3, 5.25],
+      "rotation": 60
+    },
+    {
+      "id": "w67",
+      "kind": "wall",
+      "position": [5.25, 3, 7.299],
+      "rotation": 30
+    },
+    {
+      "id": "w68",
+      "kind": "wall",
+      "position": [-7.299, 3, -5.25],
+      "rotation": 240
+    },
+    {
+      "id": "w69",
+      "kind": "wall",
+      "position": [-5.25, 3, -7.299],
+      "rotation": 210
+    },
+    {
+      "id": "w70",
+      "kind": "wall",
+      "position": [-8.598, 3, 0],
+      "rotation": 180
+    },
+    {
+      "id": "w71",
+      "kind": "wall",
+      "position": [-8.598, 3, -3],
+      "rotation": 180
+    },
+    {
+      "id": "w72",
+      "kind": "wall",
+      "position": [-8.598, 3, 3],
+      "rotation": 180
+    },
+    {
+      "id": "w73",
+      "kind": "wall",
+      "position": [-3, 3, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w74",
+      "kind": "wall",
+      "position": [-3, 3, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w75",
+      "kind": "wall",
+      "position": [0, 3, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w76",
+      "kind": "wall",
+      "position": [0, 3, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w77",
+      "kind": "wall",
+      "position": [3, 3, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "w78",
+      "kind": "wall",
+      "position": [3, 3, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "w79",
+      "kind": "wall",
+      "position": [8.598, 3, -3],
+      "rotation": 0
+    },
+    {
+      "id": "w80",
+      "kind": "wall",
+      "position": [8.598, 3, 0],
+      "rotation": 0
+    },
+    {
+      "id": "w81",
+      "kind": "wall",
+      "position": [8.598, 3, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w82",
+      "kind": "wall",
+      "position": [-3, 3, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w83",
+      "kind": "wall",
+      "position": [-3, 3, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "w84",
+      "kind": "wall",
+      "position": [3, 3, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w85",
+      "kind": "wall",
+      "position": [3, 3, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "w86",
+      "kind": "wall",
+      "position": [-1.5, 3, -3],
+      "rotation": 270
+    },
+    {
+      "id": "w87",
+      "kind": "wall",
+      "position": [1.5, 3, -3],
+      "rotation": 270
+    },
+    {
+      "id": "w88",
+      "kind": "wall",
+      "position": [-1.5, 3, 3],
+      "rotation": 90
+    },
+    {
+      "id": "w89",
+      "kind": "wall",
+      "position": [1.5, 3, 3],
+      "rotation": 90
+    },
+    {
+      "id": "us2",
+      "kind": "u-shaped-stairs",
+      "position": [4.5, 3, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c16",
+      "kind": "square-floor",
+      "position": [-4.5, 6, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c17",
+      "kind": "square-floor",
+      "position": [-4.5, 6, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c18",
+      "kind": "square-floor",
+      "position": [-4.5, 6, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c19",
+      "kind": "square-floor",
+      "position": [-1.5, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c20",
+      "kind": "square-floor",
+      "position": [-1.5, 6, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c21",
+      "kind": "square-floor",
+      "position": [1.5, 6, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c22",
+      "kind": "square-floor",
+      "position": [1.5, 6, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c23",
+      "kind": "square-floor",
+      "position": [4.5, 6, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c24",
+      "kind": "square-floor",
+      "position": [4.5, 6, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c25",
+      "kind": "square-floor",
+      "position": [4.5, 6, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "c26",
+      "kind": "square-floor",
+      "position": [-4.5, 6, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "c27",
+      "kind": "square-floor",
+      "position": [-1.5, 6, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c28",
+      "kind": "square-floor",
+      "position": [-1.5, 6, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c29",
+      "kind": "square-floor",
+      "position": [1.5, 6, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c30",
+      "kind": "square-floor",
+      "position": [1.5, 6, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc29",
+      "kind": "triangle-floor",
+      "position": [-6.866, 6, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc30",
+      "kind": "triangle-floor",
+      "position": [-6.866, 6, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc31",
+      "kind": "triangle-floor",
+      "position": [-4.5, 6, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc32",
+      "kind": "triangle-floor",
+      "position": [-6.866, 6, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc33",
+      "kind": "triangle-floor",
+      "position": [-1.5, 6, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc34",
+      "kind": "triangle-floor",
+      "position": [-1.5, 6, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc35",
+      "kind": "triangle-floor",
+      "position": [1.5, 6, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc36",
+      "kind": "triangle-floor",
+      "position": [1.5, 6, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc37",
+      "kind": "triangle-floor",
+      "position": [4.5, 6, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc38",
+      "kind": "triangle-floor",
+      "position": [6.866, 6, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc39",
+      "kind": "triangle-floor",
+      "position": [6.866, 6, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc40",
+      "kind": "triangle-floor",
+      "position": [6.866, 6, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc41",
+      "kind": "triangle-floor",
+      "position": [6.866, 6, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc42",
+      "kind": "triangle-floor",
+      "position": [4.5, 6, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc43",
+      "kind": "triangle-floor",
+      "position": [-6.866, 6, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc44",
+      "kind": "triangle-floor",
+      "position": [-4.5, 6, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc45",
+      "kind": "triangle-floor",
+      "position": [-7.732, 6, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tc46",
+      "kind": "triangle-floor",
+      "position": [-7.732, 6, -3],
+      "rotation": 180
+    },
+    {
+      "id": "tc47",
+      "kind": "triangle-floor",
+      "position": [-7.732, 6, 3],
+      "rotation": 180
+    },
+    {
+      "id": "tc48",
+      "kind": "triangle-floor",
+      "position": [-3, 6, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc49",
+      "kind": "triangle-floor",
+      "position": [-3, 6, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc50",
+      "kind": "triangle-floor",
+      "position": [0, 6, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc51",
+      "kind": "triangle-floor",
+      "position": [0, 6, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc52",
+      "kind": "triangle-floor",
+      "position": [3, 6, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc53",
+      "kind": "triangle-floor",
+      "position": [3, 6, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc54",
+      "kind": "triangle-floor",
+      "position": [7.732, 6, -3],
+      "rotation": 0
+    },
+    {
+      "id": "tc55",
+      "kind": "triangle-floor",
+      "position": [7.732, 6, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tc56",
+      "kind": "triangle-floor",
+      "position": [7.732, 6, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w90",
+      "kind": "wall",
+      "position": [-6, 6, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "fr6",
+      "kind": "wall-frame",
+      "position": [-6, 6, 1.5],
+      "rotation": 180,
+      "label": "Выход на галерею"
+    },
+    {
+      "id": "w91",
+      "kind": "wall",
+      "position": [-4.5, 6, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w92",
+      "kind": "wall",
+      "position": [-6, 6, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w93",
+      "kind": "wall",
+      "position": [-1.5, 6, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w94",
+      "kind": "wall",
+      "position": [-1.5, 6, 6],
+      "rotation": 90
+    },
+    {
+      "id": "fr7",
+      "kind": "wall-frame",
+      "position": [1.5, 6, -6],
+      "rotation": 270,
+      "label": "Выход на галерею"
+    },
+    {
+      "id": "fr8",
+      "kind": "wall-frame",
+      "position": [1.5, 6, 6],
+      "rotation": 90,
+      "label": "Выход на галерею"
+    },
+    {
+      "id": "w95",
+      "kind": "wall",
+      "position": [4.5, 6, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w96",
+      "kind": "wall",
+      "position": [6, 6, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w97",
+      "kind": "wall",
+      "position": [6, 6, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "fr9",
+      "kind": "wall-frame",
+      "position": [6, 6, 1.5],
+      "rotation": 0,
+      "label": "Выход на галерею"
+    },
+    {
+      "id": "w98",
+      "kind": "wall",
+      "position": [6, 6, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "w99",
+      "kind": "wall",
+      "position": [4.5, 6, 6],
+      "rotation": 90
+    },
+    {
+      "id": "w100",
+      "kind": "wall",
+      "position": [-6, 6, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w101",
+      "kind": "wall",
+      "position": [-4.5, 6, -6],
+      "rotation": 270
+    },
+    {
+      "id": "w102",
+      "kind": "wall",
+      "position": [-5.25, 6, 7.299],
+      "rotation": 150
+    },
+    {
+      "id": "w103",
+      "kind": "wall",
+      "position": [-7.299, 6, 5.25],
+      "rotation": 120
+    },
+    {
+      "id": "w104",
+      "kind": "wall",
+      "position": [5.25, 6, -7.299],
+      "rotation": 330
+    },
+    {
+      "id": "w105",
+      "kind": "wall",
+      "position": [7.299, 6, -5.25],
+      "rotation": 300
+    },
+    {
+      "id": "w106",
+      "kind": "wall",
+      "position": [7.299, 6, 5.25],
+      "rotation": 60
+    },
+    {
+      "id": "w107",
+      "kind": "wall",
+      "position": [5.25, 6, 7.299],
+      "rotation": 30
+    },
+    {
+      "id": "w108",
+      "kind": "wall",
+      "position": [-7.299, 6, -5.25],
+      "rotation": 240
+    },
+    {
+      "id": "w109",
+      "kind": "wall",
+      "position": [-5.25, 6, -7.299],
+      "rotation": 210
+    },
+    {
+      "id": "wf1",
+      "kind": "window-frame",
+      "position": [-8.598, 6, 0],
+      "rotation": 180,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf2",
+      "kind": "window-frame",
+      "position": [-8.598, 6, -3],
+      "rotation": 180,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf3",
+      "kind": "window-frame",
+      "position": [-8.598, 6, 3],
+      "rotation": 180,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf4",
+      "kind": "window-frame",
+      "position": [-3, 6, 8.598],
+      "rotation": 90,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf5",
+      "kind": "window-frame",
+      "position": [-3, 6, -8.598],
+      "rotation": 270,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf6",
+      "kind": "window-frame",
+      "position": [0, 6, -8.598],
+      "rotation": 270,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf7",
+      "kind": "window-frame",
+      "position": [0, 6, 8.598],
+      "rotation": 90,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf8",
+      "kind": "window-frame",
+      "position": [3, 6, -8.598],
+      "rotation": 270,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf9",
+      "kind": "window-frame",
+      "position": [3, 6, 8.598],
+      "rotation": 90,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf10",
+      "kind": "window-frame",
+      "position": [8.598, 6, -3],
+      "rotation": 0,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf11",
+      "kind": "window-frame",
+      "position": [8.598, 6, 0],
+      "rotation": 0,
+      "label": "Бойница"
+    },
+    {
+      "id": "wf12",
+      "kind": "window-frame",
+      "position": [8.598, 6, 3],
+      "rotation": 0,
+      "label": "Бойница"
+    },
+    {
+      "id": "us3",
+      "kind": "u-shaped-stairs",
+      "position": [-4.5, 6, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "c31",
+      "kind": "square-floor",
+      "position": [-4.5, 9, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c32",
+      "kind": "square-floor",
+      "position": [-4.5, 9, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c33",
+      "kind": "square-floor",
+      "position": [-4.5, 9, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c34",
+      "kind": "square-floor",
+      "position": [-1.5, 9, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c35",
+      "kind": "square-floor",
+      "position": [-1.5, 9, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c36",
+      "kind": "square-floor",
+      "position": [1.5, 9, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c37",
+      "kind": "square-floor",
+      "position": [1.5, 9, 4.5],
+      "rotation": 90
+    },
+    {
+      "id": "c38",
+      "kind": "square-floor",
+      "position": [4.5, 9, -4.5],
+      "rotation": 270
+    },
+    {
+      "id": "c39",
+      "kind": "square-floor",
+      "position": [4.5, 9, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c40",
+      "kind": "square-floor",
+      "position": [4.5, 9, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "c41",
+      "kind": "square-floor",
+      "position": [4.5, 9, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "c42",
+      "kind": "square-floor",
+      "position": [-1.5, 9, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c43",
+      "kind": "square-floor",
+      "position": [-1.5, 9, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "c44",
+      "kind": "square-floor",
+      "position": [1.5, 9, -1.5],
+      "rotation": 270
+    },
+    {
+      "id": "c45",
+      "kind": "square-floor",
+      "position": [1.5, 9, 1.5],
+      "rotation": 90
+    },
+    {
+      "id": "tc57",
+      "kind": "triangle-floor",
+      "position": [-6.866, 9, -1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc58",
+      "kind": "triangle-floor",
+      "position": [-6.866, 9, 1.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc59",
+      "kind": "triangle-floor",
+      "position": [-4.5, 9, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc60",
+      "kind": "triangle-floor",
+      "position": [-6.866, 9, 4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc61",
+      "kind": "triangle-floor",
+      "position": [-1.5, 9, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc62",
+      "kind": "triangle-floor",
+      "position": [-1.5, 9, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc63",
+      "kind": "triangle-floor",
+      "position": [1.5, 9, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc64",
+      "kind": "triangle-floor",
+      "position": [1.5, 9, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc65",
+      "kind": "triangle-floor",
+      "position": [4.5, 9, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc66",
+      "kind": "triangle-floor",
+      "position": [6.866, 9, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc67",
+      "kind": "triangle-floor",
+      "position": [6.866, 9, -1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc68",
+      "kind": "triangle-floor",
+      "position": [6.866, 9, 1.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc69",
+      "kind": "triangle-floor",
+      "position": [6.866, 9, 4.5],
+      "rotation": 180
+    },
+    {
+      "id": "tc70",
+      "kind": "triangle-floor",
+      "position": [4.5, 9, 6.866],
+      "rotation": 270
+    },
+    {
+      "id": "tc71",
+      "kind": "triangle-floor",
+      "position": [-6.866, 9, -4.5],
+      "rotation": 0
+    },
+    {
+      "id": "tc72",
+      "kind": "triangle-floor",
+      "position": [-4.5, 9, -6.866],
+      "rotation": 90
+    },
+    {
+      "id": "tc73",
+      "kind": "triangle-floor",
+      "position": [-7.732, 9, 0],
+      "rotation": 180
+    },
+    {
+      "id": "tc74",
+      "kind": "triangle-floor",
+      "position": [-7.732, 9, -3],
+      "rotation": 180
+    },
+    {
+      "id": "tc75",
+      "kind": "triangle-floor",
+      "position": [-7.732, 9, 3],
+      "rotation": 180
+    },
+    {
+      "id": "tc76",
+      "kind": "triangle-floor",
+      "position": [-3, 9, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc77",
+      "kind": "triangle-floor",
+      "position": [-3, 9, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc78",
+      "kind": "triangle-floor",
+      "position": [0, 9, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc79",
+      "kind": "triangle-floor",
+      "position": [0, 9, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc80",
+      "kind": "triangle-floor",
+      "position": [3, 9, -7.732],
+      "rotation": 270
+    },
+    {
+      "id": "tc81",
+      "kind": "triangle-floor",
+      "position": [3, 9, 7.732],
+      "rotation": 90
+    },
+    {
+      "id": "tc82",
+      "kind": "triangle-floor",
+      "position": [7.732, 9, -3],
+      "rotation": 0
+    },
+    {
+      "id": "tc83",
+      "kind": "triangle-floor",
+      "position": [7.732, 9, 0],
+      "rotation": 0
+    },
+    {
+      "id": "tc84",
+      "kind": "triangle-floor",
+      "position": [7.732, 9, 3],
+      "rotation": 0
+    },
+    {
+      "id": "hw1",
+      "kind": "half-wall",
+      "position": [-5.25, 9, 7.299],
+      "rotation": 150
+    },
+    {
+      "id": "hw2",
+      "kind": "half-wall",
+      "position": [-7.299, 9, 5.25],
+      "rotation": 120
+    },
+    {
+      "id": "hw3",
+      "kind": "half-wall",
+      "position": [5.25, 9, -7.299],
+      "rotation": 330
+    },
+    {
+      "id": "hw4",
+      "kind": "half-wall",
+      "position": [7.299, 9, -5.25],
+      "rotation": 300
+    },
+    {
+      "id": "hw5",
+      "kind": "half-wall",
+      "position": [7.299, 9, 5.25],
+      "rotation": 60
+    },
+    {
+      "id": "hw6",
+      "kind": "half-wall",
+      "position": [5.25, 9, 7.299],
+      "rotation": 30
+    },
+    {
+      "id": "hw7",
+      "kind": "half-wall",
+      "position": [-7.299, 9, -5.25],
+      "rotation": 240
+    },
+    {
+      "id": "hw8",
+      "kind": "half-wall",
+      "position": [-5.25, 9, -7.299],
+      "rotation": 210
+    },
+    {
+      "id": "hw9",
+      "kind": "half-wall",
+      "position": [-8.598, 9, 0],
+      "rotation": 180
+    },
+    {
+      "id": "hw10",
+      "kind": "half-wall",
+      "position": [-8.598, 9, -3],
+      "rotation": 180
+    },
+    {
+      "id": "hw11",
+      "kind": "half-wall",
+      "position": [-8.598, 9, 3],
+      "rotation": 180
+    },
+    {
+      "id": "hw12",
+      "kind": "half-wall",
+      "position": [-3, 9, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "hw13",
+      "kind": "half-wall",
+      "position": [-3, 9, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "hw14",
+      "kind": "half-wall",
+      "position": [0, 9, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "hw15",
+      "kind": "half-wall",
+      "position": [0, 9, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "hw16",
+      "kind": "half-wall",
+      "position": [3, 9, -8.598],
+      "rotation": 270
+    },
+    {
+      "id": "hw17",
+      "kind": "half-wall",
+      "position": [3, 9, 8.598],
+      "rotation": 90
+    },
+    {
+      "id": "hw18",
+      "kind": "half-wall",
+      "position": [8.598, 9, -3],
+      "rotation": 0
+    },
+    {
+      "id": "hw19",
+      "kind": "half-wall",
+      "position": [8.598, 9, 0],
+      "rotation": 0
+    },
+    {
+      "id": "hw20",
+      "kind": "half-wall",
+      "position": [8.598, 9, 3],
+      "rotation": 0
+    },
+    {
+      "id": "w110",
+      "kind": "wall",
+      "position": [-2.25, 0, -7.299],
+      "rotation": 210
+    },
+    {
+      "id": "w111",
+      "kind": "wall",
+      "position": [-0.75, 0, -7.299],
+      "rotation": 330
+    },
+    {
+      "id": "fr10",
+      "kind": "wall-frame",
+      "position": [-3, 9, -4.5],
+      "rotation": 0,
+      "label": "Выход на крышу"
+    },
+    {
+      "id": "w112",
+      "kind": "wall",
+      "position": [-4.5, 9, -3],
+      "rotation": 90
+    },
+    {
+      "id": "w113",
+      "kind": "wall",
+      "position": [-6, 9, -4.5],
+      "rotation": 180
+    },
+    {
+      "id": "w114",
+      "kind": "wall",
+      "position": [-4.5, 9, -6],
+      "rotation": 270
+    },
+    {
+      "id": "c46",
+      "kind": "square-floor",
+      "position": [-4.5, 12, -4.5],
+      "rotation": 0
+    }
+  ],
+  "deployables": [
+    {
+      "id": "d1",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr1",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d2",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr2",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d3",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr3",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d4",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr4",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d5",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr5",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "cup1",
+      "kind": "tool-cupboard",
+      "attach": {
+        "to": "f1",
+        "socket": "top"
+      },
+      "offset": [-0.8, 0.8],
+      "rotation": 0
+    },
+    {
+      "id": "d6",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr6",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d7",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr7",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d8",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr8",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "d9",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr9",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    },
+    {
+      "id": "win1",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf1",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win2",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf2",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win3",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf3",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win4",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf4",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win5",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf5",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win6",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf6",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win7",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf7",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win8",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf8",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win9",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf9",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win10",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf10",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win11",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf11",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "win12",
+      "kind": "metal-window-bars",
+      "attach": {
+        "to": "wf12",
+        "socket": "opening"
+      }
+    },
+    {
+      "id": "d10",
+      "kind": "garage-door",
+      "attach": {
+        "to": "fr10",
+        "socket": "opening"
+      },
+      "hinge": "left",
+      "opens": "inward"
+    }
+  ]
+}
