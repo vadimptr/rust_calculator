@@ -428,3 +428,17 @@ test('a tool cupboard stays clear of the cell edges and the wall thickness: aime
   bp = addElement(bp, 'u-shaped-stairs', { to: 'f1', socket: 'top' });
   assert.equal(deployPlacement(bp, resolveBlueprint(bp).resolved, 'tool-cupboard', 'f1', [0, 0, 0]), null);
 });
+
+test('a ramp on an upper floor: low and high variants share one anchor, so R switches the height in place', async () => {
+  const { placementAnchor } = await import('./editor.ts');
+  let bp = newBlueprint();
+  bp = addElement(bp, 'wall', { to: 'f1', socket: 'edge:0' });
+  bp = addElement(bp, 'square-floor', { to: 'w1', socket: 'top', selfSocket: 'edge:0' });
+  const resolved = resolveBlueprint(bp).resolved;
+  const onTop = candidatePlacements(bp, resolved, 'ramp', 'c1').filter(p => p.attach.socket === 'top');
+  assert.equal(onTop.length, 8);
+  const anchors = new Map<string, number[]>();
+  for (const p of onTop) anchors.set(placementAnchor('ramp', p), [...(anchors.get(placementAnchor('ramp', p)) ?? []), p.attach.rise ?? 0]);
+  assert.equal(anchors.size, 4);
+  for (const rises of anchors.values()) assert.deepEqual(rises.sort(), [0, 0.75]);
+});

@@ -187,7 +187,9 @@ export function placementAnchor(kind: ElementKind, p: Placement): string {
     const k = p.attach.selfSocket ? Number(p.attach.selfSocket.slice(5)) : 0;
     const m = edgeMids(kind, p.transform)[k] ?? p.transform.position;
     // у фундамента высота — вариант того же места: R перебирает 0 / 1.5 / 3 м
-    return KINDS[kind].isFoundation ? `${r(m[0])}|${r(m[2])}` : `${r(m[0])}|${r(m[1])}|${r(m[2])}`;
+    if (KINDS[kind].isFoundation) return `${r(m[0])}|${r(m[2])}`;
+    if (cat === 'ramp' && p.attach.socket === 'top') return `${p.attach.to}|${Math.round(p.transform.rotation)}`;
+    return `${r(m[0])}|${r(m[1])}|${r(m[2])}`;
   }
   return p.transform.position.map(r).join('|');
 }

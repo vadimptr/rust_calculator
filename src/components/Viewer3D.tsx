@@ -313,20 +313,29 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         const t = box ? rayBox(ray.origin, ray.dir, box) : null;
         return t !== null && t <= reach ? t : Infinity;
       };
-      const byRay = cands.map(c => ({ c, t: tOf(c) })).filter(x => x.t < Infinity).sort((a, b) => a.t - b.t);
-      const aim = pt ?? (byRay.length ? ray.origin.map((v, i) => v + ray.dir[i] * byRay[0].t) as [number, number, number] : null);
+      const byRay = cands.map(c => ({ c, t: tOf(c) })).filter(x => x.t < Infinity);
+      const tMin = Math.min(...byRay.map(x => x.t));
+      const aim = pt ?? (byRay.length ? ray.origin.map((v, i) => v + ray.dir[i] * tMin) as [number, number, number] : null);
       if (!aim) return false;
-      const dist = (p: Placement) => aimDistance(ed.kind, p, aim);
+      const along = Math.hypot(ray.dir[0], ray.dir[2]) || 1;
+      const uphill = (p: Placement) => KINDS[ed.kind].category === 'ramp' && p.attach.socket === 'top'
+        ? (Math.cos((p.transform.rotation * Math.PI) / 180) * ray.dir[0] + Math.sin((p.transform.rotation * Math.PI) / 180) * ray.dir[2]) / along : 0;
+      const dist = (p: Placement) => aimDistance(ed.kind, p, aim) - uphill(p);
+      byRay.sort((a, b) => (Math.abs(a.t - b.t) < 0.05 ? dist(a.c) - dist(b.c) : a.t - b.t));
       const sorted = byRay.length ? [...byRay.map(x => x.c), ...cands.filter(c => tOf(c) === Infinity)] : [...cands].sort((a, b) => dist(a) - dist(b));
       if (!byRay.length && !pt) return false;
       let p = sorted[0];
       const prev = sorted.find(c => JSON.stringify(c.attach) === state.lastAttach);
-      if (prev && (byRay.length ? tOf(prev) < Infinity && tOf(prev) <= tOf(p) + 0.3 : dist(prev) <= dist(p) + 0.4)) p = prev;
+      if (prev) {
+        const tp = tOf(prev), t0 = tOf(p);
+        const keep = byRay.length ? tp < Infinity && (Math.abs(tp - t0) < 0.05 ? dist(prev) <= dist(p) + 0.4 : tp <= t0 + 0.3) : dist(prev) <= dist(p) + 0.4;
+        if (keep) p = prev;
+      }
       // R перебирает варианты с тем же якорем (ребром опоры): крыша над зданием или наружу, пол по ту или
       // другую сторону стены, поворот лестницы — а не другие рёбра. Смена якоря сбрасывает перебор.
       const anchor = placementAnchor(ed.kind, p);
       if (state.altKey !== anchor) { state.altKey = anchor; state.alt = 0; }
-      const group = sorted.filter(c => placementAnchor(ed.kind, c) === anchor);
+      const group = sorted.filter(c => placementAnchor(ed.kind, c) === anchor).sort((a, b) => (a.attach.rise ?? 0) - (b.attach.rise ?? 0));
       if (state.alt > 0 && group.length > 1) p = group[state.alt % group.length];
       const attachKey = JSON.stringify(p.attach);
       state.lastAttach = attachKey;
@@ -340,6 +349,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const st = state.ghostStab;
       label.textContent = st < COLLAPSE ? `Обрушится: стабильность ${Math.round(st * 100)}%` : `Стабильность ${Math.round(st * 100)}%`;
       if (st < COLLAPSE) label.className = 'viewer3d__label viewer3d__label--bad';
+      if (KINDS[ed.kind].category === 'ramp' && p.attach.socket === 'top') label.textContent += p.attach.rise ? ' · высокий съезд, R — низкий' : ' · низкий съезд, R — высокий';
+      else if (KINDS[ed.kind].isFoundation && group.length > 1) label.textContent += ` · высота ${p.transform.position[1]} м, R — сменить`;
       showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable, undefined, piecesWith(cur ?? EMPTY, el)), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
       return true;
     };
@@ -383,12 +394,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const hit = pick();
       // Фундаменты, съезды и ступени ставятся как в игре — прицелом в землю рядом с постройкой: хозяином
       // становится любой фундамент поблизости, а не только тот, в который попал луч
-      const groundKind = ed.tool === 'build' && (KINDS[ed.kind].isFoundation || KINDS[ed.kind].category === 'ramp');
+      const ramp = KINDS[ed.kind].category === 'ramp';
+      const groundKind = ed.tool === 'build' && (KINDS[ed.kind].isFoundation || ramp);
       if (groundKind) {
         const g = hit && !hit.deployable ? hit.point : groundPoint();
         if (!g) return none();
-        const pt: [number, number, number] = [g.x, 0, g.z];
-        const hosts = res.elements.filter(e => KINDS[e.kind].isFoundation && Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6).map(e => e.id);
+        const pt: [number, number, number] = [g.x, ramp && hit && !hit.deployable ? g.y : 0, g.z];
+        const hosts = res.elements.filter(e => {
+          const info = KINDS[e.kind];
+          if (!(info.isFoundation || (ramp && (info.category === 'cell' || info.category === 'ramp') && !info.isFrame))) return false;
+          return Math.hypot(e.position[0] - pt[0], e.position[2] - pt[2]) < 6 && (!ramp || Math.abs(e.position[1] - pt[1]) < 3.6);
+        }).map(e => e.id);
         host.dataset.hover = hit?.id ?? 'ground';
         return showPlacement(ed, candidatesAround(ed, res, hosts, pt), pt, Infinity) ? undefined : none();
       }
