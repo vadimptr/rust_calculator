@@ -61,6 +61,7 @@ interface Viewer3DProps {
   /** Режим стройки; null — только просмотр. */
   editor: EditorState | null;
   showSockets?: boolean;
+  fov?: number;
 }
 
 interface Hit {
@@ -224,7 +225,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75 }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -253,7 +254,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     scene.background = new THREE.Color(0x161412);
     scene.fog = new THREE.Fog(0x161412, 80, 160);
 
-    const camera = new THREE.PerspectiveCamera(50, host.clientWidth / host.clientHeight, 0.1, 500);
+    const camera = new THREE.PerspectiveCamera(fov, host.clientWidth / host.clientHeight, 0.1, 500);
     camera.position.set(6, EYE_HEIGHT, 6);
     camera.lookAt(0, 0, 0);
 
@@ -929,6 +930,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     );
     s.controls.update();
   }, [resolved, modelsVersion]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    s.camera.fov = fov;
+    s.camera.updateProjectionMatrix();
+    s.hoverDirty = true;
+  }, [fov]);
 
   useEffect(() => {
     const s = refs.current;

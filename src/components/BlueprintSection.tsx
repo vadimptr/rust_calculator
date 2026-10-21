@@ -116,6 +116,16 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
 const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
 
 const GROUND_Y = -0.6;
+const FOV = { min: 70, max: 90, default: 75, key: 'bp.fov' };
+
+function savedFov(): number {
+  try {
+    const v = Number(localStorage.getItem(FOV.key));
+    return v >= FOV.min && v <= FOV.max ? v : FOV.default;
+  } catch {
+    return FOV.default;
+  }
+}
 const ROCK_OFFSET = { min: -8, max: 4, step: 0.05 };
 
 /** Содержание по дням и иконки ресурсов. */
@@ -188,13 +198,18 @@ const BlueprintSection: React.FC = () => {
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [showSockets, setShowSockets] = useState(false);
+  const [fov, setFov] = useState(savedFov);
+  const changeFov = (v: number) => {
+    setFov(v);
+    try { localStorage.setItem(FOV.key, String(v)); } catch { return; }
+  };
   const [raidOn, setRaidOn] = useState(() => new URLSearchParams(window.location.search).get('raid') === '1');
   const [raidMethod, setRaidMethod] = useState<RaidMethod>('optimal');
   const [raidPlay, setRaidPlay] = useState(0);
   const [showImpacts, setShowImpacts] = useState(true);
 
   // Режим стройки включён всегда: документ правится напрямую
-  const [tool, setTool] = useState<EditorTool>('build');
+  const [tool, setTool] = useState<EditorTool>('view');
   const [buildKind, setBuildKind] = useState<ElementKind>('square-foundation');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
 
@@ -490,8 +505,13 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} fov={fov} />
             <div className="bp__camera" role="group" aria-label="Камера">
+              <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">
+                <span>FOV</span>
+                <input type="range" min={FOV.min} max={FOV.max} step={1} value={fov} onChange={e => changeFov(Number(e.target.value))} onDoubleClick={() => changeFov(FOV.default)} aria-label="Угол обзора" />
+                <output>{fov}°</output>
+              </label>
               <button type="button" className={`bp__icon-btn${showSockets ? ' bp__icon-btn--active' : ''}`} onClick={() => setShowSockets(v => !v)} aria-pressed={showSockets} aria-label="Сокеты" data-tip="Сокеты: зелёным — зоны выбора, куда встанет блок; ярче — выбранная" data-tip-pos="left">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" /><path d="M4 7.5l8 4.5 8-4.5M12 12v9" /></svg>
               </button>

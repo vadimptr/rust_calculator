@@ -1724,6 +1724,38 @@
   z-index: 2;
 }
 
+.bp__fov {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 38px;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  background: rgba(20, 17, 14, 0.75);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  position: relative;
+}
+
+.bp__fov input {
+  width: 88px;
+  accent-color: var(--accent);
+}
+
+.bp__fov output {
+  min-width: 2.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+@media (max-width: 560px) {
+  .bp__fov input {
+    width: 60px;
+  }
+}
+
 .bp__camera .bp__icon-btn {
   color: var(--text-primary);
   background: rgba(20, 17, 14, 0.75);
