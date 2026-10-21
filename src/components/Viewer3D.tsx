@@ -123,6 +123,7 @@ interface SceneRefs {
 const GHOST_MAT = new THREE.MeshStandardMaterial({ color: 0x3b9dff, emissive: 0x16589e, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const HAMMER_MAT = new THREE.MeshStandardMaterial({ color: 0xffc34d, emissive: 0x9c6a12, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.FrontSide });
 const FALL_MAT = new THREE.MeshStandardMaterial({ color: 0xff8a3d, emissive: 0x8a3a10, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
+const BLOCKED_MAT = new THREE.MeshStandardMaterial({ color: 0xff3b3b, emissive: 0x8a1010, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.FrontSide });
 const SOCKET_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide });
 const SOCKET_SEL_MAT = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.38, depthWrite: false, side: THREE.DoubleSide });
 const SOCKET_EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.7, depthWrite: false });
@@ -569,6 +570,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       else if (KINDS[ed.kind].isFoundation && group.length > 1) label.textContent += ` · высота ${p.transform.position[1]} м, R — сменить`;
       drawSockets(showSocketsRef.current && res ? cands.map(c => boxOf(ed.kind, c, res)).filter((b): b is AimBox => !!b) : [], res ? boxOf(ed.kind, p, res) : null);
       showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable, undefined, piecesWith(cur ?? EMPTY, el)), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
+      if (st < COLLAPSE) state.pending = null;
       return true;
     };
 
@@ -730,9 +732,22 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       }
     };
 
+    const refresh = () => {
+      refreshGhost();
+      const pend = state.pending;
+      const reason = pend && pend.type !== 'hammer' ? placementBlock() ?? (throughRock() ? 'Сквозь скалу: из камня должен торчать хоть кусочек блока' : null) : null;
+      if (!reason) return;
+      if (ghost.children[0]) ghostify(ghost.children[0], BLOCKED_MAT);
+      state.ghostKey = '';
+      state.pending = null;
+      label.textContent = reason;
+      label.className = 'viewer3d__label viewer3d__label--bad';
+    };
+
     const act = (button: number) => {
       const ed = editorRef.current;
       if (!ed || button !== 0) return;
+      if (state.hoverDirty) refresh();
       const hit = pick();
       const p = state.pending;
       if (hit && (hit.deployable || !p) && toggleDoorsOf(state, hit.id)) return;
@@ -750,7 +765,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const ed = editorRef.current;
       if (!ed) return;
       if (ed.tool === 'view') return;
-      if (ed.tool === 'hammer') { refreshGhost(); if (state.pending?.type !== 'hammer') return; }
+      if (ed.tool === 'hammer') { refresh(); if (state.pending?.type !== 'hammer') return; }
       const p = state.pending;
       const target = p?.type === 'hammer' && !p.deployable ? ed.blueprint?.elements.find(e => e.id === p.id) : undefined;
       const items = ed.radial[ed.tool].filter(it => it.id !== 'rotate' || (target && rotatable(target.kind)));
@@ -818,7 +833,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         return;
       }
       // в полёте курсор захвачен: действие сразу, прицел в центре
-      if (fly.isLocked && editorRef.current) { refreshGhost(); act(e.button); }
+      if (fly.isLocked && editorRef.current) { refresh(); act(e.button); }
     };
     const onPointerUp = (e: PointerEvent) => {
       if (e.button === 2 && radialRef.current) { closeRadial(); return; }
@@ -882,16 +897,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         lastCam = camera.position.clone(); lastQuat = camera.quaternion.clone(); state.hoverDirty = true;
       }
       if (state.hoverDirty) {
-        refreshGhost();
-        const pend = state.pending;
-        const reason = pend && pend.type !== 'hammer' ? placementBlock() ?? (throughRock() ? 'Сквозь скалу: из камня должен торчать хоть кусочек блока' : null) : null;
-        if (reason) {
-          if (ghost.children[0]) ghostify(ghost.children[0], FALL_MAT);
-          state.ghostKey = '';
-          state.pending = null;
-          label.textContent = reason;
-          label.className = 'viewer3d__label viewer3d__label--bad';
-        }
+        refresh();
         const p = state.pending;
         host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'free' ? p.kind + JSON.stringify(p.t.position) : p.d.kind + (p.d.offset ? JSON.stringify(p.d.offset) : '') + (p.d.rotation ? `@${p.d.rotation}` : '')}` : '';
       }
