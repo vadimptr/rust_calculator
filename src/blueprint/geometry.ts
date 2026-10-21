@@ -182,6 +182,11 @@ function placeDeployable(parent: Transform, d: Deployable): Transform {
   return { position: [x, py, z], rotation: parent.rotation + (d.rotation ?? 0), level: parent.level };
 }
 
+export function angleGap(a: number, b: number, mod = 360): number {
+  const d = (((a - b) % mod) + mod) % mod;
+  return Math.min(d, mod - d);
+}
+
 function sameTransform(a: Transform, b: Transform, angleMod = 360): boolean {
   const d = Math.hypot(a.position[0] - b.position[0], a.position[1] - b.position[1], a.position[2] - b.position[2]);
   const da = Math.abs((((a.rotation - b.rotation) % angleMod) + angleMod) % angleMod);
@@ -234,7 +239,7 @@ export function clash(a: Placed, b: Placed): boolean {
     const sameSpan = Math.abs(a.position[1] - b.position[1]) < 0.01
       || (a.position[1] > b.position[1] && a.position[1] < b.position[1] + wallHeight(b.kind) - 0.01)
       || (b.position[1] > a.position[1] && b.position[1] < a.position[1] + wallHeight(a.kind) - 0.01);
-    return sameSpan && Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]) < 0.01 && Math.abs(((a.rotation - b.rotation) % 180 + 180) % 180) < 0.5;
+    return sameSpan && Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]) < 0.01 && angleGap(a.rotation, b.rotation, 180) < 0.5;
   }
   if (Math.abs(a.position[1] - b.position[1]) > 0.01) return false;
   return polygonsOverlap(footprint(a.kind, a), footprint(b.kind, b));

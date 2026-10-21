@@ -206,3 +206,12 @@ test('roof on a cell edge shares the edge with the neighbour cell and keeps the 
   const dup: Blueprint = { ...bp, elements: [...bp.elements, { id: 'rb2', kind: 'roof-triangle', attach: { to: 'f1', socket: 'edge:0', selfSocket: 'edge:0' } }] };
   assert.ok(resolveBlueprint(dup).issues.some(i => i.code === 'V05'));
 });
+
+test('a wall turned the other way on the same edge clashes at any yaw, not only at multiples of 30°', async () => {
+  const { clash, angleGap } = await import('./geometry.ts');
+  const a = { kind: 'wall' as const, position: [4.28, 30.5, -5.45] as [number, number, number], rotation: 114.821, level: 0 };
+  assert.ok(clash(a, { ...a, rotation: 294.821 }));
+  assert.ok(clash(a, { ...a, rotation: 114.821 + 180 - 1e-12 }));
+  assert.ok(!clash(a, { ...a, rotation: 174.821 }));
+  assert.ok(angleGap(-180.00000000000003, 0, 180) < 1e-9);
+});

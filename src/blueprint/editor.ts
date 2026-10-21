@@ -127,7 +127,7 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
         // ячейка, приставленная разными своими рёбрами, занимает одно и то же место: поворот берётся
         // по модулю симметрии формы, первым остаётся вариант с edge:0
         const sym = dedupe && KINDS[kind].category === 'cell' ? 360 / (KINDS[kind].shape === 'square' ? 4 : 3) : 360;
-        const key = `${t.position.map(v => v.toFixed(2)).join('|')}|${(((t.rotation % sym) + sym) % sym).toFixed(0)}|${turns}|${rise}`;
+        const key = `${t.position.map(v => v.toFixed(2)).join('|')}|${((Math.round(t.rotation) % sym) + sym) % sym}|${turns}|${rise}`;
         if (seen.has(key)) continue;
         seen.add(key);
         if (overlaps(kind, t, resolved)) continue;
