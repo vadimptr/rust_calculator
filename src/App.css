@@ -1049,6 +1049,40 @@
   accent-color: var(--accent);
 }
 
+.bp__range {
+  display: grid;
+  grid-template-columns: auto 1fr 4.2rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.bp__range input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.bp__range output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.bp__range-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.bp__range-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
 .bp__spec-link {
   font-size: 0.8rem;
   color: var(--text-secondary);

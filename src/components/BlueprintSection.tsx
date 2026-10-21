@@ -115,6 +115,9 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
 
 const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
 
+const GROUND_Y = -0.6;
+const ROCK_OFFSET = { min: -8, max: 4, step: 0.05 };
+
 /** Содержание по дням и иконки ресурсов. */
 const UPKEEP_DAYS = [1, 2, 3, 5, 10, 15, 20, 25, 30];
 const RES_ICONS: Record<ResourceKey, string> = { wood: '/icons/items/wood.webp', stone: '/icons/items/stones.webp', metal: '/icons/items/metal.fragments.webp', hqm: '/icons/items/metal.refined.webp' };
@@ -232,6 +235,14 @@ const BlueprintSection: React.FC = () => {
   }, []);
 
   const { blueprint, resolved, issues } = result;
+  const rock = blueprint?.terrain?.[0];
+  const rockOffset = rock ? Math.round((rock.position[1] - GROUND_Y) * 100) / 100 : 0;
+  const setRockOffset = (offset: number) => setSource(s => {
+    const doc = s.data as Blueprint | null;
+    if (!doc?.terrain?.length) return s;
+    const y = Math.round((GROUND_Y + offset) * 1000) / 1000;
+    return { label: s.label, data: { ...doc, terrain: doc.terrain.map((t, i) => (i === 0 ? { ...t, position: [t.position[0], y, t.position[2]] as [number, number, number] } : t)) } };
+  });
   const hasCupboard = !!resolved?.deployables.some(d => d.kind === 'tool-cupboard');
   const raidActive = raidOn && hasCupboard;
 
@@ -331,6 +342,26 @@ const BlueprintSection: React.FC = () => {
               Источник: {source.label}
               {blueprint?.meta.gameVersion && <> · игра {blueprint.meta.gameVersion}</>}
             </div>
+
+            {rock && (
+              <section className="bp__terrain">
+                <div className="bp__section-title">Скала</div>
+                <label className="bp__range">
+                  <span>Высота</span>
+                  <input
+                    type="range" min={ROCK_OFFSET.min} max={ROCK_OFFSET.max} step={ROCK_OFFSET.step} value={rockOffset}
+                    onChange={e => setRockOffset(Number(e.target.value))} aria-label="Высота скалы над землёй"
+                  />
+                  <output>{rockOffset > 0 ? '+' : ''}{rockOffset.toFixed(2)} м</output>
+                </label>
+                <div className="bp__range-actions">
+                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.max(ROCK_OFFSET.min, rockOffset - 0.5))}>−0.5 м</button>
+                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.min(ROCK_OFFSET.max, rockOffset + 0.5))}>+0.5 м</button>
+                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(0)} disabled={rockOffset === 0}>Сбросить</button>
+                </div>
+                <p className="bp__range-hint">Рельеф под скалой в игре бывает разным: подними или опусти её, чтобы пол полости встал как на твоём сервере.</p>
+              </section>
+            )}
 
             {errors.length > 0 && (
               <div className="bp__issues bp__issues--error">
