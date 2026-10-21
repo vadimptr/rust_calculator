@@ -197,6 +197,7 @@ const BlueprintSection: React.FC = () => {
   const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [showSockets, setShowSockets] = useState(false);
+  const [showPrivilege, setShowPrivilege] = useState(false);
   const [fov, setFov] = useState(savedFov);
   const changeFov = (v: number) => {
     setFov(v);
@@ -400,6 +401,13 @@ const BlueprintSection: React.FC = () => {
 
             {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
 
+            {hasCupboard && (
+              <label className="bp__toggle bp__privilege">
+                <input type="checkbox" checked={showPrivilege} onChange={e => setShowPrivilege(e.target.checked)} />
+                Зона привилегии шкафа (16 м)
+              </label>
+            )}
+
             {resolved && hasCupboard && raidBusy && (
               <section className="raid-panel">
                 <label className="bp__toggle raid-panel__toggle">
@@ -504,7 +512,7 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} fov={fov} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
             <div className="bp__camera" role="group" aria-label="Камера">
               <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">
                 <span>FOV</span>

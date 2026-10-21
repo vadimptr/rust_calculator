@@ -14,7 +14,9 @@ import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { aimDistance, deployPlacement, freePlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
-import { footprint } from '../blueprint/geometry.ts';
+import { footprint, socketPose } from '../blueprint/geometry.ts';
+import { PRIVILEGE_RADIUS, connectsCupboards, cupboardBlocker, privilegeZones } from '../blueprint/privilege.ts';
+import type { PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import { caveView } from '../blueprint/terrain.ts';
@@ -62,6 +64,7 @@ interface Viewer3DProps {
   editor: EditorState | null;
   showSockets?: boolean;
   fov?: number;
+  showPrivilege?: boolean;
 }
 
 interface Hit {
@@ -72,7 +75,7 @@ interface Hit {
 
 type Pending =
   | { type: 'element'; kind: ElementKind; attach: Attach }
-  | { type: 'deploy'; d: Omit<Deployable, 'id'> }
+  | { type: 'deploy'; d: Omit<Deployable, 'id'>; t?: { position: [number, number, number]; rotation: number } }
   | { type: 'hammer'; id: string; deployable: boolean }
   | { type: 'free'; kind: ElementKind; t: Transform }
   | null;
@@ -92,6 +95,7 @@ interface SceneRefs {
   frame: number;
   ghost: THREE.Group;
   sockets: THREE.Group;
+  zones: THREE.Group;
   socketKey: string;
   raycaster: THREE.Raycaster;
   /** Последняя позиция курсора в NDC (орбита); в полёте — центр экрана. */
@@ -189,6 +193,30 @@ function buildTerrain(t: ResolvedTerrain): THREE.Object3D | null {
   return model;
 }
 
+function zoneMesh(z: PrivilegeZone): THREE.Mesh {
+  const data = new Uint8Array(z.nx * z.nz * 4);
+  const at = (i: number, k: number) => i >= 0 && k >= 0 && i < z.nx && k < z.nz && z.inside[k * z.nx + i] === 1;
+  for (let k = 0; k < z.nz; k++) {
+    for (let i = 0; i < z.nx; i++) {
+      if (!at(i, k)) continue;
+      const edge = !at(i - 1, k) || !at(i + 1, k) || !at(i, k - 1) || !at(i, k + 1);
+      data.set([232, 176, 74, edge ? 210 : 46], (k * z.nx + i) * 4);
+    }
+  }
+  const tex = new THREE.DataTexture(data, z.nx, z.nz, THREE.RGBAFormat);
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  const x1 = z.x0 + z.nx * z.cell, z1 = z.z0 + z.nz * z.cell, y = 0.03;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute([z.x0, y, z.z0, x1, y, z.z0, x1, y, z1, z.x0, y, z1], 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+  geo.setIndex([0, 2, 1, 0, 3, 2]);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+  mesh.renderOrder = 1;
+  mesh.raycast = () => {};
+  return mesh;
+}
+
 function isTerrain(o: THREE.Object3D): boolean {
   for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.terrain !== undefined) return true;
   return false;
@@ -225,7 +253,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75 }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -305,6 +333,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     world.add(ghost);
     const sockets = new THREE.Group();
     world.add(sockets);
+    const zones = new THREE.Group();
+    world.add(zones);
     const label = document.createElement('div');
     label.className = 'viewer3d__label';
     host.appendChild(label);
@@ -314,7 +344,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
 
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
-      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
+      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
@@ -347,6 +377,34 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       ghost.clear();
       ghost.add(build());
       state.ghostKey = key;
+    };
+
+    let blockKey = '';
+    let blockReason: string | null = null;
+    const placementBlock = (): string | null => {
+      const p = state.pending;
+      const res = resolvedRef.current;
+      if (!p || !res || p.type === 'hammer') return null;
+      const key = JSON.stringify(p) + '|' + res.elements.length + '|' + res.deployables.length;
+      if (key === blockKey) return blockReason;
+      blockKey = key;
+      blockReason = null;
+      if (p.type === 'deploy') {
+        if (p.d.kind === 'tool-cupboard' && p.t) {
+          const hit = cupboardBlocker(res, p.t);
+          if (hit) blockReason = `Шкаф в зоне привилегии шкафа «${hit.cupboard}»: ${hit.distance.toFixed(1)} м до его здания, нужно больше ${PRIVILEGE_RADIUS} м`;
+        }
+        return blockReason;
+      }
+      let el: ResolvedElement | null = null;
+      if (p.type === 'free') el = { id: '__ghost__', kind: p.kind, grade: 'twig', ...p.t };
+      else {
+        const host = res.elements.find(e => e.id === p.attach.to);
+        if (host) el = { id: '__ghost__', kind: p.kind, grade: 'twig', ...socketPose(host, p.kind, p.attach) };
+      }
+      const tcs = el ? connectsCupboards(res, el) : null;
+      if (tcs) blockReason = `Нельзя соединить два здания со шкафами (${tcs.join(', ')})`;
+      return blockReason;
     };
 
     const throughRock = (): boolean => {
@@ -639,7 +697,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       };
       // шкаф и дроп-бокс едут за курсором: ключ без смещения, позиция обновляется на месте
       const posKey = d.kind === 'tool-cupboard' ? '' : d.kind === 'drop-box' ? `dir:${d.direction}` : JSON.stringify(d);
-      showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d }, () => ghostify(buildDeployable(rd), GHOST_MAT));
+      showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d, t: { position: rd.position, rotation: rd.rotation } }, () => ghostify(buildDeployable(rd), GHOST_MAT));
       if (!posKey || posKey.startsWith('dir:')) {
         const g = ghost.children[0];
         if (g) { g.position.set(rd.position[0], rd.position[1], rd.position[2]); g.rotation.y = (-rd.rotation * Math.PI) / 180; }
@@ -800,11 +858,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (state.hoverDirty) {
         refreshGhost();
         const pend = state.pending;
-        if (pend && pend.type !== 'hammer' && throughRock()) {
-          ghostify(ghost.children[0], FALL_MAT);
+        const reason = pend && pend.type !== 'hammer' ? placementBlock() ?? (throughRock() ? 'Сквозь скалу: из камня должен торчать хоть кусочек блока' : null) : null;
+        if (reason) {
+          if (ghost.children[0]) ghostify(ghost.children[0], FALL_MAT);
           state.ghostKey = '';
           state.pending = null;
-          label.textContent = 'Сквозь скалу: из камня должен торчать хоть кусочек блока';
+          label.textContent = reason;
           label.className = 'viewer3d__label viewer3d__label--bad';
         }
         const p = state.pending;
@@ -931,6 +990,21 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     );
     s.controls.update();
   }, [resolved, modelsVersion]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    for (const c of s.zones.children) {
+      const m = c as THREE.Mesh;
+      m.geometry.dispose();
+      const mat = m.material as THREE.MeshBasicMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+    }
+    s.zones.clear();
+    if (!showPrivilege || !resolved) return;
+    for (const z of privilegeZones(resolved)) s.zones.add(zoneMesh(z));
+  }, [resolved, showPrivilege]);
 
   useEffect(() => {
     const s = refs.current;

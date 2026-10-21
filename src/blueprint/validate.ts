@@ -5,6 +5,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import type { ErrorObject } from 'ajv';
 import schema from '../../docs/blueprint/schema/blueprint.schema.json' with { type: 'json' };
 import { isLegacy, resolveBlueprint, upgradeLegacy } from './geometry.ts';
+import { privilegeIssues } from './privilege.ts';
 import type { Blueprint, Issue, LegacyBlueprint, Resolved } from './types.ts';
 
 const ajv = new Ajv2020({ strict: true, strictRequired: false, validateFormats: false, allErrors: true });
@@ -37,6 +38,7 @@ export function loadBlueprint(data: unknown): LoadResult {
   }
   const { resolved, issues } = resolveBlueprint(blueprint);
   const hasErrors = issues.some(i => i.level === 'error');
+  if (!hasErrors) issues.push(...privilegeIssues(resolved));
   return { blueprint, resolved: hasErrors ? null : resolved, issues };
 }
 

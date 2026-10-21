@@ -2452,3 +2452,8 @@
 .upkeep__popup .cost__days {
   margin: 0;
 }
+
+.bp__privilege {
+  display: flex;
+  margin-top: 0.6rem;
+}
