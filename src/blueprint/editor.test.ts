@@ -499,3 +499,18 @@ test('triangle spiral stairs go only on a triangle cell, in three turns, and sta
   const up = candidatePlacements(built, rb.resolved, 'spiral-stairs-triangle', id);
   assert.ok(up.some(c => Math.abs(c.transform.position[1] - 1.5) < 1e-6));
 });
+
+test('bulk regrade changes only the chosen kinds of the chosen material', async () => {
+  const { regradeElements, regradeTargets } = await import('./editor.ts');
+  const { bp } = load('house-2x2');
+  const walls = bp.elements.filter(e => e.kind === 'wall').length;
+  const r = { kinds: ['wall' as const], from: 'stone' as const, to: 'metal' as const };
+  assert.equal(regradeTargets(bp, r).length, walls);
+  const out = regradeElements(bp, r);
+  assert.ok(out.elements.filter(e => e.kind === 'wall').every(e => e.grade === 'metal'));
+  assert.deepEqual(out.elements.filter(e => e.kind !== 'wall'), bp.elements.filter(e => e.kind !== 'wall'));
+  assert.equal(regradeTargets(out, r).length, 0);
+  const all = regradeElements(bp, { kinds: bp.elements.map(e => e.kind), from: 'any', to: 'twig' });
+  assert.ok(all.elements.every(e => (e.grade ?? all.defaults?.grade ?? 'twig') === 'twig'));
+  assert.equal(regradeElements(bp, { kinds: ['wall'], from: 'wood', to: 'metal' }), bp);
+});

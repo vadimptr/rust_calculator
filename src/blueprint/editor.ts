@@ -217,6 +217,32 @@ export function upgradeElement(bp: Blueprint, id: string, grade: Grade): Bluepri
   return { ...bp, elements: bp.elements.map(e => (e.id === id ? { ...e, grade } : e)) };
 }
 
+export interface Regrade {
+  kinds: ElementKind[];
+  from: Grade | 'any';
+  to: Grade;
+}
+
+export function regradeTargets(bp: Blueprint, r: Regrade): string[] {
+  const def = bp.defaults?.grade ?? 'twig';
+  const kinds = new Set(r.kinds);
+  return bp.elements.filter(e => kinds.has(e.kind) && (r.from === 'any' || (e.grade ?? def) === r.from) && (e.grade ?? def) !== r.to).map(e => e.id);
+}
+
+export function regradeElements(bp: Blueprint, r: Regrade): Blueprint {
+  const ids = new Set(regradeTargets(bp, r));
+  if (!ids.size) return bp;
+  const def = bp.defaults?.grade ?? 'twig';
+  return {
+    ...bp,
+    elements: bp.elements.map(e => {
+      if (!ids.has(e.id)) return e;
+      const { grade: _g, ...rest } = e;
+      return r.to === def ? rest : { ...rest, grade: r.to };
+    }),
+  };
+}
+
 export function rotatable(kind: ElementKind): boolean {
   const cat = KINDS[kind].category;
   return cat === 'wallType' || cat === 'stairs' || cat === 'ramp';

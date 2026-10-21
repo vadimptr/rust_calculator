@@ -2630,3 +2630,123 @@
     line-height: 1.1;
   }
 }
+
+.grade-dialog {
+  margin: auto;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  color: var(--text-primary);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+
+.grade-dialog::backdrop {
+  background: rgba(8, 6, 5, 0.6);
+}
+
+.grade-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem 1.2rem 1rem;
+}
+
+.grade-dialog__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.grade-dialog__section .bp__section-title {
+  display: block;
+  margin: 0 0 0.45rem;
+}
+
+.grade-dialog__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.grade-dialog__link {
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--accent-hover);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.grade-dialog__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.grade-dialog__group {
+  margin: 0;
+  padding: 0.4rem 0.6rem 0.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+
+.grade-dialog__group legend {
+  padding: 0 0.25rem;
+}
+
+.grade-dialog__check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.12rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.grade-dialog__check input {
+  accent-color: var(--accent);
+}
+
+.grade-dialog__check--group {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.grade-dialog__count {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.grade-dialog__grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.grade-dialog__summary,
+.grade-dialog__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.grade-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.grade-dialog__actions .bp__upload-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

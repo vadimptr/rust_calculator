@@ -874,6 +874,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector('dialog[open]')) return;
       if (editorRef.current && !(e.target instanceof HTMLInputElement)) {
         // киянка: R — снести блок под прицелом; в остальных инструментах R — другой вариант
         if (e.code === 'KeyR' && editorRef.current.tool === 'hammer') {

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
+import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SchemeSummary } from '../blueprint/schemesApi.ts';
@@ -10,7 +11,8 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import type { Regrade } from '../blueprint/editor.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Transform } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -63,6 +65,10 @@ const KIND_LABELS: Record<string, string> = {
   'metal-window-bars': 'Металлическая решётка',
   'metal-embrasure': 'Металлическая амбразура',
   'drop-box': 'Дроп-бокс',
+};
+
+const GRADE_TITLES: Record<Grade, string> = {
+  twig: 'Солома', wood: 'Дерево', stone: 'Камень', metal: 'Металл', armored: 'МВК',
 };
 
 const GRADE_LABELS: Record<string, string> = {
@@ -205,6 +211,7 @@ const BlueprintSection: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState<{ name: string; rock: boolean } | null>(null);
   const [collapsedNote, setCollapsedNote] = useState('');
+  const [gradeOpen, setGradeOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [showSockets, setShowSockets] = useState(false);
   const [showPrivilege, setShowPrivilege] = useState(true);
@@ -309,7 +316,7 @@ const BlueprintSection: React.FC = () => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (!(e.metaKey || e.ctrlKey)) return;
+      if (!(e.metaKey || e.ctrlKey) || document.querySelector('dialog[open]')) return;
       if (e.code === 'KeyZ') { (e.shiftKey ? doRedo : doUndo)(); e.preventDefault(); }
       else if (e.code === 'KeyY') { doRedo(); e.preventDefault(); }
       else if (e.code === 'KeyS') { save(); e.preventDefault(); }
@@ -331,7 +338,7 @@ const BlueprintSection: React.FC = () => {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.metaKey || e.ctrlKey) return;
+      if (e.metaKey || e.ctrlKey || document.querySelector('dialog[open]')) return;
       const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
       if (t) { setTool(cur => (cur === t ? 'view' : t)); e.preventDefault(); }
     };
@@ -479,6 +486,7 @@ const BlueprintSection: React.FC = () => {
               <button type="button" className="bp__icon-btn" onClick={doRedo} disabled={!hist?.future.length} aria-label="Вернуть" data-tip="Вернуть (Shift+Cmd+Z)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5" /><path d="M20 9H10a6 6 0 0 0 0 12h3" /></svg>
               </button>
+              <button type="button" className="raid-tier__btn" onClick={() => setGradeOpen(true)} disabled={!blueprint?.elements.length} data-tip="Сменить материал сразу у многих блоков">Материал</button>
               <button type="button" className="bp__upload-btn bp__save" onClick={save} disabled={!dirty || busy || !current?.id}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
               <span className={`bp__save-state${dirty ? ' bp__save-state--dirty' : ''}`}>{!current?.id ? 'без базы' : dirty ? 'есть изменения' : 'сохранено'}</span>
             </div>
@@ -679,6 +687,20 @@ const BlueprintSection: React.FC = () => {
         </div>
 
       </div>
+      <GradeDialog
+        open={gradeOpen}
+        blueprint={blueprint}
+        kindLabels={KIND_LABELS}
+        gradeLabels={GRADE_TITLES}
+        onClose={() => setGradeOpen(false)}
+        onApply={(r: Regrade) => {
+          if (!blueprint) return;
+          const n = regradeTargets(blueprint, r).length;
+          applyDoc(regradeElements(blueprint, r));
+          setGradeOpen(false);
+          setStatus({ text: `Материал изменён у блоков: ${n}` });
+        }}
+      />
     </section>
   );
 };
