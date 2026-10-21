@@ -49,6 +49,7 @@ export const KINDS: Record<ElementKind, KindInfo> = {
   'stairs-l-shape':       { category: 'stairs' },
   'u-shaped-stairs':      { category: 'stairs' },
   'spiral-stairs':        { category: 'stairs' },
+  'spiral-stairs-triangle': { category: 'stairs', shape: 'triangle' },
   'roof':                 { category: 'roof', shape: 'square' },
   'roof-triangle':        { category: 'roof', shape: 'triangle' },
   // съезд и ступени: на ребро фундамента, занимают место соседней ячейки и спускаются на землю
@@ -100,6 +101,14 @@ export function edgeIndex(socket: Socket): number | null {
   return m ? Number(m[1]) : null;
 }
 
+export function isSpiral(kind: ElementKind): boolean {
+  return kind === 'spiral-stairs' || kind === 'spiral-stairs-triangle';
+}
+
+export function stairTurn(kind: ElementKind): number {
+  return kind === 'spiral-stairs-triangle' ? 120 : 90;
+}
+
 /** Сокеты, которые есть у типа элемента (§4.4). */
 export function socketsOf(kind: ElementKind): Socket[] {
   const info = KINDS[kind];
@@ -111,7 +120,7 @@ export function socketsOf(kind: ElementKind): Socket[] {
     case 'wallType':
       return info.opening ? ['bottom', 'top', 'opening'] : ['bottom', 'top', 'face'];
     case 'stairs':
-      return kind === 'spiral-stairs' ? ['bottom', 'top'] : ['bottom'];
+      return isSpiral(kind) ? ['bottom', 'top'] : ['bottom'];
     case 'roof':
       return Array.from({ length: edgeCount(info.shape!) }, (_, i) => `edge:${i}` as Socket);
     case 'ramp':
@@ -139,10 +148,12 @@ export function canAttach(
     return false;
   }
   if (p.category === 'cell' && socket === 'top') {
-    return (c.category === 'stairs' || c.category === 'ramp') && selfSocket === 'bottom' && p.shape === 'square' && !p.isFrame;
+    if (p.isFrame || selfSocket !== 'bottom') return false;
+    if (child === 'spiral-stairs-triangle') return p.shape === 'triangle';
+    return (c.category === 'stairs' || c.category === 'ramp') && p.shape === 'square';
   }
   if (p.category === 'stairs' && socket === 'top') {
-    return parent === 'spiral-stairs' && child === 'spiral-stairs' && selfSocket === 'bottom';
+    return isSpiral(parent) && child === parent && selfSocket === 'bottom';
   }
   if (p.category === 'ramp' && socket === 'edge:2') {
     return c.category === 'ramp' && selfSocket === 'edge:0';

@@ -19,7 +19,7 @@ export const BUILD_PLAN: { group: string; kinds: ElementKind[] }[] = [
   { group: 'Фундаменты', kinds: ['square-foundation', 'triangle-foundation', 'foundation-steps', 'ramp'] },
   { group: 'Полы', kinds: ['square-floor', 'triangle-floor', 'floor-frame', 'triangle-floor-frame'] },
   { group: 'Стены', kinds: ['wall', 'doorway', 'window-frame', 'wall-frame', 'half-wall', 'low-wall'] },
-  { group: 'Лестницы', kinds: ['stairs-l-shape', 'u-shaped-stairs', 'spiral-stairs'] },
+  { group: 'Лестницы', kinds: ['stairs-l-shape', 'u-shaped-stairs', 'spiral-stairs', 'spiral-stairs-triangle'] },
   { group: 'Крыши', kinds: ['roof', 'roof-triangle'] },
 ];
 
@@ -35,7 +35,7 @@ const ID_PREFIX: Record<ElementKind, string> = {
   'square-foundation': 'f', 'triangle-foundation': 'tf', 'foundation-steps': 'fs', 'ramp': 'rp',
   'wall': 'w', 'half-wall': 'hw', 'low-wall': 'lw', 'doorway': 'dw', 'window-frame': 'wf', 'wall-frame': 'fr',
   'square-floor': 'c', 'triangle-floor': 'tc', 'floor-frame': 'ff', 'triangle-floor-frame': 'tff',
-  'stairs-l-shape': 'st', 'u-shaped-stairs': 'us', 'spiral-stairs': 'ss', 'roof': 'r', 'roof-triangle': 'tr',
+  'stairs-l-shape': 'st', 'u-shaped-stairs': 'us', 'spiral-stairs': 'ss', 'spiral-stairs-triangle': 'sst', 'roof': 'r', 'roof-triangle': 'tr',
 };
 
 const DEPLOY_PREFIX: Partial<Record<DeployableKind, string>> = { 'tool-cupboard': 'cup', 'drop-box': 'box' };
@@ -112,7 +112,7 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
         || (KINDS[host.kind].category === 'cell' && socket.startsWith('edge:') && KINDS[kind].category === 'roof');
       const flips = twoSided || KINDS[kind].category === 'wallType' ? [false, true] : [false];
       const spiralOnSpiral = kind === 'spiral-stairs' && host.kind === 'spiral-stairs';
-      const turnsList = spiralOnSpiral ? [2, 0, 1, 3] : KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
+      const turnsList = kind === 'spiral-stairs-triangle' ? [0, 1, 2] : spiralOnSpiral ? [2, 0, 1, 3] : KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
       const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
         ? [-3, -1.5, 0, 1.5, 3] : kind === 'ramp' && socket === 'top' ? [0, RAMP_HIGH_RISE] : [0];
       for (const flip of flips) for (const turns of turnsList) for (const rise of rises) {

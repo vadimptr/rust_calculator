@@ -30,6 +30,7 @@ BLOCKS = {
     'stairs-l-shape': 'stairs.l/block.stair.lshape.{g}.prefab',
     'u-shaped-stairs': 'stairs.u/block.stair.ushape.{g}.prefab',
     'spiral-stairs': 'stairs.spiral/block.stair.spiral.{g}.prefab',
+    'spiral-stairs-triangle': 'stairs.spiral.triangle/stairs.triangle.spiral.{g}.prefab',
     'roof': 'roof/roof.{g}.prefab',
     'roof-triangle': 'roof.triangle/roof.triangle.{g}.prefab',
     'ramp': 'ramp/ramp.{g}.prefab',
@@ -42,7 +43,7 @@ BASES = {
     'wall': 'wall/wall.prefab', 'half-wall': 'wall.half/wall.half.prefab', 'low-wall': 'wall.low/wall.low.prefab',
     'doorway': 'wall.doorway/wall.doorway.prefab', 'window-frame': 'wall.window/wall.window.prefab', 'wall-frame': 'wall.frame/wall.frame.prefab',
     'stairs-l-shape': 'stairs.l/block.stair.lshape.prefab', 'u-shaped-stairs': 'stairs.u/block.stair.ushape.prefab',
-    'spiral-stairs': 'stairs.spiral/block.stair.spiral.prefab', 'roof': 'roof/roof.prefab', 'roof-triangle': 'roof.triangle/roof.triangle.prefab',
+    'spiral-stairs': 'stairs.spiral/block.stair.spiral.prefab', 'spiral-stairs-triangle': 'stairs.spiral.triangle/block.stair.spiral.triangle.prefab', 'roof': 'roof/roof.prefab', 'roof-triangle': 'roof.triangle/roof.triangle.prefab',
     'ramp': 'ramp/ramp.prefab', 'foundation-steps': 'foundation.steps/foundation.steps.prefab',
 }
 TOKENS = {'square-foundation': 'foundation', 'triangle-foundation': 'foundation_triangle', 'foundation-steps': 'foundation_steps',

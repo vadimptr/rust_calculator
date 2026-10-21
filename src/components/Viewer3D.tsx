@@ -15,8 +15,8 @@ import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { aimDistance, deployPlacement, freePlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
 import { footprint, socketPose } from '../blueprint/geometry.ts';
-import { PRIVILEGE_RADIUS, connectsCupboards, cupboardBlocker, privilegeZones } from '../blueprint/privilege.ts';
-import type { PrivilegeZone } from '../blueprint/privilege.ts';
+import { PRIVILEGE_RADIUS, buildings, connectsCupboards, cupboardBlocker, cupboardBox, privilegeZones, privilegedAt } from '../blueprint/privilege.ts';
+import type { Buildings, PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import { caveView } from '../blueprint/terrain.ts';
@@ -96,6 +96,10 @@ interface SceneRefs {
   ghost: THREE.Group;
   sockets: THREE.Group;
   zones: THREE.Group;
+  xray: THREE.Group;
+  privInfo: Buildings | null;
+  privBadge: HTMLDivElement;
+  privAt: number;
   socketKey: string;
   raycaster: THREE.Raycaster;
   /** Последняя позиция курсора в NDC (орбита); в полёте — центр экрана. */
@@ -155,6 +159,7 @@ const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: t
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const EYE_HEIGHT = 1.6;
 const COLLIDER_MAT = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+const XRAY_MAT = new THREE.MeshBasicMaterial({ color: 0x4cff6a, transparent: true, opacity: 0.35, depthTest: false, depthWrite: false });
 const FREE_TERRAIN_DEPTH = 2.6;
 const SNAP_TERRAIN_DEPTH = 3;
 
@@ -340,16 +345,27 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     world.add(sockets);
     const zones = new THREE.Group();
     world.add(zones);
+    const xray = new THREE.Group();
+    world.add(xray);
     const label = document.createElement('div');
     label.className = 'viewer3d__label';
     host.appendChild(label);
+    const privBadge = document.createElement('div');
+    privBadge.className = 'viewer3d__privilege';
+    const privIcon = document.createElement('img');
+    privIcon.src = '/icons/ui/building-privilege.webp';
+    privIcon.alt = '';
+    const privText = document.createElement('span');
+    privText.textContent = 'Привилегия строительства';
+    privBadge.append(privIcon, privText);
+    host.appendChild(privBadge);
 
     const fly = new PointerLockControls(camera, renderer.domElement);
     const keys = new Set<string>();
 
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
-      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
+      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
     };
     refs.current = state;
@@ -891,6 +907,16 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (fly.isLocked) applyFlight(camera, keys, dt);
       else if (controls.enabled) controls.update();
       animateDoors(state.doors, dt);
+      const now = performance.now();
+      if (now - state.privAt > 200) {
+        state.privAt = now;
+        let inside = false;
+        if (state.privInfo) {
+          const at = world.worldToLocal((modeRef.current === 'fly' ? camera.position : controls.target).clone());
+          inside = privilegedAt(state.privInfo, [at.x, at.y, at.z]) !== null;
+        }
+        privBadge.classList.toggle('viewer3d__privilege--on', inside);
+      }
       state.raid.tick(performance.now());
       // в полёте прицел в центре: призрак обновляется, когда камера сдвинулась
       if (editorRef.current && fly.isLocked && (!camera.position.equals(lastCam) || !camera.quaternion.equals(lastQuat))) {
@@ -987,6 +1013,23 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
+    s.xray.clear();
+    const cupboards = resolved.deployables.filter(d => d.kind === 'tool-cupboard');
+    s.privInfo = cupboards.length ? buildings(resolved) : null;
+    s.privAt = 0;
+    for (const d of cupboards) {
+      const o = buildDeployable(d);
+      o.traverse(n => {
+        n.raycast = () => {};
+        const mesh = n as THREE.Mesh;
+        if (!mesh.isMesh) { if ((n as THREE.LineSegments).isLineSegments) n.visible = false; return; }
+        mesh.material = XRAY_MAT;
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        mesh.renderOrder = 40;
+      });
+      s.xray.add(o);
+    }
     for (const t of resolved.terrain ?? []) { const o = buildTerrain(t); if (o) s.content.add(o); }
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s);
@@ -1036,6 +1079,18 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     s.zones.clear();
     if (!showPrivilege || !resolved) return;
     for (const z of privilegeZones(resolved)) s.zones.add(zoneMesh(z));
+    for (const d of resolved.deployables) {
+      if (d.kind !== 'tool-cupboard') continue;
+      const c = cupboardBox(d).center;
+      const shell = new THREE.Mesh(new THREE.SphereGeometry(PRIVILEGE_RADIUS, 48, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.07, depthWrite: false, side: THREE.DoubleSide }));
+      const wire = new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(PRIVILEGE_RADIUS, 24, 12)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, depthWrite: false }));
+      for (const o of [shell, wire]) {
+        o.position.set(...c);
+        o.renderOrder = 3;
+        o.raycast = () => {};
+        s.zones.add(o);
+      }
+    }
   }, [resolved, showPrivilege]);
 
   useEffect(() => {

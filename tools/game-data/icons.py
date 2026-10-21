@@ -21,7 +21,7 @@ UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined', 'door.hinged.w
             'wall.window.glass.reinforced', 'wall.window.bars.toptier', 'wall.window.bars.metal', 'cupboard.tool', 'dropbox'}
 UI_BUILD = {'foundation', 'foundation.triangle', 'foundation.steps', 'ramp', 'floor', 'floor.triangle', 'floor.frame',
             'floor.triangle.frame', 'wall', 'wall.doorway', 'wall.window', 'wall.frame', 'wall.half', 'wall.low',
-            'stairs_l', 'stairs_u', 'stairs_spiral', 'roof', 'roof.triangle'}
+            'stairs_l', 'stairs_u', 'stairs_spiral', 'stairs.triangle.spiral', 'roof', 'roof.triangle'}
 wanted = {'items': set(UI_ITEMS), 'ui': set(), 'build': set(UI_BUILD)}
 for path in glob.glob(os.path.join(docs, 'pages', '*.md')):
     text = open(path, encoding='utf8').read()

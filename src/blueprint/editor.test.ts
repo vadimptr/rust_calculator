@@ -483,3 +483,19 @@ test('a foundation keeps any top height from 0 to 3 m, and a neighbour snaps 1.5
   assert.ok(resolveBlueprint(newBlueprint('f', 'square-foundation', [0, 3.2, 0], 0)).issues.some(i => i.code === 'V12'));
   assert.deepEqual(resolveBlueprint(newBlueprint('f', 'square-foundation', [0, 2.65, 0], 0)).issues, []);
 });
+
+test('triangle spiral stairs go only on a triangle cell, in three turns, and stack on themselves', () => {
+  const tri = newBlueprint('t', 'triangle-foundation', [0, 0, 0], 0);
+  const r = resolveBlueprint(tri).resolved;
+  const on = candidatePlacements(tri, r, 'spiral-stairs-triangle', 'f1');
+  assert.deepEqual(on.map(c => c.transform.rotation).sort((a, b) => a - b), [0, 120, 240]);
+  const sq = newBlueprint('s', 'square-foundation', [0, 0, 0], 0);
+  assert.equal(candidatePlacements(sq, resolveBlueprint(sq).resolved, 'spiral-stairs-triangle', 'f1').length, 0);
+  assert.ok(!candidatePlacements(tri, r, 'spiral-stairs', 'f1').length);
+  const built = addElement(tri, 'spiral-stairs-triangle', on[0].attach);
+  const rb = resolveBlueprint(built);
+  assert.deepEqual(rb.issues.filter(i => i.level === 'error'), []);
+  const id = built.elements[1].id;
+  const up = candidatePlacements(built, rb.resolved, 'spiral-stairs-triangle', id);
+  assert.ok(up.some(c => Math.abs(c.transform.position[1] - 1.5) < 1e-6));
+});

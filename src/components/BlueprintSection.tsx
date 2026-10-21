@@ -45,6 +45,7 @@ const KIND_LABELS: Record<string, string> = {
   'stairs-l-shape': 'Лестница L',
   'u-shaped-stairs': 'Лестница U',
   'spiral-stairs': 'Винтовая лестница',
+  'spiral-stairs-triangle': 'Треугольная винтовая лестница',
   'roof': 'Крыша',
   'roof-triangle': 'Треугольная крыша',
   'ramp': 'Съезд',
@@ -73,7 +74,7 @@ const SHORT_LABELS: Record<string, string> = {
   'square-foundation': 'Фундамент', 'triangle-foundation': 'Тр. фунд.', 'foundation-steps': 'Ступени', 'ramp': 'Съезд',
   'wall': 'Стена', 'half-wall': 'Полустена', 'low-wall': 'Низкая', 'doorway': 'Проём', 'window-frame': 'Окно', 'wall-frame': 'Рама',
   'square-floor': 'Пол', 'triangle-floor': 'Тр. пол', 'floor-frame': 'Рама пола', 'triangle-floor-frame': 'Тр. рама',
-  'stairs-l-shape': 'Лестн. L', 'u-shaped-stairs': 'Лестн. U', 'spiral-stairs': 'Винтовая', 'roof': 'Крыша', 'roof-triangle': 'Тр. крыша',
+  'stairs-l-shape': 'Лестн. L', 'u-shaped-stairs': 'Лестн. U', 'spiral-stairs': 'Винтовая', 'spiral-stairs-triangle': 'Тр. винтовая', 'roof': 'Крыша', 'roof-triangle': 'Тр. крыша',
   'wooden-door': 'Дер. дверь', 'sheet-metal-door': 'Мет. дверь', 'armored-door': 'МВК дверь',
   'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
   'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка', 'metal-embrasure': 'Амбразура',
@@ -84,7 +85,7 @@ const BUILD_ICONS: Record<ElementKind, string> = {
   'square-foundation': 'foundation', 'triangle-foundation': 'foundation.triangle', 'foundation-steps': 'foundation.steps', 'ramp': 'ramp',
   'square-floor': 'floor', 'triangle-floor': 'floor.triangle', 'floor-frame': 'floor.frame', 'triangle-floor-frame': 'floor.triangle.frame',
   'wall': 'wall', 'doorway': 'wall.doorway', 'window-frame': 'wall.window', 'wall-frame': 'wall.frame', 'half-wall': 'wall.half', 'low-wall': 'wall.low',
-  'stairs-l-shape': 'stairs_l', 'u-shaped-stairs': 'stairs_u', 'spiral-stairs': 'stairs_spiral', 'roof': 'roof', 'roof-triangle': 'roof.triangle',
+  'stairs-l-shape': 'stairs_l', 'u-shaped-stairs': 'stairs_u', 'spiral-stairs': 'stairs_spiral', 'spiral-stairs-triangle': 'stairs.triangle.spiral', 'roof': 'roof', 'roof-triangle': 'roof.triangle',
 };
 
 const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
@@ -96,7 +97,8 @@ const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
   'window-frame': 'Проём в стене для оконных решёток и стекла', 'wall-frame': 'Рама для гаражной и двойных дверей',
   'half-wall': 'Половина высоты обычной стены', 'low-wall': 'Треть высоты обычной стены',
   'stairs-l-shape': 'Лестница буквой Г', 'u-shaped-stairs': 'Лестница буквой П',
-  'spiral-stairs': 'Винтовая лестница на половину высоты блока', 'roof': 'Шапка для твоего дома', 'roof-triangle': 'Шапка для твоего дома',
+  'spiral-stairs': 'Винтовая лестница на половину высоты блока',
+  'spiral-stairs-triangle': 'Винтовая лестница в треугольнике, на половину высоты блока', 'roof': 'Шапка для твоего дома', 'roof-triangle': 'Шапка для твоего дома',
 };
 
 const DEPLOY_ICONS: Record<DeployableKind, string> = {
@@ -205,7 +207,7 @@ const BlueprintSection: React.FC = () => {
   const [collapsedNote, setCollapsedNote] = useState('');
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [showSockets, setShowSockets] = useState(false);
-  const [showPrivilege, setShowPrivilege] = useState(false);
+  const [showPrivilege, setShowPrivilege] = useState(true);
   const [fov, setFov] = useState(savedFov);
   const changeFov = (v: number) => {
     setFov(v);

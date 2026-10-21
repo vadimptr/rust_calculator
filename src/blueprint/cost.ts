@@ -23,7 +23,7 @@ export const COST_MULTIPLIER: Record<ElementKind, number> = {
   'square-foundation': 1, 'triangle-foundation': 0.5, 'foundation-steps': 0.5, 'ramp': 0.5,
   'wall': 1, 'half-wall': 1, 'low-wall': 0.5, 'doorway': 0.7, 'window-frame': 0.7, 'wall-frame': 0.5,
   'square-floor': 0.5, 'triangle-floor': 0.25, 'floor-frame': 0.5, 'triangle-floor-frame': 0.25,
-  'stairs-l-shape': 1, 'u-shaped-stairs': 1, 'spiral-stairs': 1,
+  'stairs-l-shape': 1, 'u-shaped-stairs': 1, 'spiral-stairs': 1, 'spiral-stairs-triangle': 1,
   'roof': 0.5, 'roof-triangle': 0.5,
 };
 

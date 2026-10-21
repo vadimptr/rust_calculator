@@ -11,7 +11,7 @@
  * каждое ребро (верх стены, соседний пол, конёк крыши); крыши — её низкое ребро; лестницы — ячейка
  * под ней.
  */
-import { BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
+import { BLOCK_FEMALE_Y, KINDS, isSpiral, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedElement } from './types.ts';
 
 /** Коэффициенты `support` из префабов игры (2026-09). */
@@ -119,7 +119,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
       const p = key(edgeMid(e, 0));
       s.push({ factor: SUPPORT.roofLowEdge, candidates: [...not(wallTop.get(p)), ...not(cellEdge.get(p)), ...not(roofHigh.get(p))] });
     } else if (info.category === 'stairs') {
-      const below = els.filter(o => o.id !== e.id && o.kind === 'spiral-stairs' && e.kind === 'spiral-stairs'
+      const below = els.filter(o => o.id !== e.id && isSpiral(o.kind) && o.kind === e.kind
         && key([o.position[0], o.position[1] + SPIRAL_H, o.position[2]]) === key(e.position)).map(o => o.id);
       s.push({ factor: SUPPORT.stairs, candidates: [...not(cellAt.get(key(e.position))), ...below] });
     }

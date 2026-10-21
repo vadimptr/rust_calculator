@@ -5,7 +5,7 @@
  */
 import {
   BLOCK_FEMALE_Y, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
-  edgeIndex, openingAccepts, socketsOf, wallHeight,
+  edgeIndex, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
@@ -114,12 +114,12 @@ function placeChild(parent: PoseHost, kind: ElementKind, a: Attach, selfSocket: 
 
   // Винтовая лестница на винтовую
   if (p.category === 'stairs' && a.socket === 'top') {
-    return { position: [px, py + SPIRAL_H, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level + SPIRAL_H / 3 };
+    return { position: [px, py + SPIRAL_H, pz], rotation: parent.rotation + stairTurn(kind) * (a.turns ?? 0), level: parent.level + SPIRAL_H / 3 };
   }
 
   // Лестница на ячейку
   if (p.category === 'cell' && a.socket === 'top' && c.category === 'stairs') {
-    return { position: [px, py, pz], rotation: parent.rotation + 90 * (a.turns ?? 0), level: parent.level };
+    return { position: [px, py, pz], rotation: parent.rotation + stairTurn(kind) * (a.turns ?? 0), level: parent.level };
   }
 
   // Крыша боком к крыше: как ячейка к ячейке по рёбрам

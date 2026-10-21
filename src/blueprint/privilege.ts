@@ -31,6 +31,7 @@ export const BLOCK_BOUNDS: Record<ElementKind, PrefabBounds> = {
   'stairs-l-shape': STAIRS,
   'u-shaped-stairs': STAIRS,
   'spiral-stairs': { center: [0, 0.75, 0], extents: [1.4, 0.75, 1.4] },
+  'spiral-stairs-triangle': { center: [0, 0.75, 1.3], extents: [1.4, 0.75, 1.2] },
   'roof': { center: [0, 1.5, 0], extents: [4.4, 1.4, 1.4] },
   'roof-triangle': { center: [0, 1.5, -0.433], extents: [4.4, 1.4, 1.4] },
 };
@@ -203,4 +204,14 @@ export function privilegeZones(resolved: Resolved, cell = 1): PrivilegeZone[] {
     zones.push({ x0, z0, cell, nx, nz, inside });
   }
   return zones;
+}
+
+export function privilegedAt(info: Buildings, point: Vec3): string | null {
+  const p: Box = { center: point, u: [1, 0], half: [0, 0, 0] };
+  for (const [b, tcs] of info.cupboards) {
+    for (const [id, bb] of info.of) {
+      if (bb === b && boxDistance(p, info.boxes.get(id)!, PRIVILEGE_RADIUS) <= PRIVILEGE_RADIUS) return tcs[0];
+    }
+  }
+  return null;
 }

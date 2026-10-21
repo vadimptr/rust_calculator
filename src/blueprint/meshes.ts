@@ -69,7 +69,7 @@ const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
   'square-foundation': SQUARE, 'square-floor': SQUARE, 'floor-frame': SQUARE,
   'triangle-foundation': TRIANGLE, 'triangle-floor': TRIANGLE, 'triangle-floor-frame': TRIANGLE,
   'wall': WALL, 'half-wall': WALL, 'low-wall': WALL, 'doorway': WALL, 'window-frame': WALL, 'wall-frame': WALL,
-  'stairs-l-shape': { yaw: 0 }, 'u-shaped-stairs': { yaw: 0 }, 'spiral-stairs': { yaw: 0 },
+  'stairs-l-shape': { yaw: 0 }, 'u-shaped-stairs': { yaw: 0 }, 'spiral-stairs': { yaw: 0 }, 'spiral-stairs-triangle': TRIANGLE,
   'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
   'ramp': { yaw: 0, offset: [-1.5, -RAMP_MALE_H.ramp!, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -RAMP_MALE_H['foundation-steps']!, 0] },
 };
@@ -499,7 +499,7 @@ function landing(x0: number, x1: number, z0: number, z1: number, y: number): THR
  * U — два марша по разным половинам и площадка во всю ширину.
  */
 function stairsParts(kind: ResolvedElement['kind']): THREE.BufferGeometry[] {
-  if (kind === 'spiral-stairs') return spiralParts();
+  if (kind === 'spiral-stairs' || kind === 'spiral-stairs-triangle') return spiralParts();
   const L = 1.43;
   if (kind === 'u-shaped-stairs') {
     return [

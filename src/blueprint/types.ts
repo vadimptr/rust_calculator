@@ -20,6 +20,7 @@ export type ElementKind =
   | 'stairs-l-shape'
   | 'u-shaped-stairs'
   | 'spiral-stairs'
+  | 'spiral-stairs-triangle'
   | 'roof'
   | 'roof-triangle'
   | 'ramp'
