@@ -72,3 +72,10 @@ test('terrain ids share the namespace with blocks and scale stays within world g
   const legacy = loadBlueprint({ formatVersion: '1.0', meta: { name: 'old' }, elements: [] });
   assert.ok(legacy.issues.some(i => i.code === 'SCHEMA'));
 });
+
+test('with a rock in the scheme a foundation may stand high on it, without one V12 caps the top at 3 m', () => {
+  const high = { formatVersion: '2.0', meta: { name: 't' }, elements: [{ id: 'f1', kind: 'square-foundation', position: [-2, 28.82, -3.47], rotation: 0 }] };
+  assert.ok(loadBlueprint(high).issues.some(i => i.code === 'V12'));
+  const onRock = loadBlueprint({ ...high, terrain: [{ id: 'rock', kind: 'god-rock', position: [0, 0, 0], rotation: 0 }] });
+  assert.deepEqual(onRock.issues.filter(i => i.level === 'error'), []);
+});

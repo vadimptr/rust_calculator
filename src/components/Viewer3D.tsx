@@ -153,6 +153,9 @@ function socketBoxMesh(box: AimBox, selected: boolean): THREE.Object3D {
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const EYE_HEIGHT = 1.6;
+const COLLIDER_MAT = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+const FREE_TERRAIN_DEPTH = 2.6;
+const SNAP_TERRAIN_DEPTH = 3;
 
 /** Перекрасить построенный объект в призрак: материалы меша и рёбер заменяются, тени выключаются. */
 function ghostify(o: THREE.Object3D, mat: THREE.Material): THREE.Object3D {
@@ -182,6 +185,7 @@ function buildTerrain(t: ResolvedTerrain): THREE.Object3D | null {
     for (let p: THREE.Object3D | null = n; p; p = p.parent) if (p.name === 'collider') collider = true;
     if (collider) {
       delete (mesh as Partial<THREE.Mesh>).raycast;
+      mesh.material = COLLIDER_MAT;
       mesh.visible = false;
       mesh.castShadow = false;
     }
@@ -379,13 +383,36 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       state.ghostKey = key;
     };
 
+    const rockDown = (x: number, y: number, z: number, len: number): number | null => {
+      const rocks = content.children.filter(c => c.userData.terrain !== undefined);
+      if (!rocks.length) return null;
+      world.updateMatrixWorld(true);
+      const probe = new THREE.Raycaster(world.localToWorld(new THREE.Vector3(x, y, z)), new THREE.Vector3(0, -1, 0), 0, len);
+      const hit = probe.intersectObjects(rocks, true)[0];
+      return hit ? hit.distance : null;
+    };
+    const inTerrain = (x: number, y: number, z: number) => y < GROUND_Y + 1e-3 || rockDown(x, y + 3, z, 3) !== null;
+    const surfaceBelow = (x: number, y: number, z: number): { y: number; rock: boolean } => {
+      const d = rockDown(x, y + 0.2, z, y + 0.2 - GROUND_Y);
+      return d === null ? { y: GROUND_Y, rock: false } : { y: y + 0.2 - d, rock: true };
+    };
+    const terrainBlock = (kind: ElementKind, t: Transform, depth: number): string | null => {
+      const poly = footprint(kind, t);
+      const top = t.position[1];
+      if (!poly.every(([x, z]) => inTerrain(x, top - depth, z))) return `Не в земле: под углами фундамента нет земли или скалы ближе ${depth} м`;
+      const [cx, , cz] = t.position;
+      const probes: [number, number][] = [[cx, cz], ...poly, ...poly.map((p, i) => { const q = poly[(i + 1) % poly.length]; return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number]; })];
+      if (probes.every(([x, z]) => inTerrain(x, top + 0.1, z))) return 'Фундамент целиком в земле или в скале';
+      return null;
+    };
+
     let blockKey = '';
     let blockReason: string | null = null;
     const placementBlock = (): string | null => {
       const p = state.pending;
       const res = resolvedRef.current;
       if (!p || !res || p.type === 'hammer') return null;
-      const key = JSON.stringify(p) + '|' + res.elements.length + '|' + res.deployables.length;
+      const key = JSON.stringify(p) + '|' + res.elements.length + '|' + res.deployables.length + '|' + JSON.stringify(res.terrain ?? []);
       if (key === blockKey) return blockReason;
       blockKey = key;
       blockReason = null;
@@ -402,7 +429,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         const host = res.elements.find(e => e.id === p.attach.to);
         if (host) el = { id: '__ghost__', kind: p.kind, grade: 'twig', ...socketPose(host, p.kind, p.attach) };
       }
-      const tcs = el ? connectsCupboards(res, el) : null;
+      if (el && KINDS[el.kind].isFoundation) blockReason = terrainBlock(el.kind, el, p.type === 'free' ? FREE_TERRAIN_DEPTH : SNAP_TERRAIN_DEPTH);
+      const tcs = el && !blockReason ? connectsCupboards(res, el) : null;
       if (tcs) blockReason = `Нельзя соединить два здания со шкафами (${tcs.join(', ')})`;
       return blockReason;
     };
@@ -582,15 +610,13 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (!t) return none();
         host.dataset.hover = 'ground';
         drawSockets([], null);
-        const high = y > FOUNDATION_TOP.free + 1e-6;
-        const above = (y - GROUND_Y).toFixed(2);
-        label.textContent = high ? `Высоко: верх в ${above} м над землёй, без опоры можно до ${(FOUNDATION_TOP.free - GROUND_Y).toFixed(1)} м` : `Стабильность 100% · верх в ${above} м над землёй`;
-        if (high) label.className = 'viewer3d__label viewer3d__label--bad';
-        showGhost(`free|${kind}|${high}`, { type: 'free', kind, t }, () => {
+        const below = surfaceBelow(at.x, y, at.z);
+        label.textContent = `Стабильность 100% · верх в ${(y - below.y).toFixed(2)} м над ${below.rock ? 'скалой' : 'землёй'}`;
+        showGhost(`free|${kind}`, { type: 'free', kind, t }, () => {
           const el: ResolvedElement = { id: '__ghost__', kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };
-          return ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), high ? FALL_MAT : GHOST_MAT);
+          return ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), GHOST_MAT);
         });
-        state.pending = high ? null : { type: 'free', kind, t };
+        state.pending = { type: 'free', kind, t };
         const g = ghost.children[0];
         if (g) { g.position.set(...t.position); g.rotation.set(0, (-t.rotation * Math.PI) / 180, 0); }
       };

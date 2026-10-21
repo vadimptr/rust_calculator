@@ -296,10 +296,10 @@ function uniqueIds(items: { id: string }[], issues: Issue[]): void {
   }
 }
 
-function checkFoundationHeight(e: { id: string; kind: ElementKind; position: [number, number, number] }, issues: Issue[]): void {
+function checkFoundationHeight(e: { id: string; kind: ElementKind; position: [number, number, number] }, issues: Issue[], onTerrain = false): void {
   if (!KINDS[e.kind].isFoundation) return;
   const y = e.position[1];
-  if (y < FOUNDATION_TOP.min - 1e-6 || y > FOUNDATION_TOP.max + 1e-6) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: верх должен быть от ${FOUNDATION_TOP.min} до ${FOUNDATION_TOP.max} м над землёй`));
+  if (y < FOUNDATION_TOP.min - 1e-6 || (!onTerrain && y > FOUNDATION_TOP.max + 1e-6)) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: верх должен быть от ${FOUNDATION_TOP.min} до ${FOUNDATION_TOP.max} м над землёй`));
 }
 
 export function isLegacy(bp: Blueprint | LegacyBlueprint): bp is LegacyBlueprint {
@@ -322,7 +322,7 @@ export function resolveBlueprint(bp: Blueprint | LegacyBlueprint): ResolveResult
   }
   for (const e of elements) {
     if (!KINDS[e.kind]) { issues.push(err('V03', e.id, `Неизвестный тип «${e.kind}»`)); continue; }
-    checkFoundationHeight(e, issues);
+    checkFoundationHeight(e, issues, terrain.length > 0);
     const r: ResolvedElement = {
       id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}), ...(e.inverted ? { inverted: true } : {}),
       position: e.position.map(round3) as [number, number, number],
