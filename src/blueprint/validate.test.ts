@@ -10,7 +10,7 @@ test('every example loads in format 2.0 without errors', () => {
     const r = loadBlueprint(JSON.parse(readFileSync(new URL(f, dir), 'utf8')));
     assert.deepEqual(r.issues.filter(i => i.level === 'error'), [], f);
     assert.equal(r.blueprint!.formatVersion, '2.0', f);
-    assert.ok(r.resolved!.elements.length > 0, f);
+    assert.ok(r.resolved!.elements.length > 0 || (r.resolved!.terrain?.length ?? 0) > 0, f);
   }
 });
 
@@ -49,4 +49,26 @@ test('in every example the owner walks in from the ground to the tool cupboard t
     const tcNode = [...graph.nodes].find(([, n]) => n.cell.id === tc.parent && !n.virtual)?.[0];
     assert.ok(tcNode && seen.has(tcNode), f);
   }
+});
+
+test('god rock template: terrain without blocks loads, keeps scale and survives building', async () => {
+  const { addElementAt, removeElement } = await import('./editor.ts');
+  const doc = JSON.parse(readFileSync(new URL('god-rock.json', dir), 'utf8'));
+  const r = loadBlueprint(doc);
+  assert.deepEqual(r.issues, []);
+  assert.equal(r.resolved!.elements.length, 0);
+  assert.deepEqual(r.resolved!.terrain, [{ id: 'rock', kind: 'god-rock', position: [0, -0.6, 0], rotation: 0, scale: 1 }]);
+  const built = addElementAt(r.blueprint!, 'square-foundation', { position: [3, 0, 2], rotation: 0, level: 0 }, 'twig');
+  assert.equal(loadBlueprint(built).resolved!.terrain!.length, 1);
+  assert.equal(removeElement(built, built.elements[0].id).terrain!.length, 1);
+});
+
+test('terrain ids share the namespace with blocks and scale stays within world generation range', () => {
+  const base = { formatVersion: '2.0', meta: { name: 't' }, elements: [{ id: 'rock', kind: 'square-foundation', position: [0, 0, 0], rotation: 0 }] };
+  const dup = loadBlueprint({ ...base, terrain: [{ id: 'rock', kind: 'god-rock', position: [0, 0, 0], rotation: 0 }] });
+  assert.ok(dup.issues.some(i => i.code === 'V01'));
+  const big = loadBlueprint({ ...base, elements: [], terrain: [{ id: 'r', kind: 'god-rock', position: [0, 0, 0], rotation: 0, scale: 1.5 }] });
+  assert.ok(big.issues.some(i => i.code === 'SCHEMA'));
+  const legacy = loadBlueprint({ formatVersion: '1.0', meta: { name: 'old' }, elements: [] });
+  assert.ok(legacy.issues.some(i => i.code === 'SCHEMA'));
 });

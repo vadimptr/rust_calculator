@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "God Rock",
+    "description": "Скала God Rock (v3_rock_formations_large/rock_formation_a) со сквозной полостью и двумя входами. Блоки ставятся внутри и врезаются в камень: игра не проверяет пересечение с ним, только запрещает ставить сквозь скалу.",
+    "gameVersion": "2026-10",
+    "tags": ["terrain", "god-rock"]
+  },
+  "defaults": { "grade": "twig" },
+  "elements": [],
+  "deployables": [],
+  "terrain": [
+    { "id": "rock", "kind": "god-rock", "position": [0, -0.6, 0], "rotation": 0, "scale": 1 }
+  ]
+}

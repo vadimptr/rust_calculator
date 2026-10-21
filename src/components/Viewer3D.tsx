@@ -5,11 +5,11 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
 import type { DoorAnim } from '../blueprint/meshes.ts';
-import { onModelLoaded, pieceManifest } from '../blueprint/models.ts';
+import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
 import { KINDS } from '../blueprint/catalog.ts';
-import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from '../blueprint/types.ts';
+import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -17,6 +17,7 @@ import { aimDistance, deployPlacement, freePlacement, placementAnchor, placement
 import { footprint } from '../blueprint/geometry.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
+import { caveView } from '../blueprint/terrain.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
 import type { RadialMenuItem } from './RadialMenu';
@@ -165,6 +166,32 @@ function piecesWith(resolved: Resolved, extra: ResolvedElement): string[] | unde
 
 const EMPTY: Resolved = { elements: [], deployables: [] };
 
+function buildTerrain(t: ResolvedTerrain): THREE.Object3D | null {
+  const model = gameModel(t.kind);
+  if (!model) return null;
+  model.traverse(n => {
+    const mesh = n as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    let collider = false;
+    for (let p: THREE.Object3D | null = n; p; p = p.parent) if (p.name === 'collider') collider = true;
+    if (collider) {
+      delete (mesh as Partial<THREE.Mesh>).raycast;
+      mesh.visible = false;
+      mesh.castShadow = false;
+    }
+  });
+  model.position.set(...t.position);
+  model.rotation.set(0, (-t.rotation * Math.PI) / 180, 0);
+  model.scale.setScalar(t.scale);
+  model.userData.terrain = t.id;
+  return model;
+}
+
+function isTerrain(o: THREE.Object3D): boolean {
+  for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.terrain !== undefined) return true;
+  return false;
+}
+
 function doorOwner(door: THREE.Object3D): THREE.Object3D | null {
   let owner: THREE.Object3D | null = door;
   while (owner && owner.userData.id === undefined) owner = owner.parent;
@@ -298,6 +325,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       for (const h of hits) {
         // только поверхности: контурные линии ловят луч в радиусе метра, и прицел прилипал к рёбрам
         if (!(h.object as THREE.Mesh).isMesh) continue;
+        if (isTerrain(h.object)) { if (editorRef.current?.tool === 'hammer') return null; continue; }
         let o: THREE.Object3D | null = h.object;
         while (o && o.userData.id === undefined) o = o.parent;
         if (!o || !(o as THREE.Mesh).visible) continue;
@@ -314,6 +342,31 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       ghost.clear();
       ghost.add(build());
       state.ghostKey = key;
+    };
+
+    const throughRock = (): boolean => {
+      const rocks = content.children.filter(c => c.userData.terrain !== undefined);
+      const g = ghost.children[0];
+      if (!rocks.length || !g) return false;
+      world.updateMatrixWorld(true);
+      const inv = g.matrixWorld.clone().invert();
+      const box = new THREE.Box3();
+      const m = new THREE.Matrix4();
+      g.traverse(n => {
+        const mesh = n as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry.computeBoundingBox();
+        box.union(mesh.geometry.boundingBox!.clone().applyMatrix4(m.multiplyMatrices(inv, mesh.matrixWorld)));
+      });
+      if (box.isEmpty()) return false;
+      const eye = state.raycaster.ray.origin.clone();
+      const local = state.raycaster.ray.clone().applyMatrix4(inv);
+      const p = local.intersectBox(box, new THREE.Vector3()) ?? box.clampPoint(local.origin, new THREE.Vector3());
+      const end = p.applyMatrix4(g.matrixWorld);
+      const dist = eye.distanceTo(end);
+      if (dist < 1e-3) return false;
+      const probe = new THREE.Raycaster(eye, end.sub(eye).normalize(), 0, dist);
+      return probe.intersectObjects(rocks, true).length > 0;
     };
 
     /** Точка прицела на земле (плоскость верха фундаментов), когда луч не попал ни в один блок. */
@@ -720,6 +773,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       }
       if (state.hoverDirty) {
         refreshGhost();
+        const pend = state.pending;
+        if (pend && pend.type !== 'hammer' && throughRock()) {
+          ghostify(ghost.children[0], FALL_MAT);
+          state.ghostKey = '';
+          state.pending = null;
+          label.textContent = 'Сквозь скалу: из камня должен торчать хоть кусочек блока';
+          label.className = 'viewer3d__label viewer3d__label--bad';
+        }
         const p = state.pending;
         host.dataset.pending = p ? `${p.type}:${p.type === 'hammer' ? p.id : p.type === 'element' ? JSON.stringify(p.attach) : p.type === 'free' ? p.kind + JSON.stringify(p.t.position) : p.d.kind + (p.d.offset ? JSON.stringify(p.d.offset) : '') + (p.d.rotation ? `@${p.d.rotation}` : '')}` : '';
       }
@@ -809,15 +870,25 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     for (const d of resolved.deployables) s.content.add(buildDeployable(d));
+    for (const t of resolved.terrain ?? []) { const o = buildTerrain(t); if (o) s.content.add(o); }
     s.doors = collectDoors(s.content);
     applyDoorsOpen(s);
     s.raid.apply(raid);
 
     // Смена материала или дверей перестраивает меши, но камеру не трогает
     if (framedKey.current === frameKey) return;
-    framedKey.current = frameKey;
     const bounds = new THREE.Box3().setFromObject(s.content);
+    if (bounds.isEmpty() && resolved.terrain?.length) return;
+    framedKey.current = frameKey;
     if (bounds.isEmpty()) return;
+    if (resolved.elements.length === 0 && resolved.terrain?.length) {
+      const v = caveView(resolved.terrain[0]);
+      s.camera.position.set(v.eye[0], v.eye[1], -v.eye[2]);
+      s.controls.target.set(v.target[0], v.target[1], -v.target[2]);
+      s.camera.lookAt(s.controls.target);
+      s.controls.update();
+      return;
+    }
     const center = bounds.getCenter(new THREE.Vector3());
     const size = bounds.getSize(new THREE.Vector3()).length();
     s.controls.target.copy(center);

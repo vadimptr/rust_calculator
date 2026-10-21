@@ -66,6 +66,10 @@ SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3',
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',
                'roof.top.line', 'roof.left.line', 'roof.right.line', 'roof.bottom.line', 'ramp.75', 'stairs.spiral.landing'}
 MANIFEST = 'assets/manifest.asset'
+TERRAIN = {
+    'god-rock': 'assets/bundled/prefabs/autospawn/decor/v3_rock_formations_large/rock_formation_a.prefab',
+}
+WORLD_LAYER = 16
 MAX_TEX = 2048
 
 
@@ -402,9 +406,88 @@ class Exporter:
             return None
         return self.write_glb(name, prims)
 
+    def mesh_prims(self, mf, mr):
+        try:
+            mesh = mf.read().m_Mesh.read()
+        except FileNotFoundError:
+            return []
+        h = MeshHandler(mesh)
+        h.process()
+        if not h.m_Vertices or not h.m_UV0:
+            return []
+        V = np.array(h.m_Vertices, dtype=np.float64)[:, :3]
+        N = np.array(h.m_Normals, dtype=np.float64)[:, :3] if h.m_Normals else None
+        UV = np.array(h.m_UV0, dtype=np.float64)[:, :2]
+        mats = mr.read().m_Materials
+        prims = []
+        for si, tris in enumerate(h.get_triangles()):
+            if si < len(mats) and tris:
+                try:
+                    prims.append((V, N, UV, np.array(tris, dtype=np.int64), self.material(mats[si].read())))
+                except Exception:
+                    continue
+        return prims
+
+    def world_colliders(self, go, parent, out):
+        tt = go.read_typetree()
+        comps = [self.scene.objects.get(c['component']['m_PathID']) for c in tt['m_Component']]
+        comps = [c for c in comps if c is not None]
+        tr = next(c for c in comps if c.type.name == 'Transform').read_typetree()
+        world = parent @ trs(tr)
+        if tt['m_Layer'] == WORLD_LAYER:
+            for c in comps:
+                if c.type.name == 'MeshCollider' and c.read_typetree().get('m_Enabled', 1):
+                    out.append((world, c.read().m_Mesh))
+        for ch in tr['m_Children']:
+            child = self.scene.objects.get(ch['m_PathID'])
+            if child is None:
+                continue
+            g = self.scene.objects.get(child.read_typetree()['m_GameObject']['m_PathID'])
+            if g is not None and g.read_typetree().get('m_IsActive', 1):
+                self.world_colliders(g, world, out)
+
+    def export_terrain(self, prefab, name):
+        root = self.roots.get(prefab.lower())
+        if root is None:
+            return None
+        items = []
+        self.collect(root, np.eye(4), items, set(), root=True)
+        colliders = []
+        self.world_colliders(root, np.eye(4), colliders)
+        mesh_list, nodes, index = [], [], {}
+        visual, collider = [], []
+        for world, mf, mr in items:
+            key = ('v', mf.read_typetree()['m_Mesh']['m_PathID'], tuple(m['m_PathID'] for m in mr.read_typetree()['m_Materials']))
+            if key not in index:
+                prims = self.mesh_prims(mf, mr)
+                index[key] = len(mesh_list) if prims else None
+                if prims:
+                    mesh_list.append((mf.read().m_Mesh.read().m_Name, prims))
+            if index[key] is not None:
+                nodes.append({'mesh': index[key], 'matrix': [round(float(v), 6) for v in world.T.reshape(-1)]})
+                visual.append(len(nodes) - 1)
+        for world, ptr in colliders:
+            key = ('c', ptr.path_id)
+            if key not in index:
+                mesh = ptr.read()
+                h = MeshHandler(mesh)
+                h.process()
+                V = np.array(h.m_Vertices, dtype=np.float64)[:, :3]
+                T = np.concatenate([np.array(t, dtype=np.int64) for t in h.get_triangles() if t]).reshape(-1, 3)
+                index[key] = len(mesh_list)
+                mesh_list.append((mesh.m_Name, [(V, None, None, T, None)]))
+            nodes.append({'mesh': index[key], 'matrix': [round(float(v), 6) for v in world.T.reshape(-1)]})
+            collider.append(len(nodes) - 1)
+        nodes.append({'name': 'visual', 'children': visual})
+        nodes.append({'name': 'collider', 'children': collider})
+        return self.write_scene(name, mesh_list, nodes, [len(nodes) - 2, len(nodes) - 1])
+
     def write_glb(self, name, prims):
+        return self.write_scene(name, [(name, prims)], [{'name': name, 'mesh': 0}], [0])
+
+    def write_scene(self, name, mesh_list, nodes, roots):
         buf = bytearray()
-        views, accessors, meshes_prims, materials, images, textures = [], [], [], [], [], []
+        views, accessors, meshes, materials, images, textures = [], [], [], [], [], []
         mat_index, img_index = {}, {}
 
         def add_view(data, target=None):
@@ -434,47 +517,20 @@ class Exporter:
                 img_index[uri] = len(textures) - 1
             return img_index[uri]
 
-        for V, N, UV, T, mat in prims:
-            used = np.unique(T)
-            remap = np.full(V.shape[0], -1, np.int64)
-            remap[used] = np.arange(len(used))
-            pos = V[used].copy()
-            uv = UV[used].copy()
-            uv[:, 1] = 1 - uv[:, 1]
-            idx = remap[T].astype(np.uint32).reshape(-1)
-            attrs = {'POSITION': add_acc(pos.astype(np.float32), 5126, 'VEC3', 34962, True),
-                     'TEXCOORD_0': add_acc(uv.astype(np.float32), 5126, 'VEC2', 34962)}
-            if N is not None:
-                nor = N[used].copy()
-                attrs['NORMAL'] = add_acc(nor.astype(np.float32), 5126, 'VEC3', 34962)
-            key = json.dumps(mat, sort_keys=True)
-            if key not in mat_index:
-                m = {'name': mat['name'], 'pbrMetallicRoughness': {'baseColorFactor': [min(1, max(0, c)) for c in mat['color']],
-                                                                   'metallicFactor': 0.1, 'roughnessFactor': 0.85},
-                     'doubleSided': 'cutoff' in mat or 'blend' in mat}
-                if 'map' in mat:
-                    m['pbrMetallicRoughness']['baseColorTexture'] = {'index': tex_index(mat['map'])}
-                if 'normal' in mat:
-                    m['normalTexture'] = {'index': tex_index(mat['normal'])}
-                if 'mr' in mat:
-                    m['pbrMetallicRoughness']['metallicRoughnessTexture'] = {'index': tex_index(mat['mr'])}
-                    m['pbrMetallicRoughness']['metallicFactor'] = 1
-                    m['pbrMetallicRoughness']['roughnessFactor'] = 1
-                if 'cutoff' in mat:
-                    m['alphaMode'] = 'MASK'
-                    m['alphaCutoff'] = mat['cutoff']
-                elif 'blend' in mat:
-                    m['alphaMode'] = 'BLEND'
-                materials.append(m)
-                mat_index[key] = len(materials) - 1
-            meshes_prims.append({'attributes': attrs, 'indices': add_acc(idx, 5125, 'SCALAR', 34963), 'material': mat_index[key]})
+        for mesh_name, prims in mesh_list:
+            meshes_prims = []
+            meshes.append({'name': mesh_name, 'primitives': meshes_prims})
+            for V, N, UV, T, mat in prims:
+                self.add_prim(meshes_prims, V, N, UV, T, mat, add_acc, tex_index, materials, mat_index)
         while len(buf) % 4:
             buf.append(0)
         gltf = {'asset': {'version': '2.0', 'generator': 'rust_calculator models.py'}, 'scene': 0,
-                'scenes': [{'nodes': [0]}], 'nodes': [{'name': name, 'mesh': 0}],
-                'meshes': [{'name': name, 'primitives': meshes_prims}], 'materials': materials,
-                'textures': textures, 'images': images, 'samplers': [{}],
+                'scenes': [{'nodes': roots}], 'nodes': nodes, 'meshes': meshes,
                 'buffers': [{'byteLength': len(buf)}], 'bufferViews': views, 'accessors': accessors}
+        if materials:
+            gltf['materials'] = materials
+        if textures:
+            gltf.update(textures=textures, images=images, samplers=[{}])
         for t in textures:
             t['sampler'] = 0
         js = json.dumps(gltf, separators=(',', ':')).encode()
@@ -485,7 +541,47 @@ class Exporter:
         path = os.path.join(self.out, name + '.glb')
         with open(path, 'wb') as f:
             f.write(data)
-        return {'triangles': int(sum(len(p[3]) for p in prims)), 'bytes': len(data)}
+        return {'triangles': int(sum(len(p[3]) for _, prims in mesh_list for p in prims)), 'bytes': len(data)}
+
+    @staticmethod
+    def add_prim(meshes_prims, V, N, UV, T, mat, add_acc, tex_index, materials, mat_index):
+        used = np.unique(T)
+        remap = np.full(V.shape[0], -1, np.int64)
+        remap[used] = np.arange(len(used))
+        pos = V[used].copy()
+        idx = remap[T].astype(np.uint32).reshape(-1)
+        attrs = {'POSITION': add_acc(pos.astype(np.float32), 5126, 'VEC3', 34962, True)}
+        if UV is not None:
+            uv = UV[used].copy()
+            uv[:, 1] = 1 - uv[:, 1]
+            attrs['TEXCOORD_0'] = add_acc(uv.astype(np.float32), 5126, 'VEC2', 34962)
+        if N is not None:
+            nor = N[used].copy()
+            attrs['NORMAL'] = add_acc(nor.astype(np.float32), 5126, 'VEC3', 34962)
+        if mat is None:
+            meshes_prims.append({'attributes': attrs, 'indices': add_acc(idx, 5125, 'SCALAR', 34963)})
+            return
+        key = json.dumps(mat, sort_keys=True)
+        if key not in mat_index:
+            m = {'name': mat['name'], 'pbrMetallicRoughness': {'baseColorFactor': [min(1, max(0, c)) for c in mat['color']],
+                                                               'metallicFactor': 0.1, 'roughnessFactor': 0.85},
+                 'doubleSided': 'cutoff' in mat or 'blend' in mat}
+            if 'map' in mat:
+                m['pbrMetallicRoughness']['baseColorTexture'] = {'index': tex_index(mat['map'])}
+            if 'normal' in mat:
+                m['normalTexture'] = {'index': tex_index(mat['normal'])}
+            if 'mr' in mat:
+                m['pbrMetallicRoughness']['metallicRoughnessTexture'] = {'index': tex_index(mat['mr'])}
+                m['pbrMetallicRoughness']['metallicFactor'] = 1
+                m['pbrMetallicRoughness']['roughnessFactor'] = 1
+            if 'cutoff' in mat:
+                m['alphaMode'] = 'MASK'
+                m['alphaCutoff'] = mat['cutoff']
+            elif 'blend' in mat:
+                m['alphaMode'] = 'BLEND'
+            materials.append(m)
+            mat_index[key] = len(materials) - 1
+        meshes_prims.append({'attributes': attrs, 'indices': add_acc(idx, 5125, 'SCALAR', 34963), 'material': mat_index[key]})
 
 
 client, out = sys.argv[1:3]
@@ -516,6 +612,15 @@ for name, prefab, sub in jobs:
     if info:
         bases.add(name)
     print(name, info if info else 'нет основной части', file=sys.stderr)
+
+world_scene = next(sf for f in env.files.values() for n, sf in getattr(f, 'files', {}).items() if n.endswith('AssetScene-world'))
+terrain_ex = Exporter(env, world_scene, out, guids)
+terrain_ex.conditionals = False
+terrain_ex.textures = ex.textures
+for name, prefab in TERRAIN.items():
+    if only and not any(name.startswith(o) for o in only):
+        continue
+    print(name, terrain_ex.export_terrain(prefab, name) or 'нет модели', file=sys.stderr)
 
 ex.conditionals = False
 manifest = {}

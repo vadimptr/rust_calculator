@@ -40,6 +40,8 @@ export type DeployableKind =
   | 'metal-embrasure'
   | 'drop-box';
 
+export type TerrainKind = 'god-rock';
+
 export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face' | 'offset';
 
 export interface Attach {
@@ -96,6 +98,16 @@ export interface Deployable {
   notes?: string;
 }
 
+export interface Terrain {
+  id: string;
+  kind: TerrainKind;
+  position: [number, number, number];
+  rotation: number;
+  scale?: number;
+  label?: string;
+  notes?: string;
+}
+
 export interface Blueprint {
   $schema?: string;
   formatVersion: '2.0';
@@ -110,6 +122,7 @@ export interface Blueprint {
   defaults?: { grade?: Grade };
   elements: Element[];
   deployables?: Deployable[];
+  terrain?: Terrain[];
   resolved?: unknown;
 }
 
@@ -147,9 +160,18 @@ export interface ResolvedDeployable extends Transform {
   direction?: 'in' | 'out';
 }
 
+export interface ResolvedTerrain {
+  id: string;
+  kind: TerrainKind;
+  position: [number, number, number];
+  rotation: number;
+  scale: number;
+}
+
 export interface Resolved {
   elements: ResolvedElement[];
   deployables: ResolvedDeployable[];
+  terrain?: ResolvedTerrain[];
 }
 
 export interface Issue {

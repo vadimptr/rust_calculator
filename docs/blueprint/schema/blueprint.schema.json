@@ -34,14 +34,21 @@
     },
     "elements": {
       "type": "array",
-      "minItems": 1,
-      "description": "Строительные блоки: в 2.0 — с позой в мире, в 1.0 — с attach и одним корнем."
+      "description": "Строительные блоки: в 2.0 — с позой в мире (может быть пустым, если в документе есть terrain), в 1.0 — с attach и одним корнем."
     },
     "deployables": {
       "type": "array",
       "default": [],
       "items": {
         "$ref": "#/$defs/Deployable"
+      }
+    },
+    "terrain": {
+      "type": "array",
+      "default": [],
+      "description": "Объекты окружения из игры (скала God Rock), в которые встраивают постройку. См. SPEC.md §6.1.",
+      "items": {
+        "$ref": "#/$defs/Terrain"
       }
     },
     "resolved": {
@@ -560,6 +567,49 @@
         }
       ]
     },
+    "Terrain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "position",
+        "rotation"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "god-rock"
+          ],
+          "description": "god-rock — v3_rock_formations_large/rock_formation_a.prefab, скала со сквозной полостью."
+        },
+        "position": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Точка префаба на земле, мировые координаты."
+        },
+        "rotation": {
+          "type": "number",
+          "description": "Поворот в плане, градусы (§4.1). В игре случайный от −180 до 180."
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 1.2,
+          "default": 1,
+          "description": "Масштаб генерации мира (DecorScale), одинаковый по осям."
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
     "ResolvedTransform": {
       "type": "object",
       "additionalProperties": false,
@@ -685,7 +735,8 @@
             "items": {
               "$ref": "#/$defs/LegacyElement"
             },
-            "type": "array"
+            "type": "array",
+            "minItems": 1
           }
         }
       },

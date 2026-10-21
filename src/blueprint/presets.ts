@@ -7,6 +7,7 @@ import roofBunker from '../../docs/blueprint/examples/roof-bunker.json';
 import honeycomb2x2 from '../../docs/blueprint/examples/honeycomb-2x2.json';
 import metalFort from '../../docs/blueprint/examples/metal-fort.json';
 import roofDefense from '../../docs/blueprint/examples/roof-defense.json';
+import godRock from '../../docs/blueprint/examples/god-rock.json';
 
 export interface BlueprintPreset {
   id: string;
@@ -18,6 +19,7 @@ export interface BlueprintPreset {
 export const BLUEPRINT_PRESETS: BlueprintPreset[] = [
   // пустой участок: первый поставленный фундамент станет корнем постройки
   { id: 'empty', label: 'Пустой участок', data: null },
+  { id: 'god-rock', label: 'God Rock', data: godRock },
   { id: 'starter-2x1', label: 'Дом 2×1 с аирлоком', data: starter2x1 },
   { id: 'house-2x2', label: 'Дом 2×2 с запрыгом', data: house2x2 },
   { id: 'sealed-triangle-tc', label: 'Шкаф в треугольном бункере', data: sealedTriangle },

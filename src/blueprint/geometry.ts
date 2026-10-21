@@ -312,8 +312,14 @@ export function resolveBlueprint(bp: Blueprint | LegacyBlueprint): ResolveResult
   const elements = bp.elements ?? [];
   const deployables = bp.deployables ?? [];
   const defaultGrade: Grade = bp.defaults?.grade ?? 'twig';
-  uniqueIds([...elements, ...deployables], issues);
+  const terrain = bp.terrain ?? [];
+  uniqueIds([...elements, ...deployables, ...terrain], issues);
   const resolved: Resolved = { elements: [], deployables: [] };
+  if (terrain.length) {
+    resolved.terrain = terrain.map(t => ({
+      id: t.id, kind: t.kind, position: t.position.map(round3) as [number, number, number], rotation: round3(norm360(t.rotation)), scale: t.scale ?? 1,
+    }));
+  }
   for (const e of elements) {
     if (!KINDS[e.kind]) { issues.push(err('V03', e.id, `Неизвестный тип «${e.kind}»`)); continue; }
     checkFoundationHeight(e, issues);

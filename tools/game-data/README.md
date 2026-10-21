@@ -57,6 +57,8 @@ venv/bin/python -I tools/game-data/textures.py \
 
 # 8. Модели 3D-просмотра: блоки всех грейдов, двери, гаражная дверь, шкаф, дроп-бокс, решётки
 #    и укреплённое стекло в glTF (public/models/*.glb, текстуры в public/models/tex).
+#    Скала God Rock (TERRAIN) пишется в public/models/god-rock.glb: 4 меша на 29 копий, узел visual — LOD0,
+#    узел collider — коллайдеры слоя World для прицела в редакторе.
 #    У блоков в glb только неусловная часть; условные куски скина (ConditionalModel: окантовка и
 #    углы крыш, треугольники и углы стен, боковины фундамента, площадка винтовой лестницы, высота
 #    пандуса) выгружаются отдельными piece.*.glb, а public/models/conditionals.json хранит для каждого

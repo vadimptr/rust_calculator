@@ -218,7 +218,7 @@ const BlueprintSection: React.FC = () => {
   }, []);
   const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
-    if (next.elements.length === 0) {
+    if (next.elements.length === 0 && !next.terrain?.length) {
       setCollapsedNote('');
       setSource(s => ({ label: s.label, data: null }));
       setRaidPlay(0);
