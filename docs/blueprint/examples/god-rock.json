@@ -11,6 +11,6 @@
   "elements": [],
   "deployables": [],
   "terrain": [
-    { "id": "rock", "kind": "god-rock", "position": [0, -0.6, 0], "rotation": 0, "scale": 1 }
+    { "id": "rock", "kind": "god-rock", "position": [0, 0, 0], "rotation": 0, "scale": 1 }
   ]
 }

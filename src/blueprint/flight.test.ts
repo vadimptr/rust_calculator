@@ -32,7 +32,7 @@ test('Space / C move vertically, Shift triples speed, floor clamps', () => {
   applyFlight(c, new Set(['Space', 'ShiftLeft']), 1);
   assert.ok(Math.abs(c.position.y - (5 + 3 * FLY_SPEED)) < 1e-6);
   applyFlight(c, new Set(['KeyC']), 100);
-  assert.equal(c.position.y, -0.4);
+  assert.equal(c.position.y, 0.2);
 });
 
 test('no keys: camera stays put', () => {

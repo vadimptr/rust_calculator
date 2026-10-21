@@ -299,7 +299,7 @@ function uniqueIds(items: { id: string }[], issues: Issue[]): void {
 function checkFoundationHeight(e: { id: string; kind: ElementKind; position: [number, number, number] }, issues: Issue[]): void {
   if (!KINDS[e.kind].isFoundation) return;
   const y = e.position[1];
-  if (y < FOUNDATION_TOP.min - 1e-6 || y > FOUNDATION_TOP.max + 1e-6) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: верх должен быть от ${FOUNDATION_TOP.min} до ${FOUNDATION_TOP.max} м от земли`));
+  if (y < FOUNDATION_TOP.min - 1e-6 || y > FOUNDATION_TOP.max + 1e-6) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: верх должен быть от ${FOUNDATION_TOP.min} до ${FOUNDATION_TOP.max} м над землёй`));
 }
 
 export function isLegacy(bp: Blueprint | LegacyBlueprint): bp is LegacyBlueprint {

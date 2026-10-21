@@ -8,7 +8,7 @@ import type { DoorAnim } from '../blueprint/meshes.ts';
 import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
-import { FOUNDATION_TOP, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
+import { FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -288,12 +288,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       new THREE.MeshStandardMaterial({ color: 0x3a4a2e, roughness: 1 }),
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.6;
+    ground.position.y = GROUND_Y;
     ground.receiveShadow = true;
     scene.add(ground);
 
     const grid = new THREE.GridHelper(60, 20, 0x4a4036, 0x2a241e);
-    grid.position.y = -0.59;
+    grid.position.y = GROUND_Y + 0.01;
     scene.add(grid);
 
     const world = new THREE.Group();
@@ -524,8 +524,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (!t) return none();
         host.dataset.hover = 'ground';
         drawSockets([], null);
-        const high = y > FOUNDATION_TOP.max;
-        label.textContent = high ? `Высоко: верх в ${y.toFixed(2)} м от земли, можно до ${FOUNDATION_TOP.max} м` : `Стабильность 100% · высота ${y.toFixed(2)} м`;
+        const high = y > FOUNDATION_TOP.free + 1e-6;
+        const above = (y - GROUND_Y).toFixed(2);
+        label.textContent = high ? `Высоко: верх в ${above} м над землёй, без опоры можно до ${(FOUNDATION_TOP.free - GROUND_Y).toFixed(1)} м` : `Стабильность 100% · верх в ${above} м над землёй`;
         if (high) label.className = 'viewer3d__label viewer3d__label--bad';
         showGhost(`free|${kind}|${high}`, { type: 'free', kind, t }, () => {
           const el: ResolvedElement = { id: '__ghost__', kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };

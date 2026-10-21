@@ -57,7 +57,7 @@ test('god rock template: terrain without blocks loads, keeps scale and survives 
   const r = loadBlueprint(doc);
   assert.deepEqual(r.issues, []);
   assert.equal(r.resolved!.elements.length, 0);
-  assert.deepEqual(r.resolved!.terrain, [{ id: 'rock', kind: 'god-rock', position: [0, -0.6, 0], rotation: 0, scale: 1 }]);
+  assert.deepEqual(r.resolved!.terrain, [{ id: 'rock', kind: 'god-rock', position: [0, 0, 0], rotation: 0, scale: 1 }]);
   const built = addElementAt(r.blueprint!, 'square-foundation', { position: [3, 0, 2], rotation: 0, level: 0 }, 'twig');
   assert.equal(loadBlueprint(built).resolved!.terrain!.length, 1);
   assert.equal(removeElement(built, built.elements[0].id).terrain!.length, 1);

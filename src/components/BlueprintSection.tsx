@@ -4,7 +4,7 @@ import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D
 import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
-import { KINDS } from '../blueprint/catalog.ts';
+import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, newBlueprint, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
@@ -115,7 +115,6 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
 
 const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
 
-const GROUND_Y = -0.6;
 const FOV = { min: 70, max: 90, default: 75, key: 'bp.fov' };
 
 function savedFov(): number {
@@ -255,7 +254,7 @@ const BlueprintSection: React.FC = () => {
   const setRockOffset = (offset: number) => setSource(s => {
     const doc = s.data as Blueprint | null;
     if (!doc?.terrain?.length) return s;
-    const y = Math.round((GROUND_Y + offset) * 1000) / 1000;
+    const y = Math.round((GROUND_Y + offset) * 1000) / 1000 + 0;
     return { label: s.label, data: { ...doc, terrain: doc.terrain.map((t, i) => (i === 0 ? { ...t, position: [t.position[0], y, t.position[2]] as [number, number, number] } : t)) } };
   });
   const hasCupboard = !!resolved?.deployables.some(d => d.kind === 'tool-cupboard');

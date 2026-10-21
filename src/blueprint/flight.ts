@@ -21,5 +21,5 @@ export function applyFlight(camera: THREE.Camera, keys: Set<string>, dt: number)
   if (move.lengthSq() === 0) return;
   const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 3 : 1;
   camera.position.addScaledVector(move.normalize(), FLY_SPEED * boost * dt);
-  if (camera.position.y < -0.4) camera.position.y = -0.4;
+  if (camera.position.y < 0.2) camera.position.y = 0.2;
 }
