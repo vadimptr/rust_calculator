@@ -4,7 +4,7 @@
  * поставленного в сокет соседа: ею пользуется и установка в редакторе.
  */
 import {
-  BLOCK_FEMALE_Y, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
+  BLOCK_FEMALE_Y, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
   edgeIndex, openingAccepts, socketsOf, wallHeight,
 } from './catalog.ts';
 import type {
@@ -299,7 +299,7 @@ function uniqueIds(items: { id: string }[], issues: Issue[]): void {
 function checkFoundationHeight(e: { id: string; kind: ElementKind; position: [number, number, number] }, issues: Issue[]): void {
   if (!KINDS[e.kind].isFoundation) return;
   const y = e.position[1];
-  if (![0, 1.5, 3].some(v => Math.abs(y - v) < 1e-6)) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: допустимо 0, 1.5 или 3 м от земли`));
+  if (y < FOUNDATION_TOP.min - 1e-6 || y > FOUNDATION_TOP.max + 1e-6) issues.push(err('V12', e.id, `Фундамент на высоте ${round3(y)} м: верх должен быть от ${FOUNDATION_TOP.min} до ${FOUNDATION_TOP.max} м от земли`));
 }
 
 export function isLegacy(bp: Blueprint | LegacyBlueprint): bp is LegacyBlueprint {

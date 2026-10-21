@@ -474,3 +474,12 @@ test('a foundation can stand anywhere on free ground at any angle, but not into 
   assert.deepEqual(first.elements[0].position, [-5, 0, 2]);
   assert.equal(first.elements[0].rotation, 40);
 });
+
+test('a free foundation keeps any top height from 0 to 3 m, and a neighbour snaps 1.5 m up or down from it', () => {
+  const bp = newBlueprint('f', 'square-foundation', [0, 0.8, 0], 0);
+  assert.deepEqual(resolveBlueprint(bp).issues, []);
+  const heights = [...new Set(candidatePlacements(bp, resolveBlueprint(bp).resolved, 'square-foundation', 'f1').map(c => c.transform.position[1]))].sort();
+  assert.deepEqual(heights, [0.8, 2.3]);
+  assert.ok(resolveBlueprint(newBlueprint('f', 'square-foundation', [0, 3.2, 0], 0)).issues.some(i => i.code === 'V12'));
+  assert.deepEqual(resolveBlueprint(newBlueprint('f', 'square-foundation', [0, 2.65, 0], 0)).issues, []);
+});

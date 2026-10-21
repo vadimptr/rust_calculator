@@ -8,7 +8,7 @@ import type { DoorAnim } from '../blueprint/meshes.ts';
 import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
-import { KINDS } from '../blueprint/catalog.ts';
+import { FOUNDATION_TOP, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain } from '../blueprint/types.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -147,6 +147,7 @@ function socketBoxMesh(box: AimBox, selected: boolean): THREE.Object3D {
 }
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const EYE_HEIGHT = 1.6;
 
 /** Перекрасить построенный объект в призрак: материалы меша и рёбер заменяются, тени выключаются. */
 function ghostify(o: THREE.Object3D, mat: THREE.Material): THREE.Object3D {
@@ -232,6 +233,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
   const radialRef = useRef<RadialState | null>(null);
   const resolvedRef = useRef<Resolved | null>(resolved);
   editorRef.current = editor;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const showSocketsRef = useRef(showSockets);
   showSocketsRef.current = showSockets;
   resolvedRef.current = resolved;
@@ -251,7 +254,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     scene.fog = new THREE.Fog(0x161412, 80, 160);
 
     const camera = new THREE.PerspectiveCamera(50, host.clientWidth / host.clientHeight, 0.1, 500);
-    camera.position.set(12, 10, 12);
+    camera.position.set(6, EYE_HEIGHT, 6);
+    camera.lookAt(0, 0, 0);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -370,6 +374,23 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     };
 
     /** Точка прицела на земле (плоскость верха фундаментов), когда луч не попал ни в один блок. */
+    const aimTarget = (): THREE.Vector3 | null => {
+      const ndc = fly.isLocked ? new THREE.Vector2(0, 0) : state.pointer;
+      if (!ndc) return null;
+      state.raycaster.setFromCamera(ndc, camera);
+      const ray = state.raycaster.ray;
+      const p = new THREE.Vector3();
+      let t = ray.intersectPlane(GROUND_PLANE, p) ? ray.origin.distanceTo(p) : Infinity;
+      const rocks = content.children.filter(c => c.userData.terrain !== undefined);
+      if (rocks.length) {
+        world.updateMatrixWorld(true);
+        const h = state.raycaster.intersectObjects(rocks, true)[0];
+        if (h && h.distance < t) t = h.distance;
+      }
+      if (modeRef.current === 'fly') t = Math.min(t, PLACE_DISTANCE);
+      return Number.isFinite(t) ? world.worldToLocal(ray.at(t, p)) : null;
+    };
+
     const groundPoint = (): THREE.Vector3 | null => {
       const ndc = fly.isLocked ? new THREE.Vector2(0, 0) : state.pointer;
       if (!ndc) return null;
@@ -497,26 +518,29 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (!at) return none();
         const ray = aimRay();
         const yaw = (Math.atan2(-ray.dir[2], -ray.dir[0]) * 180) / Math.PI + 90 * state.alt;
-        const t = freePlacement(res, kind, [at.x, 0, at.z], yaw);
+        const y = Math.max(FOUNDATION_TOP.min, Math.round(at.y * 100) / 100);
+        const t = freePlacement(res, kind, [at.x, y, at.z], yaw);
         if (!t) return none();
         host.dataset.hover = 'ground';
         drawSockets([], null);
-        label.textContent = 'Стабильность 100%';
-        showGhost(`free|${kind}`, { type: 'free', kind, t }, () => {
+        const high = y > FOUNDATION_TOP.max;
+        label.textContent = high ? `Высоко: верх в ${y.toFixed(2)} м от земли, можно до ${FOUNDATION_TOP.max} м` : `Стабильность 100% · высота ${y.toFixed(2)} м`;
+        if (high) label.className = 'viewer3d__label viewer3d__label--bad';
+        showGhost(`free|${kind}|${high}`, { type: 'free', kind, t }, () => {
           const el: ResolvedElement = { id: '__ghost__', kind, grade: 'twig', position: [0, 0, 0], rotation: 0, level: 0 };
-          return ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), GHOST_MAT);
+          return ghostify(buildElement(el, undefined, undefined, piecesWith(EMPTY, el)), high ? FALL_MAT : GHOST_MAT);
         });
-        state.pending = { type: 'free', kind, t };
+        state.pending = high ? null : { type: 'free', kind, t };
         const g = ghost.children[0];
         if (g) { g.position.set(...t.position); g.rotation.set(0, (-t.rotation * Math.PI) / 180, 0); }
       };
       if (res.elements.length === 0) {
         if (ed.tool !== 'build' || !KINDS[ed.kind].isFoundation) return none();
-        return showFree(ed.kind, groundPoint());
+        return showFree(ed.kind, aimTarget());
       }
       const hit = pick();
       if (ed.tool === 'build' && KINDS[ed.kind].isFoundation) {
-        const ground = groundPoint();
+        const ground = aimTarget();
         const ray = aimRay();
         const near = ground ?? (hit ? hit.point : null);
         if (!near) return none();
@@ -527,7 +551,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
           const y = c.transform.position[1];
           if (Math.abs(ray.dir[1]) < 1e-6) continue;
           const tt = (y - ray.origin[1]) / ray.dir[1];
-          if (tt <= 0) continue;
+          if (tt <= 0 || (modeRef.current === 'fly' && tt > PLACE_DISTANCE + 1)) continue;
           const px = ray.origin[0] + ray.dir[0] * tt, pz = ray.origin[2] + ray.dir[2] * tt;
           const poly = footprint(ed.kind, c.transform);
           if (!insidePolygon(poly, px, pz)) continue;
@@ -882,7 +906,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     framedKey.current = frameKey;
     if (bounds.isEmpty()) return;
     if (resolved.elements.length === 0 && resolved.terrain?.length) {
-      const v = caveView(resolved.terrain[0]);
+      const v = caveView(resolved.terrain[0], EYE_HEIGHT);
       s.camera.position.set(v.eye[0], v.eye[1], -v.eye[2]);
       s.controls.target.set(v.target[0], v.target[1], -v.target[2]);
       s.camera.lookAt(s.controls.target);

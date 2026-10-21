@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
+import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -113,10 +113,8 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
       const flips = twoSided || KINDS[kind].category === 'wallType' ? [false, true] : [false];
       const spiralOnSpiral = kind === 'spiral-stairs' && host.kind === 'spiral-stairs';
       const turnsList = spiralOnSpiral ? [2, 0, 1, 3] : KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
-      // фундамент к фундаменту — три высоты верха от земли: 0, 1.5 и 3 м (ряды сокетов игры)
-      const hostY = host.position[1];
       const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
-        ? [0, 1.5, 3].map(y => y - hostY) : kind === 'ramp' && socket === 'top' ? [0, RAMP_HIGH_RISE] : [0];
+        ? [-3, -1.5, 0, 1.5, 3] : kind === 'ramp' && socket === 'top' ? [0, RAMP_HIGH_RISE] : [0];
       for (const flip of flips) for (const turns of turnsList) for (const rise of rises) {
         const attach: Attach = { to: hostId, socket };
         if (defaultSelfSocket(kind) !== self) attach.selfSocket = self;
@@ -124,7 +122,7 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
         if (turns) attach.turns = turns as 0 | 1 | 2 | 3;
         if (rise) attach.rise = rise as Attach['rise'];
         const pose = socketPose(host, kind, attach);
-        if (KINDS[kind].isFoundation && ![0, 1.5, 3].some(v => Math.abs(pose.position[1] - v) < 1e-6)) continue;
+        if (KINDS[kind].isFoundation && (pose.position[1] < FOUNDATION_TOP.min - 1e-6 || pose.position[1] > FOUNDATION_TOP.max + 1e-6)) continue;
         const t: Transform = { ...pose, position: pose.position.map(round3) as [number, number, number], rotation: round3(pose.rotation) };
         // ячейка, приставленная разными своими рёбрами, занимает одно и то же место: поворот берётся
         // по модулю симметрии формы, первым остаётся вариант с edge:0
