@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Viewer3D from './Viewer3D';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
-import { BLUEPRINT_PRESETS } from '../blueprint/presets.ts';
+import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
+import type { SchemeSummary } from '../blueprint/schemesApi.ts';
+import { record, redo, startHistory, undo } from '../blueprint/history.ts';
+import type { History } from '../blueprint/history.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, newBlueprint, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Resolved, Transform } from '../blueprint/types.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Transform } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import type { RaidSimulation } from '../blueprint/splash.ts';
@@ -113,7 +116,6 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
   ],  view: [],
 };
 
-const EMPTY_RESOLVED: Resolved = { elements: [], deployables: [] };
 
 const FOV = { min: 70, max: 90, default: 75, key: 'bp.fov' };
 
@@ -141,22 +143,23 @@ const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
   </svg>
 );
 
-interface Source {
-  label: string;
-  /** Исходный документ (объект). */
-  data: unknown;
+interface Current {
+  id: string | null;
+  version: number;
+  saved: string;
 }
 
-function fromPreset(id: string): Source {
-  const p = BLUEPRINT_PRESETS.find(x => x.id === id) ?? BLUEPRINT_PRESETS[0];
-  return { label: p.label, data: p.data };
+function urlScheme(): string | null {
+  return new URLSearchParams(window.location.search).get('bp');
 }
 
-/** Начальный пресет: ?bp=<id> в адресе, иначе первый. */
-function initialPresetId(): string {
-  const wanted = new URLSearchParams(window.location.search).get('bp');
-  return BLUEPRINT_PRESETS.some(p => p.id === wanted) ? (wanted as string) : 'empty';
+function setUrlScheme(id: string | null): void {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set('bp', id); else url.searchParams.delete('bp');
+  window.history.replaceState(null, '', url);
 }
+
+const NO_RESULT: LoadResult = { blueprint: null, resolved: null, issues: [] };
 
 const UpkeepDays: React.FC<{ upkeep: Record<ResourceKey, number> }> = ({ upkeep }) => {
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -193,8 +196,13 @@ const UpkeepDays: React.FC<{ upkeep: Record<ResourceKey, number> }> = ({ upkeep 
 };
 
 const BlueprintSection: React.FC = () => {
-  const [activePreset, setActivePreset] = useState<string | null>(initialPresetId);
-  const [source, setSource] = useState<Source>(() => fromPreset(initialPresetId()));
+  const [schemes, setSchemes] = useState<SchemeSummary[] | null>(null);
+  const [current, setCurrent] = useState<Current | null>(null);
+  const [hist, setHist] = useState<History<Blueprint> | null>(null);
+  const [status, setStatus] = useState<{ text: string; bad?: boolean; reload?: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState<{ name: string; rock: boolean } | null>(null);
+  const [collapsedNote, setCollapsedNote] = useState('');
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
   const [showSockets, setShowSockets] = useState(false);
   const [showPrivilege, setShowPrivilege] = useState(false);
@@ -213,74 +221,161 @@ const BlueprintSection: React.FC = () => {
   const [buildKind, setBuildKind] = useState<ElementKind>('square-foundation');
   const [deployKind, setDeployKind] = useState<DeployableKind>('wooden-door');
 
-  // Документ → схема → геометрия
-  const result: LoadResult = useMemo(
-    () => (source.data === null ? { blueprint: null, resolved: EMPTY_RESOLVED, issues: [] } : loadBlueprint(source.data)),
-    [source],
-  );
+  const doc = hist?.present ?? null;
+  const result: LoadResult = useMemo(() => (doc ? loadBlueprint(doc) : NO_RESULT), [doc]);
+  const docJson = useMemo(() => (doc ? JSON.stringify(doc) : ''), [doc]);
+  const dirty = !!current && !!doc && docJson !== current.saved;
 
-  const choosePreset = (id: string) => {
-    setActivePreset(id);
-    setSource(fromPreset(id));
-    setRaidPlay(0);
+  const open = useCallback(async (id: string) => {
+    setBusy(true);
+    try {
+      const sc = await getScheme(id);
+      setCurrent({ id: sc.id, version: sc.version, saved: JSON.stringify(sc.doc) });
+      setHist(startHistory(sc.doc));
+      setUrlScheme(sc.id);
+      setStatus(null);
+      setRaidPlay(0);
+      setCollapsedNote('');
+    } catch (e) {
+      setStatus({ text: (e as Error).message, bad: true });
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    listSchemes().then(list => {
+      setSchemes(list);
+      const wanted = urlScheme();
+      const id = list.find(x => x.id === wanted)?.id ?? list[0]?.id;
+      if (id) open(id);
+      else { setCurrent({ id: null, version: 0, saved: '' }); setHist(startHistory(emptyScheme('Новая постройка', false))); }
+    }).catch((e: Error) => {
+      setSchemes([]);
+      setStatus({ text: `${e.message}: схемы не загрузить и не сохранить, можно только строить`, bad: true });
+      setCurrent(null);
+      setHist(startHistory(emptyScheme('Новая постройка', false)));
+    });
+  }, [open]);
+
+  const confirmLeave = () => !dirty || window.confirm('В схеме есть несохранённые изменения. Уйти без сохранения?');
+  const chooseScheme = (id: string) => {
+    if (id === current?.id || !confirmLeave()) return;
+    open(id);
   };
-  // 1 / 2 / 3 — строительный план, киянка, объект (как слоты в игре)
+
+  const create = async () => {
+    if (!creating) return;
+    const name = creating.name.trim() || 'Новая постройка';
+    setBusy(true);
+    try {
+      const sc = await createScheme(name, emptyScheme(name, creating.rock));
+      setSchemes(list => [...(list ?? []), sc]);
+      setCurrent({ id: sc.id, version: sc.version, saved: JSON.stringify(sc.doc) });
+      setHist(startHistory(sc.doc));
+      setUrlScheme(sc.id);
+      setCreating(null);
+      setStatus({ text: 'Схема создана' });
+      setRaidPlay(0);
+      setCollapsedNote('');
+    } catch (e) {
+      setStatus({ text: (e as Error).message, bad: true });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const save = useCallback(async () => {
+    if (!current?.id || !doc || busy) return;
+    setBusy(true);
+    try {
+      const sc = await saveScheme(current.id, doc.meta.name, doc, current.version);
+      setCurrent({ id: sc.id, version: sc.version, saved: JSON.stringify(sc.doc) });
+      setHist(h => (h && JSON.stringify(h.present) === JSON.stringify(sc.doc) ? h : h && { ...h, present: sc.doc }));
+      setSchemes(list => (list ?? []).map(x => (x.id === sc.id ? { ...sc } : x)));
+      setStatus({ text: 'Сохранено' });
+    } catch (e) {
+      const conflict = e instanceof ApiError && e.status === 409;
+      setStatus({ text: conflict ? 'Схему уже сохранили в другом окне. Загрузи сохранённую версию, твои правки при этом пропадут' : (e as Error).message, bad: true, reload: conflict });
+    } finally {
+      setBusy(false);
+    }
+  }, [current, doc, busy]);
+
+  const doUndo = useCallback(() => setHist(h => (h ? undo(h) : h)), []);
+  const doRedo = useCallback(() => setHist(h => (h ? redo(h) : h)), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.code === 'KeyZ') { (e.shiftKey ? doRedo : doUndo)(); e.preventDefault(); }
+      else if (e.code === 'KeyY') { doRedo(); e.preventDefault(); }
+      else if (e.code === 'KeyS') { save(); e.preventDefault(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [doUndo, doRedo, save]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+  useEffect(() => {
+    if (!status || status.bad) return;
+    const t = setTimeout(() => setStatus(null), 2500);
+    return () => clearTimeout(t);
+  }, [status]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.metaKey || e.ctrlKey) return;
       const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
       if (t) { setTool(cur => (cur === t ? 'view' : t)); e.preventDefault(); }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
-  const [collapsedNote, setCollapsedNote] = useState('');
   const applyDoc = useCallback((next: Blueprint) => {
-    if (next.elements.length === 0 && !next.terrain?.length) {
-      setCollapsedNote('');
-      setSource(s => ({ label: s.label, data: null }));
-      setRaidPlay(0);
-      return;
-    }
-    // после каждого действия — обрушение блоков без опоры, как в игре
     const { blueprint: settled, collapsed } = settle(next);
     setCollapsedNote(collapsed.length ? `Обрушилось без опоры: ${collapsed.length} (${collapsed.join(', ')})` : '');
-    setSource(s => ({ label: s.label, data: settled }));
+    setHist(h => (h ? record(h, settled) : h));
     setRaidPlay(0);
   }, []);
+  const rename = (name: string) => setHist(h => (h ? record(h, { ...h.present, meta: { ...h.present.meta, name } }, 'name') : h));
 
   const { blueprint, resolved, issues } = result;
   const rock = blueprint?.terrain?.[0];
   const rockOffset = rock ? Math.round((rock.position[1] - GROUND_Y) * 100) / 100 : 0;
-  const setRockOffset = (offset: number) => setSource(s => {
-    const doc = s.data as Blueprint | null;
-    if (!doc?.terrain?.length) return s;
+  const setRockOffset = (offset: number) => setHist(h => {
+    const d = h?.present;
+    if (!h || !d?.terrain?.length) return h;
     const y = Math.round((GROUND_Y + offset) * 1000) / 1000 + 0;
-    return { label: s.label, data: { ...doc, terrain: doc.terrain.map((t, i) => (i === 0 ? { ...t, position: [t.position[0], y, t.position[2]] as [number, number, number] } : t)) } };
+    return record(h, { ...d, terrain: d.terrain.map((t, i) => (i === 0 ? { ...t, position: [t.position[0], y, t.position[2]] as [number, number, number] } : t)) }, 'rock');
   });
   const hasCupboard = !!resolved?.deployables.some(d => d.kind === 'tool-cupboard');
   const raidActive = raidOn && hasCupboard;
 
   const editor = useMemo<EditorState | null>(() => {
-    if (!blueprint && source.data !== null) return null;
+    if (!blueprint) return null;
     return {
       tool, kind: buildKind, deployKind, blueprint, radial: RADIAL,
       // новые блоки — из веток, как в игре; грейд меняется киянкой
-      onPlace: (kind: ElementKind, attach: Attach) => blueprint && applyDoc(addElement(blueprint, kind, attach, 'twig')),
-      onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(blueprint ? addElementAt(blueprint, kind, t, 'twig') : newBlueprint('Новая постройка', kind, t.position, t.rotation)),
-      onDeploy: (d: Omit<Deployable, 'id'>) => blueprint && applyDoc(addDeployable(blueprint, d)),
-      onRemove: (id: string, deployable: boolean) => blueprint && applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, 'twig')),
+      onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(addElementAt(blueprint, kind, t, 'twig')),
+      onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
+      onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
       onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {
         if (t === 'build') setBuildKind(itemId as ElementKind);
         else if (t === 'deploy') setDeployKind(itemId as DeployableKind);
-        else if (blueprint && targetId) {
+        else if (targetId) {
           if (itemId === 'rotate') { if (!targetDeployable) applyDoc(rotateElement(blueprint, targetId)); }
           else if (itemId === 'remove') applyDoc(targetDeployable ? removeDeployable(blueprint, targetId) : removeElement(blueprint, targetId));
           else if (!targetDeployable) applyDoc(upgradeElement(blueprint, targetId, itemId as Grade));
         }
       },
     };
-  }, [blueprint, source.data, tool, buildKind, deployKind, applyDoc]);
+  }, [blueprint, tool, buildKind, deployKind, applyDoc]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -344,19 +439,54 @@ const BlueprintSection: React.FC = () => {
     <section className="bp">
       <div className="bp__layout">
         <div className="bp__left">
-          <label className="bp__preset">
-            <span className="bp__side-title">Шаблон</span>
-            <select className="bp__preset-select" value={activePreset ?? ''} onChange={e => choosePreset(e.target.value)}>
-              {activePreset === null && <option value="" disabled>{source.label}</option>}
-              {BLUEPRINT_PRESETS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
-          </label>
-          <aside className="bp__panel">
-            <div className="bp__panel-title">{blueprint?.meta.name ?? source.label}</div>
-            <div className="bp__meta">
-              Источник: {source.label}
-              {blueprint?.meta.gameVersion && <> · игра {blueprint.meta.gameVersion}</>}
+          <div className="bp__preset">
+            <span className="bp__side-title">Схема</span>
+            <div className="bp__scheme-row">
+              <select className="bp__preset-select" value={current?.id ?? ''} onChange={e => chooseScheme(e.target.value)} disabled={!schemes?.length || busy} aria-label="Схема">
+                {!current?.id && <option value="">{schemes ? 'Без схемы' : 'Загрузка…'}</option>}
+                {(schemes ?? []).map(x => <option key={x.id} value={x.id}>{x.name}{x.terrain ? ' · скала' : ''}</option>)}
+              </select>
+              <button type="button" className="bp__icon-btn" onClick={() => setCreating(c => (c ? null : { name: 'Новая постройка', rock: false }))} disabled={busy || schemes === null} aria-expanded={!!creating} aria-label="Новая схема" data-tip="Новая схема" data-tip-pos="left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              </button>
             </div>
+            {creating && (
+              <form className="bp__new" onSubmit={e => { e.preventDefault(); if (confirmLeave()) create(); }}>
+                <input className="bp__name" value={creating.name} onChange={e => setCreating({ ...creating, name: e.target.value })} maxLength={120} autoFocus aria-label="Название новой схемы" />
+                <div className="bp__new-kind" role="radiogroup" aria-label="Участок">
+                  <label><input type="radio" checked={!creating.rock} onChange={() => setCreating({ ...creating, rock: false })} /> Пустой участок</label>
+                  <label><input type="radio" checked={creating.rock} onChange={() => setCreating({ ...creating, rock: true })} /> Со скалой God Rock</label>
+                </div>
+                <div className="bp__range-actions">
+                  <button type="submit" className="bp__upload-btn" disabled={busy}>Создать</button>
+                  <button type="button" className="raid-tier__btn" onClick={() => setCreating(null)}>Отмена</button>
+                </div>
+              </form>
+            )}
+          </div>
+          <aside className="bp__panel">
+            {doc ? (
+              <input className="bp__panel-title bp__title-input" value={doc.meta.name} onChange={e => rename(e.target.value)} maxLength={120} aria-label="Название схемы" />
+            ) : (
+              <div className="bp__panel-title">Загрузка…</div>
+            )}
+            <div className="bp__toolbar" role="toolbar" aria-label="Правка">
+              <button type="button" className="bp__icon-btn" onClick={doUndo} disabled={!hist?.past.length} aria-label="Отменить" data-tip="Отменить (Cmd+Z)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></svg>
+              </button>
+              <button type="button" className="bp__icon-btn" onClick={doRedo} disabled={!hist?.future.length} aria-label="Вернуть" data-tip="Вернуть (Shift+Cmd+Z)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5" /><path d="M20 9H10a6 6 0 0 0 0 12h3" /></svg>
+              </button>
+              <button type="button" className="bp__upload-btn bp__save" onClick={save} disabled={!dirty || busy || !current?.id}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
+              <span className={`bp__save-state${dirty ? ' bp__save-state--dirty' : ''}`}>{!current?.id ? 'без базы' : dirty ? 'есть изменения' : 'сохранено'}</span>
+            </div>
+            {status && (
+              <p className={`bp__status${status.bad ? ' bp__status--bad' : ''}`}>
+                {status.text}
+                {status.reload && current?.id && <> <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => open(current.id!)}>Загрузить</button></>}
+              </p>
+            )}
+            {blueprint?.meta.gameVersion && <div className="bp__meta">Игра {blueprint.meta.gameVersion}</div>}
 
             {rock && (
               <section className="bp__terrain">
@@ -512,7 +642,7 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={source.label} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
+            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
             <div className="bp__camera" role="group" aria-label="Камера">
               <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">
                 <span>FOV</span>

@@ -9,6 +9,25 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+# API stage
+FROM node:24-alpine AS api
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
+COPY src ./src
+COPY docs/blueprint ./docs/blueprint
+COPY server ./server
+
+ENV PORT=3001 DB_PATH=/data/schemes.db NODE_ENV=production
+RUN mkdir -p /data && chown node:node /data
+VOLUME /data
+EXPOSE 3001
+USER node
+CMD ["node", "server/index.ts"]
+
 # Serve stage
 FROM nginx:alpine AS runner
 

@@ -1,0 +1,17 @@
+services:
+  rust-calculator:
+    image: ghcr.io/vadimptr/rust_calculator/app:latest
+    ports:
+      - "9092:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/vadimptr/rust_calculator/api:latest
+    volumes:
+      - schemes:/data
+    restart: unless-stopped
+
+volumes:
+  schemes:
