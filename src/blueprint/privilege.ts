@@ -215,3 +215,132 @@ export function privilegedAt(info: Buildings, point: Vec3): string | null {
   }
   return null;
 }
+
+export interface PrivilegeShell { positions: Float32Array; indices: Uint32Array }
+
+const FAR = 1e20;
+
+function edt1d(f: Float64Array, n: number, d: Float64Array, v: Int32Array, z: Float64Array): void {
+  let k = 0;
+  v[0] = 0;
+  z[0] = -Infinity;
+  z[1] = Infinity;
+  for (let q = 1; q < n; q++) {
+    let s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+    while (s <= z[k]) {
+      k--;
+      s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+    }
+    k++;
+    v[k] = q;
+    z[k] = s;
+    z[k + 1] = Infinity;
+  }
+  k = 0;
+  for (let q = 0; q < n; q++) {
+    while (z[k + 1] < q) k++;
+    d[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
+  }
+}
+
+function distanceTransform(grid: Float64Array, nx: number, ny: number, nz: number): void {
+  const n = Math.max(nx, ny, nz);
+  const f = new Float64Array(n), d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
+  const pass = (len: number, count: number, index: (line: number, q: number) => number) => {
+    for (let line = 0; line < count; line++) {
+      let any = false;
+      for (let q = 0; q < len; q++) { f[q] = grid[index(line, q)]; if (f[q] < FAR) any = true; }
+      if (!any) continue;
+      edt1d(f, len, d, v, z);
+      for (let q = 0; q < len; q++) grid[index(line, q)] = d[q];
+    }
+  };
+  pass(nx, ny * nz, (l, q) => l * nx + q);
+  pass(ny, nx * nz, (l, q) => { const x = l % nx, zz = (l / nx) | 0; return (zz * ny + q) * nx + x; });
+  pass(nz, nx * ny, (l, q) => q * nx * ny + l);
+}
+
+function surfaceNets(field: Float32Array, nx: number, ny: number, nz: number, origin: Vec3, cell: number): PrivilegeShell {
+  const at = (x: number, y: number, z: number) => field[(z * ny + y) * nx + x];
+  const cx = nx - 1, cy = ny - 1;
+  const cellIndex = new Int32Array(cx * cy * (nz - 1)).fill(-1);
+  const pos: number[] = [];
+  const corner = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
+  const edges = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+  const vals = new Float64Array(8);
+  for (let z = 0; z < nz - 1; z++) {
+    for (let y = 0; y < cy; y++) {
+      for (let x = 0; x < cx; x++) {
+        let inside = 0;
+        for (let i = 0; i < 8; i++) { vals[i] = at(x + corner[i][0], y + corner[i][1], z + corner[i][2]); if (vals[i] > 0) inside++; }
+        if (inside === 0 || inside === 8) continue;
+        let sx = 0, sy = 0, sz = 0, n = 0;
+        for (const [a, b] of edges) {
+          if ((vals[a] > 0) === (vals[b] > 0)) continue;
+          const t = vals[a] / (vals[a] - vals[b]);
+          sx += corner[a][0] + t * (corner[b][0] - corner[a][0]);
+          sy += corner[a][1] + t * (corner[b][1] - corner[a][1]);
+          sz += corner[a][2] + t * (corner[b][2] - corner[a][2]);
+          n++;
+        }
+        cellIndex[(z * cy + y) * cx + x] = pos.length / 3;
+        pos.push(origin[0] + (x + sx / n) * cell, origin[1] + (y + sy / n) * cell, origin[2] + (z + sz / n) * cell);
+      }
+    }
+  }
+  const idx: number[] = [];
+  const cellAt = (x: number, y: number, z: number) => (x < 0 || y < 0 || z < 0 || x >= cx || y >= cy || z >= nz - 1 ? -1 : cellIndex[(z * cy + y) * cx + x]);
+  const quad = (a: number, b: number, c: number, d: number, flip: boolean) => {
+    if (a < 0 || b < 0 || c < 0 || d < 0) return;
+    if (flip) idx.push(a, c, b, a, d, c); else idx.push(a, b, c, a, c, d);
+  };
+  for (let z = 0; z < nz; z++) {
+    for (let y = 0; y < ny; y++) {
+      for (let x = 0; x < nx; x++) {
+        const f0 = at(x, y, z) > 0;
+        if (x + 1 < nx && f0 !== (at(x + 1, y, z) > 0)) quad(cellAt(x, y - 1, z - 1), cellAt(x, y, z - 1), cellAt(x, y, z), cellAt(x, y - 1, z), !f0);
+        if (y + 1 < ny && f0 !== (at(x, y + 1, z) > 0)) quad(cellAt(x - 1, y, z - 1), cellAt(x - 1, y, z), cellAt(x, y, z), cellAt(x, y, z - 1), !f0);
+        if (z + 1 < nz && f0 !== (at(x, y, z + 1) > 0)) quad(cellAt(x - 1, y - 1, z), cellAt(x, y - 1, z), cellAt(x, y, z), cellAt(x - 1, y, z), !f0);
+      }
+    }
+  }
+  return { positions: new Float32Array(pos), indices: new Uint32Array(idx) };
+}
+
+function boxSamples(b: Box, step: number): Vec3[] {
+  const [ux, uz] = b.u, vx = -uz, vz = ux;
+  const [hx, hy, hz] = b.half;
+  const steps = (h: number) => Math.max(1, Math.ceil((2 * h) / step));
+  const out: Vec3[] = [];
+  const nx = steps(hx), ny = steps(hy), nz = steps(hz);
+  for (let i = 0; i <= nx; i++) for (let j = 0; j <= ny; j++) for (let k = 0; k <= nz; k++) {
+    if (i > 0 && i < nx && j > 0 && j < ny && k > 0 && k < nz) continue;
+    const a = -hx + (2 * hx * i) / nx, y = -hy + (2 * hy * j) / ny, c = -hz + (2 * hz * k) / nz;
+    out.push([b.center[0] + ux * a + vx * c, b.center[1] + y, b.center[2] + uz * a + vz * c]);
+  }
+  return out;
+}
+
+export function privilegeShells(resolved: Resolved, cell = 0.5): PrivilegeShell[] {
+  const info = buildings(resolved);
+  const shells: PrivilegeShell[] = [];
+  const pad = PRIVILEGE_RADIUS + 2 * cell;
+  for (const b of info.cupboards.keys()) {
+    const boxes = [...info.of].filter(([, bb]) => bb === b).map(([id]) => info.boxes.get(id)!);
+    const lo: Vec3 = [Infinity, Infinity, Infinity], hi: Vec3 = [-Infinity, -Infinity, -Infinity];
+    const samples = boxes.flatMap(bx => boxSamples(bx, cell / 2));
+    for (const p of samples) for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], p[a]); hi[a] = Math.max(hi[a], p[a]); }
+    const origin: Vec3 = [lo[0] - pad, lo[1] - pad, lo[2] - pad];
+    const nx = Math.ceil((hi[0] - lo[0] + 2 * pad) / cell) + 1, ny = Math.ceil((hi[1] - lo[1] + 2 * pad) / cell) + 1, nz = Math.ceil((hi[2] - lo[2] + 2 * pad) / cell) + 1;
+    const grid = new Float64Array(nx * ny * nz).fill(FAR);
+    for (const p of samples) {
+      const x = Math.round((p[0] - origin[0]) / cell), y = Math.round((p[1] - origin[1]) / cell), z = Math.round((p[2] - origin[2]) / cell);
+      grid[(z * ny + y) * nx + x] = 0;
+    }
+    distanceTransform(grid, nx, ny, nz);
+    const field = new Float32Array(grid.length);
+    for (let i = 0; i < grid.length; i++) field[i] = PRIVILEGE_RADIUS - Math.sqrt(Math.min(grid[i], FAR)) * cell;
+    shells.push(surfaceNets(field, nx, ny, nz, origin, cell));
+  }
+  return shells;
+}

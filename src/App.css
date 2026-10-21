@@ -2453,10 +2453,6 @@
   margin: 0;
 }
 
-.bp__privilege {
-  display: flex;
-  margin-top: 0.6rem;
-}
 
 .bp__scheme-row {
   display: flex;
@@ -2602,4 +2598,35 @@
 
 .viewer3d__privilege--on {
   display: inline-flex;
+}
+
+.bp__zones {
+  height: 38px;
+  padding: 0 0.8rem;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(20, 17, 14, 0.75);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+}
+
+.bp__zones:hover {
+  border-color: var(--accent);
+}
+
+.bp__zones--on {
+  border-color: rgba(232, 176, 74, 0.8);
+}
+
+@media (max-width: 720px) {
+  .bp__zones {
+    max-width: 9rem;
+    white-space: normal;
+    line-height: 1.1;
+  }
 }

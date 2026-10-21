@@ -15,7 +15,7 @@ import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import { aimDistance, deployPlacement, freePlacement, placementAnchor, placementsNear, rotatable } from '../blueprint/editor.ts';
 import { footprint, socketPose } from '../blueprint/geometry.ts';
-import { PRIVILEGE_RADIUS, buildings, connectsCupboards, cupboardBlocker, cupboardBox, privilegeZones, privilegedAt } from '../blueprint/privilege.ts';
+import { PRIVILEGE_RADIUS, buildings, connectsCupboards, cupboardBlocker, privilegeShells, privilegeZones, privilegedAt } from '../blueprint/privilege.ts';
 import type { Buildings, PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
@@ -1077,20 +1077,21 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       mat.dispose();
     }
     s.zones.clear();
-    if (!showPrivilege || !resolved) return;
-    for (const z of privilegeZones(resolved)) s.zones.add(zoneMesh(z));
-    for (const d of resolved.deployables) {
-      if (d.kind !== 'tool-cupboard') continue;
-      const c = cupboardBox(d).center;
-      const shell = new THREE.Mesh(new THREE.SphereGeometry(PRIVILEGE_RADIUS, 48, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.07, depthWrite: false, side: THREE.DoubleSide }));
-      const wire = new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(PRIVILEGE_RADIUS, 24, 12)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, depthWrite: false }));
-      for (const o of [shell, wire]) {
-        o.position.set(...c);
-        o.renderOrder = 3;
-        o.raycast = () => {};
-        s.zones.add(o);
+    if (!showPrivilege || !resolved || !resolved.deployables.some(d => d.kind === 'tool-cupboard')) return;
+    const timer = setTimeout(() => {
+      for (const z of privilegeZones(resolved)) s.zones.add(zoneMesh(z));
+      for (const sh of privilegeShells(resolved)) {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(sh.positions, 3));
+        geo.setIndex(new THREE.BufferAttribute(sh.indices, 1));
+        geo.computeVertexNormals();
+        const shell = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x404040, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide }));
+        shell.renderOrder = 3;
+        shell.raycast = () => {};
+        s.zones.add(shell);
       }
-    }
+    }, 120);
+    return () => clearTimeout(timer);
   }, [resolved, showPrivilege]);
 
   useEffect(() => {

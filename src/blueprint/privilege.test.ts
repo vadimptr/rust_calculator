@@ -48,3 +48,18 @@ test('two cupboards in one building are reported, the zone covers 16 m around th
   assert.ok(inside(16, 0));
   assert.ok(!inside(18, 0));
 });
+
+test('the privilege shell runs 16 m from the nearest block of the building, closed around it', async () => {
+  const { privilegeShells, boxDistance } = await import('./privilege.ts');
+  const r = resolveBlueprint(doc([0, 3], ['f0'])).resolved;
+  const [sh] = privilegeShells(r);
+  assert.ok(sh.indices.length > 1000);
+  const boxes = [...buildings(r).boxes.values()];
+  let worst = 0;
+  for (let i = 0; i < sh.positions.length; i += 3 * 11) {
+    const p = { center: [sh.positions[i], sh.positions[i + 1], sh.positions[i + 2]] as [number, number, number], u: [1, 0] as [number, number], half: [0, 0, 0] as [number, number, number] };
+    worst = Math.max(worst, Math.abs(Math.min(...boxes.map(b => boxDistance(p, b, 100))) - 16));
+  }
+  assert.ok(worst < 0.5, `max error ${worst}`);
+  assert.deepEqual(privilegeShells(resolveBlueprint(doc([0], [])).resolved), []);
+});

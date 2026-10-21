@@ -533,12 +533,6 @@ const BlueprintSection: React.FC = () => {
 
             {collapsedNote && <p className="palette__note">{collapsedNote}</p>}
 
-            {hasCupboard && (
-              <label className="bp__toggle bp__privilege">
-                <input type="checkbox" checked={showPrivilege} onChange={e => setShowPrivilege(e.target.checked)} />
-                Зона привилегии шкафа (16 м)
-              </label>
-            )}
 
             {resolved && hasCupboard && raidBusy && (
               <section className="raid-panel">
@@ -646,6 +640,11 @@ const BlueprintSection: React.FC = () => {
           <div className="bp__viewer">
             <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
             <div className="bp__camera" role="group" aria-label="Камера">
+              {hasCupboard && (
+                <button type="button" className={`bp__zones${showPrivilege ? ' bp__zones--on' : ''}`} onClick={() => setShowPrivilege(v => !v)} aria-pressed={showPrivilege} data-tip="Зона привилегии шкафа: 16 м от блоков здания со шкафом — оболочка в сцене и граница на земле" data-tip-pos="left">
+                  {showPrivilege ? 'Убрать зоны строительства' : 'Показать зоны строительства'}
+                </button>
+              )}
               <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">
                 <span>FOV</span>
                 <input type="range" min={FOV.min} max={FOV.max} step={1} value={fov} onChange={e => changeFov(Number(e.target.value))} onDoubleClick={() => changeFov(FOV.default)} aria-label="Угол обзора" />
