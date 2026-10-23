@@ -7,6 +7,7 @@ import {
   BLOCK_FEMALE_Y, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
   edgeIndex, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
+import { groundTerrain } from './terrain.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
   Socket, Transform,
@@ -327,7 +328,7 @@ export function resolveBlueprint(bp: Blueprint | LegacyBlueprint): ResolveResult
   }
   for (const e of elements) {
     if (!KINDS[e.kind]) { issues.push(err('V03', e.id, `Неизвестный тип «${e.kind}»`)); continue; }
-    checkFoundationHeight(e, issues, terrain.length > 0);
+    checkFoundationHeight(e, issues, groundTerrain(terrain));
     const r: ResolvedElement = {
       id: e.id, kind: e.kind, grade: e.grade ?? defaultGrade, ...(e.bunker ? { bunker: true } : {}), ...(e.inverted ? { inverted: true } : {}),
       position: e.position.map(round3) as [number, number, number],

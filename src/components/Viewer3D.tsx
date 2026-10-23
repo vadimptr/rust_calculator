@@ -1042,8 +1042,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     if (bounds.isEmpty() && resolved.terrain?.length) return;
     framedKey.current = frameKey;
     if (bounds.isEmpty()) return;
-    if (resolved.elements.length === 0 && resolved.terrain?.length) {
-      const v = caveView(resolved.terrain[0], EYE_HEIGHT);
+    const v = resolved.elements.length === 0 && resolved.terrain?.length ? caveView(resolved.terrain[0], EYE_HEIGHT) : null;
+    if (v) {
       s.camera.position.set(v.eye[0], v.eye[1], -v.eye[2]);
       s.controls.target.set(v.target[0], v.target[1], -v.target[2]);
       s.camera.lookAt(s.controls.target);

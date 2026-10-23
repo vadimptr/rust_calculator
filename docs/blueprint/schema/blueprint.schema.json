@@ -583,9 +583,10 @@
         },
         "kind": {
           "enum": [
-            "god-rock"
+            "god-rock",
+            "hot-air-balloon"
           ],
-          "description": "god-rock — v3_rock_formations_large/rock_formation_a.prefab, скала со сквозной полостью."
+          "description": "god-rock — v3_rock_formations_large/rock_formation_a.prefab, скала со сквозной полостью; hot-air-balloon — купол воздушного шара (HotAirBalloon.prefab) без корзины."
         },
         "position": {
           "$ref": "#/$defs/Vec3",
@@ -600,7 +601,7 @@
           "minimum": 0.8,
           "maximum": 1.2,
           "default": 1,
-          "description": "Масштаб генерации мира (DecorScale), одинаковый по осям."
+          "description": "Масштаб генерации мира (DecorScale) для скалы, одинаковый по осям; у шара — 1."
         },
         "label": {
           "type": "string",

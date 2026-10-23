@@ -70,6 +70,9 @@ MANIFEST = 'assets/manifest.asset'
 TERRAIN = {
     'god-rock': 'assets/bundled/prefabs/autospawn/decor/v3_rock_formations_large/rock_formation_a.prefab',
 }
+PARTS = {
+    'hot-air-balloon': ('assets/prefabs/deployable/hot air balloon/hotairballoon.prefab', 'hot_air_balloon_LOD0', {'balloon'}),
+}
 WORLD_LAYER = 16
 MAX_TEX = 2048
 
@@ -407,7 +410,7 @@ class Exporter:
             return None
         return self.write_glb(name, prims)
 
-    def mesh_prims(self, mf, mr):
+    def mesh_prims(self, mf, mr, materials=None):
         try:
             mesh = mf.read().m_Mesh.read()
         except FileNotFoundError:
@@ -424,7 +427,10 @@ class Exporter:
         for si, tris in enumerate(h.get_triangles()):
             if si < len(mats) and tris:
                 try:
-                    prims.append((V, N, UV, np.array(tris, dtype=np.int64), self.material(mats[si].read())))
+                    mat = mats[si].read()
+                    if materials is not None and mat.m_Name not in materials:
+                        continue
+                    prims.append((V, N, UV, np.array(tris, dtype=np.int64), self.material(mat)))
                 except Exception:
                     continue
         return prims
@@ -446,6 +452,39 @@ class Exporter:
             g = self.scene.objects.get(child.read_typetree()['m_GameObject']['m_PathID'])
             if g is not None and g.read_typetree().get('m_IsActive', 1):
                 self.world_colliders(g, world, out)
+
+    def export_part(self, prefab, node, materials, name):
+        root = self.roots.get(prefab.lower())
+        if root is None:
+            return None
+        found = []
+
+        def walk(go, parent):
+            tt = go.read_typetree()
+            comps = [self.scene.objects.get(c['component']['m_PathID']) for c in tt['m_Component']]
+            comps = [c for c in comps if c is not None]
+            tr = next(c for c in comps if c.type.name == 'Transform').read_typetree()
+            world = parent @ trs(tr)
+            mf = next((c for c in comps if c.type.name == 'MeshFilter'), None)
+            mr = next((c for c in comps if c.type.name == 'MeshRenderer'), None)
+            if tt['m_Name'] == node and mf is not None and mr is not None:
+                found.append((world, mf, mr))
+            for ch in tr['m_Children']:
+                child = self.scene.objects.get(ch['m_PathID'])
+                if child is not None:
+                    g = self.scene.objects.get(child.read_typetree()['m_GameObject']['m_PathID'])
+                    if g is not None:
+                        walk(g, world)
+
+        walk(root, np.eye(4))
+        if not found:
+            return None
+        world, mf, mr = found[0]
+        prims = self.mesh_prims(mf, mr, materials)
+        if not prims:
+            return None
+        matrix = [round(float(v), 6) for v in world.T.reshape(-1)]
+        return self.write_scene(name, [(name, prims)], [{'mesh': 0, 'matrix': matrix}, {'name': 'visual', 'children': [0]}], [1])
 
     def export_terrain(self, prefab, name):
         root = self.roots.get(prefab.lower())
@@ -622,6 +661,10 @@ for name, prefab in TERRAIN.items():
     if only and not any(name.startswith(o) for o in only):
         continue
     print(name, terrain_ex.export_terrain(prefab, name) or 'нет модели', file=sys.stderr)
+for name, (prefab, node, materials) in PARTS.items():
+    if only and not any(name.startswith(o) for o in only):
+        continue
+    print(name, ex.export_part(prefab, node, materials, name) or 'нет модели', file=sys.stderr)
 
 ex.conditionals = False
 manifest = {}

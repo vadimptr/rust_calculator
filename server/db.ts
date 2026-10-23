@@ -14,7 +14,7 @@ export interface SchemeRow {
 
 const SEED = [
   'god-rock', 'starter-2x1', 'house-2x2', 'sealed-triangle-tc', 'triangle-tc-window', 'bunker-30-rockets',
-  'roof-bunker', 'honeycomb-2x2', 'metal-fort', 'roof-defense',
+  'roof-bunker', 'honeycomb-2x2', 'metal-fort', 'roof-defense', 'hot-air-balloon',
 ];
 
 export function openDb(path: string): DatabaseSync {

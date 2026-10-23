@@ -9,6 +9,7 @@ import type { History } from '../blueprint/history.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
 import type { LoadResult } from '../blueprint/validate.ts';
 import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
+import { TERRAIN } from '../blueprint/terrain.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
@@ -135,7 +136,6 @@ function savedFov(): number {
     return FOV.default;
   }
 }
-const ROCK_OFFSET = { min: -8, max: 4, step: 0.05 };
 
 /** Содержание по дням и иконки ресурсов. */
 const UPKEEP_DAYS = [1, 2, 3, 5, 10, 15, 20, 25, 30];
@@ -355,6 +355,7 @@ const BlueprintSection: React.FC = () => {
 
   const { blueprint, resolved, issues } = result;
   const rock = blueprint?.terrain?.[0];
+  const rockInfo = rock ? TERRAIN[rock.kind] : null;
   const rockOffset = rock ? Math.round((rock.position[1] - GROUND_Y) * 100) / 100 : 0;
   const setRockOffset = (offset: number) => setHist(h => {
     const d = h?.present;
@@ -453,7 +454,7 @@ const BlueprintSection: React.FC = () => {
             <div className="bp__scheme-row">
               <select className="bp__preset-select" value={current?.id ?? ''} onChange={e => chooseScheme(e.target.value)} disabled={!schemes?.length || busy} aria-label="Схема">
                 {!current?.id && <option value="">{schemes ? 'Без схемы' : 'Загрузка…'}</option>}
-                {(schemes ?? []).map(x => <option key={x.id} value={x.id}>{x.name}{x.terrain ? ' · скала' : ''}</option>)}
+                {(schemes ?? []).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
               <button type="button" className="bp__icon-btn" onClick={() => setCreating(c => (c ? null : { name: 'Новая постройка', rock: false }))} disabled={busy || schemes === null} aria-expanded={!!creating} aria-label="Новая схема" data-tip="Новая схема" data-tip-pos="left">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -498,23 +499,23 @@ const BlueprintSection: React.FC = () => {
             )}
             {blueprint?.meta.gameVersion && <div className="bp__meta">Игра {blueprint.meta.gameVersion}</div>}
 
-            {rock && (
+            {rock && rockInfo && (
               <section className="bp__terrain">
-                <div className="bp__section-title">Скала</div>
+                <div className="bp__section-title">{rockInfo.label}</div>
                 <label className="bp__range">
                   <span>Высота</span>
                   <input
-                    type="range" min={ROCK_OFFSET.min} max={ROCK_OFFSET.max} step={ROCK_OFFSET.step} value={rockOffset}
-                    onChange={e => setRockOffset(Number(e.target.value))} aria-label="Высота скалы над землёй"
+                    type="range" min={rockInfo.offset.min} max={rockInfo.offset.max} step={rockInfo.offset.step} value={rockOffset}
+                    onChange={e => setRockOffset(Number(e.target.value))} aria-label={`${rockInfo.label}: высота над землёй`}
                   />
                   <output>{rockOffset > 0 ? '+' : ''}{rockOffset.toFixed(2)} м</output>
                 </label>
                 <div className="bp__range-actions">
-                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.max(ROCK_OFFSET.min, rockOffset - 0.5))}>−0.5 м</button>
-                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.min(ROCK_OFFSET.max, rockOffset + 0.5))}>+0.5 м</button>
+                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.max(rockInfo.offset.min, rockOffset - rockInfo.offset.nudge))}>−{rockInfo.offset.nudge} м</button>
+                  <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(Math.min(rockInfo.offset.max, rockOffset + rockInfo.offset.nudge))}>+{rockInfo.offset.nudge} м</button>
                   <button type="button" className="raid-tier__btn raid-tier__btn--sm" onClick={() => setRockOffset(0)} disabled={rockOffset === 0}>Сбросить</button>
                 </div>
-                <p className="bp__range-hint">Рельеф под скалой в игре бывает разным: подними или опусти её, чтобы пол полости встал как на твоём сервере.</p>
+                <p className="bp__range-hint">{rockInfo.hint}</p>
               </section>
             )}
 

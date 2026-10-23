@@ -6,6 +6,7 @@
  */
 import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
+import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
 
@@ -122,7 +123,7 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
         if (turns) attach.turns = turns as 0 | 1 | 2 | 3;
         if (rise) attach.rise = rise as Attach['rise'];
         const pose = socketPose(host, kind, attach);
-        if (KINDS[kind].isFoundation && (pose.position[1] < FOUNDATION_TOP.min - 1e-6 || (!resolved.terrain?.length && pose.position[1] > FOUNDATION_TOP.max + 1e-6))) continue;
+        if (KINDS[kind].isFoundation && (pose.position[1] < FOUNDATION_TOP.min - 1e-6 || (!groundTerrain(resolved.terrain) && pose.position[1] > FOUNDATION_TOP.max + 1e-6))) continue;
         const t: Transform = { ...pose, position: pose.position.map(round3) as [number, number, number], rotation: round3(pose.rotation) };
         // ячейка, приставленная разными своими рёбрами, занимает одно и то же место: поворот берётся
         // по модулю симметрии формы, первым остаётся вариант с edge:0

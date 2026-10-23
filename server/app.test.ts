@@ -22,7 +22,7 @@ test('the examples are seeded once, god rock first', async () => {
   const { call, close } = await start();
   const list = await call('GET', '/api/schemes');
   assert.equal(list.status, 200);
-  assert.equal(list.body.length, 10);
+  assert.equal(list.body.length, 11);
   assert.deepEqual(list.body[0], { ...list.body[0], id: 'god-rock', name: 'God Rock', terrain: true, elements: 0 });
   const one = await call('GET', '/api/schemes/house-2x2');
   assert.equal(one.body.doc.meta.name, 'Дом 2×2 с запрыгом');

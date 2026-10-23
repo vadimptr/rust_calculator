@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "Воздушный шар",
+    "description": "Купол воздушного шара из игры (HotAirBalloon.prefab) без корзины: диаметр 14.3 м, от 4.9 до 22.7 м над дном корзины. Высоту шара меняет ползунок в панели.",
+    "gameVersion": "2026-10",
+    "tags": ["terrain", "hot-air-balloon"]
+  },
+  "defaults": { "grade": "twig" },
+  "elements": [],
+  "deployables": [],
+  "terrain": [
+    { "id": "balloon", "kind": "hot-air-balloon", "position": [0, 0, 0], "rotation": 0, "scale": 1 }
+  ]
+}

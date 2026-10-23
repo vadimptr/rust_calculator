@@ -41,7 +41,7 @@ export type DeployableKind =
   | 'metal-embrasure'
   | 'drop-box';
 
-export type TerrainKind = 'god-rock';
+export type TerrainKind = 'god-rock' | 'hot-air-balloon';
 
 export type Socket = `edge:${0 | 1 | 2 | 3}` | 'top' | 'bottom' | 'opening' | 'face' | 'offset';
 
