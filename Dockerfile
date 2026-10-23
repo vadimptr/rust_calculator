@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -9,14 +9,21 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# API stage
-FROM node:24-alpine AS api
+# API dependencies
+FROM --platform=$BUILDPLATFORM node:24-alpine AS api-deps
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
+# API stage
+FROM node:24-alpine AS api
+
+WORKDIR /app
+
+COPY package.json ./
+COPY --from=api-deps /app/node_modules ./node_modules
 COPY src ./src
 COPY docs/blueprint ./docs/blueprint
 COPY server ./server

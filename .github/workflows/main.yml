@@ -31,15 +31,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker build
-        run: |
-          docker build --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
-          docker build --target api --tag ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }} .
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Docker push
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker build and push (amd64 + arm64)
         run: |
-          docker image push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          docker image push ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
+          docker buildx build --platform linux/amd64,linux/arm64 --push --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} .
+          docker buildx build --platform linux/amd64,linux/arm64 --push --target api --tag ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }} .
 
   deploy:
     name: Deploy image ✨
