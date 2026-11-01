@@ -1,0 +1,19 @@
+services:
+  caddy:
+    build: .
+    image: local/caddy-cloudflare:latest
+    container_name: vadimptr-caddy
+    ports:
+      - "9097:9097"
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

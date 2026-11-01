@@ -1,0 +1,28 @@
+{
+	dynamic_dns {
+		provider cloudflare {env.CF_API_TOKEN}
+		domains {
+			vadimptr.com home king rust
+		}
+		check_interval 5m
+		versions ipv4
+	}
+}
+
+(cloudflare_tls) {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+		resolvers 1.1.1.1 1.0.0.1
+	}
+	encode gzip
+}
+
+https://rust.vadimptr.com:9097 {
+	import cloudflare_tls
+	reverse_proxy host.docker.internal:9092
+}
+
+https://king.vadimptr.com:9097 {
+	import cloudflare_tls
+	reverse_proxy host.docker.internal:9090
+}
