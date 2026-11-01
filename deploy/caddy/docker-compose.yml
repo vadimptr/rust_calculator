@@ -8,6 +8,7 @@ services:
     env_file: .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./origin-pull-ca.pem:/etc/caddy/origin-pull-ca.pem:ro
       - caddy_data:/data
       - caddy_config:/config
     extra_hosts:
