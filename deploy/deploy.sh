@@ -1,9 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-read -r -a args <<< "${SSH_ORIGINAL_COMMAND:-$*}"
-action="${args[0]:-}"
-target="${args[1]:-}"
+request="${SSH_ORIGINAL_COMMAND:-deploy.sh $*}"
+if [[ "$request" =~ deploy\.sh[[:space:]]+(deploy|logs-kou)([[:space:]]+([A-Za-z0-9_]+))? ]]; then
+  action="${BASH_REMATCH[1]}"
+  target="${BASH_REMATCH[3]}"
+else
+  action=""
+  target=""
+fi
 
 export PATH="$HOME/.docker-deploy/bin:/usr/bin:/bin"
 export DOCKER_CONFIG="$HOME/.docker-deploy"
