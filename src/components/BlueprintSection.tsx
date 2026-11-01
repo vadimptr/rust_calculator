@@ -4,7 +4,7 @@ import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
-import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, OBJECT_COST, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, isBoatScheme } from '../blueprint/boat.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, isBoatScheme } from '../blueprint/boat.ts';
 import type { BoatResKey, Run } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
@@ -142,19 +142,24 @@ const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
   'boat-stairs': 'Прямая лестница на палубу выше',
 };
 
-const DEPLOY_ICONS: Record<DeployableKind, string> = {
+const DEPLOY_ICONS: Partial<Record<DeployableKind, string>> = {
   'wooden-door': 'door.hinged.wood', 'sheet-metal-door': 'door.hinged.metal', 'armored-door': 'door.hinged.toptier',
   'wooden-double-door': 'door.double.hinged.wood', 'sheet-metal-double-door': 'door.double.hinged.metal', 'armored-double-door': 'door.double.hinged.toptier',
   'garage-door': 'wall.frame.garagedoor', 'strengthened-glass-window': 'wall.window.glass.reinforced', 'reinforced-glass-window': 'wall.window.bars.toptier',
   'metal-window-bars': 'wall.window.bars.metal', 'metal-embrasure': 'shutter.metal.embrasure.a', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
-  'sail': 'sail', 'small-engine': 'smallengine', 'steering-wheel': 'steeringwheel.boat', 'cannon': 'cannon', 'anchor': 'anchor', 'plank': 'plank', 'small-ramp': 'small_ramp',
+  ...Object.fromEntries(Object.entries(DECK).map(([k, v]) => [k, v.icon])),
 };
 
+for (const [k, v] of Object.entries(DECK)) {
+  KIND_LABELS[k] = v.label;
+  SHORT_LABELS[k] = v.short;
+}
+
 const DEPLOY_DESCRIPTIONS: Partial<Record<DeployableKind, string>> = {
-  'sail': `Тяга ${SAIL_THRUST} Н по направлению паруса · на корпус или пол · R — повернуть`,
+  'sail': `Тяга ${SAIL_THRUST} Н по направлению паруса · на корпус или пол · R — повернуть на 45°`,
   'small-engine': `Тяга ${ENGINE_THRUST} Н, назад вдвое меньше · только на корпус · ${ENGINE_FUEL_PER_SEC} топлива в секунду`,
-  'steering-wheel': 'Нужен ровно один: задаёт нос корабля · R — повернуть',
-  'cannon': 'На корпус или пол · R — повернуть',
+  'steering-wheel': 'Нужен ровно один: задаёт нос корабля · R — повернуть на 45°',
+  'cannon': 'На корпус или пол · R — повернуть на 45°',
   'anchor': 'На внешнее ребро палубы, висит за бортом',
   'plank': 'Сходни на внешнем ребре палубы',
   'small-ramp': 'Трап на внешнем ребре палубы',
@@ -182,13 +187,14 @@ const RADIAL_BOAT: Record<EditorTool, RadialItem[]> = {
   view: [],
 };
 
-const BOAT_RES_ICONS: Record<BoatResKey, string> = {
-  wood: '/icons/items/wood.webp', lgf: '/icons/items/lowgradefuel.webp', metal: '/icons/items/metal.fragments.webp', hqm: '/icons/items/metal.refined.webp',
-  tarp: '/icons/items/tarp.webp', gears: '/icons/items/gears.webp', rope: '/icons/items/rope.webp',
+const BOAT_RES_ITEMS: Record<BoatResKey, [string, string]> = {
+  wood: ['wood', 'Дерево'], stone: ['stones', 'Камень'], lgf: ['lowgradefuel', 'Низкосортное топливо'], metal: ['metal.fragments', 'Металлические фрагменты'],
+  hqm: ['metal.refined', 'МВК'], scrap: ['scrap', 'Металлолом'], cloth: ['cloth', 'Ткань'], tarp: ['tarp', 'Брезент'], gears: ['gears', 'Шестерёнки'],
+  rope: ['rope', 'Верёвка'], techparts: ['techparts', 'Микросхемы'], sewingkit: ['sewingkit', 'Швейный набор'],
+  bpbasic: ['basicblueprintfragment', 'Фрагменты чертежей'], bpadvanced: ['advancedblueprintfragment', 'Продвинутые фрагменты чертежей'],
 };
-const BOAT_RES_LABELS: Record<BoatResKey, string> = {
-  wood: 'Дерево', lgf: 'Низкосортное топливо', metal: 'Металлические фрагменты', hqm: 'МВК', tarp: 'Брезент', gears: 'Шестерёнки', rope: 'Верёвка',
-};
+const BOAT_RES_ICONS = Object.fromEntries(Object.entries(BOAT_RES_ITEMS).map(([k, [icon]]) => [k, `/icons/items/${icon}.webp`])) as Record<BoatResKey, string>;
+const BOAT_RES_LABELS = Object.fromEntries(Object.entries(BOAT_RES_ITEMS).map(([k, [, label]]) => [k, label])) as Record<BoatResKey, string>;
 
 const speedText = (v: number) => `${v.toFixed(1)} м/с · ${Math.round(v * 3.6)} км/ч`;
 
@@ -203,6 +209,25 @@ const RunRow: React.FC<{ title: string; run: Run | null; mass: number }> = ({ ti
 
 
 const FOV = { min: 70, max: 90, default: 75, key: 'bp.fov' };
+
+function usePref<T>(key: string, initial: T, valid: (v: unknown) => boolean): [T, (v: T | ((cur: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === null) return initial;
+      const v = JSON.parse(raw);
+      return valid(v) ? v as T : initial;
+    } catch {
+      return initial;
+    }
+  });
+  const set = useCallback((v: T | ((cur: T) => T)) => setValue(cur => {
+    const next = typeof v === 'function' ? (v as (c: T) => T)(cur) : v;
+    try { localStorage.setItem(key, JSON.stringify(next)); } catch { return next; }
+    return next;
+  }), [key]);
+  return [value, set];
+}
 
 function savedFov(): number {
   try {
@@ -288,9 +313,10 @@ const BlueprintSection: React.FC = () => {
   const [creating, setCreating] = useState<{ name: string; scene: SceneKind } | null>(null);
   const [collapsedNote, setCollapsedNote] = useState('');
   const [gradeOpen, setGradeOpen] = useState(false);
-  const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
-  const [showSockets, setShowSockets] = useState(false);
-  const [showPrivilege, setShowPrivilege] = useState(true);
+  const [cameraMode, setCameraMode] = usePref<CameraMode>('bp.camera', 'fly', v => v === 'fly' || v === 'orbit');
+  const [showSockets, setShowSockets] = usePref('bp.sockets', false, v => typeof v === 'boolean');
+  const [showPrivilege, setShowPrivilege] = usePref('bp.zones', true, v => typeof v === 'boolean');
+  const [deckGroup, setDeckGroup] = usePref('bp.deckGroup', DECK_GROUPS[0].group, v => DECK_GROUPS.some(g => g.group === v));
   const [fov, setFov] = useState(savedFov);
   const changeFov = (v: number) => {
     setFov(v);
@@ -740,7 +766,7 @@ const BlueprintSection: React.FC = () => {
                     <span key={k} className="cost__res" title={BOAT_RES_LABELS[k]}><img src={BOAT_RES_ICONS[k]} alt="" />{formatNum(boat.build[k])}</span>
                   ))}
                 </div>
-                <p className="cost__note">Блок стоит 300 дерева и 15 топлива × множитель формы, объекты — по рецепту ({Object.entries(OBJECT_COST).map(([k, c]) => `${SHORT_LABELS[k]}: ${BOAT_RES_KEYS.filter(r => c?.[r]).map(r => `${c![r]} ${BOAT_RES_LABELS[r].toLowerCase()}`).join(' + ')}`).join('; ')}). Сама верфь: {BOAT_RES_KEYS.filter(r => STATION_COST[r]).map(r => `${STATION_COST[r]} ${BOAT_RES_LABELS[r].toLowerCase()}`).join(' + ')}.</p>
+                <p className="cost__note">Блок стоит 300 дерева и 15 топлива × множитель формы, объекты — по рецепту крафта. Сама верфь: {BOAT_RES_KEYS.filter(r => STATION_COST[r]).map(r => `${STATION_COST[r]} ${BOAT_RES_LABELS[r].toLowerCase()}`).join(' + ')}.</p>
                 <p className="cost__note">Распад: готовый корабль начинает гнить через {DECAY_START_HOURS} ч без использования и теряет всё здоровье за {DECAY_HOURS} ч; под крышей не гниёт.</p>
               </section>
             )}
@@ -789,6 +815,22 @@ const BlueprintSection: React.FC = () => {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
               </button>
             </div>
+            {isBoat && tool === 'deploy' && (
+              <div className="deck-palette" role="group" aria-label="Объекты на палубу">
+                <div className="deck-palette__tabs">
+                  {DECK_GROUPS.map(g => (
+                    <button key={g.group} type="button" className={`deck-palette__tab${g.group === deckGroup ? ' deck-palette__tab--active' : ''}`} onClick={() => setDeckGroup(g.group)}>{g.group}</button>
+                  ))}
+                </div>
+                <div className="deck-palette__items">
+                  {(DECK_GROUPS.find(g => g.group === deckGroup) ?? DECK_GROUPS[0]).kinds.map(k => (
+                    <button key={k} type="button" className={`deck-palette__item${k === deployKind ? ' deck-palette__item--active' : ''}`} onClick={() => setDeployKind(k)} data-tip={KIND_LABELS[k]} aria-label={KIND_LABELS[k]} aria-pressed={k === deployKind}>
+                      <img src={`/icons/items/${DEPLOY_ICONS[k]}.webp`} alt="" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="hotbar" role="group" aria-label="Инструменты">
               {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
                 <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(cur => (cur === id ? 'view' : id))} aria-pressed={tool === id} aria-label={label}>
@@ -802,7 +844,9 @@ const BlueprintSection: React.FC = () => {
               {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
               {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · R — снести · средняя кнопка — сдвиг камеры'}
               {tool === 'view' && 'Просмотр: ЛКМ по двери — открыть или закрыть · 1 / 2 / 3 — взять инструмент · средняя кнопка — сдвиг камеры'}
-              {tool === 'deploy' && 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры'}
+              {tool === 'deploy' && (isBoat
+                ? 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть на 45° от курса · средняя кнопка — сдвиг камеры'
+                : 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры')}
             </div>
           </div>
         </div>

@@ -58,7 +58,8 @@ test('mass, health and cost of a small hull', () => {
   assert.equal(s.health, 175);
   assert.equal(s.build.wood, 750);
   assert.equal(s.build.lgf, 38);
-  assert.deepEqual(blockCost('boat-doorway'), { wood: 210, lgf: 11, metal: 0, hqm: 0, tarp: 0, gears: 0, rope: 0 });
+  assert.equal(blockCost('boat-doorway').wood, 210);
+  assert.equal(blockCost('boat-doorway').lgf, 11);
 });
 
 test('neighbouring hulls hide the side between them', () => {
@@ -119,4 +120,36 @@ test('boat checks fail without a wheel and propulsion; empty boat scene passes t
   const empty = loadBlueprint(emptyScheme('Корабль', 'boat'));
   assert.deepEqual(empty.issues, []);
   assert.deepEqual(empty.blueprint?.meta.tags, ['custom', 'boat']);
+});
+
+test('objects turn from the hull grid: a hull laid at 37° keeps the wheel and sails on its axes', () => {
+  let bp: Blueprint = { ...newBlueprint('Лодка', 'boat-hull', [0, 0, 0], 37), meta: { name: 'Лодка', tags: ['boat'] }, defaults: { grade: 'wood' } };
+  bp = attach(bp, 'boat-hull', 'f1', [-2.4, 0, -1.8]);
+  bp = deploy(bp, 'steering-wheel', 'f1', [-0.5, 0, 0], 90);
+  const r = res(bp);
+  const wheel = r.deployables.find(d => d.kind === 'steering-wheel')!;
+  assert.equal(wheel.rotation, 127);
+  const sail = deployPlacement(bp, r, 'sail', 'h1', [0, 0, 0], 45)!;
+  const host = r.elements.find(e => e.id === 'h1')!;
+  assert.equal(((host.rotation + sail.deployable.rotation!) % 360 + 360) % 360, 172);
+});
+
+test('deck objects: workbench and boxes on the deck, doors and windows in boat openings', () => {
+  let bp = hullLine();
+  bp = deploy(bp, 'workbench1', 'f1', [0, 0, 0]);
+  bp = deploy(bp, 'small-wood-box', 'h1', [0.8, 0, 0.8]);
+  assert.equal(deployPlacement(bp, res(bp), 'workbench2', 'f1', [0.2, 0, 0.2], 0), null);
+  bp = attach(bp, 'boat-doorway', 'h1', [-3, 1, 1.5]);
+  bp = attach(bp, 'boat-window', 'h1', [-3, 1, -1.5]);
+  const door = bp.elements.find(e => e.kind === 'boat-doorway')!.id;
+  const win = bp.elements.find(e => e.kind === 'boat-window')!.id;
+  bp = deploy(bp, 'sheet-metal-door', door, [0.2, 1, 0.3]);
+  bp = deploy(bp, 'metal-window-bars', win, [0.2, 1, 0]);
+  const loaded = loadBlueprint(bp);
+  assert.deepEqual(loaded.issues.filter(i => i.level === 'error'), []);
+  const s = boatStats(loaded.resolved!);
+  assert.equal(s.objects, 4);
+  assert.equal(s.mass, 1000);
+  assert.equal(s.build.wood, 750 + 210 + 210 + 500 + 100);
+  assert.equal(s.build.metal, 100 + 150 + 25);
 });

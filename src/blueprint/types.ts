@@ -55,7 +55,31 @@ export type DeployableKind =
   | 'drop-box'
   | BoatObjectKind;
 
-export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'cannon' | 'anchor' | 'plank' | 'small-ramp';
+export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'cannon' | 'anchor' | 'plank' | 'small-ramp'
+  | 'workbench1'
+  | 'workbench2'
+  | 'workbench3'
+  | 'repair-bench'
+  | 'research-table'
+  | 'mixing-table'
+  | 'large-wood-box'
+  | 'small-wood-box'
+  | 'storage-barrel-vertical'
+  | 'storage-barrel-horizontal'
+  | 'shelves'
+  | 'locker'
+  | 'fridge'
+  | 'water-barrel'
+  | 'furnace'
+  | 'small-oil-refinery'
+  | 'bbq'
+  | 'small-generator'
+  | 'small-battery'
+  | 'medium-battery'
+  | 'large-solar-panel'
+  | 'lantern'
+  | 'sleeping-bag'
+  | 'bed';
 
 export type TerrainKind = 'god-rock' | 'hot-air-balloon';
 

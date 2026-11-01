@@ -20,7 +20,12 @@ UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined', 'door.hinged.w
             'door.double.hinged.wood', 'door.double.hinged.metal', 'door.double.hinged.toptier', 'wall.frame.garagedoor',
             'wall.window.glass.reinforced', 'wall.window.bars.toptier', 'wall.window.bars.metal', 'cupboard.tool', 'dropbox',
             'sail', 'smallengine', 'steeringwheel.boat', 'anchor', 'cannon', 'plank', 'small_ramp', 'boatbuildingstation',
-            'lowgradefuel', 'tarp', 'gears', 'rope', 'workcart'}
+            'lowgradefuel', 'tarp', 'gears', 'rope', 'workcart', 'stones', 'scrap', 'cloth', 'techparts', 'sewingkit',
+            'basicblueprintfragment', 'advancedblueprintfragment', 'workbench1', 'workbench2', 'workbench3', 'box.wooden.large',
+            'box.wooden', 'storage_barrel_b', 'storage_barrel_c', 'shelves', 'locker', 'fridge', 'furnace', 'small.oil.refinery',
+            'mixingtable', 'research.table', 'box.repair.bench', 'bbq', 'electric.fuelgenerator.small',
+            'electric.battery.rechargable.small', 'electric.battery.rechargable.medium', 'electric.solarpanel.large', 'lantern',
+            'sleepingbag', 'bed', 'water.barrel'}
 UI_BUILD = {'foundation', 'foundation.triangle', 'foundation.steps', 'ramp', 'floor', 'floor.triangle', 'floor.frame',
             'floor.triangle.frame', 'wall', 'wall.doorway', 'wall.window', 'wall.frame', 'wall.half', 'wall.low',
             'stairs_l', 'stairs_u', 'stairs_spiral', 'stairs.triangle.spiral', 'roof', 'roof.triangle',

@@ -8,6 +8,7 @@ import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
 import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
 import { gameModel, pieceManifest } from './models.ts';
+import { DECK, DIRECTED_OBJECTS, isBoatObject } from './boat.ts';
 
 /** Цвета по материалу: солома, дерево, камень серый, металл ржавый, МВК почти чёрный. */
 export const GRADE_COLORS: Record<Grade, number> = {
@@ -19,7 +20,7 @@ export const GRADE_COLORS: Record<Grade, number> = {
 };
 
 /** Двери: деревянная светло-коричневая, металлическая ржавая, МВК тёмно-серая; дроп-бокс синий. */
-const DOOR_COLORS: Record<DeployableKind, number> = {
+const DOOR_COLORS: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 0x7a4a1e,
   'drop-box': 0x2f6fd6,
   'wooden-door': 0xb98a5a,
@@ -90,15 +91,21 @@ const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
 
 const BOAT_OBJECT_YAW: Partial<Record<DeployableKind, number>> = { 'plank': -90 * DEG };
 
-const BOAT_OBJECT_BOX: Partial<Record<DeployableKind, { x: [number, number]; z: number; h: number }>> = {
-  'sail': { x: [-0.65, 0.65], z: 1.7, h: 6.25 },
-  'small-engine': { x: [-0.69, 0.69], z: 0.42, h: 1.73 },
-  'steering-wheel': { x: [-0.36, 0.36], z: 0.56, h: 1.44 },
-  'cannon': { x: [-0.78, 1.32], z: 0.63, h: 1.26 },
-  'anchor': { x: [-1.1, 1.5], z: 0.9, h: 1.77 },
-  'plank': { x: [-0.23, 2.82], z: 0.53, h: 0.44 },
-  'small-ramp': { x: [-1.17, 7.9], z: 1.49, h: 2.86 },
-};
+const ARROW_MAT = new THREE.MeshBasicMaterial({ color: 0x3b9dff, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
+
+function directionArrow(length: number): THREE.Mesh {
+  const shape = new THREE.Shape([
+    new THREE.Vector2(0, -0.08), new THREE.Vector2(length - 0.35, -0.08), new THREE.Vector2(length - 0.35, -0.25),
+    new THREE.Vector2(length, 0), new THREE.Vector2(length - 0.35, 0.25), new THREE.Vector2(length - 0.35, 0.08), new THREE.Vector2(0, 0.08),
+  ]);
+  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), ARROW_MAT);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.y = 0.16;
+  mesh.renderOrder = 30;
+  mesh.userData.keepMaterial = true;
+  mesh.raycast = () => {};
+  return mesh;
+}
 
 function hullModel(el: ResolvedElement, covered: number[]): THREE.Group | null {
   const model = gameModel(el.kind);
@@ -120,15 +127,16 @@ function hullModel(el: ResolvedElement, covered: number[]): THREE.Group | null {
 
 function buildBoatObject(d: ResolvedDeployable): THREE.Group {
   const g = new THREE.Group();
-  const b = BOAT_OBJECT_BOX[d.kind]!;
+  const b = DECK[d.kind]!.box;
   const proxy = new THREE.Group();
-  proxy.add(withEdges(box(b.x[1] - b.x[0], b.h, 2 * b.z, (b.x[0] + b.x[1]) / 2, b.h / 2, 0), DOOR_COLORS[d.kind]));
+  proxy.add(withEdges(box(b.x[1] - b.x[0], b.h, 2 * b.z, (b.x[0] + b.x[1]) / 2, b.h / 2, 0), DOOR_COLORS[d.kind] ?? 0x8b6a45));
   const model = gameModel(d.kind);
   if (model) {
     hideProxy(proxy);
     g.add(placeModel(model, { yaw: BOAT_OBJECT_YAW[d.kind] ?? 90 * DEG }));
   }
   g.add(proxy);
+  if (DIRECTED_OBJECTS.includes(d.kind)) g.add(directionArrow(d.kind === 'sail' ? 2.2 : 1.4));
   return g;
 }
 
@@ -807,7 +815,7 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
 
 export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   let g: THREE.Group;
-  if (BOAT_OBJECT_BOX[d.kind]) {
+  if (isBoatObject(d.kind)) {
     g = buildBoatObject(d);
   } else if (d.kind === 'drop-box') {
     g = buildDropBox(d);

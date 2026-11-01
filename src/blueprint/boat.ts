@@ -1,4 +1,5 @@
 import { KINDS, apothem, cellVertices, edgeAngle, edgeCount } from './catalog.ts';
+import { deployableCost } from './cost.ts';
 import type { Blueprint, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 export const BOAT_TAG = 'boat';
@@ -14,29 +15,96 @@ export const BOAT_PLAN: { group: string; kinds: ElementKind[] }[] = [
   { group: 'Лестницы', kinds: ['boat-stairs'] },
 ];
 
-export const BOAT_DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [
-  { group: 'Ход', kinds: ['sail', 'small-engine', 'steering-wheel', 'anchor'] },
-  { group: 'Прочее', kinds: ['cannon', 'plank', 'small-ramp'] },
+export type BoatResKey = 'wood' | 'stone' | 'lgf' | 'metal' | 'hqm' | 'scrap' | 'cloth' | 'tarp' | 'gears' | 'rope' | 'techparts' | 'sewingkit' | 'bpbasic' | 'bpadvanced';
+export type BoatRes = Record<BoatResKey, number>;
+export const BOAT_RES_KEYS: BoatResKey[] = ['wood', 'stone', 'lgf', 'metal', 'hqm', 'scrap', 'cloth', 'tarp', 'gears', 'rope', 'techparts', 'sewingkit', 'bpbasic', 'bpadvanced'];
+const zero = (): BoatRes => Object.fromEntries(BOAT_RES_KEYS.map(k => [k, 0])) as BoatRes;
+
+export interface DeckObject {
+  label: string;
+  short: string;
+  icon: string;
+  cost: Partial<BoatRes>;
+  box: { x: [number, number]; z: number; h: number };
+  desc?: string;
+}
+
+export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
+  'sail': { label: 'Парус', short: 'Парус', icon: 'sail', cost: { wood: 150, tarp: 1 }, box: { x: [-0.65, 0.65], z: 1.7, h: 6.25 } },
+  'small-engine': { label: 'Лодочный мотор', short: 'Мотор', icon: 'smallengine', cost: { hqm: 5, gears: 2, lgf: 50 }, box: { x: [-0.69, 0.69], z: 0.42, h: 1.73 } },
+  'steering-wheel': { label: 'Штурвал', short: 'Штурвал', icon: 'steeringwheel.boat', cost: { wood: 100 }, box: { x: [-0.36, 0.36], z: 0.56, h: 1.44 } },
+  'anchor': { label: 'Якорь', short: 'Якорь', icon: 'anchor', cost: { wood: 250 }, box: { x: [-1.1, 1.5], z: 0.9, h: 1.77 } },
+  'cannon': { label: 'Пушка', short: 'Пушка', icon: 'cannon', cost: { wood: 100, metal: 200 }, box: { x: [-0.78, 1.32], z: 0.63, h: 1.26 } },
+  'plank': { label: 'Доска', short: 'Доска', icon: 'plank', cost: { wood: 100 }, box: { x: [-0.23, 2.82], z: 0.53, h: 0.44 } },
+  'small-ramp': { label: 'Трап', short: 'Трап', icon: 'small_ramp', cost: { wood: 250, rope: 2 }, box: { x: [-1.17, 7.9], z: 1.49, h: 2.86 } },
+  'workbench1': { label: 'Верстак 1 уровня', short: 'Верстак 1', icon: 'workbench1', cost: { wood: 500, metal: 100 }, box: { x: [-0.49, 0.45], z: 0.82, h: 2.24 } },
+  'workbench2': { label: 'Верстак 2 уровня', short: 'Верстак 2', icon: 'workbench2', cost: { metal: 500, hqm: 20, bpbasic: 5 }, box: { x: [-0.43, 0.53], z: 0.89, h: 2.05 } },
+  'workbench3': { label: 'Верстак 3 уровня', short: 'Верстак 3', icon: 'workbench3', cost: { metal: 1000, hqm: 100, bpadvanced: 5 }, box: { x: [-0.47, 0.55], z: 1.13, h: 2.04 } },
+  'repair-bench': { label: 'Ремонтный верстак', short: 'Ремонт', icon: 'box.repair.bench', cost: { metal: 125 }, box: { x: [-0.54, 0.61], z: 1.06, h: 1.27 } },
+  'research-table': { label: 'Стол исследований', short: 'Исследования', icon: 'research.table', cost: { metal: 200, scrap: 20 }, box: { x: [-0.49, 0.52], z: 0.96, h: 1.79 } },
+  'mixing-table': { label: 'Смесительный стол', short: 'Смеситель', icon: 'mixingtable', cost: { metal: 200, stone: 100 }, box: { x: [-0.47, 0.47], z: 1.39, h: 1.78 } },
+  'large-wood-box': { label: 'Большой деревянный ящик', short: 'Ящик', icon: 'box.wooden.large', cost: { wood: 250, metal: 50 }, box: { x: [-0.53, 0.53], z: 0.94, h: 0.79 } },
+  'small-wood-box': { label: 'Маленький деревянный ящик', short: 'Мал. ящик', icon: 'box.wooden', cost: { wood: 100 }, box: { x: [-0.37, 0.37], z: 0.48, h: 0.56 } },
+  'storage-barrel-vertical': { label: 'Бочка для хранения', short: 'Бочка', icon: 'storage_barrel_b', cost: { wood: 300, metal: 75 }, box: { x: [-0.52, 0.49], z: 0.53, h: 1.35 } },
+  'storage-barrel-horizontal': { label: 'Лежачая бочка для хранения', short: 'Леж. бочка', icon: 'storage_barrel_c', cost: { wood: 300, metal: 75 }, box: { x: [-0.49, 0.55], z: 0.67, h: 1.02 } },
+  'shelves': { label: 'Полки', short: 'Полки', icon: 'shelves', cost: { metal: 50 }, box: { x: [-0.68, 0.68], z: 1.38, h: 2.8 } },
+  'locker': { label: 'Шкафчик', short: 'Шкафчик', icon: 'locker', cost: { metal: 100, wood: 50 }, box: { x: [-0.36, 0.36], z: 0.9, h: 2.24 } },
+  'fridge': { label: 'Холодильник', short: 'Холодильник', icon: 'fridge', cost: { metal: 150 }, box: { x: [-0.48, 0.58], z: 0.49, h: 2 } },
+  'water-barrel': { label: 'Бочка для воды', short: 'Вода', icon: 'water.barrel', cost: { wood: 250, tarp: 1 }, box: { x: [-0.66, 0.63], z: 0.89, h: 2.12 } },
+  'furnace': { label: 'Печь', short: 'Печь', icon: 'furnace', cost: { stone: 200, wood: 100, lgf: 50 }, box: { x: [-0.5, 0.53], z: 0.51, h: 1.6 } },
+  'small-oil-refinery': { label: 'Малый нефтеперегонный завод', short: 'Перегонка', icon: 'small.oil.refinery', cost: { wood: 200, metal: 500, lgf: 250 }, box: { x: [-1.29, 1.29], z: 1.29, h: 2.56 } },
+  'bbq': { label: 'Барбекю', short: 'Барбекю', icon: 'bbq', cost: { metal: 40, wood: 100 }, box: { x: [-0.52, 0.58], z: 0.48, h: 1.49 } },
+  'small-generator': { label: 'Малый генератор', short: 'Генератор', icon: 'electric.fuelgenerator.small', cost: { hqm: 5, gears: 2 }, box: { x: [-0.53, 0.41], z: 0.42, h: 0.7 } },
+  'small-battery': { label: 'Малый аккумулятор', short: 'Мал. аккум.', icon: 'electric.battery.rechargable.small', cost: { hqm: 5 }, box: { x: [-0.22, 0.22], z: 0.17, h: 0.34 } },
+  'medium-battery': { label: 'Средний аккумулятор', short: 'Ср. аккум.', icon: 'electric.battery.rechargable.medium', cost: { hqm: 5, techparts: 1 }, box: { x: [-0.37, 0.37], z: 0.63, h: 1.46 } },
+  'large-solar-panel': { label: 'Большая солнечная панель', short: 'Солн. панель', icon: 'electric.solarpanel.large', cost: { hqm: 5, techparts: 1 }, box: { x: [-1.01, 1], z: 0.47, h: 0.59 } },
+  'lantern': { label: 'Фонарь', short: 'Фонарь', icon: 'lantern', cost: { metal: 25, lgf: 15 }, box: { x: [-0.14, 0.14], z: 0.14, h: 0.48 } },
+  'sleeping-bag': { label: 'Спальный мешок', short: 'Спальник', icon: 'sleepingbag', cost: { cloth: 30 }, box: { x: [-0.75, 1.07], z: 0.53, h: 0.32 } },
+  'bed': { label: 'Кровать', short: 'Кровать', icon: 'bed', cost: { cloth: 60, metal: 100, sewingkit: 2 }, box: { x: [-0.74, 0.74], z: 1.19, h: 0.89 } },
+};
+
+export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
+  { group: 'Ход', kinds: ['sail', 'small-engine', 'steering-wheel', 'anchor', 'cannon', 'plank', 'small-ramp'] },
+  { group: 'Верстаки', kinds: ['workbench1', 'workbench2', 'workbench3', 'repair-bench', 'research-table', 'mixing-table'] },
+  { group: 'Хранение', kinds: ['large-wood-box', 'small-wood-box', 'storage-barrel-vertical', 'storage-barrel-horizontal', 'shelves', 'locker', 'fridge', 'water-barrel'] },
+  { group: 'Печи', kinds: ['furnace', 'small-oil-refinery', 'bbq'] },
+  { group: 'Электрика', kinds: ['small-generator', 'small-battery', 'medium-battery', 'large-solar-panel', 'lantern'] },
+  { group: 'Сон', kinds: ['sleeping-bag', 'bed'] },
+  { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
+  { group: 'Окна', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
 ];
 
-export const BOAT_OBJECTS: DeployableKind[] = BOAT_DEPLOY_PLAN.flatMap(g => g.kinds);
+export const BOAT_DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [DECK_GROUPS[0]];
+
+export const BOAT_OBJECTS: DeployableKind[] = Object.keys(DECK) as DeployableKind[];
 
 export function isBoatObject(kind: DeployableKind): boolean {
-  return BOAT_OBJECTS.includes(kind);
+  return kind in DECK;
 }
 
 export const EDGE_OBJECTS: DeployableKind[] = ['anchor', 'plank', 'small-ramp'];
 
-export const OBJECT_HALF: Partial<Record<DeployableKind, [number, number]>> = {
-  'sail': [0.3, 0.3], 'small-engine': [0.69, 0.42], 'steering-wheel': [0.36, 0.56], 'cannon': [0.78, 0.63],
-};
+export const DIRECTED_OBJECTS: DeployableKind[] = ['sail', 'small-engine', 'steering-wheel'];
+
+const PLACE_HALF_MAX = 1.3;
+
+export function objectHalf(kind: DeployableKind): [number, number] {
+  if (kind === 'sail') return [0.3, 0.3];
+  const b = DECK[kind]!.box;
+  return [Math.min(PLACE_HALF_MAX, Math.max(-b.x[0], b.x[1])), Math.min(PLACE_HALF_MAX, b.z)];
+}
 
 export const OBJECT_LIMIT: Partial<Record<DeployableKind, number>> = { 'small-engine': 5, 'sail': 10, 'steering-wheel': 1 };
 
-export type BoatResKey = 'wood' | 'lgf' | 'metal' | 'hqm' | 'tarp' | 'gears' | 'rope';
-export type BoatRes = Record<BoatResKey, number>;
-export const BOAT_RES_KEYS: BoatResKey[] = ['wood', 'lgf', 'metal', 'hqm', 'tarp', 'gears', 'rope'];
-const zero = (): BoatRes => ({ wood: 0, lgf: 0, metal: 0, hqm: 0, tarp: 0, gears: 0, rope: 0 });
+export function boatBow(resolved: Resolved): number {
+  const wheel = resolved.deployables.find(d => d.kind === 'steering-wheel');
+  if (wheel) return wheel.rotation;
+  return resolved.elements.find(e => KINDS[e.kind].boat && KINDS[e.kind].isFoundation)?.rotation ?? 0;
+}
+
+export function boatGrid(resolved: Resolved): number {
+  return resolved.elements.find(e => KINDS[e.kind].boat && KINDS[e.kind].isFoundation)?.rotation ?? 0;
+}
 
 interface BlockInfo {
   mass: number;
@@ -62,15 +130,12 @@ export const BOAT_BLOCKS: Partial<Record<ElementKind, BlockInfo>> = {
 
 const BLOCK_BASE: Partial<BoatRes> = { wood: 300, lgf: 15 };
 
-export const OBJECT_COST: Partial<Record<DeployableKind, Partial<BoatRes>>> = {
-  'sail': { wood: 150, tarp: 1 },
-  'small-engine': { hqm: 5, gears: 2, lgf: 50 },
-  'steering-wheel': { wood: 100 },
-  'anchor': { wood: 250 },
-  'cannon': { wood: 100, metal: 200 },
-  'plank': { wood: 100 },
-  'small-ramp': { wood: 250, rope: 2 },
-};
+export function objectCost(kind: DeployableKind): Partial<BoatRes> {
+  const deck = DECK[kind]?.cost;
+  if (deck) return deck;
+  const c = deployableCost(kind);
+  return { wood: c.wood ?? 0, stone: c.stone ?? 0, metal: c.metal ?? 0, hqm: c.hqm ?? 0 };
+}
 
 export const STATION_COST: Partial<BoatRes> = { wood: 200, tarp: 1 };
 
@@ -258,7 +323,7 @@ const add = (a: BoatRes, b: Partial<BoatRes>) => { for (const k of BOAT_RES_KEYS
 export function boatStats(resolved: Resolved): BoatStats {
   const blocks = resolved.elements.filter(e => KINDS[e.kind].boat);
   const hulls = blocks.filter(e => KINDS[e.kind].isFoundation);
-  const objects = resolved.deployables.filter(d => isBoatObject(d.kind));
+  const objects = resolved.deployables;
   const count: Partial<Record<DeployableKind, number>> = {};
   for (const d of objects) count[d.kind] = (count[d.kind] ?? 0) + 1;
   const massBlocks = blocks.reduce((t, e) => t + (BOAT_BLOCKS[e.kind]?.mass ?? 0), 0);
@@ -270,7 +335,7 @@ export function boatStats(resolved: Resolved): BoatStats {
   const engine = (d: ResolvedDeployable) => (d.kind === 'small-engine' ? ENGINE_THRUST : 0);
   const build = zero();
   for (const e of blocks) add(build, blockCost(e.kind));
-  for (const d of objects) add(build, OBJECT_COST[d.kind] ?? {});
+  for (const d of objects) add(build, objectCost(d.kind));
   const engines = count['small-engine'] ?? 0, sails = count['sail'] ?? 0, wheels = count['steering-wheel'] ?? 0;
   const checks: Check[] = [
     { ok: hulls.length > 0, text: 'Есть хотя бы один корпус' },

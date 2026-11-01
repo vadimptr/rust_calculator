@@ -6,7 +6,7 @@
  */
 import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
-import { EDGE_OBJECTS, OBJECT_HALF, OBJECT_LIMIT, isBoatObject } from './boat.ts';
+import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -307,12 +307,13 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
       const a = (edgeAngle(shape, k) * Math.PI) / 180;
       deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [round3(apothem(shape) * Math.cos(a)), round3(apothem(shape) * Math.sin(a))], rotation: edgeAngle(shape, k) };
     } else {
-      const bow = resolved.deployables.find(d => d.kind === 'steering-wheel')?.rotation ?? 0;
+      const bow = kind === 'steering-wheel' ? boatGrid(resolved) : boatBow(resolved);
       const turn = round3(norm360(bow + rotation - ht.rotation));
-      const spot = cupboardSpot(shape, local[0], local[2], turn, OBJECT_HALF[kind]!);
+      const half = objectHalf(kind);
+      const spot = cupboardSpot(shape, local[0], local[2], turn, half);
       if (!spot) return null;
-      const half = OBJECT_HALF[kind]!;
-      if (taken.some(d => !EDGE_OBJECTS.includes(d.kind) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < Math.min(half[0], half[1]) + 0.4)) return null;
+      const reach = (k: DeployableKind) => Math.min(...objectHalf(k));
+      if (taken.some(d => isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < reach(kind) + reach(d.kind))) return null;
       deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation: turn };
     }
   } else if (kind === 'tool-cupboard') {

@@ -20,7 +20,7 @@ import type { Buildings, PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import { caveView } from '../blueprint/terrain.ts';
-import { EDGE_OBJECTS, coveredHullSides, isBoatObject } from '../blueprint/boat.ts';
+import { DIRECTED_OBJECTS, EDGE_OBJECTS, boatBow, boatGrid, coveredHullSides, isBoatObject } from '../blueprint/boat.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
 import type { RadialMenuItem } from './RadialMenu';
@@ -755,12 +755,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       // объект
       const local = toLocal(hostEl, hit.point);
       // шкаф: R поворачивает на 90° (прямо / боком)
-      const turn = ed.deployKind === 'tool-cupboard' || (isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind)) ? (state.alt % 4) * 90 : 0;
+      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? (state.alt % 8) * 45 : 0;
       const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn) : null;
       if (!dp) {
         none();
         if (isBoatObject(ed.deployKind)) {
-          label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя';
+          label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя: только на корпус или пол корабля и не вплотную к другому объекту';
           label.className = 'viewer3d__label viewer3d__label--bad';
         }
         return;
@@ -778,6 +778,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (!posKey || posKey.startsWith('dir:')) {
         const g = ghost.children[0];
         if (g) { g.position.set(rd.position[0], rd.position[1], rd.position[2]); g.rotation.y = (-rd.rotation * Math.PI) / 180; }
+      }
+      if (DIRECTED_OBJECTS.includes(d.kind)) {
+        const off = Math.round(((rd.rotation - (d.kind === 'steering-wheel' ? boatGrid(res) : boatBow(res))) % 360 + 360) % 360);
+        label.textContent = d.kind === 'steering-wheel'
+          ? `Нос корабля — по синей стрелке · ${off}° к сетке корпуса · R — повернуть на 45°`
+          : `Тяга по синей стрелке · ${off === 0 ? 'точно по курсу' : `${off > 180 ? 360 - off : off}° от курса`} · R — повернуть на 45°`;
       }
     };
 

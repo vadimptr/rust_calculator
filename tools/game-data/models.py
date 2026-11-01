@@ -88,6 +88,36 @@ BOAT_OBJECTS = {
     'plank': 'plank/plank.deployed.prefab',
     'small-ramp': 'small_ramp/small_ramp.deployed.prefab',
 }
+DECK_OBJECTS = {
+    'workbench1': 'tier 1 workbench/workbench1.deployed.prefab',
+    'workbench2': 'tier 2 workbench/workbench2.deployed.prefab',
+    'workbench3': 'tier 3 workbench/workbench3.deployed.prefab',
+    'large-wood-box': 'large wood storage/box.wooden.large.prefab',
+    'small-wood-box': 'woodenbox/woodbox_deployed.prefab',
+    'shelves': 'shelves/shelves.prefab',
+    'locker': 'locker/locker.deployed.prefab',
+    'fridge': 'fridge/fridge.deployed.prefab',
+    'furnace': 'furnace/furnace.prefab',
+    'large-furnace': 'furnace.large/furnace.large.prefab',
+    'small-oil-refinery': 'oil refinery/refinery_small_deployed.prefab',
+    'mixing-table': 'mixingtable/mixingtable.deployed.prefab',
+    'research-table': 'research table/researchtable_deployed.prefab',
+    'repair-bench': 'repair bench/repairbench_deployed.prefab',
+    'bbq': 'bbq/bbq.deployed.prefab',
+    'small-generator': 'playerioents/generators/fuel generator/small_fuel_generator.deployed.prefab',
+    'small-battery': 'playerioents/batteries/smallrechargablebattery.deployed.prefab',
+    'medium-battery': 'playerioents/batteries/medium/medium.rechargable.battery.deployed.prefab',
+    'large-solar-panel': 'playerioents/generators/solar_panels_roof/solarpanel.large.deployed.prefab',
+    'simple-light': 'playerioents/lights/simplelight.prefab',
+    'lantern': 'lantern/lantern.deployed.prefab',
+    'sleeping-bag': 'sleeping bag/sleepingbag_leather_deployed.prefab',
+    'bed': 'bed/bed_deployed.prefab',
+    'water-barrel': 'liquidbarrel/waterbarrel.prefab',
+}
+DECK_EXTRA = {
+    'storage-barrel-vertical': 'assets/prefabs/misc/decor_dlc/storagebarrel/storage_barrel_b.prefab',
+    'storage-barrel-horizontal': 'assets/prefabs/misc/decor_dlc/storagebarrel/storage_barrel_c.prefab',
+}
 SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3', 'destruct', 'debris', 'fade', 'wallpaper')
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',
                'roof.top.line', 'roof.left.line', 'roof.right.line', 'roof.bottom.line', 'ramp.75', 'stairs.spiral.landing'}
@@ -718,6 +748,13 @@ for name, path in BOAT_OBJECTS.items():
         continue
     ex.conditionals = ex.skinned = True
     print(name, ex.export('assets/prefabs/deployable/boatbuilding/' + path, None, name) or 'нет модели', file=sys.stderr)
+    ex.skinned = False
+
+for name, prefab in [*((n, 'assets/prefabs/deployable/' + p) for n, p in DECK_OBJECTS.items()), *DECK_EXTRA.items()]:
+    if only and not any(name.startswith(o) for o in only):
+        continue
+    ex.conditionals = ex.skinned = True
+    print(name, ex.export(prefab, None, name) or 'нет модели', file=sys.stderr)
     ex.skinned = False
 
 world_scene = next(sf for f in env.files.values() for n, sf in getattr(f, 'files', {}).items() if n.endswith('AssetScene-world'))

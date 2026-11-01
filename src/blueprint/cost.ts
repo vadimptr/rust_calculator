@@ -42,6 +42,10 @@ const BUILD_ONLY: Partial<Record<DeployableKind, Partial<Res>>> = {
   'tool-cupboard': { wood: 1000 }, 'drop-box': { metal: 100 },
 };
 
+export function deployableCost(kind: DeployableKind): Partial<Res> {
+  return DEPLOYABLE_COST[kind] ?? BUILD_ONLY[kind] ?? {};
+}
+
 export const zeroRes = (): Res => ({ wood: 0, stone: 0, metal: 0, hqm: 0 });
 
 export function blockCost(kind: ElementKind, grade: Grade): Res {
