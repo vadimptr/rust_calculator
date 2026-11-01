@@ -89,7 +89,7 @@ const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
 };
 
-const BOAT_OBJECT_YAW: Partial<Record<DeployableKind, number>> = { 'plank': -90 * DEG };
+const BOAT_OBJECT_YAW: Partial<Record<DeployableKind, number>> = { 'plank': -90 * DEG, 'anchor': -90 * DEG };
 
 const ARROW_MAT = new THREE.MeshBasicMaterial({ color: 0x3b9dff, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
 

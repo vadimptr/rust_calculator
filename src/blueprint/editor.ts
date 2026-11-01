@@ -6,7 +6,7 @@
  */
 import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
-import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, objectHalf } from './boat.ts';
+import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -309,8 +309,9 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
     } else {
       const bow = kind === 'steering-wheel' ? boatGrid(resolved) : boatBow(resolved);
       const turn = round3(norm360(bow + rotation - ht.rotation));
-      const half = objectHalf(kind);
-      const spot = cupboardSpot(shape, local[0], local[2], turn, half);
+      const walled = walledEdges(resolved, ht);
+      const full = objectHalf(kind), area = objectArea(kind);
+      const spot = cupboardSpot(shape, local[0], local[2], turn, i => (walled[i] ? { half: full, margin: CUPBOARD_MARGIN } : { half: area, margin: 0 }));
       if (!spot) return null;
       const reach = (k: DeployableKind) => Math.min(...objectHalf(k));
       if (taken.some(d => isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < reach(kind) + reach(d.kind))) return null;
@@ -320,7 +321,7 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
     if (info.category !== 'cell' || info.isFrame) return null;
     if (taken.some(d => d.kind === 'tool-cupboard')) return null;
     if (resolved.elements.some(e => KINDS[e.kind].category === 'stairs' && Math.hypot(e.position[0] - ht.position[0], e.position[2] - ht.position[2]) < 0.01 && Math.abs(e.position[1] - ht.position[1]) < 0.01)) return null;
-    const spot = cupboardSpot(info.shape ?? 'square', local[0], local[2], rotation, CUPBOARD_HALF);
+    const spot = cupboardSpot(info.shape ?? 'square', local[0], local[2], rotation, () => ({ half: CUPBOARD_HALF, margin: CUPBOARD_MARGIN }));
     if (!spot) return null;
     deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation };
   } else if (kind === 'drop-box') {
@@ -367,24 +368,44 @@ function outerEdge(resolved: Resolved, host: ResolvedElement, x: number, z: numb
   return best;
 }
 
-function cupboardSpot(shape: 'square' | 'triangle', x: number, z: number, rotation: number, half: [number, number]): [number, number] | null {
+function walledEdges(resolved: Resolved, host: ResolvedElement): boolean[] {
+  const verts = cellVertices(KINDS[host.kind].shape ?? 'square');
+  const a = (-host.rotation * Math.PI) / 180;
+  const walls = resolved.elements.filter(e => KINDS[e.kind].category === 'wallType' && Math.abs(e.position[1] - host.position[1]) < 0.05).map(e => {
+    const dx = e.position[0] - host.position[0], dz = e.position[2] - host.position[2];
+    return [dx * Math.cos(a) - dz * Math.sin(a), dx * Math.sin(a) + dz * Math.cos(a)];
+  });
+  return verts.map(([x1, z1], i) => {
+    const [x2, z2] = verts[(i + 1) % verts.length];
+    return walls.some(([wx, wz]) => Math.hypot(wx - (x1 + x2) / 2, wz - (z1 + z2) / 2) < 0.05);
+  });
+}
+
+interface EdgeFit {
+  half: [number, number];
+  margin: number;
+}
+
+function cupboardSpot(shape: 'square' | 'triangle', x: number, z: number, rotation: number, fit: (edge: number) => EdgeFit): [number, number] | null {
   const verts = cellVertices(shape);
   const a = (rotation * Math.PI) / 180;
-  const corners = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => {
-    const cx = sx * half[0], cz = sz * half[1];
+  const cornersOf = ([hx, hz]: [number, number]) => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => {
+    const cx = sx * hx, cz = sz * hz;
     return [cx * Math.cos(a) - cz * Math.sin(a), cx * Math.sin(a) + cz * Math.cos(a)];
   });
   const edges = verts.map(([x1, z1], i) => {
     const [x2, z2] = verts[(i + 1) % verts.length];
     const len = Math.hypot(x2 - x1, z2 - z1);
-    return { x1, z1, nx: -(z2 - z1) / len, nz: (x2 - x1) / len };
+    const f = fit(i);
+    return { x1, z1, nx: -(z2 - z1) / len, nz: (x2 - x1) / len, corners: cornersOf(f.half), margin: f.margin };
   });
-  const slack = (px: number, pz: number) => Math.min(...edges.flatMap(e => corners.map(([cx, cz]) => (px + cx - e.x1) * e.nx + (pz + cz - e.z1) * e.nz - CUPBOARD_MARGIN)));
+  const gap = (e: typeof edges[number], px: number, pz: number) => Math.min(...e.corners.map(([cx, cz]) => (px + cx - e.x1) * e.nx + (pz + cz - e.z1) * e.nz)) - e.margin;
+  const slack = (px: number, pz: number) => Math.min(...edges.map(e => gap(e, px, pz)));
   if (slack(0, 0) < 0) return null;
   let px = x, pz = z;
   for (let iter = 0; iter < 8; iter++) {
     for (const e of edges) {
-      const d = Math.min(...corners.map(([cx, cz]) => (px + cx - e.x1) * e.nx + (pz + cz - e.z1) * e.nz)) - CUPBOARD_MARGIN;
+      const d = gap(e, px, pz);
       if (d < 0) { px -= d * e.nx; pz -= d * e.nz; }
     }
   }

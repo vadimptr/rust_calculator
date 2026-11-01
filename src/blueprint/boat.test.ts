@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveBlueprint } from './geometry.ts';
 import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear } from './editor.ts';
-import { blockCost, blockedSails, boatStats, coveredHullSides, dragFor, frontalWidth, terminalSpeed } from './boat.ts';
+import { blockCost, blockedSails, boatStats, coveredHullSides, dragFor, frontalWidth, sailWarning, terminalSpeed } from './boat.ts';
 import { loadBlueprint } from './validate.ts';
 import { emptyScheme } from './schemesApi.ts';
 import type { Blueprint, DeployableKind, ElementKind } from './types.ts';
@@ -96,7 +96,7 @@ test('objects: engine only on a hull, one wheel, edge items on a free outer edge
   bp = deploy(bp, 'small-engine', 'h1', [0, 0, 0]);
   bp = deploy(bp, 'steering-wheel', 'f1', [-0.5, 0, 0]);
   assert.equal(deployPlacement(bp, res(bp), 'steering-wheel', 'f1', [0.8, 0, 0.8], 0), null);
-  bp = deploy(bp, 'sail', 'f1', [1, 0, 0]);
+  bp = deploy(bp, 'sail', 'th1', [0, 0, 0]);
   assert.equal(deployPlacement(bp, res(bp), 'plank', 'f1', [1.4, 0, 0], 0)?.deployable.rotation, 90);
   bp = deploy(bp, 'anchor', 'h1', [0, 0, 1.4]);
   assert.equal(bp.deployables!.find(d => d.kind === 'anchor')!.rotation, 90);
@@ -170,4 +170,30 @@ test('sail wind block: another sail, a full wall or a roof behind it stops it, a
   const stats = boatStats({ ...base, deployables: [sail('s1', 0, 0), sail('s2', 1.5, 0)] });
   assert.equal(stats.sails!.force, 2500);
   assert.equal(stats.checks.find(c => c.text.startsWith('Заслонено'))?.ok, false);
+});
+
+test('deck objects may hang over an open deck edge by their support points, but keep their full box off a wall', () => {
+  let bp = { ...newBlueprint('Лодка', 'boat-hull'), meta: { name: 'Лодка', tags: ['boat'] }, defaults: { grade: 'wood' as const } };
+  const open = deployPlacement(bp, res(bp), 'furnace', 'f1', [1.5, 0, 0], 0)!;
+  assert.ok(open.deployable.offset![0] > 1.1, `offset ${open.deployable.offset}`);
+  bp = attach(bp, 'boat-wall', 'f1', [1.5, 0, 0]);
+  const walled = deployPlacement(bp, res(bp), 'furnace', 'f1', [1.5, 0, 0], 0)!;
+  assert.ok(walled.deployable.offset![0] < 0.9, `offset ${walled.deployable.offset}`);
+});
+
+test('the anchor stands on the deck edge facing out and its winch is on the deck', () => {
+  const bp = deploy(hullLine(), 'anchor', 'h1', [0, 0, 1.4]);
+  const a = bp.deployables!.find(d => d.kind === 'anchor')!;
+  assert.equal(a.rotation, 90);
+  assert.deepEqual(a.offset, [0, 1.5]);
+});
+
+test('a sail whose sheet overlaps another sail is reported as too close', () => {
+  const hull = (id: string, x: number, z: number) => ({ id, kind: 'boat-hull' as const, position: [x, 0, z] as [number, number, number], rotation: 0, level: 0 });
+  const sail = (id: string, x: number, z: number) => ({ id, kind: 'sail' as const, parent: 'h1', hinge: 'left' as const, opens: 'outward' as const, open: false, position: [x, 0, z] as [number, number, number], rotation: 0, level: 0 });
+  const elements = [hull('h1', 0, 0), hull('h2', 0, 3)];
+  const before = { elements, deployables: [sail('s1', 0, 0)] };
+  const near = sailWarning(before, { elements, deployables: [sail('s1', 0, 0), sail('g', 0, 1.2)] }, 'g');
+  assert.match(near ?? '', /Слишком близко к парусу «s1»/);
+  assert.equal(sailWarning(before, { elements, deployables: [sail('s1', 0, 0), sail('g', 0, 3)] }, 'g'), null);
 });

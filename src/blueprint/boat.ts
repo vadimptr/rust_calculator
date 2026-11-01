@@ -26,41 +26,42 @@ export interface DeckObject {
   icon: string;
   cost: Partial<BoatRes>;
   box: { x: [number, number]; z: number; h: number };
+  area: [number, number];
   desc?: string;
 }
 
 export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
-  'sail': { label: 'Парус', short: 'Парус', icon: 'sail', cost: { wood: 150, tarp: 1 }, box: { x: [-0.65, 0.65], z: 1.7, h: 6.25 } },
-  'small-engine': { label: 'Лодочный мотор', short: 'Мотор', icon: 'smallengine', cost: { hqm: 5, gears: 2, lgf: 50 }, box: { x: [-0.69, 0.69], z: 0.42, h: 1.73 } },
-  'steering-wheel': { label: 'Штурвал', short: 'Штурвал', icon: 'steeringwheel.boat', cost: { wood: 100 }, box: { x: [-0.36, 0.36], z: 0.56, h: 1.44 } },
-  'anchor': { label: 'Якорь', short: 'Якорь', icon: 'anchor', cost: { wood: 250 }, box: { x: [-1.1, 1.5], z: 0.9, h: 1.77 } },
-  'cannon': { label: 'Пушка', short: 'Пушка', icon: 'cannon', cost: { wood: 100, metal: 200 }, box: { x: [-0.78, 1.32], z: 0.63, h: 1.26 } },
-  'plank': { label: 'Доска', short: 'Доска', icon: 'plank', cost: { wood: 100 }, box: { x: [-0.23, 2.82], z: 0.53, h: 0.44 } },
-  'small-ramp': { label: 'Трап', short: 'Трап', icon: 'small_ramp', cost: { wood: 250, rope: 2 }, box: { x: [-1.17, 7.9], z: 1.49, h: 2.86 } },
-  'workbench1': { label: 'Верстак 1 уровня', short: 'Верстак 1', icon: 'workbench1', cost: { wood: 500, metal: 100 }, box: { x: [-0.49, 0.45], z: 0.82, h: 2.24 } },
-  'workbench2': { label: 'Верстак 2 уровня', short: 'Верстак 2', icon: 'workbench2', cost: { metal: 500, hqm: 20, bpbasic: 5 }, box: { x: [-0.43, 0.53], z: 0.89, h: 2.05 } },
-  'workbench3': { label: 'Верстак 3 уровня', short: 'Верстак 3', icon: 'workbench3', cost: { metal: 1000, hqm: 100, bpadvanced: 5 }, box: { x: [-0.47, 0.55], z: 1.13, h: 2.04 } },
-  'repair-bench': { label: 'Ремонтный верстак', short: 'Ремонт', icon: 'box.repair.bench', cost: { metal: 125 }, box: { x: [-0.54, 0.61], z: 1.06, h: 1.27 } },
-  'research-table': { label: 'Стол исследований', short: 'Исследования', icon: 'research.table', cost: { metal: 200, scrap: 20 }, box: { x: [-0.49, 0.52], z: 0.96, h: 1.79 } },
-  'mixing-table': { label: 'Смесительный стол', short: 'Смеситель', icon: 'mixingtable', cost: { metal: 200, stone: 100 }, box: { x: [-0.47, 0.47], z: 1.39, h: 1.78 } },
-  'large-wood-box': { label: 'Большой деревянный ящик', short: 'Ящик', icon: 'box.wooden.large', cost: { wood: 250, metal: 50 }, box: { x: [-0.53, 0.53], z: 0.94, h: 0.79 } },
-  'small-wood-box': { label: 'Маленький деревянный ящик', short: 'Мал. ящик', icon: 'box.wooden', cost: { wood: 100 }, box: { x: [-0.37, 0.37], z: 0.48, h: 0.56 } },
-  'storage-barrel-vertical': { label: 'Бочка для хранения', short: 'Бочка', icon: 'storage_barrel_b', cost: { wood: 300, metal: 75 }, box: { x: [-0.52, 0.49], z: 0.53, h: 1.35 } },
-  'storage-barrel-horizontal': { label: 'Лежачая бочка для хранения', short: 'Леж. бочка', icon: 'storage_barrel_c', cost: { wood: 300, metal: 75 }, box: { x: [-0.49, 0.55], z: 0.67, h: 1.02 } },
-  'shelves': { label: 'Полки', short: 'Полки', icon: 'shelves', cost: { metal: 50 }, box: { x: [-0.68, 0.68], z: 1.38, h: 2.8 } },
-  'locker': { label: 'Шкафчик', short: 'Шкафчик', icon: 'locker', cost: { metal: 100, wood: 50 }, box: { x: [-0.36, 0.36], z: 0.9, h: 2.24 } },
-  'fridge': { label: 'Холодильник', short: 'Холодильник', icon: 'fridge', cost: { metal: 150 }, box: { x: [-0.48, 0.58], z: 0.49, h: 2 } },
-  'water-barrel': { label: 'Бочка для воды', short: 'Вода', icon: 'water.barrel', cost: { wood: 250, tarp: 1 }, box: { x: [-0.66, 0.63], z: 0.89, h: 2.12 } },
-  'furnace': { label: 'Печь', short: 'Печь', icon: 'furnace', cost: { stone: 200, wood: 100, lgf: 50 }, box: { x: [-0.5, 0.53], z: 0.51, h: 1.6 } },
-  'small-oil-refinery': { label: 'Малый нефтеперегонный завод', short: 'Перегонка', icon: 'small.oil.refinery', cost: { wood: 200, metal: 500, lgf: 250 }, box: { x: [-1.29, 1.29], z: 1.29, h: 2.56 } },
-  'bbq': { label: 'Барбекю', short: 'Барбекю', icon: 'bbq', cost: { metal: 40, wood: 100 }, box: { x: [-0.52, 0.58], z: 0.48, h: 1.49 } },
-  'small-generator': { label: 'Малый генератор', short: 'Генератор', icon: 'electric.fuelgenerator.small', cost: { hqm: 5, gears: 2 }, box: { x: [-0.53, 0.41], z: 0.42, h: 0.7 } },
-  'small-battery': { label: 'Малый аккумулятор', short: 'Мал. аккум.', icon: 'electric.battery.rechargable.small', cost: { hqm: 5 }, box: { x: [-0.22, 0.22], z: 0.17, h: 0.34 } },
-  'medium-battery': { label: 'Средний аккумулятор', short: 'Ср. аккум.', icon: 'electric.battery.rechargable.medium', cost: { hqm: 5, techparts: 1 }, box: { x: [-0.37, 0.37], z: 0.63, h: 1.46 } },
-  'large-solar-panel': { label: 'Большая солнечная панель', short: 'Солн. панель', icon: 'electric.solarpanel.large', cost: { hqm: 5, techparts: 1 }, box: { x: [-1.01, 1], z: 0.47, h: 0.59 } },
-  'lantern': { label: 'Фонарь', short: 'Фонарь', icon: 'lantern', cost: { metal: 25, lgf: 15 }, box: { x: [-0.14, 0.14], z: 0.14, h: 0.48 } },
-  'sleeping-bag': { label: 'Спальный мешок', short: 'Спальник', icon: 'sleepingbag', cost: { cloth: 30 }, box: { x: [-0.75, 1.07], z: 0.53, h: 0.32 } },
-  'bed': { label: 'Кровать', short: 'Кровать', icon: 'bed', cost: { cloth: 60, metal: 100, sewingkit: 2 }, box: { x: [-0.74, 0.74], z: 1.19, h: 0.89 } },
+  'sail': { label: 'Парус', short: 'Парус', icon: 'sail', cost: { wood: 150, tarp: 1 }, box: { x: [-0.65, 0.65], z: 1.7, h: 6.25 }, area: [0.59, 0.59] },
+  'small-engine': { label: 'Лодочный мотор', short: 'Мотор', icon: 'smallengine', cost: { hqm: 5, gears: 2, lgf: 50 }, box: { x: [-0.69, 0.69], z: 0.42, h: 1.73 }, area: [0.67, 0.41] },
+  'steering-wheel': { label: 'Штурвал', short: 'Штурвал', icon: 'steeringwheel.boat', cost: { wood: 100 }, box: { x: [-0.36, 0.36], z: 0.56, h: 1.44 }, area: [0.92, 0.55] },
+  'anchor': { label: 'Якорь', short: 'Якорь', icon: 'anchor', cost: { wood: 250 }, box: { x: [-1.5, 1.1], z: 0.9, h: 1.77 }, area: [1.51, 0.7] },
+  'cannon': { label: 'Пушка', short: 'Пушка', icon: 'cannon', cost: { wood: 100, metal: 200 }, box: { x: [-0.78, 1.32], z: 0.63, h: 1.26 }, area: [0.75, 0.57] },
+  'plank': { label: 'Доска', short: 'Доска', icon: 'plank', cost: { wood: 100 }, box: { x: [-0.23, 2.82], z: 0.53, h: 0.44 }, area: [0.26, 0.48] },
+  'small-ramp': { label: 'Трап', short: 'Трап', icon: 'small_ramp', cost: { wood: 250, rope: 2 }, box: { x: [-1.17, 7.9], z: 1.49, h: 2.86 }, area: [1.05, 1.05] },
+  'workbench1': { label: 'Верстак 1 уровня', short: 'Верстак 1', icon: 'workbench1', cost: { wood: 500, metal: 100 }, box: { x: [-0.49, 0.45], z: 0.82, h: 2.24 }, area: [0.39, 0.76] },
+  'workbench2': { label: 'Верстак 2 уровня', short: 'Верстак 2', icon: 'workbench2', cost: { metal: 500, hqm: 20, bpbasic: 5 }, box: { x: [-0.43, 0.53], z: 0.89, h: 2.05 }, area: [0.39, 0.76] },
+  'workbench3': { label: 'Верстак 3 уровня', short: 'Верстак 3', icon: 'workbench3', cost: { metal: 1000, hqm: 100, bpadvanced: 5 }, box: { x: [-0.47, 0.55], z: 1.13, h: 2.04 }, area: [0.39, 0.76] },
+  'repair-bench': { label: 'Ремонтный верстак', short: 'Ремонт', icon: 'box.repair.bench', cost: { metal: 125 }, box: { x: [-0.54, 0.61], z: 1.06, h: 1.27 }, area: [0.52, 1.03] },
+  'research-table': { label: 'Стол исследований', short: 'Исследования', icon: 'research.table', cost: { metal: 200, scrap: 20 }, box: { x: [-0.49, 0.52], z: 0.96, h: 1.79 }, area: [0.48, 0.94] },
+  'mixing-table': { label: 'Смесительный стол', short: 'Смеситель', icon: 'mixingtable', cost: { metal: 200, stone: 100 }, box: { x: [-0.47, 0.47], z: 1.39, h: 1.78 }, area: [0.45, 1.38] },
+  'large-wood-box': { label: 'Большой деревянный ящик', short: 'Ящик', icon: 'box.wooden.large', cost: { wood: 250, metal: 50 }, box: { x: [-0.53, 0.53], z: 0.94, h: 0.79 }, area: [0.22, 0.22] },
+  'small-wood-box': { label: 'Маленький деревянный ящик', short: 'Мал. ящик', icon: 'box.wooden', cost: { wood: 100 }, box: { x: [-0.37, 0.37], z: 0.48, h: 0.56 }, area: [0.05, 0.2] },
+  'storage-barrel-vertical': { label: 'Бочка для хранения', short: 'Бочка', icon: 'storage_barrel_b', cost: { wood: 300, metal: 75 }, box: { x: [-0.52, 0.49], z: 0.53, h: 1.35 }, area: [0.22, 0.22] },
+  'storage-barrel-horizontal': { label: 'Лежачая бочка для хранения', short: 'Леж. бочка', icon: 'storage_barrel_c', cost: { wood: 300, metal: 75 }, box: { x: [-0.49, 0.55], z: 0.67, h: 1.02 }, area: [0.22, 0.22] },
+  'shelves': { label: 'Полки', short: 'Полки', icon: 'shelves', cost: { metal: 50 }, box: { x: [-0.68, 0.68], z: 1.38, h: 2.8 }, area: [0.41, 1.28] },
+  'locker': { label: 'Шкафчик', short: 'Шкафчик', icon: 'locker', cost: { metal: 100, wood: 50 }, box: { x: [-0.36, 0.36], z: 0.9, h: 2.24 }, area: [0.45, 1.0] },
+  'fridge': { label: 'Холодильник', short: 'Холодильник', icon: 'fridge', cost: { metal: 150 }, box: { x: [-0.48, 0.58], z: 0.49, h: 2 }, area: [0.53, 0.54] },
+  'water-barrel': { label: 'Бочка для воды', short: 'Вода', icon: 'water.barrel', cost: { wood: 250, tarp: 1 }, box: { x: [-0.66, 0.63], z: 0.89, h: 2.12 }, area: [0.53, 0.68] },
+  'furnace': { label: 'Печь', short: 'Печь', icon: 'furnace', cost: { stone: 200, wood: 100, lgf: 50 }, box: { x: [-0.5, 0.53], z: 0.51, h: 1.6 }, area: [0.34, 0.33] },
+  'small-oil-refinery': { label: 'Малый нефтеперегонный завод', short: 'Перегонка', icon: 'small.oil.refinery', cost: { wood: 200, metal: 500, lgf: 250 }, box: { x: [-1.29, 1.29], z: 1.29, h: 2.56 }, area: [0.05, 0.05] },
+  'bbq': { label: 'Барбекю', short: 'Барбекю', icon: 'bbq', cost: { metal: 40, wood: 100 }, box: { x: [-0.52, 0.58], z: 0.48, h: 1.49 }, area: [0.55, 0.39] },
+  'small-generator': { label: 'Малый генератор', short: 'Генератор', icon: 'electric.fuelgenerator.small', cost: { hqm: 5, gears: 2 }, box: { x: [-0.53, 0.41], z: 0.42, h: 0.7 }, area: [0.48, 0.35] },
+  'small-battery': { label: 'Малый аккумулятор', short: 'Мал. аккум.', icon: 'electric.battery.rechargable.small', cost: { hqm: 5 }, box: { x: [-0.22, 0.22], z: 0.17, h: 0.34 }, area: [0.25, 0.18] },
+  'medium-battery': { label: 'Средний аккумулятор', short: 'Ср. аккум.', icon: 'electric.battery.rechargable.medium', cost: { hqm: 5, techparts: 1 }, box: { x: [-0.37, 0.37], z: 0.63, h: 1.46 }, area: [0.35, 0.36] },
+  'large-solar-panel': { label: 'Большая солнечная панель', short: 'Солн. панель', icon: 'electric.solarpanel.large', cost: { hqm: 5, techparts: 1 }, box: { x: [-1.01, 1], z: 0.47, h: 0.59 }, area: [0.93, 0.48] },
+  'lantern': { label: 'Фонарь', short: 'Фонарь', icon: 'lantern', cost: { metal: 25, lgf: 15 }, box: { x: [-0.14, 0.14], z: 0.14, h: 0.48 }, area: [0.05, 0.05] },
+  'sleeping-bag': { label: 'Спальный мешок', short: 'Спальник', icon: 'sleepingbag', cost: { cloth: 30 }, box: { x: [-0.75, 1.07], z: 0.53, h: 0.32 }, area: [1.0, 0.49] },
+  'bed': { label: 'Кровать', short: 'Кровать', icon: 'bed', cost: { cloth: 60, metal: 100, sewingkit: 2 }, box: { x: [-0.74, 0.74], z: 1.19, h: 0.89 }, area: [0.6, 1.14] },
 };
 
 export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
@@ -92,6 +93,10 @@ export function objectHalf(kind: DeployableKind): [number, number] {
   if (kind === 'sail') return [0.3, 0.3];
   const b = DECK[kind]!.box;
   return [Math.min(PLACE_HALF_MAX, Math.max(-b.x[0], b.x[1])), Math.min(PLACE_HALF_MAX, b.z)];
+}
+
+export function objectArea(kind: DeployableKind): [number, number] {
+  return DECK[kind]!.area;
 }
 
 export const OBJECT_LIMIT: Partial<Record<DeployableKind, number>> = { 'small-engine': 5, 'sail': 10, 'steering-wheel': 1 };
@@ -327,6 +332,7 @@ interface Solid {
   yaw: number;
   half: V3;
   poly?: V2[];
+  deck?: boolean;
 }
 
 const SAIL_BOXES: { c: V3; half: V3 }[] = [
@@ -362,12 +368,12 @@ function solidsOf(resolved: Resolved): Solid[] {
   }
   for (const d of resolved.deployables) {
     if (d.kind === 'sail') {
-      for (const b of SAIL_BOXES) out.push({ id: d.id, c: localToWorld(d.position, d.rotation, b.c), yaw: d.rotation, half: b.half });
+      for (const b of SAIL_BOXES) out.push({ id: d.id, c: localToWorld(d.position, d.rotation, b.c), yaw: d.rotation, half: b.half, deck: true });
       continue;
     }
     const b = DECK[d.kind]?.box;
     if (!b) continue;
-    out.push({ id: d.id, c: localToWorld(d.position, d.rotation, [(b.x[0] + b.x[1]) / 2, b.h / 2, 0]), yaw: d.rotation, half: [(b.x[1] - b.x[0]) / 2, b.h / 2, b.z] });
+    out.push({ id: d.id, c: localToWorld(d.position, d.rotation, [(b.x[0] + b.x[1]) / 2, b.h / 2, 0]), yaw: d.rotation, half: [(b.x[1] - b.x[0]) / 2, b.h / 2, b.z], deck: true });
   }
   return out;
 }
@@ -402,7 +408,7 @@ function sailBlock(sail: ResolvedDeployable, solids: Solid[]): SailBlock | null 
   const others = solids.filter(s => s.id !== sail.id && Math.hypot(s.c[0] - sail.position[0], s.c[2] - sail.position[2]) < 7);
   const center: V3 = [sail.position[0], sail.position[1] + SAIL_CENTER_Y, sail.position[2]];
   const roof = others.find(s => s.poly && s.c[1] - s.half[1] > center[1] && polyDistance(s.poly, center[0], center[2]) === 0)
-    ?? others.find(s => !s.poly && s.c[1] - s.half[1] > center[1] && distanceTo(s, [center[0], s.c[1], center[2]]) === 0);
+    ?? others.find(s => !s.poly && !s.deck && s.c[1] - s.half[1] > center[1] && distanceTo(s, [center[0], s.c[1], center[2]]) === 0);
   if (roof) return { by: roof.id, roof: true };
   const [bx, bz] = dir(sail.rotation + 180);
   for (const h of SAIL_CHECK_HEIGHTS) {
@@ -432,7 +438,31 @@ export function describeBlock(b: SailBlock): string {
   return b.roof ? `под крышей или полом ${named(b.by)}` : `сзади ближе ${SAIL_CHECK_DISTANCE} м стоит ${named(b.by)}`;
 }
 
+const SHEET_HALF: V2 = [0.15, 1.5];
+
+function sheetsTouch(a: ResolvedDeployable, b: ResolvedDeployable): boolean {
+  const axes = (d: ResolvedDeployable) => [dir(d.rotation), dir(d.rotation + 90)];
+  const corners = (d: ResolvedDeployable) => {
+    const [ax, az] = axes(d);
+    return [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => [
+      d.position[0] + sx * SHEET_HALF[0] * ax[0] + sz * SHEET_HALF[1] * az[0],
+      d.position[2] + sx * SHEET_HALF[0] * ax[1] + sz * SHEET_HALF[1] * az[1],
+    ]);
+  };
+  if (Math.abs(a.position[1] - b.position[1]) > 6) return false;
+  const ca = corners(a), cb = corners(b);
+  return [...axes(a), ...axes(b)].every(([ux, uz]) => {
+    const pa = ca.map(([x, z]) => x * ux + z * uz), pb = cb.map(([x, z]) => x * ux + z * uz);
+    return Math.max(...pa) > Math.min(...pb) && Math.max(...pb) > Math.min(...pa);
+  });
+}
+
 export function sailWarning(before: Resolved, after: Resolved, ghostId: string): string | null {
+  const ghost = after.deployables.find(d => d.id === ghostId);
+  if (ghost?.kind === 'sail') {
+    const touching = after.deployables.filter(d => d.kind === 'sail' && d.id !== ghostId && sheetsTouch(d, ghost));
+    if (touching.length) return `Слишком близко к ${touching.length === 1 ? 'парусу' : 'парусам'} ${touching.map(d => named(d.id)).join(', ')}: полотна задевают друг друга`;
+  }
   const was = blockedSails(before), now = blockedSails(after);
   const own = now.get(ghostId);
   if (own) return `Парус не будет тянуть: ${describeBlock(own)}`;

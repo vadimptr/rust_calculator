@@ -271,6 +271,13 @@ function toggleDoorsOf(s: SceneRefs, id: string): boolean {
 }
 
 /** Точка в локальных осях элемента (x по нормали, y вверх, z вдоль). */
+function lastTurn(res: Resolved, kind: DeployableKind): number {
+  const last = [...res.deployables].reverse().find(d => d.kind === kind);
+  if (!last) return 0;
+  const bow = kind === 'steering-wheel' ? boatGrid(res) : boatBow(res);
+  return ((Math.round((last.rotation - bow) / 45) % 8) + 8) % 8;
+}
+
 function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number] {
   const a = (-el.rotation * Math.PI) / 180;
   const dx = p.x - el.position[0], dy = p.y - el.position[1], dz = p.z - el.position[2];
@@ -414,6 +421,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         while (o && o.userData.id === undefined) o = o.parent;
         if (!o || !(o as THREE.Mesh).visible) continue;
         const deployable = o.userData.open !== undefined || !(o.userData.kind in KINDS);
+        if (deployable && editorRef.current?.tool === 'deploy') continue;
         return { id: o.userData.id as string, deployable, point: world.worldToLocal(h.point.clone()) };
       }
       return null;
@@ -765,7 +773,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       // объект
       const local = toLocal(hostEl, hit.point);
       // шкаф: R поворачивает на 90° (прямо / боком)
-      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? (state.alt % 8) * 45 : 0;
+      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? ((lastTurn(res, ed.deployKind) + state.alt) % 8) * 45 : 0;
       const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn) : null;
       if (!dp) {
         none();
