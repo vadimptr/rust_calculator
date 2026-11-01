@@ -57,12 +57,5 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ vars.SSH_PORT }}
-          debug: true
           script_stop: true
-          script: |
-            export PATH="$PATH:/usr/local/bin"
-            security unlock-keychain -p ${{ secrets.SSH_PASSWORD }}
-            cd ${{ vars.WORK_DIR }}/${{ env.PROJECT_NAME }}
-            echo ${{ secrets.CR_PAT }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            docker-compose pull
-            docker-compose up -d
+          script: ${{ vars.WORK_DIR }}/deploy.sh deploy ${{ env.PROJECT_NAME }}
