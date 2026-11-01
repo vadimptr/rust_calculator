@@ -7,7 +7,7 @@ const db = openDb(process.env.DB_PATH ?? 'data/schemes.db');
 const seeded = seed(db, new URL('../docs/blueprint/examples/', import.meta.url));
 if (seeded) console.log(`seeded ${seeded} schemes`);
 
-const server = createServer(createApp(db));
+const server = createServer(createApp(db, process.env.WRITE_TOKEN ?? ''));
 server.listen(port, () => console.log(`api on :${port}`));
 
 const stop = () => server.close(() => { db.close(); process.exit(0); });

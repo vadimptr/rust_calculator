@@ -5,14 +5,16 @@ import type { AddressInfo } from 'node:net';
 import { createApp } from './app.ts';
 import { openDb, seed } from './db.ts';
 
-async function start() {
+async function start(writeToken = '') {
   const db = openDb(':memory:');
   seed(db, new URL('../docs/blueprint/examples/', import.meta.url));
-  const server = createServer(createApp(db));
+  const server = createServer(createApp(db, writeToken));
   await new Promise<void>(r => server.listen(0, r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  const call = async (method: string, path: string, body?: unknown) => {
-    const res = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const call = async (method: string, path: string, body?: unknown, token?: string) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token !== undefined) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
     return { status: res.status, body: await res.json() };
   };
   return { call, close: () => new Promise(r => server.close(r)) };
@@ -55,5 +57,20 @@ test('invalid documents and names are rejected', async () => {
   assert.equal(bad.status, 422);
   assert.ok(bad.body.issues.some((i: { code: string }) => i.code === 'V12'));
   assert.equal((await call('GET', '/api/schemes/nope')).status, 404);
+  await close();
+});
+
+test('with a write token only its holder can create and save, everyone can read', async () => {
+  const { call, close } = await start('secret');
+  const doc = { formatVersion: '2.0', meta: { name: 'x' }, elements: [] };
+  assert.equal((await call('POST', '/api/schemes', { name: 'a', doc })).status, 401);
+  assert.equal((await call('POST', '/api/schemes', { name: 'a', doc }, 'wrong')).status, 401);
+  assert.equal((await call('PUT', '/api/schemes/house-2x2', { name: 'a', doc, version: 1 })).status, 401);
+  assert.equal((await call('GET', '/api/auth', undefined, 'wrong')).status, 401);
+  assert.equal((await call('GET', '/api/auth', undefined, 'secret')).status, 200);
+  assert.equal((await call('GET', '/api/schemes/house-2x2')).status, 200);
+  const made = await call('POST', '/api/schemes', { name: 'a', doc }, 'secret');
+  assert.equal(made.status, 201);
+  assert.equal((await call('PUT', `/api/schemes/${made.body.id}`, { name: 'b', doc, version: 1 }, 'secret')).status, 200);
   await close();
 });

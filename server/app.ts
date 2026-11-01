@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { loadBlueprint } from '../src/blueprint/validate.ts';
 import type { SchemeRow } from './db.ts';
 
@@ -71,7 +71,16 @@ function newId(): string {
   return 's' + Date.now().toString(36) + randomBytes(3).toString('hex');
 }
 
-export function createApp(db: DatabaseSync) {
+const digest = (s: string) => createHash('sha256').update(s).digest();
+
+export function createApp(db: DatabaseSync, writeToken = '') {
+  const expected = digest(writeToken);
+  const authorize = (req: IncomingMessage) => {
+    if (!writeToken) return;
+    const auth = req.headers.authorization ?? '';
+    const given = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    if (!given || !timingSafeEqual(digest(given), expected)) throw new HttpError(401, 'Сохранять схемы можно только с токеном записи');
+  };
   const writes = new Map<string, number[]>();
   const limitWrites = (req: IncomingMessage) => {
     const ip = (req.headers['x-real-ip'] as string | undefined) ?? req.socket.remoteAddress ?? '?';
@@ -87,11 +96,16 @@ export function createApp(db: DatabaseSync) {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const path = url.pathname.replace(/\/+$/, '');
     if (path === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true });
+    if (path === '/api/auth' && req.method === 'GET') {
+      authorize(req);
+      return send(res, 200, { ok: true });
+    }
     if (path === '/api/schemes' && req.method === 'GET') {
       const rows = db.prepare('SELECT * FROM schemes ORDER BY position, created_at').all() as unknown as SchemeRow[];
       return send(res, 200, rows.map(summary));
     }
     if (path === '/api/schemes' && req.method === 'POST') {
+      authorize(req);
       limitWrites(req);
       const body = (await readJson(req)) as { name?: unknown; doc?: unknown };
       const name = validName(body?.name);
@@ -110,6 +124,7 @@ export function createApp(db: DatabaseSync) {
       return send(res, 200, full(row));
     }
     if (m && req.method === 'PUT') {
+      authorize(req);
       limitWrites(req);
       const body = (await readJson(req)) as { name?: unknown; doc?: unknown; version?: unknown };
       const row = get.get(m[1]) as unknown as SchemeRow | undefined;

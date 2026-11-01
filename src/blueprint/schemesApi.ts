@@ -24,13 +24,47 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  let res: Response;
+const TOKEN_KEY = 'bp.writeToken';
+
+function storedToken(): string {
   try {
-    res = await fetch(path, { method, headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    return localStorage.getItem(TOKEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function storeToken(token: string): void {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    return;
+  }
+}
+
+async function send(method: string, path: string, body: unknown, token: string): Promise<Response> {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (token && method !== 'GET') headers.Authorization = `Bearer ${token}`;
+  try {
+    return await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
     throw new ApiError(0, { error: 'Сервер схем недоступен' });
   }
+}
+
+async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+  let token = storedToken();
+  let res = await send(method, path, body, token);
+  while (res.status === 401 && method !== 'GET') {
+    const entered = window.prompt(token ? 'Токен не подошёл. Введи токен записи ещё раз' : 'Сохранять схемы можно только с токеном записи. Введи его', '')?.trim();
+    if (!entered) break;
+    token = entered;
+    res = await send(method, path, body, token);
+    if (res.status !== 401) storeToken(token);
+  }
+  if (res.status === 401) storeToken('');
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, data);
   return data as T;

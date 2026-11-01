@@ -9,6 +9,8 @@ services:
 
   api:
     image: ghcr.io/vadimptr/rust_calculator/api:latest
+    environment:
+      WRITE_TOKEN: ${WRITE_TOKEN:-}
     volumes:
       - schemes:/data
     restart: unless-stopped
