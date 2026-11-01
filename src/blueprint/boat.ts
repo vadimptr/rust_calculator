@@ -252,6 +252,7 @@ export interface BoatStats {
   fuelPerMinute: number;
   build: BoatRes;
   checks: Check[];
+  blocked: Map<string, SailBlock>;
 }
 
 function run(objects: ResolvedDeployable[], thrust: (d: ResolvedDeployable) => number, hulls: ResolvedElement[], forward: number, mass: number): Run | null {
@@ -318,6 +319,128 @@ export function coveredHullSides(resolved: Resolved): Map<string, number[]> {
   return out;
 }
 
+type V3 = [number, number, number];
+
+interface Solid {
+  id: string;
+  c: V3;
+  yaw: number;
+  half: V3;
+  poly?: V2[];
+}
+
+const SAIL_BOXES: { c: V3; half: V3 }[] = [
+  { c: [0.007, 3.09, 0], half: [0.095, 3.1, 0.1] },
+  { c: [0.1, 3.93, 0], half: [0.105, 1.5, 1.5] },
+  { c: [0.06, 4.87, 0], half: [0.105, 0.5, 1.5] },
+  { c: [0.16, 5.56, 0], half: [0.095, 0.13, 1.7] },
+];
+export const SAIL_CHECK_HEIGHTS = [3.39, 4.67];
+export const SAIL_CHECK_RADIUS = 0.5;
+export const SAIL_CHECK_DISTANCE = 2;
+const SAIL_CENTER_Y = 3.1;
+
+function localToWorld(pos: V3, yaw: number, l: V3): V3 {
+  const [cx, cz] = dir(yaw);
+  return [pos[0] + l[0] * cx - l[2] * cz, pos[1] + l[1], pos[2] + l[0] * cz + l[2] * cx];
+}
+
+function solidsOf(resolved: Resolved): Solid[] {
+  const out: Solid[] = [];
+  for (const e of resolved.elements) {
+    if (!KINDS[e.kind].boat) continue;
+    const info = KINDS[e.kind];
+    if (info.category === 'cell') {
+      const top = e.position[1] + 0.1, bottom = info.isFoundation ? e.position[1] - 3 : e.position[1] - 0.05;
+      out.push({ id: e.id, c: [e.position[0], (top + bottom) / 2, e.position[2]], yaw: 0, half: [0, (top - bottom) / 2, 0], poly: outline(e) });
+    } else if (info.category === 'wallType') {
+      const h = e.kind === 'boat-low-wall-barrier' ? 1.2 : info.height ?? 3;
+      out.push({ id: e.id, c: localToWorld(e.position, e.rotation, [0, h / 2, 0]), yaw: e.rotation, half: [0.07, h / 2, 1.5] });
+    } else {
+      out.push({ id: e.id, c: localToWorld(e.position, e.rotation, [0, 1.5, 0]), yaw: e.rotation, half: [1.5, 1.5, 0.76] });
+    }
+  }
+  for (const d of resolved.deployables) {
+    if (d.kind === 'sail') {
+      for (const b of SAIL_BOXES) out.push({ id: d.id, c: localToWorld(d.position, d.rotation, b.c), yaw: d.rotation, half: b.half });
+      continue;
+    }
+    const b = DECK[d.kind]?.box;
+    if (!b) continue;
+    out.push({ id: d.id, c: localToWorld(d.position, d.rotation, [(b.x[0] + b.x[1]) / 2, b.h / 2, 0]), yaw: d.rotation, half: [(b.x[1] - b.x[0]) / 2, b.h / 2, b.z] });
+  }
+  return out;
+}
+
+function polyDistance(poly: V2[], x: number, z: number): number {
+  let inside = false, best = Infinity;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+    const ex = xj - xi, ez = zj - zi;
+    const t = Math.max(0, Math.min(1, ((x - xi) * ex + (z - zi) * ez) / (ex * ex + ez * ez)));
+    best = Math.min(best, Math.hypot(x - xi - t * ex, z - zi - t * ez));
+  }
+  return inside ? 0 : best;
+}
+
+function distanceTo(s: Solid, p: V3): number {
+  const dy = Math.max(0, Math.abs(p[1] - s.c[1]) - s.half[1]);
+  if (s.poly) return Math.hypot(polyDistance(s.poly, p[0], p[2]), dy);
+  const [cx, cz] = dir(s.yaw);
+  const vx = p[0] - s.c[0], vz = p[2] - s.c[2];
+  const lx = vx * cx + vz * cz, lz = -vx * cz + vz * cx;
+  return Math.hypot(Math.max(0, Math.abs(lx) - s.half[0]), dy, Math.max(0, Math.abs(lz) - s.half[2]));
+}
+
+export interface SailBlock {
+  by: string | null;
+  roof: boolean;
+}
+
+function sailBlock(sail: ResolvedDeployable, solids: Solid[]): SailBlock | null {
+  const others = solids.filter(s => s.id !== sail.id && Math.hypot(s.c[0] - sail.position[0], s.c[2] - sail.position[2]) < 7);
+  const center: V3 = [sail.position[0], sail.position[1] + SAIL_CENTER_Y, sail.position[2]];
+  const roof = others.find(s => s.poly && s.c[1] - s.half[1] > center[1] && polyDistance(s.poly, center[0], center[2]) === 0)
+    ?? others.find(s => !s.poly && s.c[1] - s.half[1] > center[1] && distanceTo(s, [center[0], s.c[1], center[2]]) === 0);
+  if (roof) return { by: roof.id, roof: true };
+  const [bx, bz] = dir(sail.rotation + 180);
+  for (const h of SAIL_CHECK_HEIGHTS) {
+    for (let t = 0; t <= SAIL_CHECK_DISTANCE + 1e-9; t += 0.05) {
+      const p: V3 = [sail.position[0] + bx * t, sail.position[1] + h, sail.position[2] + bz * t];
+      const hit = others.find(s => distanceTo(s, p) <= SAIL_CHECK_RADIUS);
+      if (hit) return { by: hit.id, roof: false };
+    }
+  }
+  return null;
+}
+
+export function blockedSails(resolved: Resolved): Map<string, SailBlock> {
+  const solids = solidsOf(resolved);
+  const out = new Map<string, SailBlock>();
+  for (const d of resolved.deployables) {
+    if (d.kind !== 'sail') continue;
+    const b = sailBlock(d, solids);
+    if (b) out.set(d.id, b);
+  }
+  return out;
+}
+
+const named = (id: string | null) => (id === '__ghost__' ? 'новый объект' : `«${id}»`);
+
+export function describeBlock(b: SailBlock): string {
+  return b.roof ? `под крышей или полом ${named(b.by)}` : `сзади ближе ${SAIL_CHECK_DISTANCE} м стоит ${named(b.by)}`;
+}
+
+export function sailWarning(before: Resolved, after: Resolved, ghostId: string): string | null {
+  const was = blockedSails(before), now = blockedSails(after);
+  const own = now.get(ghostId);
+  if (own) return `Парус не будет тянуть: ${describeBlock(own)}`;
+  const newly = [...now.keys()].filter(id => !was.has(id));
+  if (newly.length) return `Заслонит ${newly.length === 1 ? 'парус' : 'паруса'} ${newly.map(named).join(', ')}: они перестанут тянуть`;
+  return null;
+}
+
 const add = (a: BoatRes, b: Partial<BoatRes>) => { for (const k of BOAT_RES_KEYS) a[k] += b[k] ?? 0; };
 
 export function boatStats(resolved: Resolved): BoatStats {
@@ -331,7 +454,8 @@ export function boatStats(resolved: Resolved): BoatStats {
   const health = blocks.reduce((t, e) => t + (BOAT_BLOCKS[e.kind]?.health ?? 0), 0);
   const wheel = objects.find(d => d.kind === 'steering-wheel');
   const forward = wheel?.rotation ?? 0;
-  const sail = (d: ResolvedDeployable) => (d.kind === 'sail' ? SAIL_THRUST : 0);
+  const blocked = blockedSails(resolved);
+  const sail = (d: ResolvedDeployable) => (d.kind === 'sail' && !blocked.has(d.id) ? SAIL_THRUST : 0);
   const engine = (d: ResolvedDeployable) => (d.kind === 'small-engine' ? ENGINE_THRUST : 0);
   const build = zero();
   for (const e of blocks) add(build, blockCost(e.kind));
@@ -344,6 +468,7 @@ export function boatStats(resolved: Resolved): BoatStats {
     { ok: connected(blocks), text: 'Все блоки соединены в одно целое' },
     { ok: wheels === 1, text: wheels > 1 ? `Штурвалов ${wheels}, нужен ровно один` : 'Штурвал стоит: он задаёт нос корабля' },
     { ok: sails + engines > 0, text: 'Есть парус или мотор' },
+    { ok: blocked.size === 0, text: blocked.size ? `Заслонено парусов: ${blocked.size} из ${sails}, они не тянут` : 'Ни один парус не заслонён' },
     { ok: engines <= OBJECT_LIMIT['small-engine']!, text: `Моторов ${engines} из ${OBJECT_LIMIT['small-engine']}` },
     { ok: sails <= OBJECT_LIMIT['sail']!, text: `Парусов ${sails} из ${OBJECT_LIMIT['sail']}` },
   ];
@@ -354,6 +479,6 @@ export function boatStats(resolved: Resolved): BoatStats {
     full: run(objects, d => sail(d) + engine(d), hulls, forward, mass),
     reverse: run(objects, d => -ENGINE_REVERSE * engine(d), hulls, forward, mass),
     fuelPerMinute: engines * ENGINE_FUEL_PER_SEC * 60,
-    build, checks,
+    build, checks, blocked,
   };
 }

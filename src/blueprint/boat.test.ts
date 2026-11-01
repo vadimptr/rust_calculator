@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveBlueprint } from './geometry.ts';
 import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear } from './editor.ts';
-import { blockCost, boatStats, coveredHullSides, dragFor, frontalWidth, terminalSpeed } from './boat.ts';
+import { blockCost, blockedSails, boatStats, coveredHullSides, dragFor, frontalWidth, terminalSpeed } from './boat.ts';
 import { loadBlueprint } from './validate.ts';
 import { emptyScheme } from './schemesApi.ts';
 import type { Blueprint, DeployableKind, ElementKind } from './types.ts';
@@ -96,7 +96,7 @@ test('objects: engine only on a hull, one wheel, edge items on a free outer edge
   bp = deploy(bp, 'small-engine', 'h1', [0, 0, 0]);
   bp = deploy(bp, 'steering-wheel', 'f1', [-0.5, 0, 0]);
   assert.equal(deployPlacement(bp, res(bp), 'steering-wheel', 'f1', [0.8, 0, 0.8], 0), null);
-  bp = deploy(bp, 'sail', 'f1', [0.6, 0, 0]);
+  bp = deploy(bp, 'sail', 'f1', [1, 0, 0]);
   assert.equal(deployPlacement(bp, res(bp), 'plank', 'f1', [1.4, 0, 0], 0)?.deployable.rotation, 90);
   bp = deploy(bp, 'anchor', 'h1', [0, 0, 1.4]);
   assert.equal(bp.deployables!.find(d => d.kind === 'anchor')!.rotation, 90);
@@ -152,4 +152,22 @@ test('deck objects: workbench and boxes on the deck, doors and windows in boat o
   assert.equal(s.mass, 1000);
   assert.equal(s.build.wood, 750 + 210 + 210 + 500 + 100);
   assert.equal(s.build.metal, 100 + 150 + 25);
+});
+
+test('sail wind block: another sail, a full wall or a roof behind it stops it, a low wall does not', () => {
+  const hull = (id: string, x: number, z: number) => ({ id, kind: 'boat-hull' as const, grade: 'wood' as const, position: [x, 0, z] as [number, number, number], rotation: 0, level: 0 });
+  const sail = (id: string, x: number, z: number, rotation = 0) => ({ id, kind: 'sail' as const, parent: 'h1', hinge: 'left' as const, opens: 'outward' as const, open: false, position: [x, 0, z] as [number, number, number], rotation, level: 0 });
+  const base = { elements: [hull('h1', 0, 0), hull('h2', -3, 0), hull('h3', 3, 0)], deployables: [] as ReturnType<typeof sail>[] };
+  assert.equal(blockedSails({ ...base, deployables: [sail('s1', 0, 0), sail('s2', 1.5, 0)] }).get('s2')?.by, 's1');
+  assert.equal(blockedSails({ ...base, deployables: [sail('s1', 0, 0), sail('s2', 1.5, 0)] }).has('s1'), false);
+  assert.equal(blockedSails({ ...base, deployables: [sail('s1', 0, 0), sail('s2', 0, 3)] }).size, 0);
+  assert.equal(blockedSails({ ...base, deployables: [sail('s1', -3, 0), sail('s2', 0, 0)] }).size, 0);
+  const wall = (kind: 'boat-wall' | 'boat-low-wall') => ({ id: 'w1', kind, grade: 'wood' as const, position: [-1.5, 0, 0] as [number, number, number], rotation: 0, level: 0 });
+  assert.equal(blockedSails({ elements: [...base.elements, wall('boat-wall')], deployables: [sail('s1', 0, 0)] }).get('s1')?.by, 'w1');
+  assert.equal(blockedSails({ elements: [...base.elements, wall('boat-low-wall')], deployables: [sail('s1', 0, 0)] }).size, 0);
+  const roof = { id: 'c1', kind: 'boat-floor' as const, grade: 'wood' as const, position: [0, 6, 0] as [number, number, number], rotation: 0, level: 2 };
+  assert.deepEqual(blockedSails({ elements: [...base.elements, roof], deployables: [sail('s1', 0, 0)] }).get('s1'), { by: 'c1', roof: true });
+  const stats = boatStats({ ...base, deployables: [sail('s1', 0, 0), sail('s2', 1.5, 0)] });
+  assert.equal(stats.sails!.force, 2500);
+  assert.equal(stats.checks.find(c => c.text.startsWith('Заслонено'))?.ok, false);
 });

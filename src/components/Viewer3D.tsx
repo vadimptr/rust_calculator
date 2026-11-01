@@ -20,7 +20,7 @@ import type { Buildings, PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import { caveView } from '../blueprint/terrain.ts';
-import { DIRECTED_OBJECTS, EDGE_OBJECTS, boatBow, boatGrid, coveredHullSides, isBoatObject } from '../blueprint/boat.ts';
+import { DIRECTED_OBJECTS, EDGE_OBJECTS, blockedSails, boatBow, boatGrid, coveredHullSides, isBoatObject, sailWarning } from '../blueprint/boat.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
 import type { RadialMenuItem } from './RadialMenu';
@@ -122,6 +122,8 @@ interface SceneRefs {
   label: HTMLDivElement;
   /** Ключ крепления, показанного в прошлый раз: сокет меняется только на заметно более близкий. */
   lastAttach: string;
+  sailWarnKey: string;
+  sailWarn: string | null;
 }
 
 // Призраки: только лицевые грани и без записи глубины — полупрозрачные грани одной коробки не
@@ -392,7 +394,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
       raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
-      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label,
+      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label, sailWarnKey: '', sailWarn: null,
     };
     refs.current = state;
 
@@ -613,6 +615,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       drawSockets(showSocketsRef.current && res ? cands.map(c => boxOf(ed.kind, c, res)).filter((b): b is AimBox => !!b) : [], res ? boxOf(ed.kind, p, res) : null);
       showGhost(key, { type: 'element', kind: ed.kind, attach: p.attach }, () => ghostify(buildElement(el, gable, undefined, piecesWith(cur ?? EMPTY, el)), st < COLLAPSE ? FALL_MAT : GHOST_MAT));
       if (st < COLLAPSE) state.pending = null;
+      else if (cur && withGhost && KINDS[ed.kind].boat && cur.deployables.some(x => x.kind === 'sail')) {
+        if (state.sailWarnKey !== key) { state.sailWarnKey = key; state.sailWarn = sailWarning(cur, withGhost, el.id); }
+        if (state.sailWarn) {
+          if (ghost.children[0]) ghostify(ghost.children[0], FALL_MAT);
+          label.textContent = state.sailWarn;
+          label.className = 'viewer3d__label viewer3d__label--bad';
+        }
+      }
       return true;
     };
 
@@ -760,6 +770,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (!dp) {
         none();
         if (isBoatObject(ed.deployKind)) {
+          const bad: ResolvedDeployable = {
+            id: '__ghost__', kind: ed.deployKind, parent: hit.id, hinge: 'left', opens: 'outward', open: false,
+            position: [hit.point.x, hit.point.y, hit.point.z], rotation: boatBow(res) + turn, level: 0,
+          };
+          showGhost(`deploy-bad|${ed.deployKind}`, null, () => ghostify(buildDeployable(bad), BLOCKED_MAT));
+          state.pending = null;
+          const g = ghost.children[0];
+          if (g) { g.position.set(...bad.position); g.rotation.y = (-bad.rotation * Math.PI) / 180; }
           label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя: только на корпус или пол корабля и не вплотную к другому объекту';
           label.className = 'viewer3d__label viewer3d__label--bad';
         }
@@ -779,7 +797,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         const g = ghost.children[0];
         if (g) { g.position.set(rd.position[0], rd.position[1], rd.position[2]); g.rotation.y = (-rd.rotation * Math.PI) / 180; }
       }
-      if (DIRECTED_OBJECTS.includes(d.kind)) {
+      const warnKey = `dep|${d.kind}|${rd.position.map(v => v.toFixed(2)).join(',')}|${rd.rotation}|${res.deployables.length}|${res.elements.length}`;
+      if (state.sailWarnKey !== warnKey) {
+        state.sailWarnKey = warnKey;
+        state.sailWarn = isBoatObject(d.kind) && (d.kind === 'sail' || res.deployables.some(x => x.kind === 'sail')) ? sailWarning(res, { ...res, deployables: [...res.deployables, rd] }, rd.id) : null;
+      }
+      const warn = state.sailWarn;
+      if (ghost.children[0]) ghostify(ghost.children[0], warn ? FALL_MAT : GHOST_MAT);
+      if (warn) {
+        label.textContent = warn;
+        label.className = 'viewer3d__label viewer3d__label--bad';
+      } else if (DIRECTED_OBJECTS.includes(d.kind)) {
         const off = Math.round(((rd.rotation - (d.kind === 'steering-wheel' ? boatGrid(res) : boatBow(res))) % 360 + 360) % 360);
         label.textContent = d.kind === 'steering-wheel'
           ? `Нос корабля — по синей стрелке · ${off}° к сетке корпуса · R — повернуть на 45°`
@@ -1064,7 +1092,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     if (!manifest) for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
     // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
-    for (const d of resolved.deployables) s.content.add(buildDeployable(d));
+    const blocked = blockedSails(resolved);
+    for (const d of resolved.deployables) s.content.add(buildDeployable(d, blocked.has(d.id)));
     s.xray.clear();
     const cupboards = resolved.deployables.filter(d => d.kind === 'tool-cupboard');
     s.privInfo = cupboards.length ? buildings(resolved) : null;

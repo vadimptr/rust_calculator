@@ -93,12 +93,14 @@ const BOAT_OBJECT_YAW: Partial<Record<DeployableKind, number>> = { 'plank': -90 
 
 const ARROW_MAT = new THREE.MeshBasicMaterial({ color: 0x3b9dff, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
 
-function directionArrow(length: number): THREE.Mesh {
+const ARROW_BLOCKED_MAT = new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide });
+
+function directionArrow(length: number, blocked = false): THREE.Mesh {
   const shape = new THREE.Shape([
     new THREE.Vector2(0, -0.08), new THREE.Vector2(length - 0.35, -0.08), new THREE.Vector2(length - 0.35, -0.25),
     new THREE.Vector2(length, 0), new THREE.Vector2(length - 0.35, 0.25), new THREE.Vector2(length - 0.35, 0.08), new THREE.Vector2(0, 0.08),
   ]);
-  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), ARROW_MAT);
+  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), blocked ? ARROW_BLOCKED_MAT : ARROW_MAT);
   mesh.rotation.x = Math.PI / 2;
   mesh.position.y = 0.16;
   mesh.renderOrder = 30;
@@ -125,7 +127,7 @@ function hullModel(el: ResolvedElement, covered: number[]): THREE.Group | null {
   return g;
 }
 
-function buildBoatObject(d: ResolvedDeployable): THREE.Group {
+function buildBoatObject(d: ResolvedDeployable, blocked: boolean): THREE.Group {
   const g = new THREE.Group();
   const b = DECK[d.kind]!.box;
   const proxy = new THREE.Group();
@@ -136,7 +138,7 @@ function buildBoatObject(d: ResolvedDeployable): THREE.Group {
     g.add(placeModel(model, { yaw: BOAT_OBJECT_YAW[d.kind] ?? 90 * DEG }));
   }
   g.add(proxy);
-  if (DIRECTED_OBJECTS.includes(d.kind)) g.add(directionArrow(d.kind === 'sail' ? 2.2 : 1.4));
+  if (DIRECTED_OBJECTS.includes(d.kind)) g.add(directionArrow(d.kind === 'sail' ? 2.2 : 1.4, blocked));
   return g;
 }
 
@@ -813,10 +815,10 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
   return g;
 }
 
-export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
+export function buildDeployable(d: ResolvedDeployable, blocked = false): THREE.Object3D {
   let g: THREE.Group;
   if (isBoatObject(d.kind)) {
-    g = buildBoatObject(d);
+    g = buildBoatObject(d, blocked);
   } else if (d.kind === 'drop-box') {
     g = buildDropBox(d);
   } else if (d.kind === 'tool-cupboard') {

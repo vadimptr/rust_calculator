@@ -4,7 +4,7 @@ import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
-import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, isBoatScheme } from '../blueprint/boat.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
 import type { BoatResKey, Run } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
@@ -760,6 +760,12 @@ const BlueprintSection: React.FC = () => {
                 <ul className="boat__checks">
                   {boat.checks.map(c => <li key={c.text} className={c.ok ? 'boat__check--ok' : 'boat__check--bad'}>{c.ok ? '✓' : '✗'} {c.text}</li>)}
                 </ul>
+                {boat.blocked.size > 0 && (
+                  <ul className="boat__checks">
+                    {[...boat.blocked].map(([id, b]) => <li key={id} className="boat__check--bad">Парус «{id}»: {describeBlock(b)}</li>)}
+                  </ul>
+                )}
+                <p className="cost__note">Парус тянет, только если ему ничего не мешает сзади: из двух точек на высоте 3.4 и 4.7 м назад на 2 м проверяется сфера радиусом 0.5 м, и сверху не должно быть пола или крыши. Заслонённый парус в сцене со стрелкой красного цвета, в скорости он не учитывается.</p>
                 <div className="bp__section-title">Стоимость постройки</div>
                 <div className="cost__row">
                   {BOAT_RES_KEYS.filter(k => boat.build[k] > 0).map(k => (
