@@ -690,6 +690,7 @@
 "table",
 "tactical.gloves",
 "target.reactive",
+"tarp",
 "telephone",
 "tincan.alarm",
 "tool.binoculars",
@@ -816,6 +817,7 @@
 "bleeding",
 "blueprint",
 "blunt",
+"building-privilege",
 "bullet",
 "cable",
 "cart",
@@ -861,6 +863,8 @@
 "foundation",
 "foundation.steps",
 "foundation.triangle",
+"hull.triangle",
+"hull_square",
 "ramp",
 "roof",
 "roof.triangle",
@@ -873,6 +877,8 @@
 "wall.frame",
 "wall.half",
 "wall.low",
+"wall.low.barrier",
+"wall.low.cannon",
 "wall.window"
 ]
 }

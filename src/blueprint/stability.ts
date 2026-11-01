@@ -11,7 +11,7 @@
  * каждое ребро (верх стены, соседний пол, конёк крыши); крыши — её низкое ребро; лестницы — ячейка
  * под ней.
  */
-import { BLOCK_FEMALE_Y, KINDS, isSpiral, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
+import { BLOCK_FEMALE_Y, KINDS, isLowWall, isSpiral, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, SPIRAL_H, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedElement } from './types.ts';
 
 /** Коэффициенты `support` из префабов игры (2026-09). */
@@ -91,7 +91,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
     const s: Support[] = [];
     if (info.category === 'wallType') {
       const p = key(e.position);
-      s.push({ factor: e.kind === 'low-wall' ? SUPPORT.lowWallBottom : SUPPORT.wallBottom, candidates: [...not(cellEdge.get(p)), ...not(wallTop.get(p)), ...not(roofHigh.get(p))] });
+      s.push({ factor: isLowWall(e.kind) ? SUPPORT.lowWallBottom : SUPPORT.wallBottom, candidates: [...not(cellEdge.get(p)), ...not(wallTop.get(p)), ...not(roofHigh.get(p))] });
       const h = wallHeight(e.kind);
       for (const end of wallEnds(e)) {
         const near = walls.filter(w => w.id !== e.id

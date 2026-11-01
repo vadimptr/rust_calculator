@@ -1,0 +1,298 @@
+{
+  "$schema": "../schema/blueprint.schema.json",
+  "formatVersion": "2.0",
+  "meta": {
+    "name": "Шлюп",
+    "description": "Корпус 2×3 с клиновым носом, фальшборт, два паруса и мотор",
+    "gameVersion": "2026-10",
+    "tags": [
+      "example",
+      "boat"
+    ]
+  },
+  "defaults": {
+    "grade": "wood"
+  },
+  "elements": [
+    {
+      "id": "h1",
+      "kind": "boat-hull",
+      "position": [
+        -4.5,
+        0,
+        -1.5
+      ],
+      "rotation": 0
+    },
+    {
+      "id": "h2",
+      "kind": "boat-hull",
+      "position": [
+        -4.5,
+        0,
+        1.5
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "h3",
+      "kind": "boat-hull",
+      "position": [
+        -1.5,
+        0,
+        -1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "h4",
+      "kind": "boat-hull",
+      "position": [
+        -1.5,
+        0,
+        1.5
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "h5",
+      "kind": "boat-hull",
+      "position": [
+        1.5,
+        0,
+        -1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "h6",
+      "kind": "boat-hull",
+      "position": [
+        1.5,
+        0,
+        1.5
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "th1",
+      "kind": "boat-hull-triangle",
+      "position": [
+        3.866,
+        0,
+        -1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "th2",
+      "kind": "boat-hull-triangle",
+      "position": [
+        3.866,
+        0,
+        1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "blw1",
+      "kind": "boat-low-wall",
+      "position": [
+        -6,
+        0,
+        -1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "blw2",
+      "kind": "boat-low-wall",
+      "position": [
+        -4.5,
+        0,
+        -3
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "blw3",
+      "kind": "boat-low-wall",
+      "position": [
+        -4.5,
+        0,
+        3
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "blw4",
+      "kind": "boat-low-wall",
+      "position": [
+        -6,
+        0,
+        1.5
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "blw5",
+      "kind": "boat-low-wall",
+      "position": [
+        -1.5,
+        0,
+        -3
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "blw6",
+      "kind": "boat-low-wall",
+      "position": [
+        -1.5,
+        0,
+        3
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "blw7",
+      "kind": "boat-low-wall",
+      "position": [
+        1.5,
+        0,
+        -3
+      ],
+      "rotation": 270
+    },
+    {
+      "id": "blw8",
+      "kind": "boat-low-wall",
+      "position": [
+        1.5,
+        0,
+        3
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "blw9",
+      "kind": "boat-low-wall",
+      "position": [
+        4.299,
+        0,
+        -2.25
+      ],
+      "rotation": 300
+    },
+    {
+      "id": "blw10",
+      "kind": "boat-low-wall",
+      "position": [
+        4.299,
+        0,
+        -0.75
+      ],
+      "rotation": 60
+    },
+    {
+      "id": "blw11",
+      "kind": "boat-low-wall",
+      "position": [
+        4.299,
+        0,
+        0.75
+      ],
+      "rotation": 300
+    },
+    {
+      "id": "blw12",
+      "kind": "boat-low-wall",
+      "position": [
+        4.299,
+        0,
+        2.25
+      ],
+      "rotation": 60
+    }
+  ],
+  "deployables": [
+    {
+      "id": "helm1",
+      "kind": "steering-wheel",
+      "attach": {
+        "to": "h1",
+        "socket": "top"
+      },
+      "offset": [
+        0,
+        0.81
+      ],
+      "rotation": 0
+    },
+    {
+      "id": "eng1",
+      "kind": "small-engine",
+      "attach": {
+        "to": "h2",
+        "socket": "top"
+      },
+      "offset": [
+        -0.4,
+        0
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "sail1",
+      "kind": "sail",
+      "attach": {
+        "to": "h3",
+        "socket": "top"
+      },
+      "offset": [
+        0,
+        0
+      ],
+      "rotation": 180
+    },
+    {
+      "id": "sail2",
+      "kind": "sail",
+      "attach": {
+        "to": "h4",
+        "socket": "top"
+      },
+      "offset": [
+        0,
+        0
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "gun1",
+      "kind": "cannon",
+      "attach": {
+        "to": "h6",
+        "socket": "top"
+      },
+      "offset": [
+        0,
+        0
+      ],
+      "rotation": 90
+    },
+    {
+      "id": "anc1",
+      "kind": "anchor",
+      "attach": {
+        "to": "th1",
+        "socket": "top"
+      },
+      "offset": [
+        -0.433,
+        0.75
+      ],
+      "rotation": 120
+    }
+  ]
+}

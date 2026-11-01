@@ -18,11 +18,14 @@ available_items = {f[:-4] for f in os.listdir(items_dir) if f.endswith('.png') a
 
 UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined', 'door.hinged.wood', 'door.hinged.metal', 'door.hinged.toptier',
             'door.double.hinged.wood', 'door.double.hinged.metal', 'door.double.hinged.toptier', 'wall.frame.garagedoor',
-            'wall.window.glass.reinforced', 'wall.window.bars.toptier', 'wall.window.bars.metal', 'cupboard.tool', 'dropbox'}
+            'wall.window.glass.reinforced', 'wall.window.bars.toptier', 'wall.window.bars.metal', 'cupboard.tool', 'dropbox',
+            'sail', 'smallengine', 'steeringwheel.boat', 'anchor', 'cannon', 'plank', 'small_ramp', 'boatbuildingstation',
+            'lowgradefuel', 'tarp', 'gears', 'rope', 'workcart'}
 UI_BUILD = {'foundation', 'foundation.triangle', 'foundation.steps', 'ramp', 'floor', 'floor.triangle', 'floor.frame',
             'floor.triangle.frame', 'wall', 'wall.doorway', 'wall.window', 'wall.frame', 'wall.half', 'wall.low',
-            'stairs_l', 'stairs_u', 'stairs_spiral', 'stairs.triangle.spiral', 'roof', 'roof.triangle'}
-wanted = {'items': set(UI_ITEMS), 'ui': set(), 'build': set(UI_BUILD)}
+            'stairs_l', 'stairs_u', 'stairs_spiral', 'stairs.triangle.spiral', 'roof', 'roof.triangle',
+            'hull_square', 'hull.triangle', 'wall.low.barrier', 'wall.low.cannon'}
+wanted = {'items': set(UI_ITEMS), 'ui': {'building-privilege'}, 'build': set(UI_BUILD)}
 for path in glob.glob(os.path.join(docs, 'pages', '*.md')):
     text = open(path, encoding='utf8').read()
     explicit = ICON_FIELD_RE.findall(text) + SCHEME_ICON_RE.findall(text)

@@ -34,6 +34,19 @@ export const BLOCK_BOUNDS: Record<ElementKind, PrefabBounds> = {
   'spiral-stairs-triangle': { center: [0, 0.75, 1.3], extents: [1.4, 0.75, 1.2] },
   'roof': { center: [0, 1.5, 0], extents: [4.4, 1.4, 1.4] },
   'roof-triangle': { center: [0, 1.5, -0.433], extents: [4.4, 1.4, 1.4] },
+  'boat-hull': { center: [0, -1.5, 0], extents: [1.5, 1.5, 1.5] },
+  'boat-hull-triangle': { center: [0, -1.5, 1.3], extents: [1.5, 1.5, 1.3] },
+  'boat-floor': { center: [0, 0, 0], extents: [1.5, 0.1, 1.5] },
+  'boat-floor-frame': { center: [0, 0, 0], extents: [1.5, 0.1, 1.5] },
+  'boat-floor-triangle': { center: [0, 0, 1.3], extents: [1.5, 0.1, 1.3] },
+  'boat-floor-frame-triangle': { center: [0, 0, 1.3], extents: [1.5, 0.1, 1.3] },
+  'boat-wall': WALL,
+  'boat-doorway': WALL,
+  'boat-window': WALL,
+  'boat-low-wall': { center: [0, 0.5, 0], extents: [0.1, 0.5, 1.5] },
+  'boat-low-wall-barrier': { center: [0, 0.5, 0], extents: [0.1, 0.5, 1.5] },
+  'boat-low-wall-cannon': { center: [0, 0.5, 0], extents: [0.1, 0.5, 1.5] },
+  'boat-stairs': STAIRS,
 };
 
 export const CUPBOARD_BOUNDS: PrefabBounds = { center: [0.0008, 0.9543, 0.0113], extents: [0.5717, 0.9558, 0.4443] };

@@ -63,6 +63,31 @@ OBJECTS = {
     'reinforced-glass-window': ('assets/prefabs/building/wall.window.bars/wall.window.bars.toptier.prefab', None),
     'metal-embrasure': ('assets/prefabs/building/wall.window.embrasure/shutter.metal.embrasure.a.prefab', None),
 }
+BOAT_CORE = 'assets/prefabs/building boat/'
+BOAT_BLOCKS = {
+    'boat-hull': 'hull.square/hull_square.wood.prefab',
+    'boat-hull-triangle': 'hull.triangle/hull.triangle.wood.prefab',
+    'boat-floor': 'floor/floor.wood.prefab',
+    'boat-floor-triangle': 'floor.triangle/floor.triangle.wood.prefab',
+    'boat-floor-frame': 'floor.frame/floor.frame.wood.prefab',
+    'boat-floor-frame-triangle': 'floor.frame.triangle/floor.frame.triangle.wood.prefab',
+    'boat-wall': 'wall/wall.wood.full.prefab',
+    'boat-doorway': 'wall.doorway/wall.doorway.wood.prefab',
+    'boat-window': 'wall.window/wall.window.wood.prefab',
+    'boat-low-wall': 'wall.low/wall.low.wood.prefab',
+    'boat-low-wall-barrier': 'wall.low.barrier/wall.low.barrier.wood.prefab',
+    'boat-low-wall-cannon': 'wall.low.canon/wall.low.canon.wood.prefab',
+    'boat-stairs': 'stair/stair.wood.prefab',
+}
+BOAT_OBJECTS = {
+    'sail': 'sail/sail.deployed.prefab',
+    'small-engine': 'smallengine/smallengine.deployed.prefab',
+    'steering-wheel': 'steeringwheel/steeringwheel.deployed.prefab',
+    'anchor': 'anchor/anchor.deployed.prefab',
+    'cannon': 'cannon/cannon.deployed.prefab',
+    'plank': 'plank/plank.deployed.prefab',
+    'small-ramp': 'small_ramp/small_ramp.deployed.prefab',
+}
 SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3', 'destruct', 'debris', 'fade', 'wallpaper')
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',
                'roof.top.line', 'roof.left.line', 'roof.right.line', 'roof.bottom.line', 'ramp.75', 'stairs.spiral.landing'}
@@ -102,6 +127,7 @@ class Exporter:
     def __init__(self, env, scene, out, guids):
         self.env, self.scene, self.out, self.guids = env, scene, out, guids
         self.conditionals = True
+        self.skinned = False
         self.classes = {}
         self.textures = {}
         self.roots = {}
@@ -222,6 +248,8 @@ class Exporter:
             return
         mf = next((c for c in comps if c.type.name == 'MeshFilter'), None)
         mr = next((c for c in comps if c.type.name == 'MeshRenderer'), None)
+        if self.skinned and mf is None:
+            mf = mr = next((c for c in comps if c.type.name == 'SkinnedMeshRenderer'), None)
         for c in comps:
             if c.type.name == 'LODGroup':
                 for lod in c.read_typetree()['m_LODs'][1:]:
@@ -409,6 +437,33 @@ class Exporter:
         if not prims:
             return None
         return self.write_glb(name, prims)
+
+    def export_split(self, prefab, name):
+        root = self.roots.get(prefab.lower())
+        if root is None:
+            return None
+        mesh_list, nodes = [], []
+        for i, child in enumerate(self.children(root)):
+            items = []
+            self.collect(child, self.transform(root), items, set())
+            prims = []
+            for world, mf, mr in items:
+                for V, N, UV, T, mat in self.mesh_prims(mf, mr):
+                    V = (world[:3, :3] @ V.T).T + world[:3, 3]
+                    if N is not None:
+                        nm = np.linalg.inv(world[:3, :3]).T
+                        N = (nm @ N.T).T
+                        N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
+                    if np.linalg.det(world[:3, :3]) < 0:
+                        T = T[:, ::-1]
+                    prims.append((V, N, UV, T, mat))
+            if prims:
+                mesh_list.append((child.read_typetree()['m_Name'], prims))
+                nodes.append({'name': f"{child.read_typetree()['m_Name']}.{i}", 'mesh': len(mesh_list) - 1})
+        if not mesh_list:
+            return None
+        nodes.append({'name': name, 'children': list(range(len(nodes)))})
+        return self.write_scene(name, mesh_list, nodes, [len(nodes) - 1])
 
     def mesh_prims(self, mf, mr, materials=None):
         try:
@@ -652,6 +707,18 @@ for name, prefab, sub in jobs:
     if info:
         bases.add(name)
     print(name, info if info else 'нет основной части', file=sys.stderr)
+
+for name, path in BOAT_BLOCKS.items():
+    if only and not any(name.startswith(o) for o in only):
+        continue
+    ex.conditionals = False
+    print(name, ex.export_split(BOAT_CORE + path, name) or 'нет модели', file=sys.stderr)
+for name, path in BOAT_OBJECTS.items():
+    if only and not any(name.startswith(o) for o in only):
+        continue
+    ex.conditionals = ex.skinned = True
+    print(name, ex.export('assets/prefabs/deployable/boatbuilding/' + path, None, name) or 'нет модели', file=sys.stderr)
+    ex.skinned = False
 
 world_scene = next(sf for f in env.files.values() for n, sf in getattr(f, 'files', {}).items() if n.endswith('AssetScene-world'))
 terrain_ex = Exporter(env, world_scene, out, guids)

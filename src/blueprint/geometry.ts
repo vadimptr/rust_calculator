@@ -5,9 +5,10 @@
  */
 import {
   BLOCK_FEMALE_Y, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
-  edgeIndex, openingAccepts, socketsOf, stairTurn, wallHeight,
+  edgeIndex, isLowWall, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
 import { groundTerrain } from './terrain.ts';
+import { isBoatObject } from './boat.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
   Socket, Transform,
@@ -262,13 +263,22 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
     const parent = byId.get(d.attach.to);
     if (!parent) { issues.push(err('V02', d.id, `attach.to ссылается на несуществующий элемент «${d.attach.to}»`)); continue; }
     const info = KINDS[parent.kind];
-    if (d.kind === 'tool-cupboard') {
+    if (isBoatObject(d.kind)) {
+      if (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFrame || !info.boat) {
+        issues.push(err('V04', d.id, `${d.kind} ставится только на корпус или пол корабля, а не на ${parent.kind}`));
+        continue;
+      }
+      if (d.kind === 'small-engine' && !info.isFoundation) {
+        issues.push(err('V04', d.id, `Мотор ставится только на корпус, а не на ${parent.kind}`));
+        continue;
+      }
+    } else if (d.kind === 'tool-cupboard') {
       if (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFrame) {
         issues.push(err('V04', d.id, `Шкаф ставится только на top фундамента или пола, а не на ${parent.kind}`));
         continue;
       }
     } else if (d.kind === 'drop-box') {
-      if (d.attach.socket !== 'face' || info.category !== 'wallType' || info.opening || parent.kind === 'low-wall') {
+      if (d.attach.socket !== 'face' || info.category !== 'wallType' || info.opening || isLowWall(parent.kind)) {
         issues.push(err('V04', d.id, `Дроп-бокс вешается только на грань стены, а не на ${parent.kind}`));
         continue;
       }

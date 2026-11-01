@@ -4,8 +4,9 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, socketsOf, wallHeight } from './catalog.ts';
+import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
+import { EDGE_OBJECTS, OBJECT_HALF, OBJECT_LIMIT, isBoatObject } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -37,9 +38,15 @@ const ID_PREFIX: Record<ElementKind, string> = {
   'wall': 'w', 'half-wall': 'hw', 'low-wall': 'lw', 'doorway': 'dw', 'window-frame': 'wf', 'wall-frame': 'fr',
   'square-floor': 'c', 'triangle-floor': 'tc', 'floor-frame': 'ff', 'triangle-floor-frame': 'tff',
   'stairs-l-shape': 'st', 'u-shaped-stairs': 'us', 'spiral-stairs': 'ss', 'spiral-stairs-triangle': 'sst', 'roof': 'r', 'roof-triangle': 'tr',
+  'boat-hull': 'h', 'boat-hull-triangle': 'th', 'boat-floor': 'bc', 'boat-floor-triangle': 'btc', 'boat-floor-frame': 'bff', 'boat-floor-frame-triangle': 'btff',
+  'boat-wall': 'bw', 'boat-doorway': 'bdw', 'boat-window': 'bwf', 'boat-low-wall': 'blw', 'boat-low-wall-barrier': 'blb', 'boat-low-wall-cannon': 'blc',
+  'boat-stairs': 'bst',
 };
 
-const DEPLOY_PREFIX: Partial<Record<DeployableKind, string>> = { 'tool-cupboard': 'cup', 'drop-box': 'box' };
+const DEPLOY_PREFIX: Partial<Record<DeployableKind, string>> = {
+  'tool-cupboard': 'cup', 'drop-box': 'box', 'sail': 'sail', 'small-engine': 'eng', 'steering-wheel': 'helm', 'cannon': 'gun',
+  'anchor': 'anc', 'plank': 'plank', 'small-ramp': 'ramp',
+};
 
 /** Свободный id с префиксом по типу. */
 export function freshId(bp: Blueprint, kind: ElementKind | DeployableKind): string {
@@ -114,7 +121,7 @@ export function candidatePlacements(_bp: Blueprint, resolved: Resolved, kind: El
       const flips = twoSided || KINDS[kind].category === 'wallType' ? [false, true] : [false];
       const spiralOnSpiral = kind === 'spiral-stairs' && host.kind === 'spiral-stairs';
       const turnsList = kind === 'spiral-stairs-triangle' ? [0, 1, 2] : spiralOnSpiral ? [2, 0, 1, 3] : KINDS[kind].category === 'stairs' || (KINDS[kind].category === 'ramp' && socket === 'top') ? [0, 1, 2, 3] : [0];
-      const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation
+      const rises = KINDS[host.kind].isFoundation && KINDS[kind].isFoundation && !KINDS[kind].boat
         ? [-3, -1.5, 0, 1.5, 3] : kind === 'ramp' && socket === 'top' ? [0, RAMP_HIGH_RISE] : [0];
       for (const flip of flips) for (const turns of turnsList) for (const rise of rises) {
         const attach: Attach = { to: hostId, socket };
@@ -287,15 +294,36 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   const info = KINDS[host.kind];
   const taken = (bp.deployables ?? []).filter(d => d.attach.to === hostId);
   let deployable: Omit<Deployable, 'id'>;
-  if (kind === 'tool-cupboard') {
+  if (isBoatObject(kind)) {
+    if (info.category !== 'cell' || info.isFrame || !info.boat) return null;
+    if (kind === 'small-engine' && !info.isFoundation) return null;
+    const limit = OBJECT_LIMIT[kind];
+    if (limit !== undefined && (bp.deployables ?? []).filter(d => d.kind === kind).length >= limit) return null;
+    if (resolved.elements.some(e => KINDS[e.kind].category === 'stairs' && Math.hypot(e.position[0] - ht.position[0], e.position[2] - ht.position[2]) < 0.01 && Math.abs(e.position[1] - ht.position[1]) < 0.01)) return null;
+    const shape = info.shape ?? 'square';
+    if (EDGE_OBJECTS.includes(kind)) {
+      const k = outerEdge(resolved, ht, local[0], local[2]);
+      if (k === null || taken.some(d => EDGE_OBJECTS.includes(d.kind) && d.rotation === edgeAngle(shape, k))) return null;
+      const a = (edgeAngle(shape, k) * Math.PI) / 180;
+      deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [round3(apothem(shape) * Math.cos(a)), round3(apothem(shape) * Math.sin(a))], rotation: edgeAngle(shape, k) };
+    } else {
+      const bow = resolved.deployables.find(d => d.kind === 'steering-wheel')?.rotation ?? 0;
+      const turn = round3(norm360(bow + rotation - ht.rotation));
+      const spot = cupboardSpot(shape, local[0], local[2], turn, OBJECT_HALF[kind]!);
+      if (!spot) return null;
+      const half = OBJECT_HALF[kind]!;
+      if (taken.some(d => !EDGE_OBJECTS.includes(d.kind) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < Math.min(half[0], half[1]) + 0.4)) return null;
+      deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation: turn };
+    }
+  } else if (kind === 'tool-cupboard') {
     if (info.category !== 'cell' || info.isFrame) return null;
     if (taken.some(d => d.kind === 'tool-cupboard')) return null;
     if (resolved.elements.some(e => KINDS[e.kind].category === 'stairs' && Math.hypot(e.position[0] - ht.position[0], e.position[2] - ht.position[2]) < 0.01 && Math.abs(e.position[1] - ht.position[1]) < 0.01)) return null;
-    const spot = cupboardSpot(info.shape ?? 'square', local[0], local[2], rotation);
+    const spot = cupboardSpot(info.shape ?? 'square', local[0], local[2], rotation, CUPBOARD_HALF);
     if (!spot) return null;
     deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation };
   } else if (kind === 'drop-box') {
-    if (info.category !== 'wallType' || info.opening || host.kind === 'low-wall') return null;
+    if (info.category !== 'wallType' || info.opening || isLowWall(host.kind)) return null;
     const h = wallHeight(host.kind);
     deployable = { kind, attach: { to: hostId, socket: 'face' }, offset: [Math.round(Math.max(-1.1, Math.min(1.1, local[2])) * 10) / 10, Math.round(Math.max(0.4, Math.min(h - 0.4, local[1])) * 10) / 10], direction: local[0] >= 0 ? 'in' : 'out' };
   } else {
@@ -323,11 +351,26 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
 const CUPBOARD_HALF: [number, number] = [0.3, 0.55];
 const CUPBOARD_MARGIN = 0.13;
 
-function cupboardSpot(shape: 'square' | 'triangle', x: number, z: number, rotation: number): [number, number] | null {
+function outerEdge(resolved: Resolved, host: ResolvedElement, x: number, z: number): number | null {
+  const shape = KINDS[host.kind].shape ?? 'square';
+  const mids = edgeMids(host.kind, host);
+  const free = (k: number) => !resolved.elements.some(e => e.id !== host.id && KINDS[e.kind].category === 'cell' && Math.abs(e.position[1] - host.position[1]) < 0.05
+    && edgeMids(e.kind, e).some(m => Math.hypot(m[0] - mids[k][0], m[2] - mids[k][2]) < 0.05));
+  let best: number | null = null, bestD = Infinity;
+  for (let k = 0; k < edgeCount(shape); k++) {
+    if (!free(k)) continue;
+    const a = (edgeAngle(shape, k) * Math.PI) / 180;
+    const d = Math.hypot(apothem(shape) * Math.cos(a) - x, apothem(shape) * Math.sin(a) - z);
+    if (d < bestD) { bestD = d; best = k; }
+  }
+  return best;
+}
+
+function cupboardSpot(shape: 'square' | 'triangle', x: number, z: number, rotation: number, half: [number, number]): [number, number] | null {
   const verts = cellVertices(shape);
   const a = (rotation * Math.PI) / 180;
   const corners = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sz]) => {
-    const cx = sx * CUPBOARD_HALF[0], cz = sz * CUPBOARD_HALF[1];
+    const cx = sx * half[0], cz = sz * half[1];
     return [cx * Math.cos(a) - cz * Math.sin(a), cx * Math.sin(a) + cz * Math.cos(a)];
   });
   const edges = verts.map(([x1, z1], i) => {

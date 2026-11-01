@@ -31,6 +31,7 @@ export interface KindInfo {
   isFoundation?: boolean;
   isFrame?: boolean;      // рамы пола: top не принимает объекты
   opening?: 'single' | 'frame' | 'window';
+  boat?: boolean;
 }
 
 export const KINDS: Record<ElementKind, KindInfo> = {
@@ -55,7 +56,24 @@ export const KINDS: Record<ElementKind, KindInfo> = {
   // съезд и ступени: на ребро фундамента, занимают место соседней ячейки и спускаются на землю
   'ramp':                 { category: 'ramp', shape: 'square' },
   'foundation-steps':     { category: 'ramp', shape: 'square' },
+  'boat-hull':                 { category: 'cell', shape: 'square', isFoundation: true, boat: true },
+  'boat-hull-triangle':        { category: 'cell', shape: 'triangle', isFoundation: true, boat: true },
+  'boat-floor':                { category: 'cell', shape: 'square', boat: true },
+  'boat-floor-triangle':       { category: 'cell', shape: 'triangle', boat: true },
+  'boat-floor-frame':          { category: 'cell', shape: 'square', isFrame: true, boat: true },
+  'boat-floor-frame-triangle': { category: 'cell', shape: 'triangle', isFrame: true, boat: true },
+  'boat-wall':                 { category: 'wallType', height: WALL_H, boat: true },
+  'boat-doorway':              { category: 'wallType', height: WALL_H, boat: true },
+  'boat-window':               { category: 'wallType', height: WALL_H, boat: true },
+  'boat-low-wall':             { category: 'wallType', height: LOW_WALL_H, boat: true },
+  'boat-low-wall-barrier':     { category: 'wallType', height: LOW_WALL_H, boat: true },
+  'boat-low-wall-cannon':      { category: 'wallType', height: LOW_WALL_H, boat: true },
+  'boat-stairs':               { category: 'stairs', boat: true },
 };
+
+export function isLowWall(kind: ElementKind): boolean {
+  return KINDS[kind].category === 'wallType' && KINDS[kind].height === LOW_WALL_H;
+}
 
 export const SINGLE_DOORS: DeployableKind[] = ['wooden-door', 'sheet-metal-door', 'armored-door'];
 export const FRAME_DOORS: DeployableKind[] = [
@@ -137,6 +155,7 @@ export function canAttach(
 ): boolean {
   const p = KINDS[parent];
   const c = KINDS[child];
+  if (!!p.boat !== !!c.boat) return false;
   const pEdge = edgeIndex(socket) !== null;
   const cEdge = edgeIndex(selfSocket) !== null;
 
@@ -166,7 +185,7 @@ export function canAttach(
     return false;
   }
   if (p.category === 'wallType' && socket === 'top') {
-    if (parent === 'low-wall') return false;
+    if (isLowWall(parent)) return false;
     // на верх стены — только полы и рамы: фундаменты стоят на земле (уровни полустены и стены из игры пока не моделируются)
     if (c.category === 'cell' && cEdge) return !c.isFoundation;
     if (c.category === 'wallType' && selfSocket === 'bottom') return true;

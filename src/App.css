@@ -1996,6 +1996,22 @@
   color: var(--text-muted);
 }
 
+.boat__checks {
+  list-style: none;
+  margin: 0.2rem 0 0.8rem;
+  padding: 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.boat__check--ok {
+  color: var(--text-secondary);
+}
+
+.boat__check--bad {
+  color: #ff8a6a;
+}
+
 .cost__days {
   width: 100%;
   border-collapse: collapse;

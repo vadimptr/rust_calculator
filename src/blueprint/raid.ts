@@ -5,12 +5,12 @@
 import { EXPLOSIVE_COSTS, RAID_RULES } from '../data/raidData.ts';
 import type { ExplosiveType, RaidCostRule, RaidMethod } from '../types/index.ts';
 import { KINDS, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
-import type { DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { BoatObjectKind, DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 
 export const OUTSIDE = '__outside__';
 
 /** Рейд дверей и вставок в окна (обновление 2026-09). optimal — минимум серы. */
-export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | 'drop-box'>, RaidCostRule> = {
+export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | 'drop-box' | BoatObjectKind>, RaidCostRule> = {
   'wooden-door':             { blockId: 'wooden-door', blockName: 'Деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
   'wooden-double-door':      { blockId: 'wooden-double-door', blockName: 'Двойная деревянная дверь', satchel: 2, rocket: 1, c4: 1, explosiveAmmo: 18, optimal: { explosiveAmmo: 18 } },
   'sheet-metal-door':        { blockId: 'sheet-metal-door', blockName: 'Металлическая дверь', satchel: 4, rocket: 2, c4: 1, explosiveAmmo: 63, optimal: { explosiveAmmo: 63 } },

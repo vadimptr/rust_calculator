@@ -25,6 +25,8 @@ export const COST_MULTIPLIER: Record<ElementKind, number> = {
   'square-floor': 0.5, 'triangle-floor': 0.25, 'floor-frame': 0.5, 'triangle-floor-frame': 0.25,
   'stairs-l-shape': 1, 'u-shaped-stairs': 1, 'spiral-stairs': 1, 'spiral-stairs-triangle': 1,
   'roof': 0.5, 'roof-triangle': 0.5,
+  'boat-hull': 1, 'boat-hull-triangle': 0.5, 'boat-floor': 0.5, 'boat-floor-triangle': 0.25, 'boat-floor-frame': 0.5, 'boat-floor-frame-triangle': 0.25,
+  'boat-wall': 1, 'boat-doorway': 0.7, 'boat-window': 0.7, 'boat-low-wall': 0.5, 'boat-low-wall-barrier': 0.5, 'boat-low-wall-cannon': 0.5, 'boat-stairs': 1,
 };
 
 /** Цена крафта объектов (только ресурсы). */

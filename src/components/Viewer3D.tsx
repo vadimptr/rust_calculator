@@ -20,6 +20,7 @@ import type { Buildings, PrivilegeZone } from '../blueprint/privilege.ts';
 import { cornerPosts, gableWalls, hipRoofs, triangleRoofFillers } from '../blueprint/conditional.ts';
 import { COLLAPSE, computeStability } from '../blueprint/stability.ts';
 import { caveView } from '../blueprint/terrain.ts';
+import { EDGE_OBJECTS, coveredHullSides, isBoatObject } from '../blueprint/boat.ts';
 import type { Placement } from '../blueprint/editor.ts';
 import RadialMenu, { radialOuter } from './RadialMenu';
 import type { RadialMenuItem } from './RadialMenu';
@@ -65,6 +66,7 @@ interface Viewer3DProps {
   showSockets?: boolean;
   fov?: number;
   showPrivilege?: boolean;
+  water?: boolean;
 }
 
 interface Hit {
@@ -158,6 +160,16 @@ function socketBoxMesh(box: AimBox, selected: boolean): THREE.Object3D {
 const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.9 });
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const EYE_HEIGHT = 1.6;
+const WATER_Y = -1.5;
+const BOAT_DEPLOY_HINT: Partial<Record<DeployableKind, string>> = {
+  'small-engine': 'Мотор — только на корпус, не больше 5 и не в тесноте',
+  'sail': 'Парус — на корпус или пол корабля, не больше 10 и не в тесноте',
+  'steering-wheel': 'Штурвал — на корпус или пол корабля, только один',
+  'cannon': 'Пушка — на корпус или пол корабля, не в тесноте',
+  'anchor': 'Якорь — на корпус или пол со свободным внешним ребром',
+  'plank': 'Доска — на корпус или пол со свободным внешним ребром',
+  'small-ramp': 'Трап — на корпус или пол со свободным внешним ребром',
+};
 const COLLIDER_MAT = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
 const XRAY_MAT = new THREE.MeshBasicMaterial({ color: 0x4cff6a, transparent: true, opacity: 0.35, depthTest: false, depthWrite: false });
 const FREE_TERRAIN_DEPTH = 2.6;
@@ -263,7 +275,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false, water = false }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -328,11 +340,25 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = GROUND_Y;
     ground.receiveShadow = true;
+    ground.name = 'ground';
     scene.add(ground);
 
     const grid = new THREE.GridHelper(60, 20, 0x4a4036, 0x2a241e);
     grid.position.y = GROUND_Y + 0.01;
+    grid.name = 'grid';
     scene.add(grid);
+
+    const sea = new THREE.Mesh(
+      new THREE.PlaneGeometry(400, 400),
+      new THREE.MeshStandardMaterial({ color: 0x1d4a5c, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.72, depthWrite: false }),
+    );
+    sea.rotation.x = -Math.PI / 2;
+    sea.position.y = WATER_Y;
+    sea.receiveShadow = true;
+    sea.renderOrder = 10;
+    sea.name = 'water';
+    sea.visible = false;
+    scene.add(sea);
 
     const world = new THREE.Group();
     world.scale.z = -1;
@@ -729,9 +755,16 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       // объект
       const local = toLocal(hostEl, hit.point);
       // шкаф: R поворачивает на 90° (прямо / боком)
-      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : 0;
+      const turn = ed.deployKind === 'tool-cupboard' || (isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind)) ? (state.alt % 4) * 90 : 0;
       const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn) : null;
-      if (!dp) return none();
+      if (!dp) {
+        none();
+        if (isBoatObject(ed.deployKind)) {
+          label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя';
+          label.className = 'viewer3d__label viewer3d__label--bad';
+        }
+        return;
+      }
       const d = { ...dp.deployable };
       // дроп-бокс: R меняет направление передачи
       if (d.kind === 'drop-box' && state.alt % 2 === 1) d.direction = d.direction === 'in' ? 'out' : 'in';
@@ -740,7 +773,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         direction: d.direction, ...dp.transform,
       };
       // шкаф и дроп-бокс едут за курсором: ключ без смещения, позиция обновляется на месте
-      const posKey = d.kind === 'tool-cupboard' ? '' : d.kind === 'drop-box' ? `dir:${d.direction}` : JSON.stringify(d);
+      const posKey = d.kind === 'tool-cupboard' || (isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind)) ? '' : d.kind === 'drop-box' ? `dir:${d.direction}` : JSON.stringify(d);
       showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d, t: { position: rd.position, rotation: rd.rotation } }, () => ghostify(buildDeployable(rd), GHOST_MAT));
       if (!posKey || posKey.startsWith('dir:')) {
         const g = ghost.children[0];
@@ -988,6 +1021,17 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     return undefined;
   }, [mode]);
 
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    s.scene.getObjectByName('ground')!.visible = !water;
+    s.scene.getObjectByName('grid')!.visible = !water;
+    s.scene.getObjectByName('water')!.visible = water;
+    const sky = water ? 0x1b2630 : 0x161412;
+    (s.scene.background as THREE.Color).set(sky);
+    s.scene.fog?.color.set(sky);
+  }, [water]);
+
   const [modelsVersion, setModelsVersion] = useState(0);
   useEffect(() => onModelLoaded(() => setModelsVersion(v => v + 1)), []);
 
@@ -1008,7 +1052,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     const hips = hipRoofs(resolved);
     const manifest = pieceManifest();
     s.pieces = manifest ? activePieces(manifest, resolved, entityMatrix) : new Map();
-    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id), s.pieces.get(el.id)));
+    const hullSides = coveredHullSides(resolved);
+    for (const el of resolved.elements) s.content.add(buildElement(el, gables.get(el.id), hips.get(el.id), s.pieces.get(el.id), hullSides.get(el.id)));
     // угловые стойки стен: без id, клик проходит сквозь них к стенам
     if (!manifest) for (const post of cornerPosts(resolved)) { const o = buildCornerPost(post); o.traverse(n => { n.raycast = () => {}; }); s.content.add(o); }
     // вставки между треугольными крышами в ряд — часть крыши-владельца (киянка бьёт по ней)

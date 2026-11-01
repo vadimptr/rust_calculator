@@ -1,4 +1,5 @@
 import type { Blueprint } from './types.ts';
+import { BOAT_TAG } from './boat.ts';
 
 export interface SchemeSummary {
   id: string;
@@ -40,11 +41,14 @@ export const getScheme = (id: string) => call<Scheme>('GET', `/api/schemes/${enc
 export const createScheme = (name: string, doc: Blueprint) => call<Scheme>('POST', '/api/schemes', { name, doc });
 export const saveScheme = (id: string, name: string, doc: Blueprint, version: number) => call<Scheme>('PUT', `/api/schemes/${encodeURIComponent(id)}`, { name, doc, version });
 
-export function emptyScheme(name: string, rock: boolean): Blueprint {
+export type SceneKind = 'empty' | 'rock' | 'boat';
+
+export function emptyScheme(name: string, scene: SceneKind): Blueprint {
+  const rock = scene === 'rock';
   return {
     formatVersion: '2.0',
-    meta: { name, gameVersion: '2026-10', tags: rock ? ['custom', 'god-rock'] : ['custom'] },
-    defaults: { grade: 'twig' },
+    meta: { name, gameVersion: '2026-10', tags: rock ? ['custom', 'god-rock'] : scene === 'boat' ? ['custom', BOAT_TAG] : ['custom'] },
+    defaults: { grade: scene === 'boat' ? 'wood' : 'twig' },
     elements: [],
     deployables: [],
     ...(rock ? { terrain: [{ id: 'rock', kind: 'god-rock' as const, position: [0, 0, 0] as [number, number, number], rotation: 0, scale: 1 }] } : {}),

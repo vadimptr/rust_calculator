@@ -92,7 +92,20 @@
         "spiral-stairs",
         "spiral-stairs-triangle",
         "roof",
-        "roof-triangle"
+        "roof-triangle",
+        "boat-hull",
+        "boat-hull-triangle",
+        "boat-floor",
+        "boat-floor-triangle",
+        "boat-floor-frame",
+        "boat-floor-frame-triangle",
+        "boat-wall",
+        "boat-doorway",
+        "boat-window",
+        "boat-low-wall",
+        "boat-low-wall-barrier",
+        "boat-low-wall-cannon",
+        "boat-stairs"
       ]
     },
     "DeployableKind": {
@@ -110,7 +123,14 @@
         "reinforced-glass-window",
         "metal-window-bars",
         "metal-embrasure",
-        "drop-box"
+        "drop-box",
+        "sail",
+        "small-engine",
+        "steering-wheel",
+        "cannon",
+        "anchor",
+        "plank",
+        "small-ramp"
       ]
     },
     "Socket": {
@@ -438,7 +458,7 @@
         },
         "offset": {
           "$ref": "#/$defs/Vec2",
-          "description": "Шкаф: смещение [x, z] в метрах от центра ячейки. Дроп-бокс: [вдоль стены, высота] от середины низа стены."
+          "description": "Шкаф: смещение [x, z] в метрах от центра ячейки. Дроп-бокс: [вдоль стены, высота] от середины низа стены. Объекты корабля: смещение [x, z] от центра корпуса или пола."
         },
         "rotation": {
           "type": "number",
@@ -488,7 +508,16 @@
           "if": {
             "properties": {
               "kind": {
-                "const": "tool-cupboard"
+                "enum": [
+                  "tool-cupboard",
+                  "sail",
+                  "small-engine",
+                  "steering-wheel",
+                  "cannon",
+                  "anchor",
+                  "plank",
+                  "small-ramp"
+                ]
               }
             }
           },
@@ -544,7 +573,14 @@
                 "kind": {
                   "enum": [
                     "tool-cupboard",
-                    "drop-box"
+                    "drop-box",
+                    "sail",
+                    "small-engine",
+                    "steering-wheel",
+                    "cannon",
+                    "anchor",
+                    "plank",
+                    "small-ramp"
                   ]
                 }
               }

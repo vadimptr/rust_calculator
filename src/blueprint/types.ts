@@ -24,7 +24,20 @@ export type ElementKind =
   | 'roof'
   | 'roof-triangle'
   | 'ramp'
-  | 'foundation-steps';
+  | 'foundation-steps'
+  | 'boat-hull'
+  | 'boat-hull-triangle'
+  | 'boat-floor'
+  | 'boat-floor-triangle'
+  | 'boat-floor-frame'
+  | 'boat-floor-frame-triangle'
+  | 'boat-wall'
+  | 'boat-doorway'
+  | 'boat-window'
+  | 'boat-low-wall'
+  | 'boat-low-wall-barrier'
+  | 'boat-low-wall-cannon'
+  | 'boat-stairs';
 
 export type DeployableKind =
   | 'tool-cupboard'
@@ -39,7 +52,10 @@ export type DeployableKind =
   | 'reinforced-glass-window'
   | 'metal-window-bars'
   | 'metal-embrasure'
-  | 'drop-box';
+  | 'drop-box'
+  | BoatObjectKind;
+
+export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'cannon' | 'anchor' | 'plank' | 'small-ramp';
 
 export type TerrainKind = 'god-rock' | 'hot-air-balloon';
 

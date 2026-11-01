@@ -33,6 +33,13 @@ const DOOR_COLORS: Record<DeployableKind, number> = {
   'reinforced-glass-window': 0x7fb6cc,
   'metal-window-bars': 0x3a3f45,
   'metal-embrasure': 0x5a4a3e,
+  'sail': 0xd8cfb8,
+  'small-engine': 0x4a4f55,
+  'steering-wheel': 0x7a4a1e,
+  'cannon': 0x3a3d42,
+  'anchor': 0x5a4a3e,
+  'plank': 0x8b5a2b,
+  'small-ramp': 0x8b5a2b,
 };
 
 const TEX_DIR = '/textures/game/';
@@ -72,10 +79,58 @@ const BLOCK_MODELS: Partial<Record<ElementKind, Placement>> = {
   'stairs-l-shape': { yaw: 0 }, 'u-shaped-stairs': { yaw: 0 }, 'spiral-stairs': { yaw: 0 }, 'spiral-stairs-triangle': TRIANGLE,
   'roof': { yaw: 90 * DEG }, 'roof-triangle': { yaw: 90 * DEG },
   'ramp': { yaw: 0, offset: [-1.5, -RAMP_MALE_H.ramp!, 0] }, 'foundation-steps': { yaw: 0, offset: [-1.5, -RAMP_MALE_H['foundation-steps']!, 0] },
+  'boat-hull': SQUARE, 'boat-floor': SQUARE, 'boat-floor-frame': SQUARE,
+  'boat-hull-triangle': TRIANGLE, 'boat-floor-triangle': TRIANGLE, 'boat-floor-frame-triangle': TRIANGLE,
+  'boat-wall': WALL, 'boat-doorway': WALL, 'boat-window': WALL, 'boat-low-wall': WALL, 'boat-low-wall-barrier': WALL, 'boat-low-wall-cannon': WALL,
+  'boat-stairs': { yaw: 0 },
 };
 const OBJECT_YAW: Partial<Record<DeployableKind, number>> = {
   'tool-cupboard': 90 * DEG, 'drop-box': 90 * DEG,
 };
+
+const BOAT_OBJECT_YAW: Partial<Record<DeployableKind, number>> = { 'plank': -90 * DEG };
+
+const BOAT_OBJECT_BOX: Partial<Record<DeployableKind, { x: [number, number]; z: number; h: number }>> = {
+  'sail': { x: [-0.65, 0.65], z: 1.7, h: 6.25 },
+  'small-engine': { x: [-0.69, 0.69], z: 0.42, h: 1.73 },
+  'steering-wheel': { x: [-0.36, 0.36], z: 0.56, h: 1.44 },
+  'cannon': { x: [-0.78, 1.32], z: 0.63, h: 1.26 },
+  'anchor': { x: [-1.1, 1.5], z: 0.9, h: 1.77 },
+  'plank': { x: [-0.23, 2.82], z: 0.53, h: 0.44 },
+  'small-ramp': { x: [-1.17, 7.9], z: 1.49, h: 2.86 },
+};
+
+function hullModel(el: ResolvedElement, covered: number[]): THREE.Group | null {
+  const model = gameModel(el.kind);
+  if (!model) return null;
+  const g = placeModel(model, BLOCK_MODELS[el.kind]!);
+  if (!covered.length) return g;
+  g.updateMatrixWorld(true);
+  const shape = KINDS[el.kind].shape ?? 'square';
+  const n = shape === 'square' ? 4 : 3;
+  g.traverse(o => {
+    if (!o.name.startsWith('m_boat_wall_hull')) return;
+    const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    const a = ((Math.atan2(c.z, c.x) / DEG) % 360 + 360) % 360;
+    const k = Math.round(a / (360 / n)) % n;
+    if (covered.includes(k)) o.visible = false;
+  });
+  return g;
+}
+
+function buildBoatObject(d: ResolvedDeployable): THREE.Group {
+  const g = new THREE.Group();
+  const b = BOAT_OBJECT_BOX[d.kind]!;
+  const proxy = new THREE.Group();
+  proxy.add(withEdges(box(b.x[1] - b.x[0], b.h, 2 * b.z, (b.x[0] + b.x[1]) / 2, b.h / 2, 0), DOOR_COLORS[d.kind]));
+  const model = gameModel(d.kind);
+  if (model) {
+    hideProxy(proxy);
+    g.add(placeModel(model, { yaw: BOAT_OBJECT_YAW[d.kind] ?? 90 * DEG }));
+  }
+  g.add(proxy);
+  return g;
+}
 
 export function entityMatrix(el: ResolvedElement): number[] | null {
   const p = BLOCK_MODELS[el.kind];
@@ -310,6 +365,7 @@ function buildWindowInsert(d: ResolvedDeployable): THREE.Group {
 const EDGE_COLOR = 0x0e0c0a;
 const WALL_T = 0.25;
 const FOUNDATION_D = 0.6;
+const BOAT_HULL_D = 3;
 /** Проём в doorway: ширина × высота; дверь заполняет его целиком. */
 const DOORWAY_W = 1.3;
 const DOORWAY_H = 2.2;
@@ -581,6 +637,7 @@ function elementParts(el: ResolvedElement): THREE.BufferGeometry[] {
   switch (info.category) {
     case 'cell':
       // фундамент на высоте полустены или стены доходит до земли
+      if (info.isFoundation && info.boat) return [cellSlab(info.shape!, BOAT_HULL_D)];
       if (info.isFoundation) return [cellSlab(info.shape!, FOUNDATION_D + Math.max(0, el.position[1]))];
       if (info.isFrame) return [cellSlab(info.shape!, FLOOR_T, 0.72)];
       return [cellSlab(info.shape!, FLOOR_T)];
@@ -691,14 +748,20 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 }
 
 /** Построить блок; gable — фронтон для полной стены, hips — вальмы крыши (conditional.ts). */
-export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[], pieces?: string[]): THREE.Object3D {
+export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[], pieces?: string[], covered: number[] = []): THREE.Object3D {
   const g = new THREE.Group();
   const geos = gable && el.kind === 'wall' ? [gableGeometry(gable.peak)]
     : hips?.length && el.kind === 'roof' ? [hipRoofGeometry(hips)] : elementParts(el);
   const topFace = KINDS[el.kind].category === 'roof' ? 'roof' : 'top';
   const parts: THREE.Object3D[] = geos.map(part => gradeMesh(part, el.grade, topFace));
   const manifest = pieceManifest();
-  if (manifest && el.inverted) {
+  if (KINDS[el.kind].boat) {
+    const model = KINDS[el.kind].isFoundation ? hullModel(el, covered) : gameModel(el.kind);
+    if (model) {
+      for (const p of parts) hideProxy(p);
+      parts.push(KINDS[el.kind].isFoundation ? model : placeModel(model, BLOCK_MODELS[el.kind]!));
+    }
+  } else if (manifest && el.inverted) {
     for (const p of parts) hideProxy(p);
   } else if (manifest?.[el.kind] && pieces) {
     const model = piecesModel(el, pieces);
@@ -744,7 +807,9 @@ function buildDropBox(d: ResolvedDeployable): THREE.Group {
 
 export function buildDeployable(d: ResolvedDeployable): THREE.Object3D {
   let g: THREE.Group;
-  if (d.kind === 'drop-box') {
+  if (BOAT_OBJECT_BOX[d.kind]) {
+    g = buildBoatObject(d);
+  } else if (d.kind === 'drop-box') {
     g = buildDropBox(d);
   } else if (d.kind === 'tool-cupboard') {
     g = new THREE.Group();

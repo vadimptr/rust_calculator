@@ -3,7 +3,9 @@ import Viewer3D from './Viewer3D';
 import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
-import type { SchemeSummary } from '../blueprint/schemesApi.ts';
+import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, OBJECT_COST, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, isBoatScheme } from '../blueprint/boat.ts';
+import type { BoatResKey, Run } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
@@ -66,6 +68,26 @@ const KIND_LABELS: Record<string, string> = {
   'metal-window-bars': 'Металлическая решётка',
   'metal-embrasure': 'Металлическая амбразура',
   'drop-box': 'Дроп-бокс',
+  'boat-hull': 'Корпус',
+  'boat-hull-triangle': 'Треугольный корпус',
+  'boat-floor': 'Пол',
+  'boat-floor-triangle': 'Треугольный пол',
+  'boat-floor-frame': 'Рама пола',
+  'boat-floor-frame-triangle': 'Треугольная рама пола',
+  'boat-wall': 'Стена',
+  'boat-doorway': 'Дверной проём',
+  'boat-window': 'Оконный проём',
+  'boat-low-wall': 'Низкая стена',
+  'boat-low-wall-barrier': 'Низкая стена с ограждением',
+  'boat-low-wall-cannon': 'Низкая стена с портом для пушки',
+  'boat-stairs': 'Лестница',
+  'sail': 'Парус',
+  'small-engine': 'Лодочный мотор',
+  'steering-wheel': 'Штурвал',
+  'cannon': 'Пушка',
+  'anchor': 'Якорь',
+  'plank': 'Доска',
+  'small-ramp': 'Трап',
 };
 
 const GRADE_TITLES: Record<Grade, string> = {
@@ -86,6 +108,9 @@ const SHORT_LABELS: Record<string, string> = {
   'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
   'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка', 'metal-embrasure': 'Амбразура',
   'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
+  'boat-hull': 'Корпус', 'boat-hull-triangle': 'Тр. корпус', 'boat-floor': 'Пол', 'boat-floor-triangle': 'Тр. пол', 'boat-floor-frame': 'Рама пола', 'boat-floor-frame-triangle': 'Тр. рама',
+  'boat-wall': 'Стена', 'boat-doorway': 'Проём', 'boat-window': 'Окно', 'boat-low-wall': 'Низкая', 'boat-low-wall-barrier': 'Ограждение', 'boat-low-wall-cannon': 'Порт', 'boat-stairs': 'Лестница',
+  'sail': 'Парус', 'small-engine': 'Мотор', 'steering-wheel': 'Штурвал', 'cannon': 'Пушка', 'anchor': 'Якорь', 'plank': 'Доска', 'small-ramp': 'Трап',
 };
 
 const BUILD_ICONS: Record<ElementKind, string> = {
@@ -93,6 +118,9 @@ const BUILD_ICONS: Record<ElementKind, string> = {
   'square-floor': 'floor', 'triangle-floor': 'floor.triangle', 'floor-frame': 'floor.frame', 'triangle-floor-frame': 'floor.triangle.frame',
   'wall': 'wall', 'doorway': 'wall.doorway', 'window-frame': 'wall.window', 'wall-frame': 'wall.frame', 'half-wall': 'wall.half', 'low-wall': 'wall.low',
   'stairs-l-shape': 'stairs_l', 'u-shaped-stairs': 'stairs_u', 'spiral-stairs': 'stairs_spiral', 'spiral-stairs-triangle': 'stairs.triangle.spiral', 'roof': 'roof', 'roof-triangle': 'roof.triangle',
+  'boat-hull': 'hull_square', 'boat-hull-triangle': 'hull.triangle', 'boat-floor': 'floor', 'boat-floor-triangle': 'floor.triangle', 'boat-floor-frame': 'floor.frame', 'boat-floor-frame-triangle': 'floor.triangle.frame',
+  'boat-wall': 'wall', 'boat-doorway': 'wall.doorway', 'boat-window': 'wall.window', 'boat-low-wall': 'wall.low', 'boat-low-wall-barrier': 'wall.low.barrier', 'boat-low-wall-cannon': 'wall.low.cannon',
+  'boat-stairs': 'foundation.steps',
 };
 
 const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
@@ -106,6 +134,12 @@ const BUILD_DESCRIPTIONS: Record<ElementKind, string> = {
   'stairs-l-shape': 'Лестница буквой Г', 'u-shaped-stairs': 'Лестница буквой П',
   'spiral-stairs': 'Винтовая лестница на половину высоты блока',
   'spiral-stairs-triangle': 'Винтовая лестница в треугольнике, на половину высоты блока', 'roof': 'Шапка для твоего дома', 'roof-triangle': 'Шапка для твоего дома',
+  'boat-hull': 'Основа корабля, ставится на воду', 'boat-hull-triangle': 'Основа корабля, клином к носу снижает сопротивление',
+  'boat-floor': 'Палуба на верху стен', 'boat-floor-triangle': 'Палуба на верху стен',
+  'boat-floor-frame': 'Рама палубы для люков', 'boat-floor-frame-triangle': 'Треугольная рама палубы',
+  'boat-wall': 'Борт или переборка', 'boat-doorway': 'Проход в рубку', 'boat-window': 'Стена с окном',
+  'boat-low-wall': 'Фальшборт в треть высоты', 'boat-low-wall-barrier': 'Фальшборт с ограждением', 'boat-low-wall-cannon': 'Фальшборт с портом для пушки',
+  'boat-stairs': 'Прямая лестница на палубу выше',
 };
 
 const DEPLOY_ICONS: Record<DeployableKind, string> = {
@@ -113,6 +147,22 @@ const DEPLOY_ICONS: Record<DeployableKind, string> = {
   'wooden-double-door': 'door.double.hinged.wood', 'sheet-metal-double-door': 'door.double.hinged.metal', 'armored-double-door': 'door.double.hinged.toptier',
   'garage-door': 'wall.frame.garagedoor', 'strengthened-glass-window': 'wall.window.glass.reinforced', 'reinforced-glass-window': 'wall.window.bars.toptier',
   'metal-window-bars': 'wall.window.bars.metal', 'metal-embrasure': 'shutter.metal.embrasure.a', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
+  'sail': 'sail', 'small-engine': 'smallengine', 'steering-wheel': 'steeringwheel.boat', 'cannon': 'cannon', 'anchor': 'anchor', 'plank': 'plank', 'small-ramp': 'small_ramp',
+};
+
+const DEPLOY_DESCRIPTIONS: Partial<Record<DeployableKind, string>> = {
+  'sail': `Тяга ${SAIL_THRUST} Н по направлению паруса · на корпус или пол · R — повернуть`,
+  'small-engine': `Тяга ${ENGINE_THRUST} Н, назад вдвое меньше · только на корпус · ${ENGINE_FUEL_PER_SEC} топлива в секунду`,
+  'steering-wheel': 'Нужен ровно один: задаёт нос корабля · R — повернуть',
+  'cannon': 'На корпус или пол · R — повернуть',
+  'anchor': 'На внешнее ребро палубы, висит за бортом',
+  'plank': 'Сходни на внешнем ребре палубы',
+  'small-ramp': 'Трап на внешнем ребре палубы',
+};
+
+const blockDesc = (k: ElementKind) => {
+  const b = BOAT_BLOCKS[k];
+  return b ? `${BUILD_DESCRIPTIONS[k]} · ${b.mass} кг · ${b.health} HP` : BUILD_DESCRIPTIONS[k];
 };
 
 /** Радиальные меню: блоки строительного плана, объекты, апгрейд и снос киянкой. */
@@ -124,6 +174,32 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
     { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'rotate', label: 'Повернуть', img: '/icons/grade/rotate.webp', mono: true }, { id: 'remove', label: 'Снести' },
   ],  view: [],
 };
+
+const RADIAL_BOAT: Record<EditorTool, RadialItem[]> = {
+  build: BOAT_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/build/${BUILD_ICONS[k]}.webp`, desc: blockDesc(k), mono: true })),
+  deploy: BOAT_DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/items/${DEPLOY_ICONS[k]}.webp`, desc: DEPLOY_DESCRIPTIONS[k] })),
+  hammer: [{ id: 'rotate', label: 'Повернуть', img: '/icons/grade/rotate.webp', mono: true }, { id: 'remove', label: 'Снести' }],
+  view: [],
+};
+
+const BOAT_RES_ICONS: Record<BoatResKey, string> = {
+  wood: '/icons/items/wood.webp', lgf: '/icons/items/lowgradefuel.webp', metal: '/icons/items/metal.fragments.webp', hqm: '/icons/items/metal.refined.webp',
+  tarp: '/icons/items/tarp.webp', gears: '/icons/items/gears.webp', rope: '/icons/items/rope.webp',
+};
+const BOAT_RES_LABELS: Record<BoatResKey, string> = {
+  wood: 'Дерево', lgf: 'Низкосортное топливо', metal: 'Металлические фрагменты', hqm: 'МВК', tarp: 'Брезент', gears: 'Шестерёнки', rope: 'Верёвка',
+};
+
+const speedText = (v: number) => `${v.toFixed(1)} м/с · ${Math.round(v * 3.6)} км/ч`;
+
+const RunRow: React.FC<{ title: string; run: Run | null; mass: number }> = ({ title, run, mass }) => (
+  <tr>
+    <td className="bp__counts-label">{title}</td>
+    <td className="bp__counts-n" data-tip={run ? `Тяга ${formatNum(Math.round(run.force))} Н / ${formatNum(mass)} кг = ${run.accel.toFixed(2)} м/с² · сопротивление ${run.drag.toFixed(2)} (лобовая ширина ${run.width.toFixed(1)} м)${run.offBow > 1 ? ` · ход под ${Math.round(run.offBow)}° к носу` : ''}` : undefined} data-tip-pos="left">
+      {run ? speedText(run.speed) : '—'}
+    </td>
+  </tr>
+);
 
 
 const FOV = { min: 70, max: 90, default: 75, key: 'bp.fov' };
@@ -209,7 +285,7 @@ const BlueprintSection: React.FC = () => {
   const [hist, setHist] = useState<History<Blueprint> | null>(null);
   const [status, setStatus] = useState<{ text: string; bad?: boolean; reload?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [creating, setCreating] = useState<{ name: string; rock: boolean } | null>(null);
+  const [creating, setCreating] = useState<{ name: string; scene: SceneKind } | null>(null);
   const [collapsedNote, setCollapsedNote] = useState('');
   const [gradeOpen, setGradeOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState<CameraMode>('fly');
@@ -258,12 +334,12 @@ const BlueprintSection: React.FC = () => {
       const wanted = urlScheme();
       const id = list.find(x => x.id === wanted)?.id ?? list[0]?.id;
       if (id) open(id);
-      else { setCurrent({ id: null, version: 0, saved: '' }); setHist(startHistory(emptyScheme('Новая постройка', false))); }
+      else { setCurrent({ id: null, version: 0, saved: '' }); setHist(startHistory(emptyScheme('Новая постройка', 'empty'))); }
     }).catch((e: Error) => {
       setSchemes([]);
       setStatus({ text: `${e.message}: схемы не загрузить и не сохранить, можно только строить`, bad: true });
       setCurrent(null);
-      setHist(startHistory(emptyScheme('Новая постройка', false)));
+      setHist(startHistory(emptyScheme('Новая постройка', 'empty')));
     });
   }, [open]);
 
@@ -275,10 +351,10 @@ const BlueprintSection: React.FC = () => {
 
   const create = async () => {
     if (!creating) return;
-    const name = creating.name.trim() || 'Новая постройка';
+    const name = creating.name.trim() || (creating.scene === 'boat' ? 'Новый корабль' : 'Новая постройка');
     setBusy(true);
     try {
-      const sc = await createScheme(name, emptyScheme(name, creating.rock));
+      const sc = await createScheme(name, emptyScheme(name, creating.scene));
       setSchemes(list => [...(list ?? []), sc]);
       setCurrent({ id: sc.id, version: sc.version, saved: JSON.stringify(sc.doc) });
       setHist(startHistory(sc.doc));
@@ -354,6 +430,11 @@ const BlueprintSection: React.FC = () => {
   const rename = (name: string) => setHist(h => (h ? record(h, { ...h.present, meta: { ...h.present.meta, name } }, 'name') : h));
 
   const { blueprint, resolved, issues } = result;
+  const isBoat = isBoatScheme(blueprint ?? doc);
+  useEffect(() => {
+    setBuildKind(isBoat ? 'boat-hull' : 'square-foundation');
+    setDeployKind(isBoat ? 'steering-wheel' : 'wooden-door');
+  }, [isBoat]);
   const rock = blueprint?.terrain?.[0];
   const rockInfo = rock ? TERRAIN[rock.kind] : null;
   const rockOffset = rock ? Math.round((rock.position[1] - GROUND_Y) * 100) / 100 : 0;
@@ -369,10 +450,10 @@ const BlueprintSection: React.FC = () => {
   const editor = useMemo<EditorState | null>(() => {
     if (!blueprint) return null;
     return {
-      tool, kind: buildKind, deployKind, blueprint, radial: RADIAL,
+      tool, kind: buildKind, deployKind, blueprint, radial: isBoat ? RADIAL_BOAT : RADIAL,
       // новые блоки — из веток, как в игре; грейд меняется киянкой
-      onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, 'twig')),
-      onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(addElementAt(blueprint, kind, t, 'twig')),
+      onPlace: (kind: ElementKind, attach: Attach) => applyDoc(addElement(blueprint, kind, attach, isBoat ? 'wood' : 'twig')),
+      onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(addElementAt(blueprint, kind, t, isBoat ? 'wood' : 'twig')),
       onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
       onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
       onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {
@@ -385,7 +466,7 @@ const BlueprintSection: React.FC = () => {
         }
       },
     };
-  }, [blueprint, tool, buildKind, deployKind, applyDoc]);
+  }, [blueprint, tool, buildKind, deployKind, applyDoc, isBoat]);
 
   // Рейд считается в веб-воркере и только когда включён показ: интерфейс не замирает
   const [raid, setRaid] = useState<{ sim: RaidSimulation; targetPos: [number, number, number]; value: number } | null>(null);
@@ -431,7 +512,8 @@ const BlueprintSection: React.FC = () => {
   const errors = issues.filter(i => i.level === 'error');
   const warnings = issues.filter(i => i.level === 'warning');
 
-  const cost = useMemo(() => (resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved]);
+  const cost = useMemo(() => (!isBoat && resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved, isBoat]);
+  const boat = useMemo(() => (isBoat && resolved ? boatStats(resolved) : null), [resolved, isBoat]);
 
   const counts = useMemo(() => {
     if (!resolved) return [];
@@ -441,7 +523,7 @@ const BlueprintSection: React.FC = () => {
     return [...map.entries()].map(([key, n]) => {
       const [kind, grade] = key.split('|');
       const isElement = kind in KINDS;
-      return { key, label: KIND_LABELS[kind] ?? kind, grade: isElement ? GRADE_LABELS[grade] ?? grade : '', n };
+      return { key, label: KIND_LABELS[kind] ?? kind, grade: isElement && !KINDS[kind as ElementKind].boat ? GRADE_LABELS[grade] ?? grade : '', n };
     });
   }, [resolved]);
 
@@ -456,16 +538,19 @@ const BlueprintSection: React.FC = () => {
                 {!current?.id && <option value="">{schemes ? 'Без схемы' : 'Загрузка…'}</option>}
                 {(schemes ?? []).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
               </select>
-              <button type="button" className="bp__icon-btn" onClick={() => setCreating(c => (c ? null : { name: 'Новая постройка', rock: false }))} disabled={busy || schemes === null} aria-expanded={!!creating} aria-label="Новая схема" data-tip="Новая схема" data-tip-pos="left">
+              <button type="button" className="bp__icon-btn" onClick={() => setCreating(c => (c ? null : { name: 'Новая постройка', scene: 'empty' }))} disabled={busy || schemes === null} aria-expanded={!!creating} aria-label="Новая схема" data-tip="Новая схема" data-tip-pos="left">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               </button>
             </div>
             {creating && (
               <form className="bp__new" onSubmit={e => { e.preventDefault(); if (confirmLeave()) create(); }}>
                 <input className="bp__name" value={creating.name} onChange={e => setCreating({ ...creating, name: e.target.value })} maxLength={120} autoFocus aria-label="Название новой схемы" />
-                <div className="bp__new-kind" role="radiogroup" aria-label="Участок">
-                  <label><input type="radio" checked={!creating.rock} onChange={() => setCreating({ ...creating, rock: false })} /> Пустой участок</label>
-                  <label><input type="radio" checked={creating.rock} onChange={() => setCreating({ ...creating, rock: true })} /> Со скалой God Rock</label>
+                <div className="bp__new-kind" role="radiogroup" aria-label="Сцена">
+                  {([['empty', 'Пустое пространство', 'Новая постройка'], ['rock', 'Скала God Rock', 'Новая постройка'], ['boat', 'Корабль на воде', 'Новый корабль']] as [SceneKind, string, string][]).map(([id, label, def]) => (
+                    <label key={id}>
+                      <input type="radio" checked={creating.scene === id} onChange={() => setCreating(c => c && { scene: id, name: c.name === 'Новая постройка' || c.name === 'Новый корабль' ? def : c.name })} /> {label}
+                    </label>
+                  ))}
                 </div>
                 <div className="bp__range-actions">
                   <button type="submit" className="bp__upload-btn" disabled={busy}>Создать</button>
@@ -487,7 +572,7 @@ const BlueprintSection: React.FC = () => {
               <button type="button" className="bp__icon-btn" onClick={doRedo} disabled={!hist?.future.length} aria-label="Вернуть" data-tip="Вернуть (Shift+Cmd+Z)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5" /><path d="M20 9H10a6 6 0 0 0 0 12h3" /></svg>
               </button>
-              <button type="button" className="raid-tier__btn" onClick={() => setGradeOpen(true)} disabled={!blueprint?.elements.length} data-tip="Сменить материал сразу у многих блоков">Материал</button>
+              {!isBoat && <button type="button" className="raid-tier__btn" onClick={() => setGradeOpen(true)} disabled={!blueprint?.elements.length} data-tip="Сменить материал сразу у многих блоков">Материал</button>}
               <button type="button" className="bp__upload-btn bp__save" onClick={save} disabled={!dirty || busy || !current?.id}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
               <span className={`bp__save-state${dirty ? ' bp__save-state--dirty' : ''}`}>{!current?.id ? 'без базы' : dirty ? 'есть изменения' : 'сохранено'}</span>
             </div>
@@ -625,6 +710,41 @@ const BlueprintSection: React.FC = () => {
               </>
             )}
 
+            {boat && (
+              <section className="cost boat">
+                <div className="bp__section-title">Корабль</div>
+                <table className="bp__counts">
+                  <tbody>
+                    <tr><td className="bp__counts-label">Масса</td><td className="bp__counts-n" data-tip={`Сумма масс блоков ${formatNum(boat.massBlocks)} кг, в физике не меньше ${formatNum(MIN_MASS)} кг; объекты массу не добавляют`} data-tip-pos="left">{formatNum(boat.mass)} кг</td></tr>
+                    <tr><td className="bp__counts-label">Прочность</td><td className="bp__counts-n" data-tip="Общее здоровье корабля — сумма вкладов блоков; урон по любому блоку и объекту идёт в него" data-tip-pos="left">{formatNum(boat.health)} HP</td></tr>
+                    <tr><td className="bp__counts-label">Блоков</td><td className="bp__counts-n">{boat.blocks} из {MAX_BLOCKS}</td></tr>
+                  </tbody>
+                </table>
+                <div className="bp__section-title">Скорость хода</div>
+                <table className="bp__counts">
+                  <tbody>
+                    <RunRow title={`Паруса ×${boat.count['sail'] ?? 0}`} run={boat.sails} mass={boat.mass} />
+                    <RunRow title={`Моторы ×${boat.count['small-engine'] ?? 0}`} run={boat.engines} mass={boat.mass} />
+                    <RunRow title="Паруса и моторы" run={boat.full} mass={boat.mass} />
+                    <RunRow title="Задний ход" run={boat.reverse} mass={boat.mass} />
+                  </tbody>
+                </table>
+                {boat.fuelPerMinute > 0 && <p className="cost__note">Моторы жгут {formatNum(boat.fuelPerMinute)} топлива в минуту, {formatNum(boat.fuelPerMinute * 60)} в час.</p>}
+                <p className="cost__note">Установившаяся скорость: min(тяга / масса, 13 м/с²) / сопротивление, не выше {VELOCITY_MAX} м/с. Сопротивление растёт с лобовой шириной корпуса: клин из треугольных корпусов на носу его снижает. У берега и на мели предел падает до {(VELOCITY_MAX * SHALLOW_FACTOR).toFixed(1)} м/с. Нос — по штурвалу{boat.hasWheel ? '' : ' (штурвала нет, нос по оси X)'}.</p>
+                <ul className="boat__checks">
+                  {boat.checks.map(c => <li key={c.text} className={c.ok ? 'boat__check--ok' : 'boat__check--bad'}>{c.ok ? '✓' : '✗'} {c.text}</li>)}
+                </ul>
+                <div className="bp__section-title">Стоимость постройки</div>
+                <div className="cost__row">
+                  {BOAT_RES_KEYS.filter(k => boat.build[k] > 0).map(k => (
+                    <span key={k} className="cost__res" title={BOAT_RES_LABELS[k]}><img src={BOAT_RES_ICONS[k]} alt="" />{formatNum(boat.build[k])}</span>
+                  ))}
+                </div>
+                <p className="cost__note">Блок стоит 300 дерева и 15 топлива × множитель формы, объекты — по рецепту ({Object.entries(OBJECT_COST).map(([k, c]) => `${SHORT_LABELS[k]}: ${BOAT_RES_KEYS.filter(r => c?.[r]).map(r => `${c![r]} ${BOAT_RES_LABELS[r].toLowerCase()}`).join(' + ')}`).join('; ')}). Сама верфь: {BOAT_RES_KEYS.filter(r => STATION_COST[r]).map(r => `${STATION_COST[r]} ${BOAT_RES_LABELS[r].toLowerCase()}`).join(' + ')}.</p>
+                <p className="cost__note">Распад: готовый корабль начинает гнить через {DECAY_START_HOURS} ч без использования и теряет всё здоровье за {DECAY_HOURS} ч; под крышей не гниёт.</p>
+              </section>
+            )}
+
             {cost && (
               <section className="cost">
                 <div className="bp__section-title">Стоимость постройки</div>
@@ -647,7 +767,7 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
+            <Viewer3D water={isBoat} resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
             <div className="bp__camera" role="group" aria-label="Камера">
               {hasCupboard && (
                 <button type="button" className={`bp__zones${showPrivilege ? ' bp__zones--on' : ''}`} onClick={() => setShowPrivilege(v => !v)} aria-pressed={showPrivilege} data-tip="Зона привилегии шкафа: 16 м от блоков здания со шкафом — оболочка в сцене и граница на земле" data-tip-pos="left">
