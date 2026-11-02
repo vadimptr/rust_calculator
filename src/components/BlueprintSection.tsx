@@ -4,7 +4,7 @@ import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
-import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, HOUSE_DEPLOY_GROUPS, objectCost, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, DRAG_MAX, DRAG_MAX_WIDTH, DRAG_MIN, DRAG_MIN_WIDTH, HOUSE_DEPLOY_GROUPS, objectCost, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
 import type { BoatResKey, Run } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
@@ -753,6 +753,7 @@ const BlueprintSection: React.FC = () => {
                   <tbody>
                     <tr><td className="bp__counts-label">Масса</td><td className="bp__counts-n" data-tip={`Сумма масс блоков ${formatNum(boat.massBlocks)} кг, в физике не меньше ${formatNum(MIN_MASS)} кг; объекты массу не добавляют`} data-tip-pos="left">{formatNum(boat.mass)} кг</td></tr>
                     <tr><td className="bp__counts-label">Прочность</td><td className="bp__counts-n" data-tip="Общее здоровье корабля — сумма вкладов блоков; урон по любому блоку и объекту идёт в него" data-tip-pos="left">{formatNum(boat.health)} HP</td></tr>
+                    {boat.bow && <tr><td className="bp__counts-label">Сопротивление воде</td><td className="bp__counts-n" data-tip={`При ходе носом вперёд: лобовая ширина корпуса ${boat.bow.width.toFixed(1)} м. Диапазон ${DRAG_MIN}–${DRAG_MAX}: ширина до ${DRAG_MIN_WIDTH} м даёт минимум, от ${DRAG_MAX_WIDTH} м — максимум. Нос по штурвалу${boat.hasWheel ? '' : ' (штурвала нет, нос по оси X)'}`} data-tip-pos="left">{boat.bow.drag.toFixed(2)} · {boat.bow.width.toFixed(1)} м</td></tr>}
                     <tr><td className="bp__counts-label">Блоков</td><td className="bp__counts-n">{boat.blocks} из {MAX_BLOCKS}</td></tr>
                   </tbody>
                 </table>

@@ -77,6 +77,10 @@ test('frontal width: flat bow counts full width, a triangle bow half of it', () 
   assert.equal(dragFor(3), 0.65);
   assert.ok(Math.abs(dragFor(6) - (0.65 + 1.55 * Math.pow(1 / 45, 0.4))) < 1e-9);
   assert.equal(dragFor(80), 2.2);
+  const bow = boatStats(r).bow!;
+  assert.ok(Math.abs(bow.width - 1.5) < 0.05, String(bow.width));
+  assert.equal(bow.drag, 0.65);
+  assert.equal(boatStats(res({ ...hullLine(), elements: [] })).bow, null);
 });
 
 test('terminal speed: accel capped at 13, speed at 15', () => {

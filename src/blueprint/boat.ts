@@ -171,6 +171,10 @@ export const MAX_BLOCKS = 180;
 export const MAX_DEPLOYABLES = 120;
 export const IDLE_DRAG = 1.5;
 const DRAG = { min: 0.65, max: 2.2, minContrib: 5, maxContrib: 50, exponent: 0.4 };
+export const DRAG_MIN = DRAG.min;
+export const DRAG_MAX = DRAG.max;
+export const DRAG_MIN_WIDTH = DRAG.minContrib;
+export const DRAG_MAX_WIDTH = DRAG.maxContrib;
 export const DECAY_START_HOURS = 24;
 export const DECAY_HOURS = 12;
 
@@ -265,6 +269,7 @@ export interface BoatStats {
   health: number;
   forward: number;
   hasWheel: boolean;
+  bow: { width: number; drag: number } | null;
   sails: Run | null;
   engines: Run | null;
   full: Run | null;
@@ -499,6 +504,7 @@ export function boatStats(resolved: Resolved): BoatStats {
   const health = blocks.reduce((t, e) => t + (BOAT_BLOCKS[e.kind]?.health ?? 0), 0);
   const wheel = objects.find(d => d.kind === 'steering-wheel');
   const forward = wheel?.rotation ?? 0;
+  const bowWidth = frontalWidth(hulls, forward, forward);
   const blocked = blockedSails(resolved);
   const sail = (d: ResolvedDeployable) => (d.kind === 'sail' && !blocked.has(d.id) ? SAIL_THRUST : 0);
   const engine = (d: ResolvedDeployable) => (d.kind === 'small-engine' ? ENGINE_THRUST : 0);
@@ -519,6 +525,7 @@ export function boatStats(resolved: Resolved): BoatStats {
   ];
   return {
     blocks: blocks.length, hulls: hulls.length, objects: objects.length, count, massBlocks, mass, health, forward, hasWheel: !!wheel,
+    bow: hulls.length ? { width: bowWidth, drag: dragFor(bowWidth) } : null,
     sails: run(objects, sail, hulls, forward, mass),
     engines: run(objects, engine, hulls, forward, mass),
     full: run(objects, d => sail(d) + engine(d), hulls, forward, mass),
