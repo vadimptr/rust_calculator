@@ -848,3 +848,51 @@ export function buildDeployable(d: ResolvedDeployable, blocked = false): THREE.O
   return place(g, d.position, d.rotation);
 }
 
+
+export const WIRE_COLORS = { power: 0xf2c230, fluid: 0x2f7be0 } as const;
+const WIRE_RADIUS = { power: 0.018, fluid: 0.03 } as const;
+const WIRE_MATS = new Map<string, THREE.MeshStandardMaterial>();
+
+function wireMat(type: 'power' | 'fluid', state: 'ok' | 'off' | 'bad' | 'ghost'): THREE.MeshStandardMaterial {
+  const key = `${type}|${state}`;
+  let m = WIRE_MATS.get(key);
+  if (!m) {
+    const color = state === 'bad' ? 0xff3b3b : state === 'off' ? 0x6b6b6b : WIRE_COLORS[type];
+    m = new THREE.MeshStandardMaterial({ color, emissive: state === 'ok' ? color : 0x000000, emissiveIntensity: 0.25, roughness: 0.6, transparent: state === 'ghost', opacity: state === 'ghost' ? 0.7 : 1, depthWrite: state !== 'ghost' });
+    WIRE_MATS.set(key, m);
+  }
+  return m;
+}
+
+export function buildWire(path: [number, number, number][], type: 'power' | 'fluid', state: 'ok' | 'off' | 'bad' | 'ghost' = 'ok'): THREE.Object3D {
+  const curve = new THREE.CurvePath<THREE.Vector3>();
+  for (let i = 1; i < path.length; i++) curve.add(new THREE.LineCurve3(new THREE.Vector3(...path[i - 1]), new THREE.Vector3(...path[i])));
+  const g = new THREE.Group();
+  if (!curve.curves.length) return g;
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(2, curve.curves.length * 4), WIRE_RADIUS[type], 6, false), wireMat(type, state));
+  mesh.castShadow = false;
+  g.add(mesh);
+  return g;
+}
+
+const SLOT_GEO = { in: new THREE.SphereGeometry(0.055, 12, 8), out: new THREE.BoxGeometry(0.09, 0.09, 0.09) };
+const SLOT_HIT = new THREE.SphereGeometry(0.14, 8, 6);
+const SLOT_HIT_MAT = new THREE.MeshBasicMaterial({ visible: false });
+const SLOT_MATS = new Map<string, THREE.MeshBasicMaterial>();
+
+export function buildSlotHandle(pos: [number, number, number], type: 'power' | 'fluid', dir: 'in' | 'out', busy: boolean): THREE.Object3D {
+  const key = `${type}|${busy}`;
+  let mat = SLOT_MATS.get(key);
+  if (!mat) {
+    mat = new THREE.MeshBasicMaterial({ color: busy ? 0x8a8a8a : WIRE_COLORS[type], depthTest: false, transparent: true, opacity: 0.95 });
+    SLOT_MATS.set(key, mat);
+  }
+  const g = new THREE.Group();
+  const mark = new THREE.Mesh(SLOT_GEO[dir], mat);
+  mark.renderOrder = 30;
+  mark.raycast = () => {};
+  const hit = new THREE.Mesh(SLOT_HIT, SLOT_HIT_MAT);
+  g.add(mark, hit);
+  g.position.set(...pos);
+  return g;
+}

@@ -3,13 +3,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { animateDoors, buildCornerPost, buildDeployable, buildElement, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
+import { animateDoors, buildCornerPost, buildDeployable, buildElement, buildSlotHandle, buildWire, collectDoors, entityMatrix, setDoorOpen } from '../blueprint/meshes.ts';
 import type { DoorAnim } from '../blueprint/meshes.ts';
 import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
 import { FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
-import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain } from '../blueprint/types.ts';
+import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain, Wire } from '../blueprint/types.ts';
+import { MAX_WIRE_LENGTH, MAX_WIRE_POINTS, pathLength, slotInfo, slotsOf } from '../blueprint/io.ts';
+import type { SlotRef, V3 } from '../blueprint/io.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
 import type { RaidView } from '../blueprint/raidOverlay.ts';
@@ -27,7 +29,7 @@ import type { RadialMenuItem } from './RadialMenu';
 
 export type CameraMode = 'orbit' | 'fly';
 
-export type EditorTool = 'build' | 'deploy' | 'hammer' | 'view';
+export type EditorTool = 'build' | 'deploy' | 'hammer' | 'wire' | 'view';
 
 /** Пункт радиального меню. */
 export type RadialItem = RadialMenuItem;
@@ -45,6 +47,8 @@ export interface EditorState {
   onPlaceFree: (kind: ElementKind, t: Transform) => void;
   onDeploy: (d: Omit<Deployable, 'id'>) => void;
   onRemove: (id: string, deployable: boolean) => void;
+  onWire: (w: Omit<Wire, 'id'>) => void;
+  onUnwire: (id: string) => void;
   /** Выбор в радиальном меню: блок плана, объект или (киянка) грейд / снос для блока под курсором. */
   onRadial: (tool: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => void;
 }
@@ -81,6 +85,13 @@ type Pending =
   | { type: 'hammer'; id: string; deployable: boolean }
   | { type: 'free'; kind: ElementKind; t: Transform }
   | null;
+
+type WirePending = { type: 'slot'; ref: SlotRef; wire: string | null } | { type: 'point'; at: V3 } | null;
+
+interface WireDraft {
+  from: SlotRef;
+  points: V3[];
+}
 
 interface SceneRefs {
   renderer: THREE.WebGLRenderer;
@@ -124,6 +135,10 @@ interface SceneRefs {
   lastAttach: string;
   sailWarnKey: string;
   sailWarn: string | null;
+  slots: THREE.Group;
+  slotsRes: Resolved | null;
+  draft: WireDraft | null;
+  wirePending: WirePending;
 }
 
 // Призраки: только лицевые грани и без записи глубины — полупрозрачные грани одной коробки не
@@ -163,6 +178,56 @@ const GHOST_EDGE = new THREE.LineBasicMaterial({ color: 0xbfe0ff, transparent: t
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const EYE_HEIGHT = 1.6;
 const WATER_Y = -1.5;
+const SLOT_PICK = 0.12;
+const SLOT_LABELS: Record<string, string> = {
+  'Block Passthrough': 'Блокировка',
+  'Branch Out': 'Ответвление',
+  'Close': 'Закрыть',
+  'Combined Power Out': 'Выход',
+  'Decrement Counter': 'Минус',
+  'Electric Output': 'Выход',
+  'Fluid Input': 'Вода',
+  'Fluid Output': 'Вода',
+  'Force Start': 'Пуск',
+  'Force Stop': 'Стоп',
+  'Fully Charged': 'Заряжен',
+  'Has Target': 'Есть цель',
+  'Increment Counter': 'Плюс',
+  'Input A': 'Вход A',
+  'Input B': 'Вход B',
+  'Invert Mode': 'Инверсия',
+  'Inverted Output': 'Инверсный выход',
+  'Low Ammo': 'Мало патронов',
+  'No Ammo': 'Нет патронов',
+  'Open': 'Открыть',
+  'Output': 'Выход',
+  'Passthrough': 'Транзит',
+  'Power In': 'Питание',
+  'Power Out': 'Выход',
+  'Power Out 1': 'Выход 1',
+  'Power Out 2': 'Выход 2',
+  'Power Out 3': 'Выход 3',
+  'Power Output': 'Выход',
+  'Pump Power': 'Питание насоса',
+  'Reset': 'Сброс',
+  'Reset Counter': 'Сброс',
+  'Root Power 1': 'Корень 1',
+  'Root Power 2': 'Корень 2',
+  'Set': 'Установить',
+  'Switch Off': 'Выключить',
+  'Switch On': 'Включить',
+  'Toggle': 'Переключить',
+  'Toggle On': 'Включить',
+  'Water In': 'Вода',
+  'Water In 1': 'Вода 1',
+  'Water In 2': 'Вода 2',
+  'Water In 3': 'Вода 3',
+  'Water Out': 'Вода',
+  'Water Out 1': 'Вода 1',
+  'Water Out 2': 'Вода 2',
+  'Water Out 3': 'Вода 3',
+  'Water Output': 'Вода',
+};
 const BOAT_DEPLOY_HINT: Partial<Record<DeployableKind, string>> = {
   'small-engine': 'Мотор — только на корпус, не больше 5 и не в тесноте',
   'sail': 'Парус — на корпус или пол корабля, не больше 10 и не в тесноте',
@@ -382,6 +447,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     world.add(zones);
     const xray = new THREE.Group();
     world.add(xray);
+    const slots = new THREE.Group();
+    world.add(slots);
     const label = document.createElement('div');
     label.className = 'viewer3d__label';
     host.appendChild(label);
@@ -402,6 +469,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
       raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label, sailWarnKey: '', sailWarn: null,
+      slots, slotsRes: null, draft: null, wirePending: null,
     };
     refs.current = state;
 
@@ -653,6 +721,106 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return out;
     };
 
+    const slotName = (r: SlotRef) => {
+      const d = resolvedRef.current?.deployables.find(x => x.id === r.id);
+      const s = d && slotInfo(d.kind, r.dir, r.slot);
+      return `${SLOT_LABELS[s?.name ?? ''] ?? s?.name ?? ''} (${r.dir === 'in' ? 'вход' : 'выход'})`;
+    };
+    const wireOf = (res: Resolved, r: SlotRef) => (res.wires ?? []).find(w => (r.dir === 'out' ? w.from : w.to).id === r.id && (r.dir === 'out' ? w.from : w.to).slot === r.slot)?.id ?? null;
+    const drawSlots = (res: Resolved) => {
+      if (state.slotsRes === res) return;
+      state.slotsRes = res;
+      slots.clear();
+      for (const d of res.deployables) {
+        for (const r of slotsOf(d)) {
+          const o = buildSlotHandle(r.pos, r.type, r.dir, wireOf(res, r) !== null);
+          o.userData.slot = r;
+          slots.add(o);
+        }
+      }
+    };
+    const pickSlot = (): SlotRef | null => {
+      const ndc = fly.isLocked ? new THREE.Vector2(0, 0) : state.pointer;
+      if (!ndc) return null;
+      world.updateMatrixWorld(true);
+      state.raycaster.setFromCamera(ndc, camera);
+      const ray = state.raycaster.ray;
+      let best: SlotRef | null = null, bestD = Infinity;
+      const p = new THREE.Vector3();
+      for (const c of slots.children) {
+        c.getWorldPosition(p);
+        const along = p.clone().sub(ray.origin).dot(ray.direction);
+        if (along <= 0) continue;
+        const d = Math.sqrt(ray.distanceSqToPoint(p)) / Math.max(1, along / 6);
+        if (d < SLOT_PICK && d < bestD) { bestD = d; best = c.userData.slot as SlotRef; }
+      }
+      return best;
+    };
+    const fits = (a: SlotRef, b: SlotRef) => a.id !== b.id && a.dir !== b.dir && a.type === b.type;
+    const wireHover = (res: Resolved) => {
+      drawSlots(res);
+      state.pending = null;
+      ghost.clear();
+      state.ghostKey = '';
+      const draft = state.draft;
+      const slot = pickSlot();
+      if (!draft) {
+        if (!slot) {
+          state.wirePending = null;
+          label.textContent = 'Провод: выбери выход или вход объекта (жёлтые — электричество, синие — вода)';
+          return;
+        }
+        const busy = wireOf(res, slot);
+        state.wirePending = { type: 'slot', ref: slot, wire: busy };
+        label.textContent = busy ? `${slotName(slot)} · клик — отсоединить провод` : `${slotName(slot)} · клик — начать ${slot.type === 'power' ? 'провод' : 'шланг'}`;
+        return;
+      }
+      const target = slot && fits(draft.from, slot) && !wireOf(res, slot) ? slot : null;
+      const hit = target ? null : pick();
+      const end: V3 | null = target ? target.pos : hit ? [hit.point.x, hit.point.y, hit.point.z] : null;
+      const path = [draft.from.pos, ...draft.points, ...(end ? [end] : [])];
+      const length = pathLength(path);
+      const tooLong = length > MAX_WIRE_LENGTH;
+      ghost.add(buildWire(path, draft.from.type, tooLong ? 'bad' : 'ghost'));
+      const what = draft.from.type === 'power' ? 'Провод' : 'Шланг';
+      const tail = `${length.toFixed(1)} из ${MAX_WIRE_LENGTH} м · ПКМ или Esc — отменить, Backspace — убрать точку`;
+      if (tooLong) {
+        state.wirePending = null;
+        label.textContent = `${what} длиннее ${MAX_WIRE_LENGTH} м · ${tail}`;
+        label.className = 'viewer3d__label viewer3d__label--bad';
+      } else if (target) {
+        state.wirePending = { type: 'slot', ref: target, wire: null };
+        label.textContent = `${slotName(target)} · клик — подключить · ${tail}`;
+      } else if (slot) {
+        state.wirePending = null;
+        label.textContent = `${slotName(slot)}: ${wireOf(res, slot) ? 'уже занят' : slot.id === draft.from.id ? 'тот же объект' : slot.type !== draft.from.type ? 'другой тип' : 'нужен ' + (draft.from.dir === 'out' ? 'вход' : 'выход')} · ${tail}`;
+        label.className = 'viewer3d__label viewer3d__label--bad';
+      } else if (end && draft.points.length < MAX_WIRE_POINTS) {
+        state.wirePending = { type: 'point', at: end };
+        label.textContent = `${what}: клик — точка крепления · ${tail}`;
+      } else {
+        state.wirePending = null;
+        label.textContent = `${what}: ${tail}`;
+      }
+    };
+    const wireAct = () => {
+      const ed = editorRef.current;
+      const p = state.wirePending;
+      if (!ed || !p) return;
+      const draft = state.draft;
+      if (p.type === 'slot' && !draft) {
+        if (p.wire) ed.onUnwire(p.wire);
+        else state.draft = { from: p.ref, points: [] };
+      } else if (p.type === 'slot' && draft) {
+        const [a, b, points] = draft.from.dir === 'out' ? [draft.from, p.ref, draft.points] : [p.ref, draft.from, [...draft.points].reverse()];
+        ed.onWire({ kind: a.type, from: { id: a.id, slot: a.slot }, to: { id: b.id, slot: b.slot }, ...(points.length ? { points: points.map(q => q.map(v => Math.round(v * 100) / 100) as V3) } : {}) });
+        state.draft = null;
+      } else if (p.type === 'point' && draft) {
+        state.draft = { ...draft, points: [...draft.points, p.at] };
+      }
+      state.hoverDirty = true;
+    };
+
     const refreshGhost = () => {
       state.hoverDirty = false;
       const ed = editorRef.current;
@@ -662,7 +830,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       host.dataset.pending = '';
       label.textContent = '';
       label.className = 'viewer3d__label';
+      if (ed?.tool !== 'wire' && slots.children.length) { slots.clear(); state.slotsRes = null; state.draft = null; }
       if (!ed || !res || ed.tool === 'view') return none();
+      if (ed.tool === 'wire') { drawSockets([], null); return wireHover(res); }
       const showFree = (kind: ElementKind, at: THREE.Vector3 | null) => {
         if (!at) return none();
         const ray = aimRay();
@@ -839,6 +1009,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const ed = editorRef.current;
       if (!ed || button !== 0) return;
       if (state.hoverDirty) refresh();
+      if (ed.tool === 'wire') return wireAct();
       const hit = pick();
       const p = state.pending;
       if (hit && (hit.deployable || !p) && toggleDoorsOf(state, hit.id)) return;
@@ -856,6 +1027,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const ed = editorRef.current;
       if (!ed) return;
       if (ed.tool === 'view') return;
+      if (ed.tool === 'wire') { state.draft = null; state.hoverDirty = true; return; }
       if (ed.tool === 'hammer') { refresh(); if (state.pending?.type !== 'hammer') return; }
       const p = state.pending;
       const target = p?.type === 'hammer' && !p.deployable ? ed.blueprint?.elements.find(e => e.id === p.id) : undefined;
@@ -955,6 +1127,12 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         if (e.code === 'KeyR' && editorRef.current.tool === 'hammer') {
           const p = state.pending;
           if (p && p.type === 'hammer') { editorRef.current.onRemove(p.id, p.deployable); state.candCache.clear(); state.hoverDirty = true; }
+          e.preventDefault();
+          return;
+        }
+        if (editorRef.current.tool === 'wire' && state.draft && (e.code === 'Escape' || e.code === 'Backspace')) {
+          state.draft = e.code === 'Escape' || !state.draft.points.length ? null : { ...state.draft, points: state.draft.points.slice(0, -1) };
+          state.hoverDirty = true;
           e.preventDefault();
           return;
         }
@@ -1102,6 +1280,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     const blocked = blockedSails(resolved);
     for (const d of resolved.deployables) s.content.add(buildDeployable(d, blocked.has(d.id)));
+    for (const w of resolved.wires ?? []) {
+      const o = buildWire(w.path, w.kind, w.length > MAX_WIRE_LENGTH ? 'bad' : 'ok');
+      o.traverse(n => { n.raycast = () => {}; });
+      s.content.add(o);
+    }
     s.xray.clear();
     const cupboards = resolved.deployables.filter(d => d.kind === 'tool-cupboard');
     s.privInfo = cupboards.length ? buildings(resolved) : null;

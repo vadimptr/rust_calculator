@@ -9,6 +9,7 @@ import {
 } from './catalog.ts';
 import { groundTerrain } from './terrain.ts';
 import { DECK, isBoatObject, isBoatOnly } from './boat.ts';
+import { resolveWires } from './io.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
   Socket, Transform,
@@ -368,6 +369,7 @@ export function resolveBlueprint(bp: Blueprint | LegacyBlueprint): ResolveResult
   }
   const byId = new Map(resolved.elements.map(e => [e.id, e]));
   resolved.deployables = resolveDeployables(deployables, byId, issues);
+  if (bp.wires?.length) resolved.wires = resolveWires(bp.wires, resolved.deployables, issues);
   return { resolved, issues };
 }
 
@@ -511,5 +513,6 @@ function resolveLegacy(bp: LegacyBlueprint): ResolveResult {
 
   const byResolved = new Map(resolved.elements.map(e => [e.id, e]));
   resolved.deployables = resolveDeployables(deployables, byResolved, issues);
+  if (bp.wires?.length) resolved.wires = resolveWires(bp.wires, resolved.deployables, issues);
   return { resolved, issues };
 }

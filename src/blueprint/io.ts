@@ -1,4 +1,4 @@
-import type { DeployableKind } from './types.ts';
+import type { DeployableKind, Issue, ResolvedDeployable, ResolvedWire, Wire, WireKind } from './types.ts';
 
 export type SlotType = 'power' | 'fluid';
 
@@ -57,3 +57,66 @@ export const IO: Partial<Record<DeployableKind, IOInfo>> = {
   'medium-battery': { inputs: [{ name: 'Power In', type: 'power', pos: [0.31, 0.73, 0.16] }], outputs: [{ name: 'Power Output', type: 'power', pos: [0.34, 0.73, 0.27] }, { name: 'Fully Charged', type: 'power', pos: [0.28, 0.84, 0.11] }] },
   'large-solar-panel': { inputs: [], outputs: [{ name: 'Electric Output', type: 'power', pos: [0.97, 0, -0.18] }] },
 };
+
+export const MAX_WIRE_LENGTH = 30;
+export const MAX_WIRE_POINTS = 18;
+
+export type V3 = [number, number, number];
+
+export interface SlotRef {
+  id: string;
+  slot: number;
+  dir: 'in' | 'out';
+  type: SlotType;
+  pos: V3;
+}
+
+export function slotWorld(d: ResolvedDeployable, s: IOSlot): V3 {
+  const a = (d.rotation * Math.PI) / 180, c = Math.cos(a), n = Math.sin(a);
+  const [x, y, z] = s.pos;
+  return [d.position[0] + x * c - z * n, d.position[1] + y, d.position[2] + x * n + z * c];
+}
+
+export function slotsOf(d: ResolvedDeployable): SlotRef[] {
+  const io = IO[d.kind];
+  if (!io) return [];
+  return [
+    ...io.inputs.map((s, i) => ({ id: d.id, slot: i, dir: 'in' as const, type: s.type, pos: slotWorld(d, s) })),
+    ...io.outputs.map((s, i) => ({ id: d.id, slot: i, dir: 'out' as const, type: s.type, pos: slotWorld(d, s) })),
+  ];
+}
+
+export function slotInfo(kind: DeployableKind, dir: 'in' | 'out', slot: number): IOSlot | undefined {
+  const io = IO[kind];
+  return io ? (dir === 'in' ? io.inputs : io.outputs)[slot] : undefined;
+}
+
+export function pathLength(points: V3[]): number {
+  let sum = 0;
+  for (let i = 1; i < points.length; i++) sum += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1], points[i][2] - points[i - 1][2]);
+  return sum;
+}
+
+export function wireKind(type: SlotType): WireKind {
+  return type;
+}
+
+export function resolveWires(wires: Wire[], deployables: ResolvedDeployable[], issues: Issue[]): ResolvedWire[] {
+  const byId = new Map(deployables.map(d => [d.id, d]));
+  const usedIn = new Set<string>(), usedOut = new Set<string>();
+  const out: ResolvedWire[] = [];
+  for (const w of wires) {
+    const a = byId.get(w.from.id), b = byId.get(w.to.id);
+    const from = a && slotInfo(a.kind, 'out', w.from.slot), to = b && slotInfo(b.kind, 'in', w.to.slot);
+    const bad = (text: string) => issues.push({ level: 'warning', code: 'V30', id: w.id, message: text });
+    if (!a || !b || !from || !to) { bad(`Провод ${w.id}: нет такого выхода или входа`); continue; }
+    if (from.type !== w.kind || to.type !== w.kind) { bad(`Провод ${w.id}: ${w.kind === 'power' ? 'электричество' : 'вода'} не подключается к этому слоту`); continue; }
+    if (a.id === b.id) { bad(`Провод ${w.id}: объект нельзя соединить сам с собой`); continue; }
+    const ki = `${b.id}/${w.to.slot}`, ko = `${a.id}/${w.from.slot}`;
+    if (usedIn.has(ki) || usedOut.has(ko)) { bad(`Провод ${w.id}: в слот уже подключён другой провод`); continue; }
+    usedIn.add(ki); usedOut.add(ko);
+    const path: V3[] = [slotWorld(a, from), ...(w.points ?? []), slotWorld(b, to)];
+    out.push({ ...w, path, length: pathLength(path) });
+  }
+  return out;
+}

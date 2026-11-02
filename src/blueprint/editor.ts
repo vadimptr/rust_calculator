@@ -9,7 +9,7 @@ import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
 import { DECK, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform, Wire } from './types.ts';
 
 const round3 = (v: number) => Math.round(v * 1000) / 1000 + 0;
 const norm360 = (a: number) => ((a % 360) + 360) % 360;
@@ -270,6 +270,19 @@ export function rotateElement(bp: Blueprint, id: string): Blueprint {
 /** Элемент, в который рейкастом попал курсор, и доступные ему размещения с учётом текущего чертежа. */
 export function transformOf(resolved: Resolved, id: string): ResolvedElement | undefined {
   return resolved.elements.find(e => e.id === id);
+}
+
+export function addWire(bp: Blueprint, w: Omit<Wire, 'id'>): Blueprint {
+  const wires = bp.wires ?? [];
+  let n = wires.length + 1;
+  while (wires.some(x => x.id === `w${n}`)) n++;
+  const clean = wires.filter(x => !(x.to.id === w.to.id && x.to.slot === w.to.slot) && !(x.from.id === w.from.id && x.from.slot === w.from.slot));
+  return { ...bp, wires: [...clean, { id: `w${n}`, ...w }] };
+}
+
+export function removeWire(bp: Blueprint, id: string): Blueprint {
+  const wires = (bp.wires ?? []).filter(w => w.id !== id);
+  return { ...bp, wires: wires.length ? wires : undefined };
 }
 
 export function pruneWires(bp: Blueprint): Blueprint {

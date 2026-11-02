@@ -266,9 +266,15 @@ export interface ResolvedTerrain {
   scale: number;
 }
 
+export interface ResolvedWire extends Wire {
+  path: [number, number, number][];
+  length: number;
+}
+
 export interface Resolved {
   elements: ResolvedElement[];
   deployables: ResolvedDeployable[];
+  wires?: ResolvedWire[];
   terrain?: ResolvedTerrain[];
 }
 
