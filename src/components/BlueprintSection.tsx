@@ -192,6 +192,8 @@ const BOAT_RES_ITEMS: Record<BoatResKey, [string, string]> = {
   hqm: ['metal.refined', 'МВК'], scrap: ['scrap', 'Металлолом'], cloth: ['cloth', 'Ткань'], tarp: ['tarp', 'Брезент'], gears: ['gears', 'Шестерёнки'],
   rope: ['rope', 'Верёвка'], techparts: ['techparts', 'Микросхемы'], sewingkit: ['sewingkit', 'Швейный набор'],
   bpbasic: ['basicblueprintfragment', 'Фрагменты чертежей'], bpadvanced: ['advancedblueprintfragment', 'Продвинутые фрагменты чертежей'],
+  propane: ['propanetank', 'Пустой баллон пропана'], sheetmetal: ['sheetmetal', 'Листовой металл'], spring: ['metalspring', 'Металлическая пружина'],
+  computer: ['targeting.computer', 'Компьютер наведения'], camera: ['cctv.camera', 'Камера видеонаблюдения'],
 };
 const BOAT_RES_ICONS = Object.fromEntries(Object.entries(BOAT_RES_ITEMS).map(([k, [icon]]) => [k, `/icons/items/${icon}.webp`])) as Record<BoatResKey, string>;
 const BOAT_RES_LABELS = Object.fromEntries(Object.entries(BOAT_RES_ITEMS).map(([k, [, label]]) => [k, label])) as Record<BoatResKey, string>;

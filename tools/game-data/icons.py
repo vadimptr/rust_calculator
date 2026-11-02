@@ -25,7 +25,8 @@ UI_ITEMS = {'wood', 'stones', 'metal.fragments', 'metal.refined', 'door.hinged.w
             'box.wooden', 'storage_barrel_b', 'storage_barrel_c', 'shelves', 'locker', 'fridge', 'furnace', 'small.oil.refinery',
             'mixingtable', 'research.table', 'box.repair.bench', 'bbq', 'electric.fuelgenerator.small',
             'electric.battery.rechargable.small', 'electric.battery.rechargable.medium', 'electric.solarpanel.large', 'lantern',
-            'sleepingbag', 'bed', 'water.barrel'}
+            'sleepingbag', 'bed', 'water.barrel',
+            'autoturret', 'cctv.camera', 'ceilinglight', 'composter', 'electric.andswitch', 'electric.battery.rechargable.large', 'electric.blocker', 'electric.button', 'electric.counter', 'electric.flasherlight', 'electric.furnace', 'electric.hbhfsensor', 'electric.heater', 'electric.igniter', 'electric.orswitch', 'electric.pressurepad', 'electric.random.switch', 'electric.simplelight', 'electric.sirenlight', 'electric.splitter', 'electric.sprinkler', 'electric.switch', 'electric.teslacoil', 'electric.timer', 'electric.xorswitch', 'electrical.branch', 'electrical.combiner', 'electrical.memorycell', 'fluid.combiner', 'fluid.splitter', 'fluid.switch', 'generator.wind.scrap', 'metalspring', 'planter.large', 'planter.small', 'planter.triangle', 'powered.water.purifier', 'propanetank', 'samsite', 'sheetmetal', 'smart.switch', 'targeting.computer', 'water.catcher.large', 'water.catcher.small', 'water.purifier', 'waterpump'}
 UI_BUILD = {'foundation', 'foundation.triangle', 'foundation.steps', 'ramp', 'floor', 'floor.triangle', 'floor.frame',
             'floor.triangle.frame', 'wall', 'wall.doorway', 'wall.window', 'wall.frame', 'wall.half', 'wall.low',
             'stairs_l', 'stairs_u', 'stairs_spiral', 'stairs.triangle.spiral', 'roof', 'roof.triangle',

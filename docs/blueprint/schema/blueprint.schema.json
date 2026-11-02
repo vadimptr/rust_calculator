@@ -53,6 +53,14 @@
     },
     "resolved": {
       "$ref": "#/$defs/Resolved"
+    },
+    "wires": {
+      "type": "array",
+      "default": [],
+      "description": "Провода и шланги между слотами объектов: от выхода к входу.",
+      "items": {
+        "$ref": "#/$defs/Wire"
+      }
     }
   },
   "$defs": {
@@ -154,7 +162,48 @@
         "large-solar-panel",
         "lantern",
         "sleeping-bag",
-        "bed"
+        "bed",
+        "small-planter",
+        "large-planter",
+        "triangle-planter",
+        "composter",
+        "sprinkler",
+        "ceiling-light",
+        "electric-heater",
+        "water-pump",
+        "water-purifier",
+        "powered-water-purifier",
+        "small-water-catcher",
+        "large-water-catcher",
+        "fluid-splitter",
+        "fluid-combiner",
+        "fluid-switch",
+        "wind-turbine",
+        "large-battery",
+        "splitter",
+        "root-combiner",
+        "branch",
+        "blocker",
+        "switch",
+        "smart-switch",
+        "button",
+        "timer",
+        "and-switch",
+        "or-switch",
+        "xor-switch",
+        "counter",
+        "memory-cell",
+        "random-switch",
+        "pressure-pad",
+        "hbhf-sensor",
+        "simple-light",
+        "flasher-light",
+        "siren-light",
+        "auto-turret",
+        "sam-site",
+        "tesla-coil",
+        "igniter",
+        "electric-furnace"
       ]
     },
     "Socket": {
@@ -564,7 +613,28 @@
                   "large-solar-panel",
                   "lantern",
                   "sleeping-bag",
-                  "bed"
+                  "bed",
+                  "small-planter",
+                  "large-planter",
+                  "triangle-planter",
+                  "composter",
+                  "sprinkler",
+                  "ceiling-light",
+                  "water-pump",
+                  "water-purifier",
+                  "powered-water-purifier",
+                  "small-water-catcher",
+                  "large-water-catcher",
+                  "wind-turbine",
+                  "large-battery",
+                  "pressure-pad",
+                  "flasher-light",
+                  "siren-light",
+                  "auto-turret",
+                  "sam-site",
+                  "tesla-coil",
+                  "igniter",
+                  "electric-furnace"
                 ]
               }
             }
@@ -591,6 +661,55 @@
             "properties": {
               "kind": {
                 "const": "drop-box"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "face"
+                  }
+                }
+              },
+              "hinge": false,
+              "opens": false,
+              "open": false,
+              "rotation": false
+            },
+            "required": [
+              "direction"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "electric-heater",
+                  "fluid-splitter",
+                  "fluid-combiner",
+                  "fluid-switch",
+                  "splitter",
+                  "root-combiner",
+                  "branch",
+                  "blocker",
+                  "switch",
+                  "smart-switch",
+                  "button",
+                  "timer",
+                  "and-switch",
+                  "or-switch",
+                  "xor-switch",
+                  "counter",
+                  "memory-cell",
+                  "random-switch",
+                  "hbhf-sensor",
+                  "simple-light"
+                ]
               }
             }
           },
@@ -652,7 +771,48 @@
                     "large-solar-panel",
                     "lantern",
                     "sleeping-bag",
-                    "bed"
+                    "bed",
+                    "small-planter",
+                    "large-planter",
+                    "triangle-planter",
+                    "composter",
+                    "sprinkler",
+                    "ceiling-light",
+                    "electric-heater",
+                    "water-pump",
+                    "water-purifier",
+                    "powered-water-purifier",
+                    "small-water-catcher",
+                    "large-water-catcher",
+                    "fluid-splitter",
+                    "fluid-combiner",
+                    "fluid-switch",
+                    "wind-turbine",
+                    "large-battery",
+                    "splitter",
+                    "root-combiner",
+                    "branch",
+                    "blocker",
+                    "switch",
+                    "smart-switch",
+                    "button",
+                    "timer",
+                    "and-switch",
+                    "or-switch",
+                    "xor-switch",
+                    "counter",
+                    "memory-cell",
+                    "random-switch",
+                    "pressure-pad",
+                    "hbhf-sensor",
+                    "simple-light",
+                    "flasher-light",
+                    "siren-light",
+                    "auto-turret",
+                    "sam-site",
+                    "tesla-coil",
+                    "igniter",
+                    "electric-furnace"
                   ]
                 }
               }
@@ -823,6 +983,61 @@
         },
         "socket": {
           "$ref": "#/$defs/Socket"
+        }
+      }
+    },
+    "Wire": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "from",
+        "to"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "power",
+            "fluid"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/WireEnd"
+        },
+        "to": {
+          "$ref": "#/$defs/WireEnd"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        }
+      }
+    },
+    "WireEnd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slot"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     }

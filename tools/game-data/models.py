@@ -118,6 +118,49 @@ DECK_EXTRA = {
     'storage-barrel-vertical': 'assets/prefabs/misc/decor_dlc/storagebarrel/storage_barrel_b.prefab',
     'storage-barrel-horizontal': 'assets/prefabs/misc/decor_dlc/storagebarrel/storage_barrel_c.prefab',
 }
+IO_OBJECTS = {
+    'small-planter': 'assets/prefabs/deployable/planters/planter.small.deployed.prefab',
+    'large-planter': 'assets/prefabs/deployable/planters/planter.large.deployed.prefab',
+    'triangle-planter': 'assets/prefabs/deployable/planters/planter.triangle.deployed.prefab',
+    'composter': 'assets/prefabs/deployable/composter/composter.prefab',
+    'sprinkler': 'assets/prefabs/deployable/playerioents/sprinkler/electric.sprinkler.deployed.prefab',
+    'ceiling-light': 'assets/prefabs/deployable/ceiling light/ceilinglight.deployed.prefab',
+    'electric-heater': 'assets/prefabs/deployable/playerioents/electricheater/electrical.heater.prefab',
+    'water-pump': 'assets/prefabs/deployable/playerioents/waterpump/water.pump.deployed.prefab',
+    'water-purifier': 'assets/prefabs/deployable/waterpurifier/waterpurifier.deployed.prefab',
+    'powered-water-purifier': 'assets/prefabs/deployable/playerioents/poweredwaterpurifier/poweredwaterpurifier.deployed.prefab',
+    'small-water-catcher': 'assets/prefabs/deployable/water catcher/water_catcher_small.prefab',
+    'large-water-catcher': 'assets/prefabs/deployable/water catcher/water_catcher_large.prefab',
+    'fluid-splitter': 'assets/prefabs/deployable/playerioents/fluidsplitter/fluidsplitter.prefab',
+    'fluid-combiner': 'assets/prefabs/deployable/playerioents/fluidcombiner/fluid.combiner.deployed.prefab',
+    'fluid-switch': 'assets/prefabs/deployable/playerioents/fluidswitch/fluidswitch.prefab',
+    'wind-turbine': 'assets/prefabs/deployable/windmill/electric.windmill.small.prefab',
+    'large-battery': 'assets/prefabs/deployable/playerioents/batteries/large/large.rechargable.battery.deployed.prefab',
+    'splitter': 'assets/prefabs/deployable/playerioents/splitter/splitter.prefab',
+    'root-combiner': 'assets/prefabs/deployable/playerioents/gates/combiner/electrical.combiner.deployed.prefab',
+    'branch': 'assets/prefabs/deployable/playerioents/gates/branch/electrical.branch.deployed.prefab',
+    'blocker': 'assets/prefabs/deployable/playerioents/gates/blocker/electrical.blocker.deployed.prefab',
+    'switch': 'assets/prefabs/deployable/playerioents/simpleswitch/switch.prefab',
+    'smart-switch': 'assets/prefabs/deployable/playerioents/app/smartswitch/smartswitch.prefab',
+    'button': 'assets/prefabs/deployable/playerioents/button/button.prefab',
+    'timer': 'assets/prefabs/deployable/playerioents/timers/timer.prefab',
+    'and-switch': 'assets/prefabs/deployable/playerioents/gates/andswitch/andswitch.entity.prefab',
+    'or-switch': 'assets/prefabs/deployable/playerioents/gates/orswitch/orswitch.entity.prefab',
+    'xor-switch': 'assets/prefabs/deployable/playerioents/gates/xorswitch/xorswitch.entity.prefab',
+    'counter': 'assets/prefabs/deployable/playerioents/counter/counter.prefab',
+    'memory-cell': 'assets/prefabs/deployable/playerioents/gates/dflipflop/electrical.memorycell.deployed.prefab',
+    'random-switch': 'assets/prefabs/deployable/playerioents/gates/randswitch/electrical.random.switch.deployed.prefab',
+    'pressure-pad': 'assets/prefabs/deployable/playerioents/detectors/pressurepad/pressurepad.deployed.prefab',
+    'hbhf-sensor': 'assets/prefabs/deployable/playerioents/detectors/hbhfsensor/hbhfsensor.deployed.prefab',
+    'simple-light': 'assets/prefabs/deployable/playerioents/lights/simplelight.prefab',
+    'flasher-light': 'assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.deployed.prefab',
+    'siren-light': 'assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab',
+    'auto-turret': 'assets/prefabs/npc/autoturret/autoturret_deployed.prefab',
+    'sam-site': 'assets/prefabs/npc/sam_site_turret/sam_site_turret_deployed.prefab',
+    'tesla-coil': 'assets/prefabs/deployable/playerioents/teslacoil/teslacoil.deployed.prefab',
+    'igniter': 'assets/prefabs/deployable/playerioents/igniter/igniter.deployed.prefab',
+    'electric-furnace': 'assets/prefabs/deployable/playerioents/electricfurnace/electricfurnace.deployed.prefab',
+}
 SKIP_NAMES = ('gibs', 'collider', 'collision', 'shadow', 'lod1', 'lod2', 'lod3', 'destruct', 'debris', 'fade', 'wallpaper')
 CONDITIONAL = {'full', 'wall_s', 'wall_e', 'wall_n', 'wall_w', 'wall_ne', 'wall_nw', 'roof.full', 'roof.triangle.full',
                'roof.top.line', 'roof.left.line', 'roof.right.line', 'roof.bottom.line', 'ramp.75', 'stairs.spiral.landing'}
@@ -750,7 +793,7 @@ for name, path in BOAT_OBJECTS.items():
     print(name, ex.export('assets/prefabs/deployable/boatbuilding/' + path, None, name) or 'нет модели', file=sys.stderr)
     ex.skinned = False
 
-for name, prefab in [*((n, 'assets/prefabs/deployable/' + p) for n, p in DECK_OBJECTS.items()), *DECK_EXTRA.items()]:
+for name, prefab in [*((n, 'assets/prefabs/deployable/' + p) for n, p in DECK_OBJECTS.items()), *DECK_EXTRA.items(), *IO_OBJECTS.items()]:
     if only and not any(name.startswith(o) for o in only):
         continue
     ex.conditionals = ex.skinned = True

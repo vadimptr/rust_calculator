@@ -6,7 +6,7 @@
  */
 import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
-import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
+import { DECK, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -272,9 +272,16 @@ export function transformOf(resolved: Resolved, id: string): ResolvedElement | u
   return resolved.elements.find(e => e.id === id);
 }
 
+export function pruneWires(bp: Blueprint): Blueprint {
+  if (!bp.wires?.length) return bp;
+  const ids = new Set((bp.deployables ?? []).map(d => d.id));
+  const wires = bp.wires.filter(w => ids.has(w.from.id) && ids.has(w.to.id));
+  return wires.length === bp.wires.length ? bp : { ...bp, wires };
+}
+
 export function removeElement(bp: Blueprint, id: string): Blueprint {
   if (!bp.elements.some(e => e.id === id)) return bp;
-  return { ...bp, elements: bp.elements.filter(e => e.id !== id), deployables: (bp.deployables ?? []).filter(d => d.attach.to !== id) };
+  return pruneWires({ ...bp, elements: bp.elements.filter(e => e.id !== id), deployables: (bp.deployables ?? []).filter(d => d.attach.to !== id) });
 }
 
 export interface DeployPlacement {
@@ -294,8 +301,29 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   const info = KINDS[host.kind];
   const taken = (bp.deployables ?? []).filter(d => d.attach.to === hostId);
   let deployable: Omit<Deployable, 'id'>;
-  if (isBoatObject(kind)) {
+  const mount = isBoatObject(kind) ? DECK[kind]!.mount : undefined;
+  if (mount === 'wall') {
+    if (info.category !== 'wallType') return null;
+    const b = DECK[kind]!.box;
+    const bottom = b.y ?? 0, top = bottom + b.h, h = wallHeight(host.kind);
+    if (top - bottom > h) return null;
+    const step = (v: number) => Math.round(v * 20) / 20;
+    const along = step(Math.max(-1.5 + b.z, Math.min(1.5 - b.z, local[2])));
+    const height = step(Math.max(-bottom, Math.min(h - top, local[1] - (bottom + top) / 2)));
+    const direction: 'in' | 'out' = local[0] >= 0 ? 'out' : 'in';
+    const clash = taken.some(d => {
+      if (d.attach.socket !== 'face') return false;
+      if (d.kind !== 'drop-box' && d.direction !== direction) return false;
+      const o = d.kind in DECK ? DECK[d.kind]!.box : { z: 0.3, h: 0.5, y: -0.25 };
+      const [da, dh] = d.offset ?? [0, 0];
+      const oc = dh + (o.y ?? 0) + o.h / 2, mc = height + bottom + b.h / 2;
+      return Math.abs(da - along) < o.z + b.z && Math.abs(oc - mc) < (o.h + b.h) / 2;
+    });
+    if (clash) return null;
+    deployable = { kind, attach: { to: hostId, socket: 'face' }, offset: [along, height], direction };
+  } else if (isBoatObject(kind)) {
     if (info.category !== 'cell' || info.isFrame || (isBoatOnly(kind) && !info.boat)) return null;
+    if (mount === 'ceiling' && info.isFoundation) return null;
     if (kind === 'small-engine' && !info.isFoundation) return null;
     const limit = OBJECT_LIMIT[kind];
     if (limit !== undefined && (bp.deployables ?? []).filter(d => d.kind === kind).length >= limit) return null;
@@ -424,7 +452,7 @@ export function addDeployable(bp: Blueprint, d: Omit<Deployable, 'id'>): Bluepri
 }
 
 export function removeDeployable(bp: Blueprint, id: string): Blueprint {
-  return { ...bp, deployables: (bp.deployables ?? []).filter(d => d.id !== id) };
+  return pruneWires({ ...bp, deployables: (bp.deployables ?? []).filter(d => d.id !== id) });
 }
 
 /**

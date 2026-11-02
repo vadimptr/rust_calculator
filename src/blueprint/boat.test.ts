@@ -211,3 +211,26 @@ test('house: furniture goes on a foundation, boat-only objects do not, and raid 
   assert.deepEqual(loaded.issues.filter(i => i.level === 'error'), []);
   assert.equal(loaded.resolved!.deployables.length, 2);
 });
+
+test('io objects: wall items hang on either face of a wall, ceiling lights hang under a floor, planters stand on a foundation', () => {
+  let bp = newBlueprint('Ферма', 'square-foundation');
+  bp = attach(bp, 'wall', 'f1', [1.5, 1, 0]);
+  const wall = bp.elements.find(e => e.kind === 'wall')!.id;
+  bp = attach(bp, 'square-floor', wall, [0, 3, 0]);
+  const floor = bp.elements.find(e => e.kind === 'square-floor')!.id;
+  assert.equal(deployPlacement(bp, res(bp), 'splitter', 'f1', [0, 0, 0], 0), null);
+  assert.equal(deployPlacement(bp, res(bp), 'ceiling-light', 'f1', [0, 0, 0], 0), null);
+  bp = deploy(bp, 'splitter', wall, [-0.2, 1.4, 0.5]);
+  bp = deploy(bp, 'switch', wall, [0.2, 1.4, 0.5]);
+  assert.equal(deployPlacement(bp, res(bp), 'splitter', wall, [-0.2, 1.4, 0.5], 0), null);
+  bp = deploy(bp, 'ceiling-light', floor, [0, -0.2, 0]);
+  bp = deploy(bp, 'large-planter', 'f1', [0, 0, 0]);
+  const loaded = loadBlueprint(bp);
+  assert.deepEqual(loaded.issues.filter(i => i.level === 'error'), []);
+  const r = loaded.resolved!;
+  const w = r.elements.find(e => e.id === wall)!;
+  const inner = r.deployables.find(d => d.kind === 'splitter')!, outer = r.deployables.find(d => d.kind === 'switch')!;
+  assert.ok(inner.position[0] < w.position[0] && outer.position[0] > w.position[0], `${inner.position} ${outer.position}`);
+  const light = r.deployables.find(d => d.kind === 'ceiling-light')!;
+  assert.ok(Math.abs(light.position[1] - (r.elements.find(e => e.id === floor)!.position[1] - 0.2)) < 1e-6);
+});

@@ -131,7 +131,7 @@ function buildBoatObject(d: ResolvedDeployable, blocked: boolean): THREE.Group {
   const g = new THREE.Group();
   const b = DECK[d.kind]!.box;
   const proxy = new THREE.Group();
-  proxy.add(withEdges(box(b.x[1] - b.x[0], b.h, 2 * b.z, (b.x[0] + b.x[1]) / 2, b.h / 2, 0), DOOR_COLORS[d.kind] ?? 0x8b6a45));
+  proxy.add(withEdges(box(b.x[1] - b.x[0], b.h, 2 * b.z, (b.x[0] + b.x[1]) / 2, (b.y ?? 0) + b.h / 2, 0), DOOR_COLORS[d.kind] ?? 0x8b6a45));
   const model = gameModel(d.kind);
   if (model) {
     hideProxy(proxy);

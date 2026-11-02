@@ -4,11 +4,11 @@
  * поставленного в сокет соседа: ею пользуется и установка в редакторе.
  */
 import {
-  BLOCK_FEMALE_Y, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
+  BLOCK_FEMALE_Y, FLOOR_T, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
   edgeIndex, isLowWall, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
 import { groundTerrain } from './terrain.ts';
-import { isBoatObject, isBoatOnly } from './boat.ts';
+import { DECK, isBoatObject, isBoatOnly } from './boat.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
   Socket, Transform,
@@ -165,6 +165,8 @@ function onTop(parent: PoseHost, h: number, kind: ElementKind, a: Attach, selfSo
   throw new Error(`unsupported attachment ${parent.kind}.${a.socket} <- ${kind}.${selfSocket}`);
 }
 
+const WALL_HALF = 0.125;
+
 function placeDeployable(parent: Transform, d: Deployable): Transform {
   const [px, py, pz] = parent.position;
   if (d.attach.socket === 'opening') {
@@ -174,6 +176,12 @@ function placeDeployable(parent: Transform, d: Deployable): Transform {
     // дроп-бокс: на стене, смещение вдоль стены и по высоте; поворот = нормаль стены
     const [along, height] = d.offset ?? [0, 1.3];
     const [cx, cz] = dir(parent.rotation);
+    const deck = DECK[d.kind];
+    if (deck?.mount === 'wall') {
+      const side = d.direction === 'in' ? -1 : 1;
+      const out = side * (WALL_HALF - deck.box.x[0]);
+      return { position: [px - along * cz + out * cx, py + height, pz + along * cx + out * cz], rotation: parent.rotation + (side < 0 ? 180 : 0), level: parent.level };
+    }
     return { position: [px - along * cz, py + height, pz + along * cx], rotation: parent.rotation, level: parent.level };
   }
   const [ox, oz] = d.offset ?? [0, 0];
@@ -181,7 +189,8 @@ function placeDeployable(parent: Transform, d: Deployable): Transform {
   // R(rot) · offset: локальный +x → (cx, cz), локальный +z → (-cz, cx)
   const x = px + ox * cx - oz * cz;
   const z = pz + ox * cz + oz * cx;
-  return { position: [x, py, z], rotation: parent.rotation + (d.rotation ?? 0), level: parent.level };
+  const y = DECK[d.kind]?.mount === 'ceiling' ? py - FLOOR_T : py;
+  return { position: [x, y, z], rotation: parent.rotation + (d.rotation ?? 0), level: parent.level };
 }
 
 export function angleGap(a: number, b: number, mod = 360): number {
@@ -263,7 +272,16 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
     const parent = byId.get(d.attach.to);
     if (!parent) { issues.push(err('V02', d.id, `attach.to ссылается на несуществующий элемент «${d.attach.to}»`)); continue; }
     const info = KINDS[parent.kind];
-    if (isBoatObject(d.kind)) {
+    if (DECK[d.kind]?.mount === 'wall') {
+      if (d.attach.socket !== 'face' || info.category !== 'wallType') {
+        issues.push(err('V04', d.id, `${d.kind} вешается на стену, а не на ${parent.kind}`));
+        continue;
+      }
+    } else if (isBoatObject(d.kind)) {
+      if (DECK[d.kind]?.mount === 'ceiling' && (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFoundation)) {
+        issues.push(err('V04', d.id, `${d.kind} вешается под потолок — под пол, а не на ${parent.kind}`));
+        continue;
+      }
       if (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFrame || (isBoatOnly(d.kind) && !info.boat)) {
         issues.push(err('V04', d.id, isBoatOnly(d.kind) ? `${d.kind} ставится только на корпус или пол корабля, а не на ${parent.kind}` : `${d.kind} ставится только на фундамент или пол, а не на ${parent.kind}`));
         continue;

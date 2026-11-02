@@ -56,6 +56,47 @@ export type DeployableKind =
   | BoatObjectKind;
 
 export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'cannon' | 'anchor' | 'plank' | 'small-ramp'
+  | 'small-planter'
+  | 'large-planter'
+  | 'triangle-planter'
+  | 'composter'
+  | 'sprinkler'
+  | 'ceiling-light'
+  | 'electric-heater'
+  | 'water-pump'
+  | 'water-purifier'
+  | 'powered-water-purifier'
+  | 'small-water-catcher'
+  | 'large-water-catcher'
+  | 'fluid-splitter'
+  | 'fluid-combiner'
+  | 'fluid-switch'
+  | 'wind-turbine'
+  | 'large-battery'
+  | 'splitter'
+  | 'root-combiner'
+  | 'branch'
+  | 'blocker'
+  | 'switch'
+  | 'smart-switch'
+  | 'button'
+  | 'timer'
+  | 'and-switch'
+  | 'or-switch'
+  | 'xor-switch'
+  | 'counter'
+  | 'memory-cell'
+  | 'random-switch'
+  | 'pressure-pad'
+  | 'hbhf-sensor'
+  | 'simple-light'
+  | 'flasher-light'
+  | 'siren-light'
+  | 'auto-turret'
+  | 'sam-site'
+  | 'tesla-coil'
+  | 'igniter'
+  | 'electric-furnace'
   | 'workbench1'
   | 'workbench2'
   | 'workbench3'
@@ -163,8 +204,24 @@ export interface Blueprint {
   defaults?: { grade?: Grade };
   elements: Element[];
   deployables?: Deployable[];
+  wires?: Wire[];
   terrain?: Terrain[];
   resolved?: unknown;
+}
+
+export type WireKind = 'power' | 'fluid';
+
+export interface WireEnd {
+  id: string;
+  slot: number;
+}
+
+export interface Wire {
+  id: string;
+  kind: WireKind;
+  from: WireEnd;
+  to: WireEnd;
+  points?: [number, number, number][];
 }
 
 export interface LegacyBlueprint extends Omit<Blueprint, 'formatVersion' | 'elements'> {

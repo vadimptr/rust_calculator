@@ -1,0 +1,3092 @@
+[
+ {
+  "shortname": "planter.small",
+  "displayName": "Small Planter Box",
+  "itemPrefab": "assets/prefabs/deployable/planters/planter.small.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/planters/planter.small.deployed.prefab",
+  "entityClass": "PlanterBox",
+  "ioClass": null,
+  "inputs": [],
+  "outputs": [],
+  "fluid": {
+   "soilSaturationMax": 3000,
+   "water_from": "sprinkler splash or rain or bucket/jug (no hose input)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.342,
+    0.002
+   ],
+   "extent": [
+    1.619,
+    0.342,
+    0.55
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "wood": 100,
+   "tarp": 1
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "PlanterBox (StorageContainer, ISplashable), no IO slots. 6 fertilizer slots. Optimal saturation 60% (ConVar server.optimalPlanterQualitySaturation=0.6). Each plant consumes ceil(WaterIntake*tempMult*(1+0.1*W genes)) per plant tick (server.planttick=60s); WaterIntake 4 (berries, corn, potato, wheat) / 5 (hemp, pumpkin, rose, sunflower) / 20 (orchid). Rain adds round(4*rain*seconds) every 20-45s if outside. Light: sun raycast or CeilingLight within 3 m."
+ },
+ {
+  "shortname": "planter.large",
+  "displayName": "Large Planter Box",
+  "itemPrefab": "assets/prefabs/deployable/planters/planter.large.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/planters/planter.large.deployed.prefab",
+  "entityClass": "PlanterBox",
+  "ioClass": null,
+  "inputs": [],
+  "outputs": [],
+  "fluid": {
+   "soilSaturationMax": 9000,
+   "water_from": "sprinkler splash or rain or bucket/jug (no hose input)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.3,
+    0.002
+   ],
+   "extent": [
+    1.41,
+    0.28,
+    1.38
+   ]
+  },
+  "health": 250.0,
+  "cost": {
+   "wood": 200,
+   "tarp": 2
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "PlanterBox, no IO slots. Same rules as small planter; saturation max 9000."
+ },
+ {
+  "shortname": "planter.triangle",
+  "displayName": "Triangle Planter Box",
+  "itemPrefab": "assets/prefabs/deployable/planters/planter.triangle.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/planters/planter.triangle.deployed.prefab",
+  "entityClass": "PlanterBox",
+  "ioClass": null,
+  "inputs": [],
+  "outputs": [],
+  "fluid": {
+   "soilSaturationMax": 3000,
+   "water_from": "sprinkler splash or rain or bucket/jug (no hose input)"
+  },
+  "box": {
+   "center": [
+    -0.527,
+    0.266,
+    -0.002
+   ],
+   "extent": [
+    1.103,
+    0.266,
+    1.252
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "wood": 150,
+   "tarp": 1
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "PlanterBox, no IO slots, same rules as small planter. Bounds center is offset (-0.526 x) because of triangle shape."
+ },
+ {
+  "shortname": "composter",
+  "displayName": "Composter",
+  "itemPrefab": "assets/prefabs/deployable/composter/composter.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/composter/composter.prefab",
+  "entityClass": "Composter",
+  "ioClass": null,
+  "inputs": [],
+  "outputs": [],
+  "box": {
+   "center": [
+    0.0,
+    0.804,
+    0.0
+   ],
+   "extent": [
+    0.6,
+    0.816,
+    0.6
+   ]
+  },
+  "health": 500.0,
+  "cost": {
+   "tarp": 2,
+   "wood": 200
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "Composter : BaseOven, no IO, no power. 5 input + 3 output slots; converts compostables to fertilizer every server.composterUpdateInterval=300s; runs without fuel."
+ },
+ {
+  "shortname": "electric.sprinkler",
+  "displayName": "Sprinkler",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/sprinkler/electric.sprinkler.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/sprinkler/electric.sprinkler.deployed.prefab",
+  "entityClass": "Sprinkler",
+  "ioClass": "Sprinkler",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.25,
+     0.09,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "fluid",
+    "pos": [
+     -0.25,
+     0.09,
+     0.0
+    ]
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "consumption_per_sec": 2,
+   "min_input_flow": 2,
+   "splash_interval_s": 5,
+   "water_per_splash": 15,
+   "radius_m": 3,
+   "passthrough": "flow out = input flow - 2 (default IOEntity rule)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.22,
+    0.0
+   ],
+   "extent": [
+    0.25,
+    0.22,
+    0.25
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "Sprinkler: IOType fluid. ON when input flow >= 2 (ConsumptionAmount=2); its source LiquidContainer deducts 2 water/s per running sprinkler (DesiredPower). Every SplashFrequency=5s gives WaterPerSplash=15 split between ISplashables (planters, players, etc.) inside a capsule of server.sprinklerRadius=3 m with line of sight. Salt water resets planter saturation to 0; radioactive kills plants. DecayPerSplash=0."
+ },
+ {
+  "shortname": "waterpump",
+  "displayName": "Water Pump",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/waterpump/water.pump.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/waterpump/water.pump.deployed.prefab",
+  "entityClass": "WaterPump",
+  "ioClass": "WaterPump",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.09,
+     0.65,
+     0.09
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Output",
+    "type": "fluid",
+    "pos": [
+     -0.09,
+     0.74,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 5,
+   "passthrough": "no electric output; consumes 5 while running"
+  },
+  "fluid": {
+   "pump_amount": 85,
+   "pump_interval_s": 10,
+   "pump_rate_per_sec": 8.5,
+   "capacity": 2000,
+   "maxOutputFlow": 12,
+   "autofill": {
+    "enabled": true,
+    "amount": 24,
+    "interval_s": 2
+   }
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.375,
+    0.0
+   ],
+   "extent": [
+    0.63,
+    0.375,
+    0.36
+   ]
+  },
+  "health": 300.0,
+  "cost": {
+   "wood": 250,
+   "metal.fragments": 200,
+   "gears": 1
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "WaterPump : LiquidContainer. Must be deployed in water: adds AmountPerPump=85 of the water type at WaterResourceLocation (salt/fresh) every PumpInterval=10s (±10%) while powered (>=5). When powered (Flag HasPower) its outputs ignore gravity restrictions. IsRootEntity, gravity source."
+ },
+ {
+  "shortname": "water.purifier",
+  "displayName": "Water Purifier",
+  "itemPrefab": "assets/prefabs/deployable/waterpurifier/waterpurifier.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/waterpurifier/waterpurifier.deployed.prefab",
+  "entityClass": "WaterPurifier",
+  "ioClass": "WaterPurifier",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     -0.08,
+     1.04,
+     -0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     0.619,
+     0.221,
+     0.33
+    ],
+    "onChild": "assets/prefabs/deployable/waterpurifier/waterstorage.prefab"
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "input_capacity": 5000,
+   "process_per_min": 1000,
+   "fresh_ratio": 4,
+   "fresh_per_min": 250,
+   "output_capacity": 2000,
+   "output_maxOutputFlow": 12,
+   "output_autofill": {
+    "amount": 24,
+    "interval_s": 2
+   }
+  },
+  "box": {
+   "center": [
+    0.196,
+    0.535,
+    0.0
+   ],
+   "extent": [
+    0.61,
+    0.54,
+    0.414
+   ]
+  },
+  "health": 150.0,
+  "cost": {
+   "propanetank": 1,
+   "metal.fragments": 15,
+   "cloth": 10
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "WaterPurifier : LiquidContainer, not electric. Must sit on a burning oven-like parent (campfire etc.): converts only while parent IsOn (Cook). Clean water goes to child entity waterstorage.prefab (LiquidContainer) at anchor cleanwaterstorage (0.624,0.196,0); the Water Out position is given in entity space = anchor + child handle. stopWhenOutputFull=0."
+ },
+ {
+  "shortname": "powered.water.purifier",
+  "displayName": "Powered Water Purifier",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/poweredwaterpurifier/poweredwaterpurifier.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/poweredwaterpurifier/poweredwaterpurifier.deployed.prefab",
+  "entityClass": "PoweredWaterPurifier",
+  "ioClass": "PoweredWaterPurifier",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.83,
+     1.08,
+     0.5
+    ]
+   },
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     1.14,
+     0.45,
+     0.02
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     -0.651,
+     0.148,
+     0.694
+    ],
+    "onChild": "assets/prefabs/deployable/playerioents/poweredwaterpurifier/poweredwaterpurifier.storage.prefab"
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 5,
+   "passthrough": "no electric output"
+  },
+  "fluid": {
+   "input_capacity": 5000,
+   "process_per_min": 4000,
+   "fresh_ratio": 2,
+   "fresh_per_min": 2000,
+   "convert_interval_s": 5,
+   "output_capacity": 5000,
+   "output_maxOutputFlow": 12,
+   "output_autofill": {
+    "amount": 24,
+    "interval_s": 2
+   },
+   "stopWhenOutputFull": true
+  },
+  "box": {
+   "center": [
+    0.038,
+    0.998,
+    0.061
+   ],
+   "extent": [
+    1.146,
+    1.002,
+    0.962
+   ]
+  },
+  "health": 300.0,
+  "cost": {
+   "metal.fragments": 300,
+   "cloth": 20,
+   "wood": 100
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "PoweredWaterPurifier : WaterPurifier. Converts every 5s while powered (PowerDrain=5). Output is child LiquidContainer poweredwaterpurifier.storage.prefab at anchor cleanwaterstorage (-0.431,0.618,0.604); Water Out given in entity space. Power In is mainPowerSlot. ioType of entity is Electric."
+ },
+ {
+  "shortname": "water.barrel",
+  "displayName": "Water Barrel",
+  "itemPrefab": "assets/prefabs/deployable/liquidbarrel/waterbarrel.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/liquidbarrel/waterbarrel.prefab",
+  "entityClass": "LiquidContainer",
+  "ioClass": "LiquidContainer",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.01,
+     2.03,
+     0.0
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     1.1,
+     0.53
+    ]
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "capacity": 20000,
+   "maxOutputFlow": 12,
+   "autofill": {
+    "enabled": true,
+    "amount": 24,
+    "interval_s": 2
+   }
+  },
+  "box": {
+   "center": [
+    0.023,
+    1.06,
+    -0.011
+   ],
+   "extent": [
+    0.867,
+    1.06,
+    0.645
+   ]
+  },
+  "health": 250.0,
+  "cost": {
+   "wood": 250,
+   "tarp": 1
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "LiquidContainer, root entity, no power. Accepts water/salt water (ValidItems). Output side gravity-limited (no pump)."
+ },
+ {
+  "shortname": "water.catcher.small",
+  "displayName": "Small Water Catcher",
+  "itemPrefab": "assets/prefabs/deployable/water catcher/water_catcher_small.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/water catcher/water_catcher_small.prefab",
+  "entityClass": "WaterCatcher",
+  "ioClass": "WaterCatcher",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.4,
+     0.6,
+     0.0
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.29,
+     0.59
+    ]
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "capacity": 10000,
+   "maxOutputFlow": 6,
+   "autofill": {
+    "enabled": true,
+    "amount": 12,
+    "interval_s": 2
+   },
+   "collect": "every 60s (+0..10%): ceil(10 * (0.25 + 2*fog + 500*rain + 0.5*snow)); rain/snow only if outside (sky test at +2 m, size 0.5); base (dry) = 3 per minute"
+  },
+  "box": {
+   "center": [
+    -0.022,
+    1.335,
+    -0.006
+   ],
+   "extent": [
+    1.115,
+    1.335,
+    1.181
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "wood": 100,
+   "metal.fragments": 50,
+   "tarp": 1
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "WaterCatcher : LiquidContainer. requireOutside. Also has a Water In."
+ },
+ {
+  "shortname": "water.catcher.large",
+  "displayName": "Large Water Catcher",
+  "itemPrefab": "assets/prefabs/deployable/water catcher/water_catcher_large.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/water catcher/water_catcher_large.prefab",
+  "entityClass": "WaterCatcher",
+  "ioClass": "WaterCatcher",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.86,
+     0.8,
+     0.0
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.75,
+     1.03
+    ]
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "capacity": 50000,
+   "maxOutputFlow": 12,
+   "autofill": {
+    "enabled": true,
+    "amount": 6,
+    "interval_s": 2
+   },
+   "collect": "every 60s (+0..10%): ceil(30 * (0.25 + 2*fog + 500*rain + 0.5*snow)); base (dry) = 8 per minute"
+  },
+  "box": {
+   "center": [
+    0.04,
+    1.998,
+    0.0
+   ],
+   "extent": [
+    2.695,
+    2.084,
+    2.826
+   ]
+  },
+  "health": 300.0,
+  "cost": {
+   "wood": 500,
+   "metal.fragments": 200,
+   "tarp": 2
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "WaterCatcher, rain test at +3 m, size 1.0. NB autofillTickAmount is 6 (less than small catcher 12) in this build."
+ },
+ {
+  "shortname": "fluid.splitter",
+  "displayName": "Fluid Splitter",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/fluidsplitter/fluidsplitter.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/fluidsplitter/fluidsplitter.prefab",
+  "entityClass": "Splitter",
+  "ioClass": "Splitter",
+  "inputs": [
+   {
+    "name": "Water In",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.18,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out 1",
+    "type": "fluid",
+    "pos": [
+     0.15,
+     0.0,
+     0.03
+    ]
+   },
+   {
+    "name": "Water Out 2",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.0,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Water Out 3",
+    "type": "fluid",
+    "pos": [
+     -0.15,
+     0.0,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "rule": "Splitter class with ioType Fluidic: flow per output = floor(in/n), first (in mod n) connected outputs get +1; consumption 0"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.13,
+    0.09
+   ],
+   "extent": [
+    0.21,
+    0.12,
+    0.07
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "Uses the same Splitter class as electric splitter. Root entity."
+ },
+ {
+  "shortname": "fluid.switch",
+  "displayName": "Fluid Switch & Pump",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/fluidswitch/fluidswitch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/fluidswitch/fluidswitch.prefab",
+  "entityClass": "FluidSwitch",
+  "ioClass": "FluidSwitch",
+  "inputs": [
+   {
+    "name": "Fluid Input",
+    "type": "fluid",
+    "pos": [
+     0.07,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Toggle",
+    "type": "power",
+    "pos": [
+     0.04,
+     0.2,
+     0.03
+    ]
+   },
+   {
+    "name": "Pump Power",
+    "type": "power",
+    "pos": [
+     0.09,
+     0.2,
+     0.0
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Fluid Output",
+    "type": "fluid",
+    "pos": [
+     -0.09,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "fluid",
+  "power": {
+   "consumption": 0,
+   "passthrough": "no electric output; Pump Power input just needs >0"
+  },
+  "fluid": {
+   "rule": "flow out = flow in when switched ON, 0 when OFF; when Pump Power > 0 water downstream ignores gravity (acts as pump/gravity source)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "extent": [
+    0.17,
+    0.2,
+    0.093
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 150
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "FluidSwitch : ElectricSwitch. ioType Fluidic. Toggle input >0 => ON, 0 => OFF (edge on change). Inputs: Fluid Input (fluid), Toggle (power), Pump Power (power)."
+ },
+ {
+  "shortname": "fluid.combiner",
+  "displayName": "Fluid Combiner",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/fluidcombiner/fluid.combiner.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/fluidcombiner/fluid.combiner.deployed.prefab",
+  "entityClass": "ElectricalCombiner",
+  "ioClass": "ElectricalCombiner",
+  "inputs": [
+   {
+    "name": "Water In 1",
+    "type": "fluid",
+    "pos": [
+     0.15,
+     0.18,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Water In 2",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.18,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Water In 3",
+    "type": "fluid",
+    "pos": [
+     -0.15,
+     0.18,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Water Out",
+    "type": "fluid",
+    "pos": [
+     0.0,
+     0.0,
+     0.03
+    ]
+   }
+  ],
+  "ioType": "fluid",
+  "fluid": {
+   "rule": "ElectricalCombiner with ioType Fluidic: out = in1+in2+in3"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.13,
+    0.09
+   ],
+   "extent": [
+    0.21,
+    0.12,
+    0.07
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "Bonus item (not in request list)."
+ },
+ {
+  "shortname": "ceilinglight",
+  "displayName": "Ceiling Light",
+  "itemPrefab": "assets/prefabs/deployable/ceiling light/ceilinglight.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/ceiling light/ceilinglight.deployed.prefab",
+  "entityClass": "CeilingLight",
+  "ioClass": "CeilingLight",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.03,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     -0.03,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 2,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    -0.35,
+    0.0
+   ],
+   "extent": [
+    0.5,
+    0.35,
+    0.5
+   ]
+  },
+  "health": 300.0,
+  "cost": {
+   "metal.fragments": 50
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "CeilingLight: consumption 2 (prefab consumptionAmount). Acts as grow light: plants within server.ceilingLightGrowableRange=3 m (3D distance from light) get artificial light = 1 when light is ON. Mount on ceiling."
+ },
+ {
+  "shortname": "electric.heater",
+  "displayName": "Electric Heater",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/electricheater/electrical.heater.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/electricheater/electrical.heater.prefab",
+  "entityClass": "ElectricalHeater",
+  "ioClass": "ElectricalHeater",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.35,
+     -0.07,
+     0.14
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     -0.35,
+     -0.07,
+     0.14
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 3,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.103
+   ],
+   "extent": [
+    0.561,
+    0.274,
+    0.103
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 200
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "ElectricalHeater: ConsumptionAmount=3. GrowableHeatSource heatAmount=10, range server.artificialTemperatureGrowableRange=4 m (falloff 1.0 until 70% of range, then linear to 0)."
+ },
+ {
+  "shortname": "generator.wind.scrap",
+  "displayName": "Wind Turbine",
+  "itemPrefab": "assets/prefabs/deployable/windmill/generator.wind.scrap.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/windmill/electric.windmill.small.prefab",
+  "alias": "electric.windmill.small (requested name)",
+  "entityClass": "ElectricWindmill",
+  "ioClass": "ElectricWindmill",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     -0.12,
+     0.35,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 150,
+   "passthrough": "single output = currentEnergy",
+   "formula": "floor(150 * clamp01(InverseLerp(0,50,h)*0.5 + PerlinNoise(x/512 + t/600, z/512 + t/6000))); h = height above first ground/building hit within 10 m below, else above terrain; 0 if blocked (needs clear ray 16 m up from +6 m and 16 m toward wind)",
+   "update_interval_s": 20
+  },
+  "box": {
+   "center": [
+    0.0,
+    4.922,
+    0.0
+   ],
+   "extent": [
+    1.59,
+    4.935,
+    1.52
+   ]
+  },
+  "health": 250.0,
+  "cost": {
+   "wood": 500,
+   "metal.refined": 10,
+   "gears": 3,
+   "sheetmetal": 3
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "ElectricWindmill (Wind Turbine). Root entity. Bounds ~3.2x9.9x3.0 m."
+ },
+ {
+  "shortname": "electric.solarpanel.large",
+  "displayName": "Large Solar Panel",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/generators/solar_panels_roof/solarpanel.large.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/generators/solar_panels_roof/solarpanel.large.deployed.prefab",
+  "entityClass": "SolarPanel",
+  "ioClass": "SolarPanel",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "Electric Output",
+    "type": "power",
+    "pos": [
+     0.18,
+     0.0,
+     0.97
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 20,
+   "passthrough": "single output = currentEnergy",
+   "formula": "night: 0; else floor(20 * InverseLerp(0.3,0.7, dot(sunSampler.forward, sunDir)) * healthFraction); 0 if sun occluded within 100 m",
+   "sunSampler_forward_local": [
+    0.564,
+    0.827,
+    0.0
+   ]
+  },
+  "box": {
+   "center": [
+    0.04,
+    0.269,
+    0.0
+   ],
+   "extent": [
+    0.45,
+    0.296,
+    1.02
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.refined": 5,
+   "techparts": 1
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "SolarPanel. sunSampler tilted ~34 deg from vertical toward local +X: rotate panel so +X faces the sun path. Root entity."
+ },
+ {
+  "shortname": "electric.fuelgenerator.small",
+  "displayName": "Small Generator",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/generators/fuel generator/small_fuel_generator.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/generators/fuel generator/small_fuel_generator.deployed.prefab",
+  "entityClass": "FuelGenerator",
+  "ioClass": "FuelGenerator",
+  "inputs": [
+   {
+    "name": "Force Start",
+    "type": "power",
+    "pos": [
+     -0.22,
+     0.32,
+     0.195
+    ]
+   },
+   {
+    "name": "Force Stop",
+    "type": "power",
+    "pos": [
+     -0.22,
+     0.32,
+     0.1
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     -0.22,
+     0.32,
+     0.01
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 40,
+   "passthrough": "single output = 40 when ON, else 0"
+  },
+  "fuel": {
+   "item": "lowgradefuel",
+   "per_sec": 0.0694,
+   "per_hour": 250,
+   "slot_capacity": 500,
+   "tick_s": 3
+  },
+  "box": {
+   "center": [
+    0.021,
+    0.343,
+    -0.062
+   ],
+   "extent": [
+    0.398,
+    0.356,
+    0.495
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.refined": 5,
+   "gears": 2
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "FuelGenerator. Force Start / Force Stop inputs (any >0) toggle. Root entity."
+ },
+ {
+  "shortname": "electric.battery.rechargable.small",
+  "displayName": "Small Rechargeable Battery",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/batteries/small.rechargable.battery.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/batteries/smallrechargablebattery.deployed.prefab",
+  "entityClass": "ElectricBattery",
+  "ioClass": "ElectricBattery",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     -0.058,
+     0.315,
+     0.165
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Output",
+    "type": "power",
+    "pos": [
+     -0.058,
+     0.315,
+     -0.165
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Fully Charged",
+    "type": "power",
+    "pos": [
+     -0.058,
+     0.15,
+     0.22
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 15,
+   "passthrough": "Power Output = maxOutput (15) whenever discharging and charge >=1; real drain per second = sum of DesiredPower (consumption) of downstream consumers, capped at 15. Fully Charged output = 1 when full.",
+   "capacity_rWs": 24000,
+   "capacity_rWm": 400,
+   "initial_charge_rWs": 2200,
+   "max_input": 60,
+   "charge": "+min(input, 4*maxOutput) * 0.8 per second"
+  },
+  "box": {
+   "center": [
+    0.002,
+    0.184,
+    0.0
+   ],
+   "extent": [
+    0.162,
+    0.175,
+    0.227
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.refined": 5
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "ElectricBattery; root entity. In-game rWm = rustWattSeconds/60."
+ },
+ {
+  "shortname": "electric.battery.rechargable.medium",
+  "displayName": "Medium Rechargeable Battery",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/batteries/medium/medium.rechargable.battery.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/batteries/medium/medium.rechargable.battery.deployed.prefab",
+  "entityClass": "ElectricBattery",
+  "ioClass": "ElectricBattery",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     -0.16,
+     0.73,
+     0.31
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Output",
+    "type": "power",
+    "pos": [
+     -0.27,
+     0.73,
+     0.34
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Fully Charged",
+    "type": "power",
+    "pos": [
+     -0.11,
+     0.84,
+     0.28
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 50,
+   "passthrough": "Power Output = 50 while discharging; drain = downstream consumption capped at 50; Fully Charged = 1 when full",
+   "capacity_rWs": 540000,
+   "capacity_rWm": 9000,
+   "initial_charge_rWs": 6000,
+   "max_input": 200,
+   "charge": "+min(input, 200) * 0.8 per second"
+  },
+  "box": {
+   "center": [
+    -0.001,
+    0.732,
+    0.002
+   ],
+   "extent": [
+    0.634,
+    0.732,
+    0.371
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.refined": 5,
+   "techparts": 1
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "ElectricBattery; root entity."
+ },
+ {
+  "shortname": "electric.battery.rechargable.large",
+  "displayName": "Large Rechargeable Battery",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/batteries/large/large.rechargable.battery.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/batteries/large/large.rechargable.battery.deployed.prefab",
+  "entityClass": "ElectricBattery",
+  "ioClass": "ElectricBattery",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.18,
+     0.96,
+     0.67
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Output",
+    "type": "power",
+    "pos": [
+     -0.18,
+     0.96,
+     0.67
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Fully Charged",
+    "type": "power",
+    "pos": [
+     0.31,
+     1.11,
+     0.67
+    ]
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 100,
+   "passthrough": "Power Output = 100 while discharging; drain = downstream consumption capped at 100; Fully Charged = 1 when full",
+   "capacity_rWs": 1440000,
+   "capacity_rWm": 24000,
+   "initial_charge_rWs": 12000,
+   "max_input": 400,
+   "charge": "+min(input, 400) * 0.8 per second"
+  },
+  "box": {
+   "center": [
+    0.004,
+    1.121,
+    0.074
+   ],
+   "extent": [
+    0.5,
+    1.129,
+    0.686
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.refined": 10,
+   "techparts": 2
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "ElectricBattery; root entity."
+ },
+ {
+  "shortname": "electric.generator.small",
+  "displayName": "Test Generator",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/generators/generator.small.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/generators/generator.small.prefab",
+  "entityClass": "ElectricGenerator",
+  "ioClass": "ElectricGenerator",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "Power Output 1",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.75,
+     0.0
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Power Output 2",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.75,
+     0.4
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Power Output 3",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.75,
+     -0.4
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 100,
+   "passthrough": "EVERY output = 100 (not split)"
+  },
+  "box": {
+   "center": [
+    0.001,
+    0.38,
+    -0.002
+   ],
+   "extent": [
+    0.394,
+    0.38,
+    0.793
+   ]
+  },
+  "health": 1000.0,
+  "cost": {
+   "metal.refined": 25,
+   "gears": 4,
+   "metalpipe": 2,
+   "fuse": 4
+  },
+  "workbench": 2,
+  "craftable": false,
+  "notes": "Test Generator (ElectricGenerator), admin/creative item; bonus."
+ },
+ {
+  "shortname": "generator.water",
+  "displayName": "Wind Turbine",
+  "itemPrefab": "assets/prefabs/deployable/water wheel/electric.waterwheel.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/water wheel/electric.waterwheel.prefab",
+  "entityClass": "ElectricWaterWheel",
+  "ioClass": "ElectricWaterWheel",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.01,
+     0.716,
+     -0.75
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "generation": 30,
+   "passthrough": "single output",
+   "manual": 60
+  },
+  "box": {
+   "center": [
+    0.0,
+    1.3,
+    0.0
+   ],
+   "extent": [
+    1.3,
+    1.3,
+    0.85
+   ]
+  },
+  "health": 400.0,
+  "cost": {
+   "wood": 500,
+   "gears": 2,
+   "sheetmetal": 1
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "ElectricWaterWheel (display name \"Wind Turbine\" in this build - likely data bug). 30 from water flow (x1.2 ocean), 60 when cranked manually. Bonus item."
+ },
+ {
+  "shortname": "electric.splitter",
+  "displayName": "Splitter",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/splitter/splitter.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/splitter/splitter.prefab",
+  "entityClass": "Splitter",
+  "ioClass": "Splitter",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.32,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out 1",
+    "type": "power",
+    "pos": [
+     0.108,
+     -0.32,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Power Out 2",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.32,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Power Out 3",
+    "type": "power",
+    "pos": [
+     -0.112,
+     -0.32,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "each connected output = floor(in/n) where n = connected outputs; the first (in mod n) connected outputs get +1"
+  },
+  "box": {
+   "center": [
+    0.0,
+    -0.01,
+    0.09
+   ],
+   "extent": [
+    0.2,
+    0.31,
+    0.1
+   ]
+  },
+  "health": 500.0,
+  "cost": {
+   "metal.fragments": 100
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electrical.combiner",
+  "displayName": "Root Combiner",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/combiner/electrical.combiner.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/combiner/electrical.combiner.deployed.prefab",
+  "alias": "electric.rootcombiner (requested name)",
+  "entityClass": "ElectricalCombiner",
+  "ioClass": "ElectricalCombiner",
+  "inputs": [
+   {
+    "name": "Root Power 1",
+    "type": "power",
+    "pos": [
+     0.05,
+     -0.12,
+     0.03
+    ],
+    "rootOnly": true,
+    "mainPower": true
+   },
+   {
+    "name": "Root Power 2",
+    "type": "power",
+    "pos": [
+     -0.05,
+     -0.12,
+     0.03
+    ],
+    "rootOnly": true,
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Combined Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in1 + in2; inputs accept wires only from root entities (rootConnectionsOnly: batteries, generators, solar, windmill, splitter, combiner, pressure pad, liquid containers); a loop back to itself zeroes the input (short circuit flag)"
+  },
+  "box": {
+   "center": [
+    -0.0,
+    -0.0,
+    0.053
+   ],
+   "extent": [
+    0.074,
+    0.129,
+    0.053
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.blocker",
+  "displayName": "Blocker",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/blocker/electrical.blocker.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/blocker/electrical.blocker.deployed.prefab",
+  "entityClass": "ElectricalBlocker",
+  "ioClass": "ElectricalBlocker",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Block Passthrough",
+    "type": "power",
+    "pos": [
+     0.08,
+     0.0,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in while Block Passthrough input == 0, else 0"
+  },
+  "box": {
+   "center": [
+    -0.0,
+    -0.0,
+    0.053
+   ],
+   "extent": [
+    0.074,
+    0.129,
+    0.053
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.switch",
+  "displayName": "Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/simpleswitch/switch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/simpleswitch/switch.prefab",
+  "entityClass": "ElectricSwitch",
+  "ioClass": "ElectricSwitch",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.22,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Switch On",
+    "type": "power",
+    "pos": [
+     -0.16,
+     0.07,
+     0.03
+    ]
+   },
+   {
+    "name": "Switch Off",
+    "type": "power",
+    "pos": [
+     -0.16,
+     -0.09,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.2,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in when ON else 0; Switch On / Switch Off inputs (>0) set state"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.09
+   ],
+   "extent": [
+    0.17,
+    0.24,
+    0.093
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 100
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "smart.switch",
+  "displayName": "Smart Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/app/smartswitch/smartswitch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/app/smartswitch/smartswitch.prefab",
+  "alias": "smart switch",
+  "entityClass": "SmartSwitch",
+  "ioClass": "SmartSwitch",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.22,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Switch On",
+    "type": "power",
+    "pos": [
+     -0.16,
+     0.07,
+     0.03
+    ]
+   },
+   {
+    "name": "Switch Off",
+    "type": "power",
+    "pos": [
+     -0.16,
+     -0.09,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.2,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "same as switch; also toggled via Rust+ app"
+  },
+  "box": {
+   "center": [
+    0.0,
+    -0.04,
+    0.09
+   ],
+   "extent": [
+    0.17,
+    0.22,
+    0.093
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.refined": 3,
+   "techparts": 1
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.button",
+  "displayName": "Button",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/button/button.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/button/button.prefab",
+  "entityClass": "PressButton",
+  "ioClass": "PressButton",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.025
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.16,
+     0.025
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "player-placed button (sourceItem set): on press emits max(2, in) for pressPowerTime=0.5 s; button stays pressed pressDuration=1 s; consumption 0"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "extent": [
+    0.2,
+    0.2,
+    0.093
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.timer",
+  "displayName": "Timer",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/timers/timer.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/timers/timer.prefab",
+  "entityClass": "CustomTimerSwitch",
+  "ioClass": "CustomTimerSwitch",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.253,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Toggle On",
+    "type": "power",
+    "pos": [
+     -0.16,
+     -0.013,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.237,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in while timer runs (timerLength default 10 s, configurable); started by Toggle On pulse or by power appearing on Power In"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.06
+   ],
+   "extent": [
+    0.15,
+    0.24,
+    0.08
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "CustomTimerSwitch"
+ },
+ {
+  "shortname": "electric.andswitch",
+  "displayName": "AND Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/andswitch/andswitch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/andswitch/andswitch.entity.prefab",
+  "entityClass": "ANDSwitch",
+  "ioClass": "ANDSwitch",
+  "inputs": [
+   {
+    "name": "Input A",
+    "type": "power",
+    "pos": [
+     0.025,
+     -0.228,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Input B",
+    "type": "power",
+    "pos": [
+     -0.025,
+     -0.228,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.237,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = max(A,B) if A>0 and B>0 else 0 (battery drain is attributed to the larger input only)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.06
+   ],
+   "extent": [
+    0.15,
+    0.24,
+    0.08
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 100
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.orswitch",
+  "displayName": "OR Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/orswitch/orswitch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/orswitch/orswitch.entity.prefab",
+  "entityClass": "ORSwitch",
+  "ioClass": "ORSwitch",
+  "inputs": [
+   {
+    "name": "Input A",
+    "type": "power",
+    "pos": [
+     0.025,
+     -0.228,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Input B",
+    "type": "power",
+    "pos": [
+     -0.025,
+     -0.228,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.237,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = max(A,B)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.06
+   ],
+   "extent": [
+    0.15,
+    0.24,
+    0.08
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 100
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.xorswitch",
+  "displayName": "XOR Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/xorswitch/xorswitch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/xorswitch/xorswitch.entity.prefab",
+  "entityClass": "XORSwitch",
+  "ioClass": "XORSwitch",
+  "inputs": [
+   {
+    "name": "Input A",
+    "type": "power",
+    "pos": [
+     0.025,
+     -0.239,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Input B",
+    "type": "power",
+    "pos": [
+     -0.025,
+     -0.239,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.241,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = max(A,B) if exactly one input > 0 else 0"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.06
+   ],
+   "extent": [
+    0.15,
+    0.24,
+    0.08
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 100
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electrical.branch",
+  "displayName": "Electrical Branch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/branch/electrical.branch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/branch/electrical.branch.deployed.prefab",
+  "alias": "electric.electricalbranch (requested name)",
+  "entityClass": "ElectricalBranch",
+  "ioClass": "ElectricalBranch",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     -0.03,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Branch Out",
+    "type": "power",
+    "pos": [
+     0.03,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "Branch Out = min(in, branchAmount); Power Out = max(0, in - branchAmount); branchAmount default 2, configurable 1..10000000"
+  },
+  "box": {
+   "center": [
+    -0.0,
+    -0.0,
+    0.053
+   ],
+   "extent": [
+    0.074,
+    0.129,
+    0.053
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.counter",
+  "displayName": "Counter",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/counter/counter.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/counter/counter.prefab",
+  "entityClass": "PowerCounter",
+  "ioClass": "PowerCounter",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.0,
+     0.02
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Increment Counter",
+    "type": "power",
+    "pos": [
+     -0.09,
+     0.148,
+     0.02
+    ]
+   },
+   {
+    "name": "Decrement Counter",
+    "type": "power",
+    "pos": [
+     -0.09,
+     0.088,
+     0.02
+    ]
+   },
+   {
+    "name": "Reset Counter",
+    "type": "power",
+    "pos": [
+     -0.09,
+     0.028,
+     0.02
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.18,
+     0.02
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "passthrough mode: out = in; counter mode: out = in when count >= target else 0; Increment/Decrement/Reset inputs (count clamped 0..999)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.128,
+    -0.002
+   ],
+   "extent": [
+    0.098,
+    0.128,
+    0.088
+   ]
+  },
+  "health": 100.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electrical.memorycell",
+  "displayName": "Memory Cell",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/dflipflop/electrical.memorycell.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/dflipflop/electrical.memorycell.deployed.prefab",
+  "entityClass": "ElectricalDFlipFlop",
+  "ioClass": "ElectricalDFlipFlop",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Set",
+    "type": "power",
+    "pos": [
+     -0.07,
+     0.07,
+     0.03
+    ]
+   },
+   {
+    "name": "Reset",
+    "type": "power",
+    "pos": [
+     -0.07,
+     0.0,
+     0.03
+    ]
+   },
+   {
+    "name": "Toggle",
+    "type": "power",
+    "pos": [
+     -0.07,
+     -0.07,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Output",
+    "type": "power",
+    "pos": [
+     -0.03,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Inverted Output",
+    "type": "power",
+    "pos": [
+     0.03,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "Output = in when state ON, Inverted Output = in when OFF; Set/Reset/Toggle inputs"
+  },
+  "box": {
+   "center": [
+    -0.0,
+    -0.0,
+    0.053
+   ],
+   "extent": [
+    0.074,
+    0.129,
+    0.053
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.random.switch",
+  "displayName": "RAND Switch",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/gates/randswitch/electrical.random.switch.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/gates/randswitch/electrical.random.switch.deployed.prefab",
+  "entityClass": "RANDSwitch",
+  "ioClass": "RANDSwitch",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Set",
+    "type": "power",
+    "pos": [
+     -0.07,
+     0.04,
+     0.03
+    ]
+   },
+   {
+    "name": "Reset",
+    "type": "power",
+    "pos": [
+     -0.07,
+     -0.04,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.13,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in if last Set pulse rolled ON (50/50), Reset forces OFF"
+  },
+  "box": {
+   "center": [
+    -0.0,
+    -0.0,
+    0.053
+   ],
+   "extent": [
+    0.074,
+    0.129,
+    0.053
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.simplelight",
+  "displayName": "Simple Light",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/lights/simpelight.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/lights/simplelight.prefab",
+  "entityClass": "SimpleLight",
+  "ioClass": "SimpleLight",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.14,
+     0.0,
+     0.02
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     -0.14,
+     0.0,
+     0.02
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 1,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.174,
+    0.261
+   ],
+   "extent": [
+    0.198,
+    0.192,
+    0.265
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "wood": 100,
+   "metal.fragments": 25
+  },
+  "workbench": 0,
+  "craftable": false
+ },
+ {
+  "shortname": "electric.flasherlight",
+  "displayName": "Flasher Light",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.deployed.prefab",
+  "entityClass": "FlasherLight",
+  "ioClass": "FlasherLight",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.06,
+     0.03,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     -0.06,
+     0.03,
+     0.0
+    ]
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 1,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower)"
+  },
+  "box": {
+   "center": [
+    -0.001,
+    0.25,
+    0.0
+   ],
+   "extent": [
+    0.188,
+    0.252,
+    0.188
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 120
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.sirenlight",
+  "displayName": "Siren Light",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab",
+  "entityClass": "SirenLight",
+  "ioClass": "SirenLight",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.11,
+     0.03,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     -0.11,
+     0.03,
+     0.0
+    ]
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 1,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.3,
+    0.0
+   ],
+   "extent": [
+    0.22,
+    0.3,
+    0.22
+   ]
+  },
+  "health": 75.0,
+  "cost": {
+   "metal.fragments": 120
+  },
+  "workbench": 1,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.doorcontroller",
+  "displayName": "Door Controller",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/doormanipulators/doorcontroller.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/doormanipulators/doorcontroller.deployed.prefab",
+  "entityClass": "CustomDoorManipulator",
+  "ioClass": "CustomDoorManipulator",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     -0.12,
+     0.03
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Open",
+    "type": "power",
+    "pos": [
+     -0.09,
+     0.04,
+     0.03
+    ]
+   },
+   {
+    "name": "Close",
+    "type": "power",
+    "pos": [
+     -0.09,
+     -0.03,
+     0.03
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.12,
+     0.03
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 1,
+   "passthrough": "output = max(0, input - consumption); if input < consumption the device is unpowered (IOEntity.GetCurrentEnergy/GetHasPower); Open/Close inputs act only when powered"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "extent": [
+    0.081,
+    0.12,
+    0.08
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "CustomDoorManipulator, attaches to a door."
+ },
+ {
+  "shortname": "autoturret",
+  "displayName": "Auto Turret",
+  "itemPrefab": "assets/prefabs/npc/autoturret/autoturret.item.prefab",
+  "entityPrefab": "assets/prefabs/npc/autoturret/autoturret_deployed.prefab",
+  "entityClass": "AutoTurret",
+  "ioClass": "AutoTurret",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     -0.12,
+     0.59,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Has Target",
+    "type": "power",
+    "pos": [
+     0.12,
+     0.59,
+     0.06
+    ]
+   },
+   {
+    "name": "Low Ammo",
+    "type": "power",
+    "pos": [
+     0.12,
+     0.59,
+     0.0
+    ]
+   },
+   {
+    "name": "No Ammo",
+    "type": "power",
+    "pos": [
+     0.12,
+     0.59,
+     -0.06
+    ]
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 10,
+   "passthrough": "outputs Has Target / Low Ammo (<=50 total ammo) / No Ammo = min(1, in-10) when condition true; no passthrough"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.558,
+    0.126
+   ],
+   "extent": [
+    0.508,
+    0.558,
+    0.635
+   ]
+  },
+  "health": 1000.0,
+  "cost": {
+   "targeting.computer": 1,
+   "cctv.camera": 1,
+   "metal.refined": 25
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "AutoTurret : ContainerIOEntity. sightRange 30 m."
+ },
+ {
+  "shortname": "samsite",
+  "displayName": "SAM Site",
+  "itemPrefab": "assets/prefabs/npc/sam_site_turret/sam.site.item.prefab",
+  "entityPrefab": "assets/prefabs/npc/sam_site_turret/sam_site_turret_deployed.prefab",
+  "entityClass": "SamSite",
+  "ioClass": "SamSite",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.58,
+     -0.98
+    ],
+    "mainPower": true
+   },
+   {
+    "name": "Invert Mode",
+    "type": "power",
+    "pos": [
+     -0.97,
+     0.58,
+     0.0
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Has Target",
+    "type": "power",
+    "pos": [
+     0.95,
+     0.58,
+     -0.16
+    ]
+   },
+   {
+    "name": "Low Ammo",
+    "type": "power",
+    "pos": [
+     0.95,
+     0.58,
+     0.0
+    ]
+   },
+   {
+    "name": "No Ammo",
+    "type": "power",
+    "pos": [
+     0.95,
+     0.58,
+     0.16
+    ]
+   },
+   {
+    "name": "Passthrough",
+    "type": "power",
+    "pos": [
+     0.95,
+     0.42,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 25,
+   "passthrough": "Passthrough = in - 25; Has Target / Low Ammo (<10) / No Ammo outputs = 1 when true"
+  },
+  "box": {
+   "center": [
+    0.0,
+    1.637,
+    -0.092
+   ],
+   "extent": [
+    0.962,
+    1.637,
+    1.054
+   ]
+  },
+  "health": 1000.0,
+  "cost": {
+   "metal.refined": 50
+  },
+  "workbench": 0,
+  "craftable": false,
+  "notes": "SamSite. vehicleScanRadius 150 m, missileScanRadius 225 m. Invert Mode input."
+ },
+ {
+  "shortname": "electric.teslacoil",
+  "displayName": "Tesla Coil",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/teslacoil/teslacoil.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/teslacoil/teslacoil.deployed.prefab",
+  "entityClass": "TeslaCoil",
+  "ioClass": "TeslaCoil",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.0,
+     0.03,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [],
+  "ioType": "power",
+  "power": {
+   "consumption": 25,
+   "passthrough": "no outputs; draws min(input,25); damage per 0.25 s tick = power*1.4 (max 35); input >=10 => heavy shorting",
+   "formula": "ConsumptionAmount = ceil(maxDamageOutput 35 / powerToDamageRatio 1.4) = 25"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.3,
+    0.0
+   ],
+   "extent": [
+    0.2,
+    0.3,
+    0.2
+   ]
+  },
+  "health": 250.0,
+  "cost": {
+   "metal.refined": 3,
+   "techparts": 1
+  },
+  "workbench": 2,
+  "craftable": true
+ },
+ {
+  "shortname": "electric.igniter",
+  "displayName": "Igniter",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/igniter/igniter.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/igniter/igniter.deployed.prefab",
+  "entityClass": "Igniter",
+  "ioClass": "Igniter",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.15,
+     0.05,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [],
+  "ioType": "power",
+  "power": {
+   "consumption": 2,
+   "passthrough": "no outputs"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.089,
+    -0.001
+   ],
+   "extent": [
+    0.172,
+    0.09,
+    0.162
+   ]
+  },
+  "health": 250.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 0,
+  "craftable": true,
+  "notes": "Ignites flammables within 2 m every 2 s; 0.5 self damage per ignite."
+ },
+ {
+  "shortname": "electric.pressurepad",
+  "displayName": "Pressure Pad",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/detectors/pressurepad/pressurepad.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/detectors/pressurepad/pressurepad.deployed.prefab",
+  "entityClass": "PressurePad",
+  "ioClass": "PressurePad",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.49,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     -0.49,
+     0.0,
+     0.0
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 0,
+   "passthrough": "out = in while stepped on (min pressPowerAmount=1 for 0.5 s burst)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    -0.0,
+    -0.0
+   ],
+   "extent": [
+    0.495,
+    0.05,
+    0.495
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "wood": 150,
+   "metalspring": 1,
+   "gears": 1
+  },
+  "workbench": 1,
+  "craftable": true,
+  "notes": "Root entity (can feed root combiner)."
+ },
+ {
+  "shortname": "electric.hbhfsensor",
+  "displayName": "HBHF Sensor",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/detectors/hbhfsensor/hbhfsensor.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/detectors/hbhfsensor/hbhfsensor.deployed.prefab",
+  "entityClass": "HBHFSensor",
+  "ioClass": "HBHFSensor",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     0.08,
+     0.0,
+     0.1
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "Power Out",
+    "type": "power",
+    "pos": [
+     -0.08,
+     0.0,
+     0.1
+    ],
+    "mainPower": true
+   }
+  ],
+  "ioType": "power",
+  "power": {
+   "consumption": 1,
+   "passthrough": "out = min(detectedPlayers, in - 1)"
+  },
+  "box": {
+   "center": [
+    0.0,
+    0.0,
+    0.13
+   ],
+   "extent": [
+    0.2,
+    0.2,
+    0.13
+   ]
+  },
+  "health": 200.0,
+  "cost": {
+   "metal.fragments": 75
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "range 10 m."
+ },
+ {
+  "shortname": "electric.furnace",
+  "displayName": "Electric Furnace",
+  "itemPrefab": "assets/prefabs/deployable/playerioents/electricfurnace/electricfurnace.item.prefab",
+  "entityPrefab": "assets/prefabs/deployable/playerioents/electricfurnace/electricfurnace.deployed.prefab",
+  "entityClass": "ElectricOven",
+  "ioChild": {
+   "prefab": "assets/prefabs/deployable/playerioents/electricfurnace/electricfurnace.io.prefab",
+   "anchor": "ioEntityAnchor",
+   "anchorPos": [
+    -0.012,
+    0.798,
+    -0.308
+   ],
+   "cls": "ElectricFurnaceIO"
+  },
+  "ioClass": "ElectricFurnaceIO",
+  "inputs": [
+   {
+    "name": "Power In",
+    "type": "power",
+    "pos": [
+     -0.312,
+     1.048,
+     -0.208
+    ],
+    "mainPower": true
+   }
+  ],
+  "outputs": [],
+  "ioType": "power",
+  "power": {
+   "consumption": 3,
+   "passthrough": "no outputs; draws 3 only while furnace is ON (ElectricFurnaceIO.DesiredPower)"
+  },
+  "box": {
+   "center": [
+    -0.002,
+    0.6,
+    -0.007
+   ],
+   "extent": [
+    0.372,
+    0.6,
+    0.377
+   ]
+  },
+  "health": 500.0,
+  "cost": {
+   "metal.refined": 5,
+   "metal.fragments": 200
+  },
+  "workbench": 2,
+  "craftable": true,
+  "notes": "ElectricOven; the IO slot lives on child entity electricfurnace.io.prefab at anchor ioEntityAnchor (-0.012,0.798,-0.308); input position given in entity space = anchor + child handle (anchor rotation identity). Bonus item."
+ }
+]

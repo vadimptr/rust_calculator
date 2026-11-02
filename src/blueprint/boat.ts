@@ -15,9 +15,10 @@ export const BOAT_PLAN: { group: string; kinds: ElementKind[] }[] = [
   { group: 'Лестницы', kinds: ['boat-stairs'] },
 ];
 
-export type BoatResKey = 'wood' | 'stone' | 'lgf' | 'metal' | 'hqm' | 'scrap' | 'cloth' | 'tarp' | 'gears' | 'rope' | 'techparts' | 'sewingkit' | 'bpbasic' | 'bpadvanced';
+export type BoatResKey = 'wood' | 'stone' | 'lgf' | 'metal' | 'hqm' | 'scrap' | 'cloth' | 'tarp' | 'gears' | 'rope' | 'techparts' | 'sewingkit' | 'bpbasic' | 'bpadvanced'
+  | 'propane' | 'sheetmetal' | 'spring' | 'computer' | 'camera';
 export type BoatRes = Record<BoatResKey, number>;
-export const BOAT_RES_KEYS: BoatResKey[] = ['wood', 'stone', 'lgf', 'metal', 'hqm', 'scrap', 'cloth', 'tarp', 'gears', 'rope', 'techparts', 'sewingkit', 'bpbasic', 'bpadvanced'];
+export const BOAT_RES_KEYS: BoatResKey[] = ['wood', 'stone', 'lgf', 'metal', 'hqm', 'scrap', 'cloth', 'tarp', 'gears', 'rope', 'techparts', 'sewingkit', 'bpbasic', 'bpadvanced', 'propane', 'sheetmetal', 'spring', 'computer', 'camera'];
 const zero = (): BoatRes => Object.fromEntries(BOAT_RES_KEYS.map(k => [k, 0])) as BoatRes;
 
 export interface DeckObject {
@@ -25,8 +26,9 @@ export interface DeckObject {
   short: string;
   icon: string;
   cost: Partial<BoatRes>;
-  box: { x: [number, number]; z: number; h: number };
+  box: { x: [number, number]; z: number; h: number; y?: number };
   area: [number, number];
+  mount?: 'wall' | 'ceiling';
   desc?: string;
 }
 
@@ -62,14 +64,59 @@ export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
   'lantern': { label: 'Фонарь', short: 'Фонарь', icon: 'lantern', cost: { metal: 25, lgf: 15 }, box: { x: [-0.14, 0.14], z: 0.14, h: 0.48 }, area: [0.05, 0.05] },
   'sleeping-bag': { label: 'Спальный мешок', short: 'Спальник', icon: 'sleepingbag', cost: { cloth: 30 }, box: { x: [-0.75, 1.07], z: 0.53, h: 0.32 }, area: [1.0, 0.49] },
   'bed': { label: 'Кровать', short: 'Кровать', icon: 'bed', cost: { cloth: 60, metal: 100, sewingkit: 2 }, box: { x: [-0.74, 0.74], z: 1.19, h: 0.89 }, area: [0.6, 1.14] },
+  'small-planter': { label: 'Малая грядка', short: 'Мал. грядка', icon: 'planter.small', cost: { wood: 100, tarp: 1 }, box: { x: [-0.55, 0.55], z: 1.62, h: 0.68 }, area: [0.44, 1.3] },
+  'large-planter': { label: 'Большая грядка', short: 'Бол. грядка', icon: 'planter.large', cost: { wood: 200, tarp: 2 }, box: { x: [-1.38, 1.38], z: 1.41, h: 0.56 }, area: [1.1, 1.13] },
+  'triangle-planter': { label: 'Треугольная грядка', short: 'Тр. грядка', icon: 'planter.triangle', cost: { wood: 150, tarp: 1 }, box: { x: [-1.25, 1.25], z: 1.63, h: 0.53 }, area: [1, 1.3] },
+  'composter': { label: 'Компостер', short: 'Компостер', icon: 'composter', cost: { tarp: 2, wood: 200 }, box: { x: [-0.6, 0.6], z: 0.6, h: 1.63 }, area: [0.48, 0.48] },
+  'sprinkler': { label: 'Разбрызгиватель', short: 'Разбрызг.', icon: 'electric.sprinkler', cost: { metal: 75 }, box: { x: [-0.25, 0.25], z: 0.25, h: 0.44 }, area: [0.2, 0.2] },
+  'ceiling-light': { label: 'Потолочная лампа', short: 'Потол. лампа', icon: 'ceilinglight', cost: { metal: 50 }, box: { x: [-0.5, 0.5], z: 0.5, h: 0.7, y: -0.7 }, area: [0.4, 0.4], mount: 'ceiling' },
+  'electric-heater': { label: 'Электрообогреватель', short: 'Обогрев.', icon: 'electric.heater', cost: { metal: 200 }, box: { x: [0, 0.21], z: 0.56, h: 0.55, y: -0.27 }, area: [0.08, 0.45], mount: 'wall' },
+  'water-pump': { label: 'Водяной насос', short: 'Насос', icon: 'waterpump', cost: { wood: 250, metal: 200, gears: 1 }, box: { x: [-0.36, 0.36], z: 0.63, h: 0.75 }, area: [0.29, 0.5] },
+  'water-purifier': { label: 'Водоочиститель', short: 'Очиститель', icon: 'water.purifier', cost: { propane: 1, metal: 15, cloth: 10 }, box: { x: [-0.41, 0.41], z: 0.81, h: 1.08 }, area: [0.33, 0.64] },
+  'powered-water-purifier': { label: 'Электрический водоочиститель', short: 'Эл. очист.', icon: 'powered.water.purifier', cost: { metal: 300, cloth: 20, wood: 100 }, box: { x: [-0.9, 1.02], z: 1.18, h: 2 }, area: [0.77, 0.95] },
+  'small-water-catcher': { label: 'Малый водосборник', short: 'Мал. сборник', icon: 'water.catcher.small', cost: { wood: 100, metal: 50, tarp: 1 }, box: { x: [-1.19, 1.18], z: 1.14, h: 2.67 }, area: [0.94, 0.91] },
+  'large-water-catcher': { label: 'Большой водосборник', short: 'Бол. сборник', icon: 'water.catcher.large', cost: { wood: 500, metal: 200, tarp: 2 }, box: { x: [-2.83, 2.83], z: 2.73, h: 4.17, y: -0.09 }, area: [2.26, 2.19] },
+  'fluid-splitter': { label: 'Разветвитель жидкости', short: 'Развет. воды', icon: 'fluid.splitter', cost: { metal: 75 }, box: { x: [0.02, 0.16], z: 0.21, h: 0.24 }, area: [0.06, 0.17], mount: 'wall' },
+  'fluid-combiner': { label: 'Объединитель жидкости', short: 'Объед. воды', icon: 'fluid.combiner', cost: { metal: 75 }, box: { x: [0.02, 0.16], z: 0.21, h: 0.24 }, area: [0.06, 0.17], mount: 'wall' },
+  'fluid-switch': { label: 'Переключатель жидкости и насос', short: 'Перекл. воды', icon: 'fluid.switch', cost: { metal: 150 }, box: { x: [-0.09, 0.09], z: 0.17, h: 0.4, y: -0.2 }, area: [0.07, 0.14], mount: 'wall' },
+  'wind-turbine': { label: 'Ветрогенератор', short: 'Ветряк', icon: 'generator.wind.scrap', cost: { wood: 500, hqm: 10, gears: 3, sheetmetal: 3 }, box: { x: [-1.52, 1.52], z: 1.59, h: 9.87 }, area: [1.22, 1.27] },
+  'large-battery': { label: 'Большой аккумулятор', short: 'Бол. аккум.', icon: 'electric.battery.rechargable.large', cost: { hqm: 10, techparts: 2 }, box: { x: [-0.61, 0.76], z: 0.5, h: 2.26 }, area: [0.55, 0.4] },
+  'splitter': { label: 'Разветвитель', short: 'Разветвит.', icon: 'electric.splitter', cost: { metal: 100 }, box: { x: [-0.01, 0.19], z: 0.2, h: 0.62, y: -0.32 }, area: [0.08, 0.16], mount: 'wall' },
+  'root-combiner': { label: 'Корневой объединитель', short: 'Объединит.', icon: 'electrical.combiner', cost: { metal: 75 }, box: { x: [0, 0.11], z: 0.07, h: 0.26, y: -0.13 }, area: [0.05, 0.06], mount: 'wall' },
+  'branch': { label: 'Ответвитель', short: 'Ответвит.', icon: 'electrical.branch', cost: { metal: 75 }, box: { x: [0, 0.11], z: 0.07, h: 0.26, y: -0.13 }, area: [0.05, 0.06], mount: 'wall' },
+  'blocker': { label: 'Блокиратор', short: 'Блокиратор', icon: 'electric.blocker', cost: { metal: 75 }, box: { x: [0, 0.11], z: 0.07, h: 0.26, y: -0.13 }, area: [0.05, 0.06], mount: 'wall' },
+  'switch': { label: 'Выключатель', short: 'Выключатель', icon: 'electric.switch', cost: { metal: 100 }, box: { x: [0, 0.18], z: 0.17, h: 0.48, y: -0.24 }, area: [0.07, 0.14], mount: 'wall' },
+  'smart-switch': { label: 'Умный выключатель', short: 'Умн. выкл.', icon: 'smart.switch', cost: { hqm: 3, techparts: 1 }, box: { x: [0, 0.18], z: 0.17, h: 0.44, y: -0.26 }, area: [0.07, 0.14], mount: 'wall' },
+  'button': { label: 'Кнопка', short: 'Кнопка', icon: 'electric.button', cost: { metal: 75 }, box: { x: [-0.09, 0.09], z: 0.2, h: 0.4, y: -0.2 }, area: [0.07, 0.16], mount: 'wall' },
+  'timer': { label: 'Таймер', short: 'Таймер', icon: 'electric.timer', cost: { metal: 75 }, box: { x: [-0.02, 0.14], z: 0.15, h: 0.48, y: -0.24 }, area: [0.06, 0.12], mount: 'wall' },
+  'and-switch': { label: 'Логическое И', short: 'И', icon: 'electric.andswitch', cost: { metal: 100 }, box: { x: [-0.02, 0.14], z: 0.15, h: 0.48, y: -0.24 }, area: [0.06, 0.12], mount: 'wall' },
+  'or-switch': { label: 'Логическое ИЛИ', short: 'ИЛИ', icon: 'electric.orswitch', cost: { metal: 100 }, box: { x: [-0.02, 0.14], z: 0.15, h: 0.48, y: -0.24 }, area: [0.06, 0.12], mount: 'wall' },
+  'xor-switch': { label: 'Исключающее ИЛИ', short: 'XOR', icon: 'electric.xorswitch', cost: { metal: 100 }, box: { x: [-0.02, 0.14], z: 0.15, h: 0.48, y: -0.24 }, area: [0.06, 0.12], mount: 'wall' },
+  'counter': { label: 'Счётчик', short: 'Счётчик', icon: 'electric.counter', cost: { metal: 75 }, box: { x: [-0.09, 0.09], z: 0.1, h: 0.26 }, area: [0.07, 0.08], mount: 'wall' },
+  'memory-cell': { label: 'Ячейка памяти', short: 'Память', icon: 'electrical.memorycell', cost: { metal: 75 }, box: { x: [0, 0.11], z: 0.07, h: 0.26, y: -0.13 }, area: [0.05, 0.06], mount: 'wall' },
+  'random-switch': { label: 'Случайный переключатель', short: 'Случайн.', icon: 'electric.random.switch', cost: { metal: 75 }, box: { x: [0, 0.11], z: 0.07, h: 0.26, y: -0.13 }, area: [0.05, 0.06], mount: 'wall' },
+  'pressure-pad': { label: 'Нажимная плита', short: 'Плита', icon: 'electric.pressurepad', cost: { wood: 150, spring: 1, gears: 1 }, box: { x: [-0.49, 0.49], z: 0.49, h: 0.1, y: -0.05 }, area: [0.4, 0.4] },
+  'hbhf-sensor': { label: 'Датчик HBHF', short: 'HBHF', icon: 'electric.hbhfsensor', cost: { metal: 75 }, box: { x: [0, 0.26], z: 0.2, h: 0.4, y: -0.2 }, area: [0.1, 0.16], mount: 'wall' },
+  'simple-light': { label: 'Лампа', short: 'Лампа', icon: 'electric.simplelight', cost: { wood: 100, metal: 25 }, box: { x: [0, 0.53], z: 0.2, h: 0.38 }, area: [0.21, 0.16], mount: 'wall' },
+  'flasher-light': { label: 'Мигалка', short: 'Мигалка', icon: 'electric.flasherlight', cost: { metal: 120 }, box: { x: [-0.19, 0.19], z: 0.19, h: 0.5 }, area: [0.15, 0.15] },
+  'siren-light': { label: 'Сирена', short: 'Сирена', icon: 'electric.sirenlight', cost: { metal: 120 }, box: { x: [-0.22, 0.22], z: 0.22, h: 0.6 }, area: [0.18, 0.18] },
+  'auto-turret': { label: 'Автотурель', short: 'Турель', icon: 'autoturret', cost: { computer: 1, camera: 1, hqm: 25 }, box: { x: [-0.51, 0.76], z: 0.51, h: 1.12 }, area: [0.51, 0.41] },
+  'sam-site': { label: 'ПВО (SAM)', short: 'ПВО', icon: 'samsite', cost: { hqm: 50 }, box: { x: [-1.15, 0.96], z: 0.96, h: 3.27 }, area: [0.84, 0.77] },
+  'tesla-coil': { label: 'Катушка Теслы', short: 'Тесла', icon: 'electric.teslacoil', cost: { hqm: 3, techparts: 1 }, box: { x: [-0.2, 0.2], z: 0.2, h: 0.6 }, area: [0.16, 0.16] },
+  'igniter': { label: 'Воспламенитель', short: 'Воспламен.', icon: 'electric.igniter', cost: { metal: 75 }, box: { x: [-0.16, 0.16], z: 0.17, h: 0.18 }, area: [0.13, 0.14] },
+  'electric-furnace': { label: 'Электропечь', short: 'Эл. печь', icon: 'electric.furnace', cost: { hqm: 5, metal: 200 }, box: { x: [-0.38, 0.37], z: 0.37, h: 1.2 }, area: [0.3, 0.3] },
 };
 
 export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Ход', kinds: ['sail', 'small-engine', 'steering-wheel', 'anchor', 'cannon', 'plank', 'small-ramp'] },
   { group: 'Верстаки', kinds: ['workbench1', 'workbench2', 'workbench3', 'repair-bench', 'research-table', 'mixing-table'] },
-  { group: 'Хранение', kinds: ['large-wood-box', 'small-wood-box', 'storage-barrel-vertical', 'storage-barrel-horizontal', 'shelves', 'locker', 'fridge', 'water-barrel'] },
+  { group: 'Хранение', kinds: ['large-wood-box', 'small-wood-box', 'storage-barrel-vertical', 'storage-barrel-horizontal', 'shelves', 'locker', 'fridge'] },
   { group: 'Печи', kinds: ['furnace', 'small-oil-refinery', 'bbq'] },
-  { group: 'Электрика', kinds: ['small-generator', 'small-battery', 'medium-battery', 'large-solar-panel', 'lantern'] },
+  { group: 'Ферма', kinds: ['small-planter', 'large-planter', 'triangle-planter', 'composter', 'sprinkler', 'ceiling-light', 'electric-heater'] },
+  { group: 'Вода', kinds: ['water-pump', 'water-barrel', 'small-water-catcher', 'large-water-catcher', 'water-purifier', 'powered-water-purifier', 'fluid-splitter', 'fluid-combiner', 'fluid-switch'] },
+  { group: 'Энергия', kinds: ['wind-turbine', 'large-solar-panel', 'small-generator', 'small-battery', 'medium-battery', 'large-battery'] },
+  { group: 'Логика', kinds: ['splitter', 'root-combiner', 'branch', 'blocker', 'switch', 'smart-switch', 'button', 'timer', 'and-switch', 'or-switch', 'xor-switch', 'counter', 'memory-cell', 'random-switch', 'pressure-pad', 'hbhf-sensor'] },
+  { group: 'Свет и защита', kinds: ['simple-light', 'flasher-light', 'siren-light', 'lantern', 'auto-turret', 'sam-site', 'tesla-coil', 'igniter', 'electric-furnace'] },
   { group: 'Сон', kinds: ['sleeping-bag', 'bed'] },
   { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
   { group: 'Окна', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
