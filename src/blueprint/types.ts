@@ -172,6 +172,8 @@ export interface Deployable {
   offset?: [number, number];
   /** Дроп-бокс: out — изнутри наружу (по нормали стены), in — снаружи внутрь. */
   direction?: 'in' | 'out';
+  /** Разбрызгиватель: висит вниз головой под полом верхнего этажа. */
+  hanging?: boolean;
   rotation?: number;
   hinge?: 'left' | 'right';
   opens?: 'outward' | 'inward';
@@ -256,6 +258,7 @@ export interface ResolvedDeployable extends Transform {
   opens: 'outward' | 'inward';
   open: boolean;
   direction?: 'in' | 'out';
+  hanging?: boolean;
 }
 
 export interface ResolvedTerrain {

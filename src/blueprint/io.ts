@@ -73,7 +73,7 @@ export interface SlotRef {
 
 export function slotWorld(d: ResolvedDeployable, s: IOSlot): V3 {
   const a = (d.rotation * Math.PI) / 180, c = Math.cos(a), n = Math.sin(a);
-  const [x, y, z] = s.pos;
+  const [x, y, z] = d.hanging ? [s.pos[0], -s.pos[1], -s.pos[2]] : s.pos;
   return [d.position[0] + x * c - z * n, d.position[1] + y, d.position[2] + x * n + z * c];
 }
 

@@ -235,6 +235,27 @@ test('io objects: wall items hang on either face of a wall, ceiling lights hang 
   assert.ok(Math.abs(light.position[1] - (r.elements.find(e => e.id === floor)!.position[1] - 0.2)) < 1e-6);
 });
 
+test('sprinkler: aimed at the underside of a floor it hangs upside down, aimed at the top it stands, never under a foundation', () => {
+  let bp = newBlueprint('Ферма', 'square-foundation');
+  bp = attach(bp, 'wall', 'f1', [1.5, 1, 0]);
+  const wall = bp.elements.find(e => e.kind === 'wall')!.id;
+  bp = attach(bp, 'square-floor', wall, [0, 3, 0]);
+  const floor = bp.elements.find(e => e.kind === 'square-floor')!.id;
+  assert.equal(deployPlacement(bp, res(bp), 'sprinkler', 'f1', [0, -0.2, 0], 0)?.deployable.hanging, undefined);
+  bp = deploy(bp, 'sprinkler', floor, [0, -0.2, 0]);
+  bp = deploy(bp, 'sprinkler', floor, [0, 0, 0]);
+  bp = deploy(bp, 'large-planter', 'f1', [0, 0, 0]);
+  const loaded = loadBlueprint(bp);
+  assert.deepEqual(loaded.issues.filter(i => i.level === 'error'), []);
+  const r = loaded.resolved!;
+  const top = r.elements.find(e => e.id === floor)!.position[1];
+  const [hung, stands] = r.deployables.filter(d => d.kind === 'sprinkler');
+  assert.equal(hung.hanging, true);
+  assert.ok(Math.abs(hung.position[1] - (top - 0.2)) < 1e-6);
+  assert.equal(stands.hanging, undefined);
+  assert.ok(Math.abs(stands.position[1] - top) < 1e-6);
+});
+
 test('yaw: a sail off the centre line turns the bow away from its side, a mirrored pair cancels out', () => {
   let bp = hullLine();
   bp = attach(bp, 'boat-hull', 'f1', [0, 0, 3]);

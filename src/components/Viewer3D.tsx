@@ -8,10 +8,10 @@ import type { DoorAnim } from '../blueprint/meshes.ts';
 import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
-import { FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
+import { FLOOR_T, FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain, Wire } from '../blueprint/types.ts';
 import { MAX_WIRE_LENGTH, MAX_WIRE_POINTS, pathLength, slotInfo, slotsOf } from '../blueprint/io.ts';
-import { simulate } from '../blueprint/iosim.ts';
+import { SPRINKLER_RADIUS, simulate } from '../blueprint/iosim.ts';
 import type { SlotRef, V3 } from '../blueprint/io.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -71,6 +71,7 @@ interface Viewer3DProps {
   showSockets?: boolean;
   fov?: number;
   showPrivilege?: boolean;
+  showSprinklers?: boolean;
   water?: boolean;
 }
 
@@ -110,6 +111,7 @@ interface SceneRefs {
   ghost: THREE.Group;
   sockets: THREE.Group;
   zones: THREE.Group;
+  waterZones: THREE.Group;
   xray: THREE.Group;
   privInfo: Buildings | null;
   privBadge: HTMLDivElement;
@@ -283,6 +285,30 @@ function buildTerrain(t: ResolvedTerrain): THREE.Object3D | null {
   return model;
 }
 
+const SPRINKLER_ZONE_MAT = new THREE.MeshBasicMaterial({ color: 0x3b8fe8, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide });
+const SPRINKLER_BAND_MAT = new THREE.MeshBasicMaterial({ color: 0x3b8fe8, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide });
+const SPRINKLER_EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x6fb4ff, transparent: true, opacity: 0.85, depthWrite: false });
+const SPRINKLER_DISK = new THREE.CircleGeometry(SPRINKLER_RADIUS, 64).rotateX(-Math.PI / 2);
+const SPRINKLER_BAND = new THREE.CylinderGeometry(SPRINKLER_RADIUS, SPRINKLER_RADIUS, 0.5, 64, 1, true).translate(0, 0.25, 0);
+const SPRINKLER_RING = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 64 }, (_, i) => new THREE.Vector3(SPRINKLER_RADIUS * Math.cos((i / 64) * Math.PI * 2), 0, SPRINKLER_RADIUS * Math.sin((i / 64) * Math.PI * 2))));
+
+function sprinklerZone(hanging: boolean): THREE.Group {
+  const g = new THREE.Group();
+  g.position.y = (hanging ? FLOOR_T - 3 : 0) + 0.03;
+  for (const m of [new THREE.Mesh(SPRINKLER_DISK, SPRINKLER_ZONE_MAT), new THREE.Mesh(SPRINKLER_BAND, SPRINKLER_BAND_MAT)]) {
+    m.userData.keepMaterial = true;
+    m.raycast = () => {};
+    m.renderOrder = 4;
+    g.add(m);
+  }
+  const ring = new THREE.LineLoop(SPRINKLER_RING, SPRINKLER_EDGE_MAT);
+  ring.raycast = () => {};
+  ring.renderOrder = 4;
+  g.add(ring);
+  g.userData.zone = true;
+  return g;
+}
+
 function zoneMesh(z: PrivilegeZone): THREE.Mesh {
   const data = new Uint8Array(z.nx * z.nz * 4);
   const at = (i: number, k: number) => i >= 0 && k >= 0 && i < z.nx && k < z.nz && z.inside[k * z.nx + i] === 1;
@@ -350,7 +376,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false, water = false }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false, showSprinklers = true, water = false }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -361,6 +387,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
   editorRef.current = editor;
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const showSprinklersRef = useRef(showSprinklers);
+  showSprinklersRef.current = showSprinklers;
   const showSocketsRef = useRef(showSockets);
   showSocketsRef.current = showSockets;
   resolvedRef.current = resolved;
@@ -446,6 +474,8 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     world.add(sockets);
     const zones = new THREE.Group();
     world.add(zones);
+    const waterZones = new THREE.Group();
+    world.add(waterZones);
     const xray = new THREE.Group();
     world.add(xray);
     const slots = new THREE.Group();
@@ -468,7 +498,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
 
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
-      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
+      raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, waterZones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
       hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label, sailWarnKey: '', sailWarn: null,
       slots, slotsRes: null, draft: null, wirePending: null,
     };
@@ -975,9 +1005,15 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         direction: d.direction, ...dp.transform,
       };
       // шкаф и дроп-бокс едут за курсором: ключ без смещения, позиция обновляется на месте
-      const posKey = d.kind === 'tool-cupboard' || (isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind)) ? '' : d.kind === 'drop-box' ? `dir:${d.direction}` : JSON.stringify(d);
-      showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d, t: { position: rd.position, rotation: rd.rotation } }, () => ghostify(buildDeployable(rd), GHOST_MAT));
-      if (!posKey || posKey.startsWith('dir:')) {
+      if (d.hanging) rd.hanging = true;
+      const follow = d.kind === 'tool-cupboard' || (isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind));
+      const posKey = follow ? (d.hanging ? 'hang' : '') : d.kind === 'drop-box' ? `dir:${d.direction}` : JSON.stringify(d);
+      showGhost(`deploy|${hit.id}|${d.kind}|${posKey}`, { type: 'deploy', d, t: { position: rd.position, rotation: rd.rotation } }, () => {
+        const o = ghostify(buildDeployable(rd), GHOST_MAT);
+        if (d.kind === 'sprinkler' && showSprinklersRef.current) o.add(sprinklerZone(d.hanging === true));
+        return o;
+      });
+      if (follow || posKey.startsWith('dir:')) {
         const g = ghost.children[0];
         if (g) { g.position.set(rd.position[0], rd.position[1], rd.position[2]); g.rotation.y = (-rd.rotation * Math.PI) / 180; }
       }
@@ -1373,6 +1409,23 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     }, 120);
     return () => clearTimeout(timer);
   }, [resolved, showPrivilege]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (!s) return;
+    s.waterZones.clear();
+    s.ghostKey = '';
+    s.hoverDirty = true;
+    if (!showSprinklers || !resolved) return;
+    for (const d of resolved.deployables) {
+      if (d.kind !== 'sprinkler') continue;
+      const z = sprinklerZone(d.hanging === true);
+      z.position.x = d.position[0];
+      z.position.z = d.position[2];
+      z.position.y += d.position[1];
+      s.waterZones.add(z);
+    }
+  }, [resolved, showSprinklers]);
 
   useEffect(() => {
     const s = refs.current;

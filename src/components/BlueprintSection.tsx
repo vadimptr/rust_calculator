@@ -14,7 +14,7 @@ import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { TERRAIN } from '../blueprint/terrain.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import { IO } from '../blueprint/io.ts';
-import { simulate } from '../blueprint/iosim.ts';
+import { SPRINKLER_RADIUS, simulate } from '../blueprint/iosim.ts';
 import IOPanel from './IOPanel';
 import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, addWire, removeWire, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
@@ -326,6 +326,7 @@ const BlueprintSection: React.FC = () => {
   const [cameraMode, setCameraMode] = usePref<CameraMode>('bp.camera', 'fly', v => v === 'fly' || v === 'orbit');
   const [showSockets, setShowSockets] = usePref('bp.sockets', false, v => typeof v === 'boolean');
   const [showPrivilege, setShowPrivilege] = usePref('bp.zones', true, v => typeof v === 'boolean');
+  const [showSprinklers, setShowSprinklers] = usePref('bp.sprinklerZones', true, v => typeof v === 'boolean');
   const [deckGroup, setDeckGroup] = usePref('bp.deckGroup', DECK_GROUPS[0].group, v => DECK_GROUPS.some(g => g.group === v));
   const [houseGroup, setHouseGroup] = usePref('bp.houseGroup', HOUSE_DEPLOY_GROUPS[0].group, v => HOUSE_DEPLOY_GROUPS.some(g => g.group === v));
   const [fov, setFov] = useState(savedFov);
@@ -482,6 +483,18 @@ const BlueprintSection: React.FC = () => {
     return record(h, { ...d, terrain: d.terrain.map((t, i) => (i === 0 ? { ...t, position: [t.position[0], y, t.position[2]] as [number, number, number] } : t)) }, 'rock');
   });
   const hasCupboard = !!resolved?.deployables.some(d => d.kind === 'tool-cupboard');
+  const hasSprinklers = !!resolved?.deployables.some(d => d.kind === 'sprinkler') || (tool === 'deploy' && deployKind === 'sprinkler');
+  useEffect(() => {
+    if (!hasSprinklers) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.code !== 'KeyE' || document.querySelector('dialog[open]')) return;
+      setShowSprinklers(v => !v);
+      e.preventDefault();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [hasSprinklers, setShowSprinklers]);
   const raidActive = raidOn && hasCupboard;
 
   const editor = useMemo<EditorState | null>(() => {
@@ -835,11 +848,16 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D water={isBoat} resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} />
+            <Viewer3D water={isBoat} resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} showSprinklers={showSprinklers} />
             <div className="bp__camera" role="group" aria-label="Камера">
               {hasCupboard && (
                 <button type="button" className={`bp__zones${showPrivilege ? ' bp__zones--on' : ''}`} onClick={() => setShowPrivilege(v => !v)} aria-pressed={showPrivilege} data-tip="Зона привилегии шкафа: 16 м от блоков здания со шкафом — оболочка в сцене и граница на земле" data-tip-pos="left">
                   {showPrivilege ? 'Убрать зоны строительства' : 'Показать зоны строительства'}
+                </button>
+              )}
+              {hasSprinklers && (
+                <button type="button" className={`bp__zones${showSprinklers ? ' bp__zones--on' : ''}`} onClick={() => setShowSprinklers(v => !v)} aria-pressed={showSprinklers} data-tip={`Зона полива разбрызгивателей: ${SPRINKLER_RADIUS} м вокруг · клавиша E`} data-tip-pos="left">
+                  {showSprinklers ? 'Убрать зоны полива' : 'Показать зоны полива'}
                 </button>
               )}
               <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">

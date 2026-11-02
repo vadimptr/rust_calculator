@@ -64,6 +64,14 @@ test('water: a powered pump feeds sprinklers, an unpowered one does not; water w
   assert.ok(up.water[0].hours === null);
 });
 
+test('water: a sprinkler hanging under the ceiling waters the planter below, one standing on the floor above does not', () => {
+  const hung = { ...dev('s1', 'sprinkler', 0, 2.8), hanging: true };
+  const s = simulate(scene([dev('bar', 'water-barrel', 0, 3), dev('bar2', 'water-barrel', 2, 3), hung, dev('s2', 'sprinkler', 1, 3), dev('pl', 'large-planter', 0, 0, 1)], [wire('fluid', 'bar', 0, 's1', 0), wire('fluid', 'bar2', 0, 's2', 0)]));
+  assert.equal(s.devices.get('s1')!.powered, true);
+  assert.equal(s.devices.get('s2')!.powered, true);
+  assert.deepEqual(s.planters[0].water, ['s1']);
+});
+
 test('wind turbine: 75 on the ground, 150 at 50 m and higher', () => {
   assert.equal(windOutput(0), 75);
   assert.equal(windOutput(25), 112);

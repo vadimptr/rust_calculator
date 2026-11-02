@@ -22,6 +22,7 @@ export const FLUID_SOURCE: Partial<Record<DeployableKind, { flow: number; perSec
 };
 export const SPRINKLER_DRAIN = 2;
 export const SPRINKLER_RADIUS = 3;
+export const SPRINKLER_REACH = { up: [-0.5, 2], down: [-3.2, 0.5] } as const;
 export const GROW_LIGHT_RADIUS = 3;
 export const HEATER_RADIUS = 4;
 const GRAVITY_THRESHOLD = 1;
@@ -263,7 +264,9 @@ export function simulate(resolved: Resolved): IOSimulation {
       const dx = o.position[0] - p.position[0], dz = o.position[2] - p.position[2];
       const lx = dx * Math.cos(a) - dz * Math.sin(a), lz = dx * Math.sin(a) + dz * Math.cos(a);
       const ex = Math.max(0, Math.max(b.x[0] - lx, lx - b.x[1])), ez = Math.max(0, Math.abs(lz) - b.z);
-      const ey = vertical ? Math.max(0, Math.abs(o.position[1] - p.position[1]) - 0.5) : Math.abs(o.position[1] - p.position[1]) > 2 ? Infinity : 0;
+      const [lo, hi] = SPRINKLER_REACH[o.hanging ? 'down' : 'up'];
+      const dy = p.position[1] - o.position[1];
+      const ey = vertical ? Math.max(0, Math.abs(dy) - 0.5) : dy < lo || dy > hi ? Infinity : 0;
       return Math.hypot(ex, ey, ez) <= r;
     };
     const on = (kind: DeployableKind, r: number, vertical: boolean) => resolved.deployables.filter(o => o.kind === kind && devices.get(o.id)?.powered && near(o, r, vertical)).map(o => o.id);

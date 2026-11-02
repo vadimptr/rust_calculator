@@ -574,9 +574,27 @@
             "out"
           ],
           "description": "Только для дроп-бокса: out — передача изнутри наружу (по нормали стены), in — снаружи внутрь."
+        },
+        "hanging": {
+          "type": "boolean",
+          "description": "Только для разбрызгивателя: висит вниз головой под полом верхнего этажа."
         }
       },
       "allOf": [
+        {
+          "if": {
+            "required": [
+              "hanging"
+            ]
+          },
+          "then": {
+            "properties": {
+              "kind": {
+                "const": "sprinkler"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

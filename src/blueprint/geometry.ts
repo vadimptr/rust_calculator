@@ -190,7 +190,7 @@ function placeDeployable(parent: Transform, d: Deployable): Transform {
   // R(rot) · offset: локальный +x → (cx, cz), локальный +z → (-cz, cx)
   const x = px + ox * cx - oz * cz;
   const z = pz + ox * cz + oz * cx;
-  const y = DECK[d.kind]?.mount === 'ceiling' ? py - FLOOR_T : py;
+  const y = DECK[d.kind]?.mount === 'ceiling' || d.hanging ? py - FLOOR_T : py;
   return { position: [x, y, z], rotation: parent.rotation + (d.rotation ?? 0), level: parent.level };
 }
 
@@ -279,7 +279,11 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
         continue;
       }
     } else if (isBoatObject(d.kind)) {
-      if (DECK[d.kind]?.mount === 'ceiling' && (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFoundation)) {
+      if (d.hanging && !DECK[d.kind]?.hangs) {
+        issues.push(err('V04', d.id, `${d.kind} нельзя повесить вниз головой`));
+        continue;
+      }
+      if ((DECK[d.kind]?.mount === 'ceiling' || d.hanging) && (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFoundation)) {
         issues.push(err('V04', d.id, `${d.kind} вешается под потолок — под пол, а не на ${parent.kind}`));
         continue;
       }
@@ -316,6 +320,7 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
     const t = placeDeployable(parent, d);
     out.push({
       id: d.id, kind: d.kind, parent: parent.id, hinge: d.hinge ?? 'left', opens: d.opens ?? 'outward', open: d.open === true, direction: d.direction,
+      ...(d.hanging ? { hanging: true } : {}),
       position: t.position.map(round3) as [number, number, number],
       rotation: round3(norm360(t.rotation)), level: t.level,
     } satisfies ResolvedDeployable);

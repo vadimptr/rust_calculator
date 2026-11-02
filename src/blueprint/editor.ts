@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
+import { FLOOR_T, FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
 import { DECK, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
@@ -336,7 +336,8 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
     deployable = { kind, attach: { to: hostId, socket: 'face' }, offset: [along, height], direction };
   } else if (isBoatObject(kind)) {
     if (info.category !== 'cell' || info.isFrame || (isBoatOnly(kind) && !info.boat)) return null;
-    if (mount === 'ceiling' && info.isFoundation) return null;
+    const hang = !!DECK[kind]!.hangs && local[1] < -FLOOR_T / 2;
+    if ((mount === 'ceiling' || hang) && info.isFoundation) return null;
     if (kind === 'small-engine' && !info.isFoundation) return null;
     const limit = OBJECT_LIMIT[kind];
     if (limit !== undefined && (bp.deployables ?? []).filter(d => d.kind === kind).length >= limit) return null;
@@ -355,8 +356,9 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
       const spot = cupboardSpot(shape, local[0], local[2], turn, i => (walled[i] ? { half: full, margin: CUPBOARD_MARGIN } : { half: area, margin: 0 }));
       if (!spot) return null;
       const reach = (k: DeployableKind) => Math.min(...objectHalf(k));
-      if (taken.some(d => isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < reach(kind) + reach(d.kind))) return null;
-      deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation: turn };
+      const under = (d: Deployable) => DECK[d.kind]?.mount === 'ceiling' || d.hanging === true;
+      if (taken.some(d => isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind) && under(d) === (mount === 'ceiling' || hang) && Math.hypot((d.offset?.[0] ?? 0) - spot[0], (d.offset?.[1] ?? 0) - spot[1]) < reach(kind) + reach(d.kind))) return null;
+      deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: spot, rotation: turn, ...(hang ? { hanging: true } : {}) };
     }
   } else if (kind === 'tool-cupboard') {
     if (info.category !== 'cell' || info.isFrame) return null;

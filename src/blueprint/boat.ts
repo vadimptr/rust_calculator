@@ -29,6 +29,7 @@ export interface DeckObject {
   box: { x: [number, number]; z: number; h: number; y?: number };
   area: [number, number];
   mount?: 'wall' | 'ceiling';
+  hangs?: boolean;
   desc?: string;
 }
 
@@ -68,7 +69,7 @@ export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
   'large-planter': { label: 'Большая грядка', short: 'Бол. грядка', icon: 'planter.large', cost: { wood: 200, tarp: 2 }, box: { x: [-1.38, 1.38], z: 1.41, h: 0.56 }, area: [1.1, 1.13] },
   'triangle-planter': { label: 'Треугольная грядка', short: 'Тр. грядка', icon: 'planter.triangle', cost: { wood: 150, tarp: 1 }, box: { x: [-1.25, 1.25], z: 1.63, h: 0.53 }, area: [1, 1.3] },
   'composter': { label: 'Компостер', short: 'Компостер', icon: 'composter', cost: { tarp: 2, wood: 200 }, box: { x: [-0.6, 0.6], z: 0.6, h: 1.63 }, area: [0.48, 0.48] },
-  'sprinkler': { label: 'Разбрызгиватель', short: 'Разбрызг.', icon: 'electric.sprinkler', cost: { metal: 75 }, box: { x: [-0.25, 0.25], z: 0.25, h: 0.44 }, area: [0.2, 0.2] },
+  'sprinkler': { label: 'Разбрызгиватель', short: 'Разбрызг.', icon: 'electric.sprinkler', cost: { metal: 75 }, box: { x: [-0.25, 0.25], z: 0.25, h: 0.44 }, area: [0.2, 0.2], hangs: true },
   'ceiling-light': { label: 'Потолочная лампа', short: 'Потол. лампа', icon: 'ceilinglight', cost: { metal: 50 }, box: { x: [-0.5, 0.5], z: 0.5, h: 0.7, y: -0.7 }, area: [0.4, 0.4], mount: 'ceiling' },
   'electric-heater': { label: 'Электрообогреватель', short: 'Обогрев.', icon: 'electric.heater', cost: { metal: 200 }, box: { x: [0, 0.21], z: 0.56, h: 0.55, y: -0.27 }, area: [0.08, 0.45], mount: 'wall' },
   'water-pump': { label: 'Водяной насос', short: 'Насос', icon: 'waterpump', cost: { wood: 250, metal: 200, gears: 1 }, box: { x: [-0.36, 0.36], z: 0.63, h: 0.75 }, area: [0.29, 0.5] },

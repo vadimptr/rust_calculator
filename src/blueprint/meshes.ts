@@ -819,6 +819,12 @@ export function buildDeployable(d: ResolvedDeployable, blocked = false): THREE.O
   let g: THREE.Group;
   if (isBoatObject(d.kind)) {
     g = buildBoatObject(d, blocked);
+    if (d.hanging) {
+      const inner = g;
+      inner.rotation.x = Math.PI;
+      g = new THREE.Group();
+      g.add(inner);
+    }
   } else if (d.kind === 'drop-box') {
     g = buildDropBox(d);
   } else if (d.kind === 'tool-cupboard') {
