@@ -13,6 +13,9 @@ import type { LoadResult } from '../blueprint/validate.ts';
 import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { TERRAIN } from '../blueprint/terrain.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
+import { IO } from '../blueprint/io.ts';
+import { simulate } from '../blueprint/iosim.ts';
+import IOPanel from './IOPanel';
 import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, addWire, removeWire, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Regrade } from '../blueprint/editor.ts';
@@ -549,6 +552,7 @@ const BlueprintSection: React.FC = () => {
   const warnings = issues.filter(i => i.level === 'warning');
 
   const cost = useMemo(() => (!isBoat && resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved, isBoat]);
+  const ioSim = useMemo(() => (resolved && resolved.deployables.some(d => IO[d.kind] || d.kind.endsWith('planter')) ? simulate(resolved) : null), [resolved]);
   const objectsCost = useMemo(() => {
     if (isBoat || !resolved) return null;
     const sum: Partial<Record<BoatResKey, number>> = {};
@@ -825,6 +829,7 @@ const BlueprintSection: React.FC = () => {
                 <p className="cost__note">Ставка {(cost.rate * 100).toFixed(1)} % от стоимости за {cost.count} {cost.count === 1 ? 'блок' : cost.count < 5 ? 'блока' : 'блоков'} (брекеты игры: 15 по 10 %, 50 по 15 %, 125 по 20 %, дальше 33.3 %), один игрок; шкаф и дроп-боксы не учитываются.</p>
               </section>
             )}
+            {ioSim && <IOPanel sim={ioSim} />}
           </aside>
         </div>
 

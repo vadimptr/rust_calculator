@@ -11,6 +11,7 @@ import type { AimBox } from '../blueprint/pieces.ts';
 import { FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain, Wire } from '../blueprint/types.ts';
 import { MAX_WIRE_LENGTH, MAX_WIRE_POINTS, pathLength, slotInfo, slotsOf } from '../blueprint/io.ts';
+import { simulate } from '../blueprint/iosim.ts';
 import type { SlotRef, V3 } from '../blueprint/io.ts';
 import { MOVE_KEYS, applyFlight } from '../blueprint/flight.ts';
 import { RaidOverlay } from '../blueprint/raidOverlay.ts';
@@ -721,15 +722,20 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return out;
     };
 
+    let slotSim: ReturnType<typeof simulate> | null = null;
     const slotName = (r: SlotRef) => {
       const d = resolvedRef.current?.deployables.find(x => x.id === r.id);
       const s = d && slotInfo(d.kind, r.dir, r.slot);
-      return `${SLOT_LABELS[s?.name ?? ''] ?? s?.name ?? ''} (${r.dir === 'in' ? 'вход' : 'выход'})`;
+      const dev = slotSim?.devices.get(r.id);
+      const amount = dev ? (r.dir === 'in' ? dev.inputs : dev.outputs)[r.slot] ?? 0 : 0;
+      const unit = r.type === 'power' ? 'ед.' : 'воды/с';
+      return `${SLOT_LABELS[s?.name ?? ''] ?? s?.name ?? ''} (${r.dir === 'in' ? 'вход' : 'выход'}${amount > 0 ? `, ${amount} ${unit}` : ''})`;
     };
     const wireOf = (res: Resolved, r: SlotRef) => (res.wires ?? []).find(w => (r.dir === 'out' ? w.from : w.to).id === r.id && (r.dir === 'out' ? w.from : w.to).slot === r.slot)?.id ?? null;
     const drawSlots = (res: Resolved) => {
       if (state.slotsRes === res) return;
       state.slotsRes = res;
+      slotSim = simulate(res);
       slots.clear();
       for (const d of res.deployables) {
         for (const r of slotsOf(d)) {
@@ -1280,8 +1286,10 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     for (const f of triangleRoofFillers(resolved)) { const o = buildElement(f.el); o.userData.id = f.owner; s.content.add(o); }
     const blocked = blockedSails(resolved);
     for (const d of resolved.deployables) s.content.add(buildDeployable(d, blocked.has(d.id)));
+    const sim = resolved.wires?.length ? simulate(resolved) : null;
+    const gravityBad = new Set(sim?.gravity.map(g => g.wire));
     for (const w of resolved.wires ?? []) {
-      const o = buildWire(w.path, w.kind, w.length > MAX_WIRE_LENGTH ? 'bad' : 'ok');
+      const o = buildWire(w.path, w.kind, w.length > MAX_WIRE_LENGTH || gravityBad.has(w.id) ? 'bad' : (sim?.wires.get(w.id) ?? 0) > 0 ? 'ok' : 'off');
       o.traverse(n => { n.raycast = () => {}; });
       s.content.add(o);
     }
