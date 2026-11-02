@@ -25,6 +25,8 @@ export const SUPPORT = {
   stairs: 0.7,
 } as const;
 
+const WALL_MID_FLOOR = 1.5;
+
 /** Порог обрушения (`stability.collapse`) и точность пересчёта (`stability.accuracy`). */
 export const COLLAPSE = 0.05;
 const ACCURACY = 0.001;
@@ -54,6 +56,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
   // индексы точек: середины рёбер ячеек, верх стен, коньки и низы крыш, центры ячеек
   const cellEdge = new Map<string, string[]>();
   const wallTop = new Map<string, string[]>();
+  const wallMid = new Map<string, string[]>();
   const roofHigh = new Map<string, string[]>();
   const cellAt = new Map<string, string[]>();
   const rampLow = new Map<string, string[]>();
@@ -68,6 +71,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
       push(rampLow, [low[0], low[1] - RAMP_DROP[e.kind]!, low[2]], e.id);
     } else if (info.category === 'wallType') {
       push(wallTop, [e.position[0], e.position[1] + wallHeight(e.kind), e.position[2]], e.id);
+      if (e.kind === 'wall') push(wallMid, [e.position[0], e.position[1] + WALL_MID_FLOOR, e.position[2]], e.id);
     } else if (info.category === 'roof' && info.shape === 'square') {
       const h = edgeMid(e, 2);
       push(roofHigh, [h[0], h[1] + 3, h[2]], e.id);
@@ -105,7 +109,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
         const p = key(edgeMid(e, k));
         // соседний пол того же уровня (не фундамент: фундамент полу не опора), верх стены, конёк крыши
         const floors = not(cellEdge.get(p)).filter(id => !KINDS[els.find(x => x.id === id)!.kind].isFoundation);
-        s.push({ factor, candidates: [...not(wallTop.get(p)), ...floors, ...not(roofHigh.get(p))] });
+        s.push({ factor, candidates: [...not(wallTop.get(p)), ...not(wallMid.get(p)), ...floors, ...not(roofHigh.get(p))] });
       }
     } else if (info.category === 'roof' && e.inverted) {
       // перевёрнутый треугольник держится на соседних скатах по бокам
