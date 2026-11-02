@@ -6,7 +6,7 @@
  */
 import { FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
-import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, objectArea, objectHalf } from './boat.ts';
+import { EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform } from './types.ts';
@@ -295,7 +295,7 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
   const taken = (bp.deployables ?? []).filter(d => d.attach.to === hostId);
   let deployable: Omit<Deployable, 'id'>;
   if (isBoatObject(kind)) {
-    if (info.category !== 'cell' || info.isFrame || !info.boat) return null;
+    if (info.category !== 'cell' || info.isFrame || (isBoatOnly(kind) && !info.boat)) return null;
     if (kind === 'small-engine' && !info.isFoundation) return null;
     const limit = OBJECT_LIMIT[kind];
     if (limit !== undefined && (bp.deployables ?? []).filter(d => d.kind === kind).length >= limit) return null;

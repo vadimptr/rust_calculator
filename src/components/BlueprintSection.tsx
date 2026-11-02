@@ -4,7 +4,7 @@ import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
-import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, HOUSE_DEPLOY_GROUPS, objectCost, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
 import type { BoatResKey, Run } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
@@ -317,6 +317,7 @@ const BlueprintSection: React.FC = () => {
   const [showSockets, setShowSockets] = usePref('bp.sockets', false, v => typeof v === 'boolean');
   const [showPrivilege, setShowPrivilege] = usePref('bp.zones', true, v => typeof v === 'boolean');
   const [deckGroup, setDeckGroup] = usePref('bp.deckGroup', DECK_GROUPS[0].group, v => DECK_GROUPS.some(g => g.group === v));
+  const [houseGroup, setHouseGroup] = usePref('bp.houseGroup', HOUSE_DEPLOY_GROUPS[0].group, v => HOUSE_DEPLOY_GROUPS.some(g => g.group === v));
   const [fov, setFov] = useState(savedFov);
   const changeFov = (v: number) => {
     setFov(v);
@@ -539,6 +540,15 @@ const BlueprintSection: React.FC = () => {
   const warnings = issues.filter(i => i.level === 'warning');
 
   const cost = useMemo(() => (!isBoat && resolved && resolved.elements.length > 0 ? costOf(resolved) : null), [resolved, isBoat]);
+  const objectsCost = useMemo(() => {
+    if (isBoat || !resolved) return null;
+    const sum: Partial<Record<BoatResKey, number>> = {};
+    for (const d of resolved.deployables) {
+      if (!(d.kind in DECK)) continue;
+      for (const [k, v] of Object.entries(objectCost(d.kind)) as [BoatResKey, number][]) sum[k] = (sum[k] ?? 0) + v;
+    }
+    return Object.keys(sum).length ? sum : null;
+  }, [resolved, isBoat]);
   const boat = useMemo(() => (isBoat && resolved ? boatStats(resolved) : null), [resolved, isBoat]);
 
   const counts = useMemo(() => {
@@ -785,6 +795,16 @@ const BlueprintSection: React.FC = () => {
                     <span key={k} className="cost__res" title={RES_LABELS[k]}><img src={RES_ICONS[k]} alt="" />{formatNum(cost.build[k])}</span>
                   ))}
                 </div>
+                {objectsCost && (
+                  <>
+                    <div className="bp__section-title">Объекты</div>
+                    <div className="cost__row">
+                      {BOAT_RES_KEYS.filter(k => (objectsCost[k] ?? 0) > 0).map(k => (
+                        <span key={k} className="cost__res" title={BOAT_RES_LABELS[k]}><img src={BOAT_RES_ICONS[k]} alt="" />{formatNum(objectsCost[k]!)}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
                 <div className="bp__section-title">Содержание <UpkeepDays upkeep={cost.upkeep} /></div>
                 <div className="cost__row">
                   {RESOURCE_KEYS.filter(k => cost.upkeep[k] > 0).map(k => (
@@ -821,22 +841,27 @@ const BlueprintSection: React.FC = () => {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
               </button>
             </div>
-            {isBoat && tool === 'deploy' && (
-              <div className="deck-palette" role="group" aria-label="Объекты на палубу">
-                <div className="deck-palette__tabs">
-                  {DECK_GROUPS.map(g => (
-                    <button key={g.group} type="button" className={`deck-palette__tab${g.group === deckGroup ? ' deck-palette__tab--active' : ''}`} onClick={() => setDeckGroup(g.group)}>{g.group}</button>
-                  ))}
+            {tool === 'deploy' && (() => {
+              const groups = isBoat ? DECK_GROUPS : HOUSE_DEPLOY_GROUPS;
+              const active = isBoat ? deckGroup : houseGroup;
+              const choose = isBoat ? setDeckGroup : setHouseGroup;
+              return (
+                <div className="deck-palette" role="group" aria-label={isBoat ? 'Объекты на палубу' : 'Объекты'}>
+                  <div className="deck-palette__tabs">
+                    {groups.map(g => (
+                      <button key={g.group} type="button" className={`deck-palette__tab${g.group === active ? ' deck-palette__tab--active' : ''}`} onClick={() => choose(g.group)}>{g.group}</button>
+                    ))}
+                  </div>
+                  <div className="deck-palette__items">
+                    {(groups.find(g => g.group === active) ?? groups[0]).kinds.map(k => (
+                      <button key={k} type="button" className={`deck-palette__item${k === deployKind ? ' deck-palette__item--active' : ''}`} onClick={() => setDeployKind(k)} data-tip={KIND_LABELS[k]} aria-label={KIND_LABELS[k]} aria-pressed={k === deployKind}>
+                        <img src={`/icons/items/${DEPLOY_ICONS[k]}.webp`} alt="" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="deck-palette__items">
-                  {(DECK_GROUPS.find(g => g.group === deckGroup) ?? DECK_GROUPS[0]).kinds.map(k => (
-                    <button key={k} type="button" className={`deck-palette__item${k === deployKind ? ' deck-palette__item--active' : ''}`} onClick={() => setDeployKind(k)} data-tip={KIND_LABELS[k]} aria-label={KIND_LABELS[k]} aria-pressed={k === deployKind}>
-                      <img src={`/icons/items/${DEPLOY_ICONS[k]}.webp`} alt="" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+              );
+            })()}
             <div className="hotbar" role="group" aria-label="Инструменты">
               {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
                 <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(cur => (cur === id ? 'view' : id))} aria-pressed={tool === id} aria-label={label}>
@@ -852,7 +877,7 @@ const BlueprintSection: React.FC = () => {
               {tool === 'view' && 'Просмотр: ЛКМ по двери — открыть или закрыть · 1 / 2 / 3 — взять инструмент · средняя кнопка — сдвиг камеры'}
               {tool === 'deploy' && (isBoat
                 ? 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть на 45° от курса · средняя кнопка — сдвиг камеры'
-                : 'ЛКМ — поставить · зажать ПКМ — выбрать объект · R — поворот шкафа или направление дроп-бокса · средняя кнопка — сдвиг камеры')}
+                : 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть (шкаф, мебель) или сменить направление дроп-бокса · средняя кнопка — сдвиг камеры')}
             </div>
           </div>
         </div>

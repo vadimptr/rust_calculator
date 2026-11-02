@@ -77,6 +77,21 @@ export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
 
 export const BOAT_DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [DECK_GROUPS[0]];
 
+export const BOAT_ONLY: DeployableKind[] = DECK_GROUPS[0].kinds;
+
+export const FURNITURE_GROUPS = DECK_GROUPS.filter(g => g.kinds.every(k => k in DECK) && g !== DECK_GROUPS[0]);
+
+export const HOUSE_DEPLOY_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
+  { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'] },
+  { group: 'Окна', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
+  { group: 'Шкаф', kinds: ['tool-cupboard', 'drop-box'] },
+  ...FURNITURE_GROUPS,
+];
+
+export function isBoatOnly(kind: DeployableKind): boolean {
+  return BOAT_ONLY.includes(kind);
+}
+
 export const BOAT_OBJECTS: DeployableKind[] = Object.keys(DECK) as DeployableKind[];
 
 export function isBoatObject(kind: DeployableKind): boolean {
@@ -104,11 +119,11 @@ export const OBJECT_LIMIT: Partial<Record<DeployableKind, number>> = { 'small-en
 export function boatBow(resolved: Resolved): number {
   const wheel = resolved.deployables.find(d => d.kind === 'steering-wheel');
   if (wheel) return wheel.rotation;
-  return resolved.elements.find(e => KINDS[e.kind].boat && KINDS[e.kind].isFoundation)?.rotation ?? 0;
+  return boatGrid(resolved);
 }
 
 export function boatGrid(resolved: Resolved): number {
-  return resolved.elements.find(e => KINDS[e.kind].boat && KINDS[e.kind].isFoundation)?.rotation ?? 0;
+  return (resolved.elements.find(e => KINDS[e.kind].boat && KINDS[e.kind].isFoundation) ?? resolved.elements.find(e => KINDS[e.kind].isFoundation))?.rotation ?? 0;
 }
 
 interface BlockInfo {

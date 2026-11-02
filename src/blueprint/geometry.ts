@@ -8,7 +8,7 @@ import {
   edgeIndex, isLowWall, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
 import { groundTerrain } from './terrain.ts';
-import { isBoatObject } from './boat.ts';
+import { isBoatObject, isBoatOnly } from './boat.ts';
 import type {
   Attach, Blueprint, Deployable, Element, ElementKind, Grade, Issue, LegacyBlueprint, LegacyElement, Resolved, ResolvedDeployable, ResolvedElement,
   Socket, Transform,
@@ -264,8 +264,8 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
     if (!parent) { issues.push(err('V02', d.id, `attach.to ссылается на несуществующий элемент «${d.attach.to}»`)); continue; }
     const info = KINDS[parent.kind];
     if (isBoatObject(d.kind)) {
-      if (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFrame || !info.boat) {
-        issues.push(err('V04', d.id, `${d.kind} ставится только на корпус или пол корабля, а не на ${parent.kind}`));
+      if (d.attach.socket !== 'top' || info.category !== 'cell' || info.isFrame || (isBoatOnly(d.kind) && !info.boat)) {
+        issues.push(err('V04', d.id, isBoatOnly(d.kind) ? `${d.kind} ставится только на корпус или пол корабля, а не на ${parent.kind}` : `${d.kind} ставится только на фундамент или пол, а не на ${parent.kind}`));
         continue;
       }
       if (d.kind === 'small-engine' && !info.isFoundation) {

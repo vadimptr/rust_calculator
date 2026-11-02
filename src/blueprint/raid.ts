@@ -4,6 +4,7 @@
  */
 import { EXPLOSIVE_COSTS, RAID_RULES } from '../data/raidData.ts';
 import type { ExplosiveType, RaidCostRule, RaidMethod } from '../types/index.ts';
+import { isBoatObject } from './boat.ts';
 import { KINDS, apothem, edgeAngle, edgeCount, wallHeight } from './catalog.ts';
 import type { BoatObjectKind, DeployableKind, Grade, Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 
@@ -153,7 +154,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
   const roofLowAt = new Map<string, ResolvedElement>();
   for (const r of roofs) if (!r.inverted) roofLowAt.set(key3(...edgeMids(KINDS[r.kind].shape!, r.position, r.rotation)[0]), r);
   const doorsIn = new Map<string, ResolvedDeployable>();
-  for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard' && d.kind !== 'drop-box') doorsIn.set(d.parent, d);
+  for (const d of resolved.deployables) if (d.kind !== 'tool-cupboard' && d.kind !== 'drop-box' && !isBoatObject(d.kind)) doorsIn.set(d.parent, d);
 
   /** Стена-тип на вертикали (x, z), перекрывающая высоту y. */
   const wallsAtXZ = new Map<string, ResolvedElement[]>();

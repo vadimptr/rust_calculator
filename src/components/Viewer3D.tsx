@@ -786,7 +786,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
           state.pending = null;
           const g = ghost.children[0];
           if (g) { g.position.set(...bad.position); g.rotation.y = (-bad.rotation * Math.PI) / 180; }
-          label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя: только на корпус или пол корабля и не вплотную к другому объекту';
+          label.textContent = BOAT_DEPLOY_HINT[ed.deployKind] ?? 'Сюда нельзя: только на фундамент, корпус или пол и не вплотную к другому объекту';
           label.className = 'viewer3d__label viewer3d__label--bad';
         }
         return;
@@ -1143,7 +1143,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     s.controls.target.copy(center);
     const dist = Math.max(8, size * 1.1);
     // Камера смотрит со стороны первой двери, иначе первого проёма или окна (3/4-ракурс), иначе — с фиксированного угла
-    const door = resolved.deployables.find(d => d.kind !== 'tool-cupboard');
+    const door = resolved.deployables.find(d => d.kind !== 'tool-cupboard' && !isBoatObject(d.kind));
     const opening = resolved.elements.find(e => KINDS[e.kind].opening || e.kind === 'window-frame');
     const facing = door?.rotation ?? opening?.rotation;
     const az = ((facing !== undefined ? facing + 35 : 135) * Math.PI) / 180;

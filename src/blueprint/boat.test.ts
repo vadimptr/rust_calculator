@@ -197,3 +197,13 @@ test('a sail whose sheet overlaps another sail is reported as too close', () => 
   assert.match(near ?? '', /Слишком близко к парусу «s1»/);
   assert.equal(sailWarning(before, { elements, deployables: [sail('s1', 0, 0), sail('g', 0, 3)] }, 'g'), null);
 });
+
+test('house: furniture goes on a foundation, boat-only objects do not, and raid does not take furniture for a door', () => {
+  let bp = newBlueprint('Дом', 'square-foundation');
+  assert.equal(deployPlacement(bp, res(bp), 'sail', 'f1', [0, 0, 0], 0), null);
+  bp = deploy(bp, 'furnace', 'f1', [0.5, 0, 0]);
+  bp = deploy(bp, 'large-wood-box', 'f1', [-0.8, 0, 0]);
+  const loaded = loadBlueprint(bp);
+  assert.deepEqual(loaded.issues.filter(i => i.level === 'error'), []);
+  assert.equal(loaded.resolved!.deployables.length, 2);
+});
