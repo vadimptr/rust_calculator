@@ -1724,41 +1724,120 @@
   z-index: 2;
 }
 
-.bp__fov {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  height: 38px;
-  padding: 0 0.6rem;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
+.bp__camera .bp__icon-btn {
+  color: var(--text-primary);
   background: rgba(20, 17, 14, 0.75);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
+}
+
+.view-settings {
   position: relative;
 }
 
-.bp__fov input {
-  width: 88px;
+.view-settings__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  width: 290px;
+  max-width: calc(100vw - 32px);
+  padding: 0.7rem 0.8rem 0.5rem;
+  background: rgba(20, 17, 14, 0.96);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.view-settings__menu::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -8px;
+  height: 8px;
+}
+
+.view-settings__title {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.view-settings__seg {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.view-settings__seg button {
+  flex: 1;
+  padding: 0.4rem 0;
+  font: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.view-settings__seg button + button {
+  border-left: 1px solid var(--card-border);
+}
+
+.view-settings__seg .view-settings__seg--on {
+  color: var(--text-primary);
+  background: rgba(207, 72, 32, 0.25);
+}
+
+.view-settings__fov {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.view-settings__fov input {
+  flex: 1;
+  min-width: 0;
   accent-color: var(--accent);
 }
 
-.bp__fov output {
+.view-settings__fov output {
   min-width: 2.2rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
 
-@media (max-width: 560px) {
-  .bp__fov input {
-    width: 60px;
-  }
+.view-settings__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.35rem 0;
+  cursor: pointer;
 }
 
-.bp__camera .bp__icon-btn {
-  color: var(--text-primary);
-  background: rgba(20, 17, 14, 0.75);
+.view-settings__row input {
+  margin-top: 0.15rem;
+  accent-color: var(--accent);
+}
+
+.view-settings__row em {
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+.view-settings__row small {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
 }
 
 .bp__left > .bp__panel {
@@ -2678,37 +2757,6 @@
 
 .viewer3d__privilege--on {
   display: inline-flex;
-}
-
-.bp__zones {
-  height: 38px;
-  padding: 0 0.8rem;
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  background: rgba(20, 17, 14, 0.75);
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  position: relative;
-}
-
-.bp__zones:hover {
-  border-color: var(--accent);
-}
-
-.bp__zones--on {
-  border-color: rgba(232, 176, 74, 0.8);
-}
-
-@media (max-width: 720px) {
-  .bp__zones {
-    max-width: 9rem;
-    white-space: normal;
-    line-height: 1.1;
-  }
 }
 
 .grade-dialog {

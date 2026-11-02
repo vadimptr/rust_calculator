@@ -6,7 +6,7 @@
  */
 import { FLOOR_T, FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
-import { DECK, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
+import { DECK, DIRECTED_OBJECTS, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
 import { unstable } from './stability.ts';
 import type { Attach, Blueprint, Deployable, DeployableKind, Element, ElementKind, Grade, Resolved, ResolvedElement, Socket, Transform, Wire } from './types.ts';
@@ -307,7 +307,7 @@ export interface DeployPlacement {
  * ячейки в точку наведения, дроп-бокс — на грань стены в точку наведения. local — точка наведения в
  * локальных осях хозяина (x по нормали, y вверх, z вдоль).
  */
-export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number], rotation = 0): DeployPlacement | null {
+export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: DeployableKind, hostId: string, local: [number, number, number], rotation = 0, snap = false): DeployPlacement | null {
   const host = bp.elements.find(e => e.id === hostId);
   const ht = resolved.elements.find(e => e.id === hostId);
   if (!host || !ht) return null;
@@ -349,11 +349,14 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
       const a = (edgeAngle(shape, k) * Math.PI) / 180;
       deployable = { kind, attach: { to: hostId, socket: 'top' }, offset: [round3(apothem(shape) * Math.cos(a)), round3(apothem(shape) * Math.sin(a))], rotation: edgeAngle(shape, k) };
     } else {
+      const directed = DIRECTED_OBJECTS.includes(kind);
       const bow = kind === 'steering-wheel' ? boatGrid(resolved) : boatBow(resolved);
-      const turn = round3(norm360(bow + rotation - ht.rotation));
+      const sides = snap ? nearSides(shape, local[0], local[2]) : [];
+      const turn = round3(norm360(directed ? bow + rotation - ht.rotation : snap ? sides[0].angle + 180 + rotation : rotation));
       const walled = walledEdges(resolved, ht);
       const full = objectHalf(kind), area = objectArea(kind);
-      const spot = cupboardSpot(shape, local[0], local[2], turn, i => (walled[i] ? { half: full, margin: CUPBOARD_MARGIN } : { half: area, margin: 0 }));
+      const [tx, tz] = sides.reduce(([x, z], s) => [x + s.out[0] * 5, z + s.out[1] * 5], [local[0], local[2]]);
+      const spot = cupboardSpot(shape, tx, tz, turn, i => (walled[i] ? { half: full, margin: CUPBOARD_MARGIN } : { half: snap ? full : area, margin: 0 }));
       if (!spot) return null;
       const reach = (k: DeployableKind) => Math.min(...objectHalf(k));
       const under = (d: Deployable) => DECK[d.kind]?.mount === 'ceiling' || d.hanging === true;
@@ -423,6 +426,19 @@ function walledEdges(resolved: Resolved, host: ResolvedElement): boolean[] {
     return walls.some(([wx, wz]) => Math.hypot(wx - (x1 + x2) / 2, wz - (z1 + z2) / 2) < 0.05);
   });
 }
+
+function nearSides(shape: 'square' | 'triangle', x: number, z: number): { angle: number; out: [number, number] }[] {
+  const verts = cellVertices(shape);
+  const sides = verts.map(([x1, z1], i) => {
+    const [x2, z2] = verts[(i + 1) % verts.length];
+    const len = Math.hypot(x2 - x1, z2 - z1);
+    const out: [number, number] = [(z2 - z1) / len, -(x2 - x1) / len];
+    return { angle: (Math.atan2(out[1], out[0]) * 180) / Math.PI, out, dist: -((x - x1) * out[0] + (z - z1) * out[1]) };
+  }).sort((a, b) => a.dist - b.dist);
+  return sides.filter((s, i) => i === 0 || s.dist < SNAP_CORNER);
+}
+
+const SNAP_CORNER = 0.6;
 
 interface EdgeFit {
   half: [number, number];

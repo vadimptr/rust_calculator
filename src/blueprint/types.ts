@@ -110,6 +110,7 @@ export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'canno
   | 'shelves'
   | 'locker'
   | 'fridge'
+  | 'mini-fridge'
   | 'water-barrel'
   | 'furnace'
   | 'small-oil-refinery'

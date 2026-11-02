@@ -53,7 +53,8 @@ export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
   'storage-barrel-horizontal': { label: 'Лежачая бочка для хранения', short: 'Леж. бочка', icon: 'storage_barrel_c', cost: { wood: 300, metal: 75 }, box: { x: [-0.49, 0.55], z: 0.67, h: 1.02 }, area: [0.22, 0.22] },
   'shelves': { label: 'Полки', short: 'Полки', icon: 'shelves', cost: { metal: 50 }, box: { x: [-0.68, 0.68], z: 1.38, h: 2.8 }, area: [0.41, 1.28] },
   'locker': { label: 'Шкафчик', short: 'Шкафчик', icon: 'locker', cost: { metal: 100, wood: 50 }, box: { x: [-0.36, 0.36], z: 0.9, h: 2.24 }, area: [0.45, 1.0] },
-  'fridge': { label: 'Холодильник', short: 'Холодильник', icon: 'fridge', cost: { metal: 150 }, box: { x: [-0.48, 0.58], z: 0.49, h: 2 }, area: [0.53, 0.54] },
+  'fridge': { label: 'Большой холодильник', short: 'Холодильник', icon: 'fridge', cost: { metal: 150 }, box: { x: [-0.48, 0.58], z: 0.49, h: 2 }, area: [0.53, 0.54] },
+  'mini-fridge': { label: 'Малый холодильник', short: 'Мини-холод.', icon: 'minifridge', cost: { metal: 50 }, box: { x: [-0.4, 0.44], z: 0.46, h: 1.08 }, area: [0.34, 0.37] },
   'water-barrel': { label: 'Бочка для воды', short: 'Вода', icon: 'water.barrel', cost: { wood: 250, tarp: 1 }, box: { x: [-0.66, 0.63], z: 0.89, h: 2.12 }, area: [0.53, 0.68] },
   'furnace': { label: 'Печь', short: 'Печь', icon: 'furnace', cost: { stone: 200, wood: 100, lgf: 50 }, box: { x: [-0.5, 0.53], z: 0.51, h: 1.6 }, area: [0.34, 0.33] },
   'small-oil-refinery': { label: 'Малый нефтеперегонный завод', short: 'Перегонка', icon: 'small.oil.refinery', cost: { wood: 200, metal: 500, lgf: 250 }, box: { x: [-1.29, 1.29], z: 1.29, h: 2.56 }, area: [0.05, 0.05] },
@@ -111,7 +112,7 @@ export const DECK: Partial<Record<DeployableKind, DeckObject>> = {
 export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Ход', kinds: ['sail', 'small-engine', 'steering-wheel', 'anchor', 'cannon', 'plank', 'small-ramp'] },
   { group: 'Верстаки', kinds: ['workbench1', 'workbench2', 'workbench3', 'repair-bench', 'research-table', 'mixing-table'] },
-  { group: 'Хранение', kinds: ['large-wood-box', 'small-wood-box', 'storage-barrel-vertical', 'storage-barrel-horizontal', 'shelves', 'locker', 'fridge'] },
+  { group: 'Хранение', kinds: ['large-wood-box', 'small-wood-box', 'storage-barrel-vertical', 'storage-barrel-horizontal', 'shelves', 'locker', 'fridge', 'mini-fridge'] },
   { group: 'Печи', kinds: ['furnace', 'small-oil-refinery', 'bbq'] },
   { group: 'Ферма', kinds: ['small-planter', 'large-planter', 'triangle-planter', 'composter', 'sprinkler', 'ceiling-light', 'electric-heater'] },
   { group: 'Вода', kinds: ['water-pump', 'water-barrel', 'small-water-catcher', 'large-water-catcher', 'water-purifier', 'powered-water-purifier', 'fluid-splitter', 'fluid-combiner', 'fluid-switch'] },

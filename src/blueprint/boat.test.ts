@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveBlueprint } from './geometry.ts';
 import { addDeployable, addElement, candidatePlacements, deployPlacement, newBlueprint, placementsNear } from './editor.ts';
-import { blockCost, blockedSails, boatStats, coveredHullSides, dragFor, frontalWidth, sailWarning, terminalSpeed } from './boat.ts';
+import { blockCost, blockedSails, objectHalf, boatStats, coveredHullSides, dragFor, frontalWidth, sailWarning, terminalSpeed } from './boat.ts';
 import { loadBlueprint } from './validate.ts';
 import { emptyScheme } from './schemesApi.ts';
 import type { Blueprint, DeployableKind, ElementKind } from './types.ts';
@@ -254,6 +254,32 @@ test('sprinkler: aimed at the underside of a floor it hangs upside down, aimed a
   assert.ok(Math.abs(hung.position[1] - (top - 0.2)) < 1e-6);
   assert.equal(stands.hanging, undefined);
   assert.ok(Math.abs(stands.position[1] - top) < 1e-6);
+});
+
+test('flower: furniture follows the grid of its own foundation, Shift presses it flush to the nearest edge or into a corner', () => {
+  let bp = newBlueprint('Цветок', 'triangle-foundation');
+  for (let k = 0; k < 3; k++) {
+    const a = ((90 + 120 * k) * Math.PI) / 180;
+    bp = attach(bp, 'square-foundation', 'f1', [Math.cos(a) * 1.5, 0, Math.sin(a) * 1.5]);
+  }
+  const squares = bp.elements.filter(e => e.kind === 'square-foundation').map(e => e.id);
+  assert.equal(squares.length, 3);
+  const bare = bp, empty = res(bp);
+  for (const id of squares) bp = deploy(bp, 'large-wood-box', id, [0, 0, 0]);
+  const r = res(bp);
+  for (const d of r.deployables) {
+    const host = r.elements.find(e => e.id === d.parent)!;
+    const off = (((d.rotation - host.rotation) % 90) + 90) % 90;
+    assert.ok(off < 1e-6 || off > 90 - 1e-6, `${d.id} ${d.rotation} on ${host.rotation}`);
+  }
+  const edge = deployPlacement(bare, empty, 'furnace', squares[0], [0.3, 0, 1.2], 0, true)!;
+  const [hx, hz] = objectHalf('furnace');
+  const reach = (t: number, ux: number, uz: number) => hx * Math.abs(Math.cos(t) * ux + Math.sin(t) * uz) + hz * Math.abs(-Math.sin(t) * ux + Math.cos(t) * uz);
+  const t = (edge.deployable.rotation! * Math.PI) / 180;
+  assert.ok(Math.abs(edge.deployable.offset![1] + reach(t, 0, 1) - 1.5) < 0.02, JSON.stringify(edge.deployable));
+  const corner = deployPlacement(bare, empty, 'furnace', squares[1], [1.2, 0, -1.2], 0, true)!;
+  const c = corner.deployable.offset!, tc = (corner.deployable.rotation! * Math.PI) / 180;
+  assert.ok(Math.abs(c[0] + reach(tc, 1, 0) - 1.5) < 0.02 && Math.abs(-c[1] + reach(tc, 0, 1) - 1.5) < 0.02, JSON.stringify(corner.deployable));
 });
 
 test('yaw: a sail off the centre line turns the bow away from its side, a mirrored pair cancels out', () => {

@@ -72,6 +72,7 @@ interface Viewer3DProps {
   fov?: number;
   showPrivilege?: boolean;
   showSprinklers?: boolean;
+  showCupboard?: boolean;
   water?: boolean;
 }
 
@@ -132,6 +133,7 @@ interface SceneRefs {
   stability: Map<string, number>;
   pieces: Map<string, string[]>;
   ghostStab: number;
+  shift: boolean;
   /** Подпись в углу сцены: стабильность наведённого блока или призрака. */
   label: HTMLDivElement;
   /** Ключ крепления, показанного в прошлый раз: сокет меняется только на заметно более близкий. */
@@ -366,8 +368,8 @@ function toggleDoorsOf(s: SceneRefs, id: string): boolean {
 function lastTurn(res: Resolved, kind: DeployableKind): number {
   const last = [...res.deployables].reverse().find(d => d.kind === kind);
   if (!last) return 0;
-  const bow = kind === 'steering-wheel' ? boatGrid(res) : boatBow(res);
-  return ((Math.round((last.rotation - bow) / 45) % 8) + 8) % 8;
+  const base = !DIRECTED_OBJECTS.includes(kind) ? res.elements.find(e => e.id === last.parent)?.rotation ?? 0 : kind === 'steering-wheel' ? boatGrid(res) : boatBow(res);
+  return ((Math.round((last.rotation - base) / 45) % 8) + 8) % 8;
 }
 
 function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number] {
@@ -376,7 +378,7 @@ function toLocal(el: ResolvedElement, p: THREE.Vector3): [number, number, number
   return [dx * Math.cos(a) - dz * Math.sin(a), dy, dx * Math.sin(a) + dz * Math.cos(a)];
 }
 
-const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false, showSprinklers = true, water = false }) => {
+const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, frameKey, editor, showSockets = false, fov = 75, showPrivilege = false, showSprinklers = true, showCupboard = true, water = false }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const refs = useRef<SceneRefs | null>(null);
   const framedKey = useRef<string | null>(null);
@@ -499,7 +501,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     const state: SceneRefs = {
       renderer, scene, camera, controls, fly, keys, clock: new THREE.Clock(), content, doors: [], doorState: new Map(),
       raid: new RaidOverlay(content, world), frame: 0, ghost, sockets, zones, waterZones, xray, privInfo: null, privBadge, privAt: 0, socketKey: '', raycaster: new THREE.Raycaster(), pointer: null,
-      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, label, sailWarnKey: '', sailWarn: null,
+      hoverDirty: false, pending: null, alt: 0, altKey: '', candCache: new Map(), ghostKey: '', lastAttach: '', stability: new Map(), pieces: new Map(), ghostStab: 1, shift: false, label, sailWarnKey: '', sailWarn: null,
       slots, slotsRes: null, draft: null, wirePending: null,
     };
     refs.current = state;
@@ -979,8 +981,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       // объект
       const local = toLocal(hostEl, hit.point);
       // шкаф: R поворачивает на 90° (прямо / боком)
-      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? ((lastTurn(res, ed.deployKind) + state.alt) % 8) * 45 : 0;
-      const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn) : null;
+      const snap = state.shift && isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind);
+      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : snap && !DIRECTED_OBJECTS.includes(ed.deployKind) ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? ((lastTurn(res, ed.deployKind) + state.alt) % 8) * 45 : 0;
+      const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn, snap) : null;
       if (!dp) {
         none();
         if (isBoatObject(ed.deployKind)) {
@@ -1032,6 +1035,9 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
         label.textContent = d.kind === 'steering-wheel'
           ? `Нос корабля — по синей стрелке · ${off}° к сетке корпуса · R — повернуть на 45°`
           : `Тяга по синей стрелке · ${off === 0 ? 'точно по курсу' : `${off > 180 ? 360 - off : off}° от курса`} · R — повернуть на 45°`;
+      } else if (isBoatObject(d.kind) && !EDGE_OBJECTS.includes(d.kind)) {
+        label.textContent = snap ? 'Прижат к краю · R — повернуть на 90°' : 'R — повернуть на 45° · Shift — прижать к краю';
+        label.className = 'viewer3d__label';
       }
     };
 
@@ -1163,6 +1169,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
     renderer.domElement.addEventListener('contextmenu', onContextMenu);
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' && !state.shift) { state.shift = true; state.hoverDirty = true; }
       if (document.querySelector('dialog[open]')) return;
       if (editorRef.current && !(e.target instanceof HTMLInputElement)) {
         // киянка: R — снести блок под прицелом; в остальных инструментах R — другой вариант
@@ -1190,7 +1197,10 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       keys.add(e.code);
       e.preventDefault();
     };
-    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
+    const onKeyUp = (e: KeyboardEvent) => {
+      keys.delete(e.code);
+      if (e.key === 'Shift') { state.shift = false; state.hoverDirty = true; }
+    };
     const onUnlock = () => keys.clear();
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
@@ -1426,6 +1436,11 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       s.waterZones.add(z);
     }
   }, [resolved, showSprinklers]);
+
+  useEffect(() => {
+    const s = refs.current;
+    if (s) s.xray.visible = showCupboard;
+  }, [showCupboard]);
 
   useEffect(() => {
     const s = refs.current;

@@ -97,6 +97,7 @@ DECK_OBJECTS = {
     'shelves': 'shelves/shelves.prefab',
     'locker': 'locker/locker.deployed.prefab',
     'fridge': 'fridge/fridge.deployed.prefab',
+    'mini-fridge': 'minifridge/minifridge.deployed.prefab',
     'furnace': 'furnace/furnace.prefab',
     'large-furnace': 'furnace.large/furnace.large.prefab',
     'small-oil-refinery': 'oil refinery/refinery_small_deployed.prefab',

@@ -16,6 +16,7 @@ import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import { IO } from '../blueprint/io.ts';
 import { SPRINKLER_RADIUS, simulate } from '../blueprint/iosim.ts';
 import IOPanel from './IOPanel';
+import ViewSettings from './ViewSettings';
 import type { ResourceKey } from '../blueprint/cost.ts';
 import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, addWire, removeWire, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Regrade } from '../blueprint/editor.ts';
@@ -327,6 +328,7 @@ const BlueprintSection: React.FC = () => {
   const [showSockets, setShowSockets] = usePref('bp.sockets', false, v => typeof v === 'boolean');
   const [showPrivilege, setShowPrivilege] = usePref('bp.zones', true, v => typeof v === 'boolean');
   const [showSprinklers, setShowSprinklers] = usePref('bp.sprinklerZones', true, v => typeof v === 'boolean');
+  const [showCupboard, setShowCupboard] = usePref('bp.cupboardGlow', true, v => typeof v === 'boolean');
   const [deckGroup, setDeckGroup] = usePref('bp.deckGroup', DECK_GROUPS[0].group, v => DECK_GROUPS.some(g => g.group === v));
   const [houseGroup, setHouseGroup] = usePref('bp.houseGroup', HOUSE_DEPLOY_GROUPS[0].group, v => HOUSE_DEPLOY_GROUPS.some(g => g.group === v));
   const [fov, setFov] = useState(savedFov);
@@ -848,32 +850,21 @@ const BlueprintSection: React.FC = () => {
 
         <div className="bp__center">
           <div className="bp__viewer">
-            <Viewer3D water={isBoat} resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} showSprinklers={showSprinklers} />
-            <div className="bp__camera" role="group" aria-label="Камера">
-              {hasCupboard && (
-                <button type="button" className={`bp__zones${showPrivilege ? ' bp__zones--on' : ''}`} onClick={() => setShowPrivilege(v => !v)} aria-pressed={showPrivilege} data-tip="Зона привилегии шкафа: 16 м от блоков здания со шкафом — оболочка в сцене и граница на земле" data-tip-pos="left">
-                  {showPrivilege ? 'Убрать зоны строительства' : 'Показать зоны строительства'}
-                </button>
-              )}
-              {hasSprinklers && (
-                <button type="button" className={`bp__zones${showSprinklers ? ' bp__zones--on' : ''}`} onClick={() => setShowSprinklers(v => !v)} aria-pressed={showSprinklers} data-tip={`Зона полива разбрызгивателей: ${SPRINKLER_RADIUS} м вокруг · клавиша E`} data-tip-pos="left">
-                  {showSprinklers ? 'Убрать зоны полива' : 'Показать зоны полива'}
-                </button>
-              )}
-              <label className="bp__fov" data-tip={`Угол обзора по вертикали, как graphics.fov в игре: ${FOV.min}–${FOV.max}°, по умолчанию ${FOV.default}°`} data-tip-pos="left">
-                <span>FOV</span>
-                <input type="range" min={FOV.min} max={FOV.max} step={1} value={fov} onChange={e => changeFov(Number(e.target.value))} onDoubleClick={() => changeFov(FOV.default)} aria-label="Угол обзора" />
-                <output>{fov}°</output>
-              </label>
-              <button type="button" className={`bp__icon-btn${showSockets ? ' bp__icon-btn--active' : ''}`} onClick={() => setShowSockets(v => !v)} aria-pressed={showSockets} aria-label="Сокеты" data-tip="Сокеты: зелёным — зоны выбора, куда встанет блок; ярче — выбранная" data-tip-pos="left">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" /><path d="M4 7.5l8 4.5 8-4.5M12 12v9" /></svg>
-              </button>
-              <button type="button" className={`bp__icon-btn${cameraMode === 'orbit' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('orbit')} aria-pressed={cameraMode === 'orbit'} aria-label="Орбита" data-tip="Орбита: вращать перетаскиванием, колесо — приближать" data-tip-pos="left">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M17.7 2.8v3.8h-3.8M6.3 21.2v-3.8h3.8" /><circle cx="12" cy="12" r="2" fill="currentColor" /></svg>
-              </button>
-              <button type="button" className={`bp__icon-btn${cameraMode === 'fly' ? ' bp__icon-btn--active' : ''}`} onClick={() => setCameraMode('fly')} aria-pressed={cameraMode === 'fly'} aria-label="Полёт" data-tip="Полёт: клик по сцене — захват мыши, WASD — лететь, Esc — отпустить" data-tip-pos="left">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z" /><path d="M10 13l4.5-4.5" /></svg>
-              </button>
+            <Viewer3D water={isBoat} resolved={resolved} mode={cameraMode} raid={raidView} raidPlay={raidActive ? raidPlay : 0} frameKey={current?.id ?? 'local'} editor={editor} showSockets={showSockets} fov={fov} showPrivilege={showPrivilege && hasCupboard} showSprinklers={showSprinklers} showCupboard={showCupboard} />
+            <div className="bp__camera">
+              <ViewSettings
+                camera={cameraMode}
+                setCamera={setCameraMode}
+                fov={fov}
+                fovRange={FOV}
+                setFov={changeFov}
+                toggles={[
+                  { label: 'Зоны строительства', hint: 'Привилегия шкафа: 16 м от блоков здания со шкафом', on: showPrivilege, set: setShowPrivilege, muted: hasCupboard ? undefined : 'нет шкафа' },
+                  { label: 'Подсветка шкафа', hint: 'Шкаф зелёным сквозь стены', on: showCupboard, set: setShowCupboard, muted: hasCupboard ? undefined : 'нет шкафа' },
+                  { label: 'Зоны полива', hint: `Разбрызгиватель поливает в ${SPRINKLER_RADIUS} м · клавиша E`, on: showSprinklers, set: setShowSprinklers, muted: hasSprinklers ? undefined : 'нет разбрызгивателей' },
+                  { label: 'Сокеты', hint: 'Зелёным — куда встанет блок, ярче — выбранный', on: showSockets, set: setShowSockets },
+                ]}
+              />
             </div>
             {tool === 'deploy' && (() => {
               const groups = isBoat ? DECK_GROUPS : HOUSE_DEPLOY_GROUPS;
