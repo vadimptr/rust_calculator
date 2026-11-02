@@ -4,8 +4,8 @@ import GradeDialog from './GradeDialog';
 import type { CameraMode, EditorState, EditorTool, RadialItem } from './Viewer3D';
 import { ApiError, createScheme, emptyScheme, getScheme, listSchemes, saveScheme } from '../blueprint/schemesApi.ts';
 import type { SceneKind, SchemeSummary } from '../blueprint/schemesApi.ts';
-import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, DRAG_MAX, DRAG_MAX_WIDTH, DRAG_MIN, DRAG_MIN_WIDTH, HOUSE_DEPLOY_GROUPS, objectCost, ENGINE_FUEL_PER_SEC, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
-import type { BoatResKey, Run } from '../blueprint/boat.ts';
+import { BOAT_BLOCKS, BOAT_DEPLOY_PLAN, BOAT_PLAN, BOAT_RES_KEYS, DECAY_HOURS, DECAY_START_HOURS, DECK, DECK_GROUPS, DRAG_MAX, DRAG_MAX_WIDTH, DRAG_MIN, DRAG_MIN_WIDTH, HOUSE_DEPLOY_GROUPS, objectCost, ENGINE_FUEL_PER_SEC, ENGINE_LEVER, ENGINE_THRUST, MAX_BLOCKS, MIN_MASS, SAIL_LEVER, SAIL_THRUST, SHALLOW_FACTOR, STATION_COST, VELOCITY_MAX, boatStats, describeBlock, isBoatScheme } from '../blueprint/boat.ts';
+import type { BoatResKey, Run, Yaw } from '../blueprint/boat.ts';
 import { record, redo, startHistory, undo } from '../blueprint/history.ts';
 import type { History } from '../blueprint/history.ts';
 import { loadBlueprint } from '../blueprint/validate.ts';
@@ -14,9 +14,9 @@ import { GROUND_Y, KINDS } from '../blueprint/catalog.ts';
 import { TERRAIN } from '../blueprint/terrain.ts';
 import { RESOURCE_KEYS, costOf } from '../blueprint/cost.ts';
 import type { ResourceKey } from '../blueprint/cost.ts';
-import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
+import { BUILD_PLAN, DEPLOY_PLAN, addDeployable, addElement, addElementAt, addWire, removeWire, regradeElements, regradeTargets, removeDeployable, removeElement, rotateElement, settle, upgradeElement } from '../blueprint/editor.ts';
 import type { Regrade } from '../blueprint/editor.ts';
-import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Transform } from '../blueprint/types.ts';
+import type { Attach, Blueprint, Deployable, DeployableKind, ElementKind, Grade, Transform, Wire } from '../blueprint/types.ts';
 
 import type { RaidView } from '../blueprint/raidOverlay.ts';
 import type { RaidSimulation } from '../blueprint/splash.ts';
@@ -178,6 +178,7 @@ const RADIAL: Record<EditorTool, RadialItem[]> = {
     { id: 'twig', label: 'Солома', img: '/icons/grade/straw.webp' }, { id: 'wood', label: 'Дерево' }, { id: 'stone', label: 'Камень' },
     { id: 'metal', label: 'Металл' }, { id: 'armored', label: 'МВК' }, { id: 'rotate', label: 'Повернуть', img: '/icons/grade/rotate.webp', mono: true }, { id: 'remove', label: 'Снести' },
   ],  view: [],
+  wire: [],
 };
 
 const RADIAL_BOAT: Record<EditorTool, RadialItem[]> = {
@@ -185,6 +186,7 @@ const RADIAL_BOAT: Record<EditorTool, RadialItem[]> = {
   deploy: BOAT_DEPLOY_PLAN.flatMap(g => g.kinds).map(k => ({ id: k, label: KIND_LABELS[k], short: SHORT_LABELS[k], img: `/icons/items/${DEPLOY_ICONS[k]}.webp`, desc: DEPLOY_DESCRIPTIONS[k] })),
   hammer: [{ id: 'rotate', label: 'Повернуть', img: '/icons/grade/rotate.webp', mono: true }, { id: 'remove', label: 'Снести' }],
   view: [],
+  wire: [],
 };
 
 const BOAT_RES_ITEMS: Record<BoatResKey, [string, string]> = {
@@ -200,10 +202,12 @@ const BOAT_RES_LABELS = Object.fromEntries(Object.entries(BOAT_RES_ITEMS).map(([
 
 const speedText = (v: number) => `${v.toFixed(1)} м/с · ${Math.round(v * 3.6)} км/ч`;
 
+const yawText = (yaw: Yaw) => `${yaw.left ? 'влево' : 'вправо'} · штурвал ${Math.round(yaw.hold * 100)}%`;
+
 const RunRow: React.FC<{ title: string; run: Run | null; mass: number }> = ({ title, run, mass }) => (
   <tr>
     <td className="bp__counts-label">{title}</td>
-    <td className="bp__counts-n" data-tip={run ? `Тяга ${formatNum(Math.round(run.force))} Н / ${formatNum(mass)} кг = ${run.accel.toFixed(2)} м/с² · сопротивление ${run.drag.toFixed(2)} (лобовая ширина ${run.width.toFixed(1)} м)${run.offBow > 1 ? ` · ход под ${Math.round(run.offBow)}° к носу` : ''}` : undefined} data-tip-pos="left">
+    <td className="bp__counts-n" data-tip={run ? `Тяга ${formatNum(Math.round(run.force))} Н / ${formatNum(mass)} кг = ${run.accel.toFixed(2)} м/с² · сопротивление ${run.drag.toFixed(2)} (лобовая ширина ${run.width.toFixed(1)} м)${run.offBow > 1 ? ` · ход под ${Math.round(run.offBow)}° к носу` : ''} · ${run.yaw ? `уводит ${yawText(run.yaw)}` : 'идёт прямо'}` : undefined} data-tip-pos="left">
       {run ? speedText(run.speed) : '—'}
     </td>
   </tr>
@@ -251,6 +255,7 @@ const ToolIcon: React.FC<{ tool: EditorTool }> = ({ tool }) => (
     {tool === 'build' && <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5" /><path d="M3.5 9.5h17M9.5 9.5v11M14 14h4M14 17h4" /></>}
     {tool === 'hammer' && <><path d="M14.5 3.5l6 6-2.5 2.5-6-6z" /><path d="M13 8L4 17l3 3 9-9" /></>}
     {tool === 'deploy' && <><path d="M6 21V3h12v18" /><path d="M4 21h16" /><circle cx="14.5" cy="12" r="0.9" fill="currentColor" /></>}
+    {tool === 'wire' && <><circle cx="5" cy="18" r="2" /><circle cx="19" cy="6" r="2" /><path d="M6.5 16.5C9 12 8 9 12 9s5-1 5.5-1.5" /></>}
   </svg>
 );
 
@@ -444,7 +449,7 @@ const BlueprintSection: React.FC = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.metaKey || e.ctrlKey || document.querySelector('dialog[open]')) return;
-      const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy' } as Record<string, EditorTool>)[e.code];
+      const t = ({ Digit1: 'build', Digit2: 'hammer', Digit3: 'deploy', Digit4: 'wire' } as Record<string, EditorTool>)[e.code];
       if (t) { setTool(cur => (cur === t ? 'view' : t)); e.preventDefault(); }
     };
     document.addEventListener('keydown', onKey);
@@ -485,6 +490,8 @@ const BlueprintSection: React.FC = () => {
       onPlaceFree: (kind: ElementKind, t: Transform) => applyDoc(addElementAt(blueprint, kind, t, isBoat ? 'wood' : 'twig')),
       onDeploy: (d: Omit<Deployable, 'id'>) => applyDoc(addDeployable(blueprint, d)),
       onRemove: (id: string, deployable: boolean) => applyDoc(deployable ? removeDeployable(blueprint, id) : removeElement(blueprint, id)),
+      onWire: (w: Omit<Wire, 'id'>) => applyDoc(addWire(blueprint, w)),
+      onUnwire: (id: string) => applyDoc(removeWire(blueprint, id)),
       onRadial: (t: EditorTool, itemId: string, targetId: string | null, targetDeployable: boolean) => {
         if (t === 'build') setBuildKind(itemId as ElementKind);
         else if (t === 'deploy') setDeployKind(itemId as DeployableKind);
@@ -766,6 +773,7 @@ const BlueprintSection: React.FC = () => {
                     <RunRow title={`Моторы ×${boat.count['small-engine'] ?? 0}`} run={boat.engines} mass={boat.mass} />
                     <RunRow title="Паруса и моторы" run={boat.full} mass={boat.mass} />
                     <RunRow title="Задний ход" run={boat.reverse} mass={boat.mass} />
+                    {boat.full && <tr><td className="bp__counts-label">Увод на полном ходу</td><td className="bp__counts-n" data-tip={`Паруса и моторы не на оси корабля разворачивают его вокруг центра масс (центр габарита блоков). В игре плечо паруса — ${SAIL_LEVER * 100}% расстояния до центра, мотора — ${ENGINE_LEVER * 100}%. Процент — сколько штурвала держать, чтобы идти прямо; больше 100% — не удержать. Инерция корабля посчитана приближённо по блокам`} data-tip-pos="left">{boat.full.yaw ? yawText(boat.full.yaw) : 'идёт прямо'}</td></tr>}
                   </tbody>
                 </table>
                 {boat.fuelPerMinute > 0 && <p className="cost__note">Моторы жгут {formatNum(boat.fuelPerMinute)} топлива в минуту, {formatNum(boat.fuelPerMinute * 60)} в час.</p>}
@@ -866,7 +874,7 @@ const BlueprintSection: React.FC = () => {
               );
             })()}
             <div className="hotbar" role="group" aria-label="Инструменты">
-              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]]] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
+              {([['build', 'Строительный план', KIND_LABELS[buildKind]], ['hammer', 'Киянка', 'Киянка'], ['deploy', 'Объект', KIND_LABELS[deployKind]], ['wire', 'Провод и шланг', 'Провод']] as [EditorTool, string, string][]).map(([id, label, sub], i) => (
                 <button key={id} type="button" className={`hotbar__slot${tool === id ? ' hotbar__slot--active' : ''}`} onClick={() => setTool(cur => (cur === id ? 'view' : id))} aria-pressed={tool === id} aria-label={label}>
                   <span className="hotbar__key">{i + 1}</span>
                   <ToolIcon tool={id} />
@@ -877,7 +885,8 @@ const BlueprintSection: React.FC = () => {
             <div className="bp__hint">
               {tool === 'build' && 'ЛКМ — поставить · зажать ПКМ — выбрать блок · R — другой вариант · средняя кнопка — сдвиг камеры'}
               {tool === 'hammer' && 'Наведи на блок · зажать ПКМ — апгрейд или снос · R — снести · средняя кнопка — сдвиг камеры'}
-              {tool === 'view' && 'Просмотр: ЛКМ по двери — открыть или закрыть · 1 / 2 / 3 — взять инструмент · средняя кнопка — сдвиг камеры'}
+              {tool === 'view' && 'Просмотр: ЛКМ по двери — открыть или закрыть · 1 / 2 / 3 / 4 — взять инструмент · средняя кнопка — сдвиг камеры'}
+              {tool === 'wire' && 'ЛКМ по выходу или входу — начать, по стенам и полу — точки крепления, по слоту другого объекта — подключить · ЛКМ по занятому слоту — отсоединить · ПКМ или Esc — отменить'}
               {tool === 'deploy' && (isBoat
                 ? 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть на 45° от курса · средняя кнопка — сдвиг камеры'
                 : 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть (шкаф, мебель) или сменить направление дроп-бокса · средняя кнопка — сдвиг камеры')}

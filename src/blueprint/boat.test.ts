@@ -234,3 +234,22 @@ test('io objects: wall items hang on either face of a wall, ceiling lights hang 
   const light = r.deployables.find(d => d.kind === 'ceiling-light')!;
   assert.ok(Math.abs(light.position[1] - (r.elements.find(e => e.id === floor)!.position[1] - 0.2)) < 1e-6);
 });
+
+test('yaw: a sail off the centre line turns the bow away from its side, a mirrored pair cancels out', () => {
+  let bp = hullLine();
+  bp = attach(bp, 'boat-hull', 'f1', [0, 0, 3]);
+  bp = attach(bp, 'boat-hull', 'f1', [0, 0, -3]);
+  const right = bp.elements.find(e => e.kind === 'boat-hull' && e.position[2] > 1)!.id;
+  const left = bp.elements.find(e => e.kind === 'boat-hull' && e.position[2] < -1)!.id;
+  bp = deploy(bp, 'steering-wheel', 'f1', [-0.5, 0, 0]);
+  const one = deploy(bp, 'sail', right, [0, 0, 0]);
+  const s = boatStats(res(one));
+  assert.equal(s.forward, 0);
+  assert.equal(res(one).deployables.find(d => d.kind === 'sail')!.rotation, 0);
+  const yaw = s.sails!.yaw!;
+  assert.ok(yaw, 'парус сбоку уводит корабль');
+  assert.equal(yaw.left, true);
+  assert.ok(yaw.hold > 0.05 && yaw.hold < 1, String(yaw.hold));
+  const both = deploy(one, 'sail', left, [0, 0, 0]);
+  assert.equal(boatStats(res(both)).sails!.yaw, null);
+});

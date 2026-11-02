@@ -222,6 +222,10 @@ export const DRAG_MIN = DRAG.min;
 export const DRAG_MAX = DRAG.max;
 export const DRAG_MIN_WIDTH = DRAG.minContrib;
 export const DRAG_MAX_WIDTH = DRAG.maxContrib;
+export const SAIL_LEVER = 0.1;
+export const ENGINE_LEVER = 0.05;
+export const RUDDER_ACCEL = 0.3;
+const RUDDER_DEADZONE = 0.02;
 export const DECAY_START_HOURS = 24;
 export const DECAY_HOURS = 12;
 
@@ -291,7 +295,14 @@ export function terminalSpeed(force: number, mass: number, drag: number): number
   return Math.min(Math.min(force / mass, MAX_ACCEL) / drag, VELOCITY_MAX);
 }
 
+export interface Yaw {
+  accel: number;
+  hold: number;
+  left: boolean;
+}
+
 export interface Run {
+  yaw: Yaw | null;
   force: number;
   heading: number;
   offBow: number;
@@ -327,13 +338,46 @@ export interface BoatStats {
   blocked: Map<string, SailBlock>;
 }
 
-function run(objects: ResolvedDeployable[], thrust: (d: ResolvedDeployable) => number, hulls: ResolvedElement[], forward: number, mass: number): Run | null {
-  let fx = 0, fz = 0;
+interface Body {
+  hulls: ResolvedElement[];
+  forward: number;
+  mass: number;
+  center: V2;
+  inertia: number;
+}
+
+export function boatCenter(blocks: ResolvedElement[], forward: number): V2 {
+  const [fx, fz] = dir(forward), [rx, rz] = [-fz, fx];
+  const pts = blocks.flatMap(e => (KINDS[e.kind].shape ? outline(e) : [[e.position[0], e.position[2]] as V2]));
+  if (!pts.length) return [0, 0];
+  const along = pts.map(([x, z]) => x * fx + z * fz), across = pts.map(([x, z]) => x * rx + z * rz);
+  const a = (Math.min(...along) + Math.max(...along)) / 2, c = (Math.min(...across) + Math.max(...across)) / 2;
+  return [a * fx + c * rx, a * fz + c * rz];
+}
+
+export function yawInertia(blocks: ResolvedElement[], center: V2, mass: number): number {
+  let m = 0, sum = 0;
+  for (const e of blocks) {
+    const w = BOAT_BLOCKS[e.kind]?.mass ?? 0;
+    const k2 = KINDS[e.kind].shape === 'square' ? 1.5 : 0.75;
+    m += w;
+    sum += w * ((e.position[0] - center[0]) ** 2 + (e.position[2] - center[1]) ** 2 + k2);
+  }
+  return m > 0 ? sum * mass / m : 0;
+}
+
+function run(objects: ResolvedDeployable[], thrust: (d: ResolvedDeployable) => number, body: Body): Run | null {
+  const { hulls, forward, mass, center, inertia } = body;
+  let fx = 0, fz = 0, torque = 0;
   for (const d of objects) {
     const f = thrust(d);
     if (!f) continue;
-    const [x, z] = dir(d.rotation);
+    const engine = d.kind === 'small-engine';
+    const [x, z] = dir(engine ? forward : d.rotation);
     fx += f * x; fz += f * z;
+    const lever = engine ? ENGINE_LEVER : SAIL_LEVER;
+    const rx = (d.position[0] - center[0]) * lever, rz = (d.position[2] - center[1]) * lever;
+    torque += rz * f * x - rx * f * z;
   }
   const force = Math.hypot(fx, fz);
   if (force < 1e-6) return null;
@@ -341,7 +385,13 @@ function run(objects: ResolvedDeployable[], thrust: (d: ResolvedDeployable) => n
   const off = ((heading - forward) % 360 + 360) % 360;
   const width = frontalWidth(hulls, forward, heading);
   const drag = dragFor(width);
-  return { force, heading, offBow: Math.min(off, 360 - off), accel: Math.min(force / mass, MAX_ACCEL), drag, width, speed: terminalSpeed(force, mass, drag) };
+  const speed = terminalSpeed(force, mass, drag);
+  const cap = Math.min(1, (MAX_ACCEL * mass / force) ** 2);
+  const accel = inertia > 0 ? torque * cap / inertia : 0;
+  const rudder = RUDDER_ACCEL * Math.min(1, Math.max(0.6, Math.abs(speed * Math.cos(off * DEG)) / VELOCITY_MAX));
+  const hold = Math.abs(accel) / rudder;
+  const yaw = hold < RUDDER_DEADZONE ? null : { accel: Math.abs(accel), hold, left: accel > 0 };
+  return { yaw, force, heading, offBow: Math.min(off, 360 - off), accel: Math.min(force / mass, MAX_ACCEL), drag, width, speed };
 }
 
 function connected(elements: ResolvedElement[]): boolean {
@@ -552,6 +602,8 @@ export function boatStats(resolved: Resolved): BoatStats {
   const wheel = objects.find(d => d.kind === 'steering-wheel');
   const forward = wheel?.rotation ?? 0;
   const bowWidth = frontalWidth(hulls, forward, forward);
+  const center = boatCenter(blocks, forward);
+  const body: Body = { hulls, forward, mass, center, inertia: yawInertia(blocks, center, mass) };
   const blocked = blockedSails(resolved);
   const sail = (d: ResolvedDeployable) => (d.kind === 'sail' && !blocked.has(d.id) ? SAIL_THRUST : 0);
   const engine = (d: ResolvedDeployable) => (d.kind === 'small-engine' ? ENGINE_THRUST : 0);
@@ -570,13 +622,15 @@ export function boatStats(resolved: Resolved): BoatStats {
     { ok: engines <= OBJECT_LIMIT['small-engine']!, text: `Моторов ${engines} из ${OBJECT_LIMIT['small-engine']}` },
     { ok: sails <= OBJECT_LIMIT['sail']!, text: `Парусов ${sails} из ${OBJECT_LIMIT['sail']}` },
   ];
+  const full = run(objects, d => sail(d) + engine(d), body);
+  if (full?.yaw && full.yaw.hold > 1) checks.push({ ok: false, text: `Штурвал не удержит прямой ход: нужно ${Math.round(full.yaw.hold * 100)}% поворота` });
   return {
     blocks: blocks.length, hulls: hulls.length, objects: objects.length, count, massBlocks, mass, health, forward, hasWheel: !!wheel,
     bow: hulls.length ? { width: bowWidth, drag: dragFor(bowWidth) } : null,
-    sails: run(objects, sail, hulls, forward, mass),
-    engines: run(objects, engine, hulls, forward, mass),
-    full: run(objects, d => sail(d) + engine(d), hulls, forward, mass),
-    reverse: run(objects, d => -ENGINE_REVERSE * engine(d), hulls, forward, mass),
+    sails: run(objects, sail, body),
+    engines: run(objects, engine, body),
+    full,
+    reverse: run(objects, d => -ENGINE_REVERSE * engine(d), body),
     fuelPerMinute: engines * ENGINE_FUEL_PER_SEC * 60,
     build, checks, blocked,
   };
