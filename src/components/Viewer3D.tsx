@@ -546,6 +546,14 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       return hit ? hit.distance : null;
     };
     const inTerrain = (x: number, y: number, z: number) => y < GROUND_Y + 1e-3 || rockDown(x, y + 3, z, 3) !== null;
+    const insideRock = (x: number, y: number, z: number): boolean => {
+      const rocks = content.children.filter(c => c.userData.terrain !== undefined);
+      if (!rocks.length) return false;
+      world.updateMatrixWorld(true);
+      const up = new THREE.Vector3(0, 1, 0);
+      const hit = new THREE.Raycaster(world.localToWorld(new THREE.Vector3(x, y, z)), up, 0, 500).intersectObjects(rocks, true)[0];
+      return !!hit?.face && hit.face.normal.clone().transformDirection(hit.object.matrixWorld).dot(up) > 0;
+    };
     const surfaceBelow = (x: number, y: number, z: number): { y: number; rock: boolean } => {
       const d = rockDown(x, y + 0.2, z, y + 0.2 - GROUND_Y);
       return d === null ? { y: GROUND_Y, rock: false } : { y: y + 0.2 - d, rock: true };
@@ -556,7 +564,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       if (!poly.every(([x, z]) => inTerrain(x, top - depth, z))) return `Не в земле: под углами фундамента нет земли или скалы ближе ${depth} м`;
       const [cx, , cz] = t.position;
       const probes: [number, number][] = [[cx, cz], ...poly, ...poly.map((p, i) => { const q = poly[(i + 1) % poly.length]; return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2] as [number, number]; })];
-      if (probes.every(([x, z]) => inTerrain(x, top + 0.1, z))) return 'Фундамент целиком в земле или в скале';
+      if (probes.every(([x, z]) => top + 0.1 < GROUND_Y + 1e-3 || insideRock(x, top + 0.1, z))) return 'Фундамент целиком в земле или в скале';
       return null;
     };
 
