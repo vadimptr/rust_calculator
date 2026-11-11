@@ -8,7 +8,7 @@ import type { DoorAnim } from '../blueprint/meshes.ts';
 import { gameModel, onModelLoaded, pieceManifest } from '../blueprint/models.ts';
 import { activePieces, aimBox, rayBox } from '../blueprint/pieces.ts';
 import type { AimBox } from '../blueprint/pieces.ts';
-import { FLOOR_T, FOUNDATION_TOP, GROUND_Y, KINDS, PLACE_DISTANCE } from '../blueprint/catalog.ts';
+import { FLOOR_T, FOUNDATION_TOP, GROUND_Y, HATCH_INFO, KINDS, PLACE_DISTANCE, isHatch } from '../blueprint/catalog.ts';
 import type { Attach, Blueprint, Transform, Deployable, DeployableKind, ElementKind, Resolved, ResolvedDeployable, ResolvedElement, ResolvedTerrain, Wire } from '../blueprint/types.ts';
 import { MAX_WIRE_LENGTH, MAX_WIRE_POINTS, pathLength, slotInfo, slotsOf } from '../blueprint/io.ts';
 import { SPRINKLER_RADIUS, simulate } from '../blueprint/iosim.ts';
@@ -990,7 +990,7 @@ const Viewer3D: React.FC<Viewer3DProps> = ({ resolved, mode, raid, raidPlay, fra
       const local = toLocal(hostEl, hit.point);
       // шкаф: R поворачивает на 90° (прямо / боком)
       const snap = state.shift && isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind);
-      const turn = ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : snap && !DIRECTED_OBJECTS.includes(ed.deployKind) ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? ((lastTurn(res, ed.deployKind) + state.alt) % 8) * 45 : 0;
+      const turn = isHatch(ed.deployKind) ? (HATCH_INFO[ed.deployKind].shape === 'square' ? (state.alt % 4) * 90 : (state.alt % 3) * 120) : ed.deployKind === 'tool-cupboard' ? (state.alt % 4) * 90 : snap && !DIRECTED_OBJECTS.includes(ed.deployKind) ? (state.alt % 4) * 90 : isBoatObject(ed.deployKind) && !EDGE_OBJECTS.includes(ed.deployKind) ? ((lastTurn(res, ed.deployKind) + state.alt) % 8) * 45 : 0;
       const dp = ed.blueprint ? deployPlacement(ed.blueprint, res, ed.deployKind, hit.id, local, turn, snap) : null;
       if (!dp) {
         none();

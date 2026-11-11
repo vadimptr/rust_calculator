@@ -132,6 +132,10 @@
         "metal-window-bars",
         "metal-embrasure",
         "drop-box",
+        "ladder-hatch",
+        "triangle-ladder-hatch",
+        "armored-ladder-hatch",
+        "armored-triangle-ladder-hatch",
         "sail",
         "small-engine",
         "steering-wheel",
@@ -537,7 +541,7 @@
         "rotation": {
           "type": "number",
           "default": 0,
-          "description": "Угол в градусах относительно родительской ячейки (только для сокета top)."
+          "description": "Угол в градусах относительно родительской ячейки (сокет top) или рамы пола (люк, кратно 90° у квадратного и 120° у треугольного)."
         },
         "hinge": {
           "type": "string",
@@ -755,6 +759,36 @@
         },
         {
           "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "ladder-hatch",
+                  "triangle-ladder-hatch",
+                  "armored-ladder-hatch",
+                  "armored-triangle-ladder-hatch"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "attach": {
+                "type": "object",
+                "properties": {
+                  "socket": {
+                    "const": "opening"
+                  }
+                }
+              },
+              "offset": false,
+              "direction": false,
+              "hinge": false,
+              "opens": false
+            }
+          }
+        },
+        {
+          "if": {
             "not": {
               "properties": {
                 "kind": {
@@ -833,7 +867,11 @@
                     "sam-site",
                     "tesla-coil",
                     "igniter",
-                    "electric-furnace"
+                    "electric-furnace",
+                    "ladder-hatch",
+                    "triangle-ladder-hatch",
+                    "armored-ladder-hatch",
+                    "armored-triangle-ladder-hatch"
                   ]
                 }
               }

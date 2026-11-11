@@ -72,6 +72,10 @@ const KIND_LABELS: Record<string, string> = {
   'metal-window-bars': 'Металлическая решётка',
   'metal-embrasure': 'Металлическая амбразура',
   'drop-box': 'Дроп-бокс',
+  'ladder-hatch': 'Люк с лестницей',
+  'triangle-ladder-hatch': 'Треугольный люк с лестницей',
+  'armored-ladder-hatch': 'Бронированный люк',
+  'armored-triangle-ladder-hatch': 'Треугольный бронированный люк',
   'boat-hull': 'Корпус',
   'boat-hull-triangle': 'Треугольный корпус',
   'boat-floor': 'Пол',
@@ -112,6 +116,7 @@ const SHORT_LABELS: Record<string, string> = {
   'wooden-double-door': 'Дер. двойная', 'sheet-metal-double-door': 'Мет. двойная', 'armored-double-door': 'МВК двойная', 'garage-door': 'Гаражная',
   'strengthened-glass-window': 'Стекло', 'reinforced-glass-window': 'Ус. стекло', 'metal-window-bars': 'Решётка', 'metal-embrasure': 'Амбразура',
   'tool-cupboard': 'Шкаф', 'drop-box': 'Дроп-бокс',
+  'ladder-hatch': 'Люк', 'triangle-ladder-hatch': 'Тр. люк', 'armored-ladder-hatch': 'МВК люк', 'armored-triangle-ladder-hatch': 'Тр. МВК люк',
   'boat-hull': 'Корпус', 'boat-hull-triangle': 'Тр. корпус', 'boat-floor': 'Пол', 'boat-floor-triangle': 'Тр. пол', 'boat-floor-frame': 'Рама пола', 'boat-floor-frame-triangle': 'Тр. рама',
   'boat-wall': 'Стена', 'boat-doorway': 'Проём', 'boat-window': 'Окно', 'boat-low-wall': 'Низкая', 'boat-low-wall-barrier': 'Ограждение', 'boat-low-wall-cannon': 'Порт', 'boat-stairs': 'Лестница',
   'sail': 'Парус', 'small-engine': 'Мотор', 'steering-wheel': 'Штурвал', 'cannon': 'Пушка', 'anchor': 'Якорь', 'plank': 'Доска', 'small-ramp': 'Трап',
@@ -151,6 +156,7 @@ const DEPLOY_ICONS: Partial<Record<DeployableKind, string>> = {
   'wooden-double-door': 'door.double.hinged.wood', 'sheet-metal-double-door': 'door.double.hinged.metal', 'armored-double-door': 'door.double.hinged.toptier',
   'garage-door': 'wall.frame.garagedoor', 'strengthened-glass-window': 'wall.window.glass.reinforced', 'reinforced-glass-window': 'wall.window.bars.toptier',
   'metal-window-bars': 'wall.window.bars.metal', 'metal-embrasure': 'shutter.metal.embrasure.a', 'tool-cupboard': 'cupboard.tool', 'drop-box': 'dropbox',
+  'ladder-hatch': 'floor.ladder.hatch', 'triangle-ladder-hatch': 'floor.triangle.ladder.hatch', 'armored-ladder-hatch': 'floor.ladder.hatch.toptier', 'armored-triangle-ladder-hatch': 'floor.triangle.ladder.hatch.toptier',
   ...Object.fromEntries(Object.entries(DECK).map(([k, v]) => [k, v.icon])),
 };
 
@@ -903,7 +909,7 @@ const BlueprintSection: React.FC = () => {
               {tool === 'wire' && 'ЛКМ по выходу или входу — начать, по стенам и полу — точки крепления, по слоту другого объекта — подключить · ЛКМ по занятому слоту — отсоединить · ПКМ или Esc — отменить'}
               {tool === 'deploy' && (isBoat
                 ? 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть на 45° от курса · средняя кнопка — сдвиг камеры'
-                : 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть (шкаф, мебель) или сменить направление дроп-бокса · средняя кнопка — сдвиг камеры')}
+                : 'ЛКМ — поставить · объект — в палитре над панелью или зажатой ПКМ · R — повернуть (шкаф, мебель, люк в раме пола) или сменить направление дроп-бокса · средняя кнопка — сдвиг камеры')}
             </div>
           </div>
         </div>

@@ -54,6 +54,11 @@ export const DEPLOYABLE_STATS: Partial<Record<DeployableKind, { hp: number; prot
   'reinforced-glass-window': { hp: 500, protection: BLOCK_PROTECTION.metal },
   'metal-window-bars': { hp: 500, protection: BLOCK_PROTECTION.metal },
   'metal-embrasure': { hp: 500, protection: { Bullet: 0.99, Blunt: 0.99, Stab: 0.99, Explosion: 0.5, Heat: 0.95 } },
+  // floor.ladder.hatch и .toptier: LadderHatch.startHealth, baseProtection как у металлических дверей
+  'ladder-hatch': { hp: 250, protection: METAL_DOOR },
+  'triangle-ladder-hatch': { hp: 250, protection: METAL_DOOR },
+  'armored-ladder-hatch': { hp: 1000, protection: METAL_DOOR },
+  'armored-triangle-ladder-hatch': { hp: 1000, protection: METAL_DOOR },
 };
 
 export interface ExplosiveData {

@@ -11,7 +11,7 @@
  * Коллайдеры — выпуклые тела по геометрии движка: стены и двери — коробки, проёмы — их рамы,
  * полы, фундаменты и крыши — призмы своих контуров.
  */
-import { FLOOR_T, KINDS, ROOF_RISE, TRI_CIRCUM, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, HATCH_HOLE, HATCH_INFO, KINDS, ROOF_RISE, TRI_CIRCUM, cellVertices, isHatch, wallHeight } from './catalog.ts';
 import type { Resolved, ResolvedDeployable, ResolvedElement } from './types.ts';
 import { OUTSIDE, cheapestFrom, frontier, reachableSpaces, spacesValue } from './raid.ts';
 import type { SpaceGraph } from './raid.ts';
@@ -300,6 +300,19 @@ function deployableBox(d: ResolvedDeployable, resolved: Resolved): { w: number; 
 function deployableTarget(d: ResolvedDeployable, resolved: Resolved): SplashTarget | null {
   const profile = deployableProfile(d.kind);
   if (!profile) return null;
+  if (isHatch(d.kind)) {
+    const poly = cellVertices(HATCH_INFO[d.kind].shape).map(([x, z]) => [x * HATCH_HOLE, z * HATCH_HOLE] as [number, number]);
+    const xs = poly.map(p => p[0]), zs = poly.map(p => p[1]);
+    const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cz = (Math.max(...zs) + Math.min(...zs)) / 2;
+    const f: Frame = { origin: d.position, rotation: d.rotation };
+    return {
+      id: d.id, kind: d.kind, hp: profile.hp, profile, ...hitsFor(profile), carrierId: d.parent,
+      origin: d.position, rotation: d.rotation, axis: 'y', face: 0.05,
+      surface: { kind: 'poly', polygon: poly }, center: d.position,
+      obb: makeOBB(f, [cx, -0.05, cz], [(Math.max(...xs) - Math.min(...xs)) / 2, 0.05, (Math.max(...zs) - Math.min(...zs)) / 2]),
+      candidates: [[0, 0, 0] as Vec3, ...poly.map(([x, z]) => [x, 0, z] as Vec3)].map(p => toWorld(f, p)),
+    };
+  }
   const b = deployableBox(d, resolved);
   const f: Frame = { origin: d.position, rotation: d.rotation };
   return {

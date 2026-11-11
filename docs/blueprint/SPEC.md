@@ -419,6 +419,8 @@ y_T   = y_P
 | `wooden-door`, `sheet-metal-door`, `armored-door` | `opening` элемента `doorway` | `hinge`, `opens`, `open` |
 | `garage-door`, `wooden-double-door`, `sheet-metal-double-door`, `armored-double-door` | `opening` элемента `wall-frame` | `opens`, `open` (`hinge` игнорируется: у двойной двери петли с обеих сторон, гаражная поднимается) |
 | `strengthened-glass-window`, `reinforced-glass-window`, `metal-window-bars`, `metal-embrasure` | `opening` элемента `window-frame` | нет (`hinge`, `opens`, `open` игнорируются) |
+| `ladder-hatch`, `armored-ladder-hatch` | `opening` элемента `floor-frame` (металлический — и `boat-floor-frame`) | `rotation` кратно 90° |
+| `triangle-ladder-hatch`, `armored-triangle-ladder-hatch` | `opening` элемента `triangle-floor-frame` (металлический — и `boat-floor-frame-triangle`) | `rotation` кратно 120° |
 | `drop-box` | `face` стены или половинной стены | `offset` [вдоль стены, высота] от середины низа стены, `direction` обязателен: `out` — передача изнутри наружу (по нормали стены), `in` — снаружи внутрь |
 
 Поля дверей:
@@ -677,6 +679,8 @@ fragments, armored 25 HQM. `costMultiplier`: фундамент, стена, п�
 | `reinforced-glass-window` | 4 HQM | 500 |
 | `metal-window-bars` | 25 metal fragments | 500 |
 | `metal-embrasure` | 100 metal fragments | 500 |
+| `ladder-hatch`, `triangle-ladder-hatch` | 300 metal fragments + 3 gears + лестница | 250 |
+| `armored-ladder-hatch`, `armored-triangle-ladder-hatch` | 35 HQM + 6 gears + лестница | 1000 |
 | `drop-box` | 100 metal fragments | — |
 
 ### 9.3 Рейд
@@ -697,6 +701,8 @@ explosiveAmmo / optimal для wood, stone, metal, armored. `twig`
 | `armored-door`, `armored-double-door` | 15 | 5 | 3 | 250 | explosiveAmmo 250 |
 | `strengthened-glass-window` | 9 | 3 | 2 | 140 | explosiveAmmo 140 |
 | `reinforced-glass-window`, `metal-window-bars`, `metal-embrasure` | 12 | 4 | 2 | 200 | c4 2 |
+| `ladder-hatch`, `triangle-ladder-hatch` | 4 | 2 | 1 | 63 | explosiveAmmo 63 |
+| `armored-ladder-hatch`, `armored-triangle-ladder-hatch` | 15 | 5 | 3 | 250 | explosiveAmmo 250 |
 
 `optimal` здесь — минимум серы при крафт-костах из `EXPLOSIVE_COSTS`
 (explosive ammo 25, satchel 480, rocket 1400, c4 2200 серы): для всех

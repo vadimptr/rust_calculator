@@ -23,6 +23,10 @@ export const DOOR_RAID_RULES: Record<Exclude<DeployableKind, 'tool-cupboard' | '
   'reinforced-glass-window':   { blockId: 'reinforced-glass-window', blockName: 'Усиленное стекло', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
   'metal-window-bars':         { blockId: 'metal-window-bars', blockName: 'Металлическая решётка', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
   'metal-embrasure':           { blockId: 'metal-embrasure', blockName: 'Металлическая амбразура', satchel: 12, rocket: 4, c4: 2, explosiveAmmo: 200, optimal: { c4: 2 } },
+  'ladder-hatch':                  { blockId: 'ladder-hatch', blockName: 'Люк с лестницей', satchel: 4, rocket: 2, c4: 1, explosiveAmmo: 63, optimal: { explosiveAmmo: 63 } },
+  'triangle-ladder-hatch':         { blockId: 'triangle-ladder-hatch', blockName: 'Треугольный люк с лестницей', satchel: 4, rocket: 2, c4: 1, explosiveAmmo: 63, optimal: { explosiveAmmo: 63 } },
+  'armored-ladder-hatch':          { blockId: 'armored-ladder-hatch', blockName: 'Бронированный люк', satchel: 15, rocket: 5, c4: 3, explosiveAmmo: 250, optimal: { explosiveAmmo: 250 } },
+  'armored-triangle-ladder-hatch': { blockId: 'armored-triangle-ladder-hatch', blockName: 'Треугольный бронированный люк', satchel: 15, rocket: 5, c4: 3, explosiveAmmo: 250, optimal: { explosiveAmmo: 250 } },
 };
 
 /** Ветки ломаются инструментом: взрывчатки 0. */
@@ -94,7 +98,8 @@ function blockerStep(b: EdgeBlocker, method: RaidMethod): RaidStep | null {
   if (!b.element) return null;
   const info = KINDS[b.element.kind];
   if (info.category === 'cell') {
-    return info.isFrame ? null : stepCost(b.element.id, b.element.kind, b.element.grade, method);
+    if (info.isFrame) return b.door ? stepCost(b.door.id, b.door.kind, undefined, method) : null;
+    return stepCost(b.element.id, b.element.kind, b.element.grade, method);
   }
   if (info.opening || b.element.kind === 'window-frame') {
     return b.door ? stepCost(b.door.id, b.door.kind, undefined, method) : null;
@@ -203,7 +208,7 @@ export function buildSpaceGraph(resolved: Resolved): SpaceGraph {
     const abovePos: [number, number, number] = [n.position[0], n.position[1] + 3, n.position[2]];
     const above = nodeAtPos.get(key3(...abovePos));
     if (above) {
-      list.push({ to: above.id, blocker: { element: above.virtual ? null : above.cell, door: null }, mid: abovePos });
+      list.push({ to: above.id, blocker: { element: above.virtual ? null : above.cell, door: above.virtual ? null : doorsIn.get(above.cell.id) ?? null }, mid: abovePos });
     } else {
       list.push({ to: OUTSIDE, blocker: { element: roofOver.get(key3(...n.position)) ?? null, door: null }, mid: abovePos });
     }

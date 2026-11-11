@@ -4,7 +4,7 @@
  * вариант прогоняется через движок геометрии (значит, учитываются занятость слотов и правила
  * совместимости), а из удавшихся берётся ближайший к точке наведения.
  */
-import { FLOOR_T, FOUNDATION_TOP, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, isLowWall, socketsOf, wallHeight } from './catalog.ts';
+import { FLOOR_T, FOUNDATION_TOP, HATCHES, HATCH_INFO, KINDS, RAMP_HIGH_RISE, ROOF_RISE, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle, edgeCount, hatchFits, isHatch, isLowWall, socketsOf, wallHeight } from './catalog.ts';
 import { overlaps, resolveBlueprint, socketPose } from './geometry.ts';
 import { DECK, DIRECTED_OBJECTS, EDGE_OBJECTS, OBJECT_LIMIT, boatBow, boatGrid, isBoatObject, isBoatOnly, objectArea, objectHalf } from './boat.ts';
 import { groundTerrain } from './terrain.ts';
@@ -30,6 +30,7 @@ export const DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
   { group: 'Двойные и гаражные', kinds: ['wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'] },
   { group: 'В окно', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
+  { group: 'Люки', kinds: HATCHES },
   { group: 'Прочее', kinds: ['tool-cupboard', 'drop-box'] },
 ];
 
@@ -46,6 +47,7 @@ const ID_PREFIX: Record<ElementKind, string> = {
 const DEPLOY_PREFIX: Partial<Record<DeployableKind, string>> = {
   'tool-cupboard': 'cup', 'drop-box': 'box', 'sail': 'sail', 'small-engine': 'eng', 'steering-wheel': 'helm', 'cannon': 'gun',
   'anchor': 'anc', 'plank': 'plank', 'small-ramp': 'ramp',
+  'ladder-hatch': 'hatch', 'triangle-ladder-hatch': 'hatch', 'armored-ladder-hatch': 'hatch', 'armored-triangle-ladder-hatch': 'hatch',
 };
 
 /** Свободный id с префиксом по типу. */
@@ -303,7 +305,7 @@ export interface DeployPlacement {
 }
 
 /**
- * Размещение объекта на наведённом элементе: дверь или вставка — в свободный проём, шкаф — на верх
+ * Размещение объекта на наведённом элементе: дверь или вставка — в свободный проём, люк — в раму пола, шкаф — на верх
  * ячейки в точку наведения, дроп-бокс — на грань стены в точку наведения. local — точка наведения в
  * локальных осях хозяина (x по нормали, y вверх, z вдоль).
  */
@@ -374,6 +376,11 @@ export function deployPlacement(bp: Blueprint, resolved: Resolved, kind: Deploya
     if (info.category !== 'wallType' || info.opening || isLowWall(host.kind)) return null;
     const h = wallHeight(host.kind);
     deployable = { kind, attach: { to: hostId, socket: 'face' }, offset: [Math.round(Math.max(-1.1, Math.min(1.1, local[2])) * 10) / 10, Math.round(Math.max(0.4, Math.min(h - 0.4, local[1])) * 10) / 10], direction: local[0] >= 0 ? 'in' : 'out' };
+  } else if (isHatch(kind)) {
+    if (!hatchFits(kind, host.kind) || taken.length > 0) return null;
+    const step = HATCH_INFO[kind].shape === 'square' ? 90 : 120;
+    const turn = round3(norm360(Math.round(rotation / step) * step));
+    deployable = { kind, attach: { to: hostId, socket: 'opening' }, ...(turn ? { rotation: turn } : {}) };
   } else {
     if (!info.opening) return null;
     if (taken.length > 0) return null;

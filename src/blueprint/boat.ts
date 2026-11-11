@@ -122,6 +122,7 @@ export const DECK_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Сон', kinds: ['sleeping-bag', 'bed'] },
   { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door'] },
   { group: 'Окна', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
+  { group: 'Люки', kinds: ['ladder-hatch', 'triangle-ladder-hatch'] },
 ];
 
 export const BOAT_DEPLOY_PLAN: { group: string; kinds: DeployableKind[] }[] = [DECK_GROUPS[0]];
@@ -133,6 +134,7 @@ export const FURNITURE_GROUPS = DECK_GROUPS.filter(g => g.kinds.every(k => k in 
 export const HOUSE_DEPLOY_GROUPS: { group: string; kinds: DeployableKind[] }[] = [
   { group: 'Двери', kinds: ['wooden-door', 'sheet-metal-door', 'armored-door', 'wooden-double-door', 'sheet-metal-double-door', 'armored-double-door', 'garage-door'] },
   { group: 'Окна', kinds: ['strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure'] },
+  { group: 'Люки', kinds: ['ladder-hatch', 'triangle-ladder-hatch', 'armored-ladder-hatch', 'armored-triangle-ladder-hatch'] },
   { group: 'Шкаф', kinds: ['tool-cupboard', 'drop-box'] },
   ...FURNITURE_GROUPS,
 ];

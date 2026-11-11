@@ -53,7 +53,10 @@ export type DeployableKind =
   | 'metal-window-bars'
   | 'metal-embrasure'
   | 'drop-box'
+  | HatchKind
   | BoatObjectKind;
+
+export type HatchKind = 'ladder-hatch' | 'triangle-ladder-hatch' | 'armored-ladder-hatch' | 'armored-triangle-ladder-hatch';
 
 export type BoatObjectKind = 'sail' | 'small-engine' | 'steering-wheel' | 'cannon' | 'anchor' | 'plank' | 'small-ramp'
   | 'small-planter'

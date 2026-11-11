@@ -3,10 +3,10 @@
  * Локальный +x стены — её внешняя нормаль; ячейка центрирована в начале координат.
  */
 import * as THREE from 'three';
-import { FLOOR_T, KINDS, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_INSERTS, cellVertices, wallHeight } from './catalog.ts';
+import { FLOOR_T, HATCH_HOLE, HATCH_INFO, KINDS, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, TRI_CIRCUM, WINDOW_INSERTS, apothem, cellVertices, isHatch, wallHeight } from './catalog.ts';
 import type { Shape } from './catalog.ts';
 import type { CornerPost, GableShape } from './conditional.ts';
-import type { DeployableKind, ElementKind, Grade, ResolvedDeployable, ResolvedElement } from './types.ts';
+import type { DeployableKind, ElementKind, Grade, HatchKind, ResolvedDeployable, ResolvedElement } from './types.ts';
 import { gameModel, pieceManifest } from './models.ts';
 import { DECK, DIRECTED_OBJECTS, isBoatObject } from './boat.ts';
 
@@ -34,6 +34,10 @@ const DOOR_COLORS: Partial<Record<DeployableKind, number>> = {
   'reinforced-glass-window': 0x7fb6cc,
   'metal-window-bars': 0x3a3f45,
   'metal-embrasure': 0x5a4a3e,
+  'ladder-hatch': 0xa85a2e,
+  'triangle-ladder-hatch': 0xa85a2e,
+  'armored-ladder-hatch': 0x3a3d42,
+  'armored-triangle-ladder-hatch': 0x3a3d42,
   'sail': 0xd8cfb8,
   'small-engine': 0x4a4f55,
   'steering-wheel': 0x7a4a1e,
@@ -757,6 +761,26 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
   return group;
 }
 
+const HATCH_PLATE = 0.08;
+const LADDER_LEN = 2.8;
+
+/** Люк: плита в проёме рамы пола и лестница вниз у ребра edge:0 (локальный +x). */
+function buildHatch(kind: HatchKind): THREE.Group {
+  const g = new THREE.Group();
+  const shape = HATCH_INFO[kind].shape;
+  const outline = new THREE.Shape(cellVertices(shape).map(([x, z]) => new THREE.Vector2(x * HATCH_HOLE, z * HATCH_HOLE)));
+  const plate = new THREE.ExtrudeGeometry(outline, { depth: HATCH_PLATE, bevelEnabled: false });
+  plate.rotateX(Math.PI / 2);
+  plate.translate(0, -0.02, 0);
+  g.add(withEdges(plate, DOOR_COLORS[kind] ?? 0xa85a2e));
+  const x = apothem(shape) * HATCH_HOLE - 0.12;
+  const top = -FLOOR_T, bottom = top - LADDER_LEN;
+  const parts = [box(0.05, LADDER_LEN, 0.05, x, (top + bottom) / 2, -0.22), box(0.05, LADDER_LEN, 0.05, x, (top + bottom) / 2, 0.22)];
+  for (let y = top - 0.25; y > bottom + 0.1; y -= 0.3) parts.push(box(0.04, 0.04, 0.44, x, y, 0));
+  for (const p of parts) g.add(withEdges(p, 0x6b6b6b));
+  return g;
+}
+
 /** Построить блок; gable — фронтон для полной стены, hips — вальмы крыши (conditional.ts). */
 export function buildElement(el: ResolvedElement, gable?: GableShape, hips?: (1 | -1)[], pieces?: string[], covered: number[] = []): THREE.Object3D {
   const g = new THREE.Group();
@@ -838,6 +862,8 @@ export function buildDeployable(d: ResolvedDeployable, blocked = false): THREE.O
       g.add(placeModel(model, { yaw: OBJECT_YAW['tool-cupboard']! }));
     }
     g.add(proxy);
+  } else if (isHatch(d.kind)) {
+    g = buildHatch(d.kind);
   } else if (WINDOW_INSERTS.includes(d.kind)) {
     g = buildWindowInsert(d);
     g = d.kind === 'metal-embrasure' ? withModelAt(g, d.kind, { yaw: 0, offset: [0, SHUTTERS_Y, 0] }) : withModel(g, d.kind, 0);

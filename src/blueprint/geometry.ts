@@ -5,7 +5,7 @@
  */
 import {
   BLOCK_FEMALE_Y, FLOOR_T, FOUNDATION_TOP, KINDS, RAMP_DROP, RAMP_HIGH_RISE, RAMP_MALE_H, ROOF_RISE, SPIRAL_H, apothem, canAttach, cellVertices, defaultSelfSocket, edgeAngle,
-  edgeIndex, isLowWall, openingAccepts, socketsOf, stairTurn, wallHeight,
+  edgeIndex, HATCH_INFO, hatchFits, isHatch, isLowWall, openingAccepts, socketsOf, stairTurn, wallHeight,
 } from './catalog.ts';
 import { groundTerrain } from './terrain.ts';
 import { DECK, isBoatObject, isBoatOnly } from './boat.ts';
@@ -171,7 +171,7 @@ const WALL_HALF = 0.125;
 function placeDeployable(parent: Transform, d: Deployable): Transform {
   const [px, py, pz] = parent.position;
   if (d.attach.socket === 'opening') {
-    return { position: [px, py, pz], rotation: parent.rotation, level: parent.level };
+    return { position: [px, py, pz], rotation: parent.rotation + (isHatch(d.kind) ? d.rotation ?? 0 : 0), level: parent.level };
   }
   if (d.attach.socket === 'face') {
     // дроп-бокс: на стене, смещение вдоль стены и по высоте; поворот = нормаль стены
@@ -305,6 +305,18 @@ function resolveDeployables(deployables: Deployable[], byId: Map<string, Resolve
         issues.push(err('V04', d.id, `Дроп-бокс вешается только на грань стены, а не на ${parent.kind}`));
         continue;
       }
+    } else if (isHatch(d.kind)) {
+      if (d.attach.socket !== 'opening' || !info.isFrame) {
+        issues.push(err('V04', d.id, `Люк ставится только в раму пола, а не в ${parent.kind}.${d.attach.socket}`));
+        continue;
+      }
+      if (!hatchFits(d.kind, parent.kind)) {
+        issues.push(err('V11', d.id, info.boat && info.shape === HATCH_INFO[d.kind].shape ? `${d.kind} нельзя ставить на корабль` : `${d.kind} не подходит к ${parent.kind}`));
+        continue;
+      }
+      const prev = openings.get(parent.id);
+      if (prev) { issues.push(err('V11', d.id, `В раме «${parent.id}» уже стоит «${prev}»`)); continue; }
+      openings.set(parent.id, d.id);
     } else {
       if (d.attach.socket !== 'opening' || !info.opening) {
         issues.push(err('V04', d.id, `Дверь ставится только в opening проёма, а не в ${parent.kind}.${d.attach.socket}`));

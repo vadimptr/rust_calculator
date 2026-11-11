@@ -4,7 +4,7 @@
  * 2026-09). Ветки стоят дерево. Содержание за сутки = Σ цена × ставка, где ставка — средняя по
  * «брекетам» от числа блоков здания: первые 15 по 10 %, следующие 50 по 15 %, следующие 125 по 20 %,
  * остальные по 33.3 % (для одного игрока; групповой множитель не учитывается). Двери и вставки
- * считаются как блоки по своей цене крафта (только ресурсы, без шестерёнок); шкаф и дроп-бокс — нет.
+ * считаются как блоки по своей цене крафта (только ресурсы, без шестерёнок и лестницы у люков); шкаф и дроп-бокс — нет.
  */
 import type { DeployableKind, ElementKind, Grade, Resolved } from './types.ts';
 
@@ -36,6 +36,7 @@ const DEPLOYABLE_COST: Partial<Record<DeployableKind, Partial<Res>>> = {
   'garage-door': { metal: 300 },
   'armored-door': { hqm: 20 }, 'armored-double-door': { hqm: 30 },
   'strengthened-glass-window': { metal: 50 }, 'reinforced-glass-window': { hqm: 4 }, 'metal-window-bars': { metal: 25 }, 'metal-embrasure': { metal: 100 },
+  'ladder-hatch': { metal: 300 }, 'triangle-ladder-hatch': { metal: 300 }, 'armored-ladder-hatch': { hqm: 35 }, 'armored-triangle-ladder-hatch': { hqm: 35 },
 };
 /** Объекты вне содержания, но со стоимостью постройки. */
 const BUILD_ONLY: Partial<Record<DeployableKind, Partial<Res>>> = {

@@ -1,7 +1,7 @@
 /**
  * Геометрический справочник (SPEC §4): формы, сокеты, матрица совместимости.
  */
-import type { DeployableKind, ElementKind, Socket } from './types.ts';
+import type { DeployableKind, ElementKind, HatchKind, Socket } from './types.ts';
 
 export const GRID = 3;
 export const SQ_APOTHEM = 1.5;
@@ -82,6 +82,27 @@ export const FRAME_DOORS: DeployableKind[] = [
 export const WINDOW_INSERTS: DeployableKind[] = [
   'strengthened-glass-window', 'reinforced-glass-window', 'metal-window-bars', 'metal-embrasure',
 ];
+
+/** Люки с лестницей в раму пола: форма рамы и МВК (в префабе SocketMod_BoatBuildingBlock — на корабль нельзя). */
+export const HATCH_INFO: Record<HatchKind, { shape: Shape; armored: boolean }> = {
+  'ladder-hatch': { shape: 'square', armored: false },
+  'triangle-ladder-hatch': { shape: 'triangle', armored: false },
+  'armored-ladder-hatch': { shape: 'square', armored: true },
+  'armored-triangle-ladder-hatch': { shape: 'triangle', armored: true },
+};
+export const HATCHES = Object.keys(HATCH_INFO) as HatchKind[];
+/** Доля рамы пола, занятая проёмом под люк. */
+export const HATCH_HOLE = 0.72;
+
+export function isHatch(kind: DeployableKind): kind is HatchKind {
+  return kind in HATCH_INFO;
+}
+
+/** Встаёт ли люк в эту раму: форма совпадает, МВК — только не на корабле. */
+export function hatchFits(kind: HatchKind, frame: ElementKind): boolean {
+  const info = KINDS[frame];
+  return !!info.isFrame && info.shape === HATCH_INFO[kind].shape && !(info.boat && HATCH_INFO[kind].armored);
+}
 
 /** Что принимает opening данного типа проёма. */
 export function openingAccepts(opening: 'single' | 'frame' | 'window'): DeployableKind[] {
