@@ -764,7 +764,7 @@ function place(group: THREE.Group, position: [number, number, number], rotation:
 const HATCH_PLATE = 0.08;
 const LADDER_LEN = 2.8;
 
-/** Люк: плита в проёме рамы пола и лестница вниз у ребра edge:0 (локальный +x). */
+/** Люк: крышка из модели игры (до загрузки — плита в проёме рамы) и лестница вниз у ребра edge:0 (локальный +x). */
 function buildHatch(kind: HatchKind): THREE.Group {
   const g = new THREE.Group();
   const shape = HATCH_INFO[kind].shape;
@@ -772,7 +772,9 @@ function buildHatch(kind: HatchKind): THREE.Group {
   const plate = new THREE.ExtrudeGeometry(outline, { depth: HATCH_PLATE, bevelEnabled: false });
   plate.rotateX(Math.PI / 2);
   plate.translate(0, -0.02, 0);
-  g.add(withEdges(plate, DOOR_COLORS[kind] ?? 0xa85a2e));
+  const lid = new THREE.Group();
+  lid.add(withEdges(plate, DOOR_COLORS[kind] ?? 0xa85a2e));
+  g.add(withModelAt(lid, kind, { yaw: 0 }));
   const x = apothem(shape) * HATCH_HOLE - 0.12;
   const top = -FLOOR_T, bottom = top - LADDER_LEN;
   const parts = [box(0.05, LADDER_LEN, 0.05, x, (top + bottom) / 2, -0.22), box(0.05, LADDER_LEN, 0.05, x, (top + bottom) / 2, 0.22)];

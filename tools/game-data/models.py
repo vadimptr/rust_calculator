@@ -62,6 +62,10 @@ OBJECTS = {
     'strengthened-glass-window': ('assets/prefabs/building/wall.window.reinforcedglass/wall.window.glass.reinforced.prefab', None),
     'reinforced-glass-window': ('assets/prefabs/building/wall.window.bars/wall.window.bars.toptier.prefab', None),
     'metal-embrasure': ('assets/prefabs/building/wall.window.embrasure/shutter.metal.embrasure.a.prefab', None),
+    'ladder-hatch': ('assets/prefabs/building/floor.ladder.hatch/floor.ladder.hatch.prefab', None),
+    'triangle-ladder-hatch': ('assets/prefabs/building/floor.triangle.ladder.hatch/floor.triangle.ladder.hatch.prefab', None),
+    'armored-ladder-hatch': ('assets/prefabs/building/floor.ladder.hatch.toptier/floor.ladder.hatch.toptier.prefab', None),
+    'armored-triangle-ladder-hatch': ('assets/prefabs/building/floor.ladder.hatch.toptier/floor.triangle.ladder.hatch.toptier.prefab', None),
 }
 BOAT_CORE = 'assets/prefabs/building boat/'
 BOAT_BLOCKS = {
