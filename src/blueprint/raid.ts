@@ -108,8 +108,8 @@ function blockerStep(b: EdgeBlocker, method: RaidMethod): RaidStep | null {
   return stepCost(b.element.id, b.element.kind, b.element.grade, method);
 }
 
-/** Ключ точки с округлением до 1 см; «+ 0» убирает −0 после cos/sin. */
-const r2 = (v: number) => (Math.round(v * 100) / 100 + 0).toFixed(2);
+/** Ключ точки с округлением до 1 см; сначала до мм, как позиции блоков, иначе середина ребра через cos/sin и округлённая позиция стены на границе сантиметра расходятся; «+ 0» убирает −0. */
+const r2 = (v: number) => (Math.round(Math.round(v * 1000) / 10) / 100 + 0).toFixed(2);
 const key2 = (x: number, z: number) => `${r2(x)}|${r2(z)}`;
 const key3 = (x: number, y: number, z: number) => `${r2(x)}|${r2(y)}|${r2(z)}`;
 

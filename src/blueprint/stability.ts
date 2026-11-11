@@ -32,7 +32,29 @@ export const COLLAPSE = 0.05;
 const ACCURACY = 0.001;
 
 const DEG = Math.PI / 180;
-const key = (p: [number, number, number]) => p.map(v => (Math.round(v * 20) / 20 + 0).toFixed(2)).join('|');
+type Point = [number, number, number];
+
+/** Совпадение точек с допуском: округление к сетке рвёт пары, чья общая точка легла на границу ячейки сетки. */
+const NEAR = 0.03;
+class PointIndex {
+  private cells = new Map<string, { p: Point; id: string }[]>();
+  private static cell(p: Point, d: Point = [0, 0, 0]): string {
+    return p.map((v, i) => Math.floor(v / 0.1) + d[i]).join('|');
+  }
+  push(p: Point, id: string): void {
+    const k = PointIndex.cell(p);
+    this.cells.set(k, [...(this.cells.get(k) ?? []), { p, id }]);
+  }
+  get(p: Point): string[] {
+    const out: string[] = [];
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+      for (const x of this.cells.get(PointIndex.cell(p, [dx, dy, dz])) ?? []) {
+        if (Math.hypot(x.p[0] - p[0], x.p[1] - p[1], x.p[2] - p[2]) < NEAR && !out.includes(x.id)) out.push(x.id);
+      }
+    }
+    return out;
+  }
+}
 
 function edgeMid(el: ResolvedElement, k: number): [number, number, number] {
   const shape = KINDS[el.kind].shape ?? 'square';
@@ -54,13 +76,13 @@ interface Support { factor: number; candidates: string[] }
 export function buildSupports(resolved: Resolved): Map<string, Support[] | null> {
   const els = resolved.elements;
   // индексы точек: середины рёбер ячеек, верх стен, коньки и низы крыш, центры ячеек
-  const cellEdge = new Map<string, string[]>();
-  const wallTop = new Map<string, string[]>();
-  const wallMid = new Map<string, string[]>();
-  const roofHigh = new Map<string, string[]>();
-  const cellAt = new Map<string, string[]>();
-  const rampLow = new Map<string, string[]>();
-  const push = (m: Map<string, string[]>, p: [number, number, number], id: string) => { const k = key(p); m.set(k, [...(m.get(k) ?? []), id]); };
+  const cellEdge = new PointIndex();
+  const wallTop = new PointIndex();
+  const wallMid = new PointIndex();
+  const roofHigh = new PointIndex();
+  const cellAt = new PointIndex();
+  const rampLow = new PointIndex();
+  const push = (m: PointIndex, p: Point, id: string) => m.push(p, id);
   for (const e of els) {
     const info = KINDS[e.kind];
     if (info.category === 'cell') {
@@ -84,17 +106,17 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
     if (info.isFoundation) { out.set(e.id, null); continue; }
     if (info.category === 'ramp') {
       const base = e.position[1] - BLOCK_FEMALE_Y - RAMP_MALE_H[e.kind]!;
-      const under = [...(cellAt.get(key([e.position[0], base, e.position[2]])) ?? []), ...(e.kind === 'ramp' ? cellAt.get(key([e.position[0], base - RAMP_HIGH_RISE, e.position[2]])) ?? [] : [])];
+      const under = [...cellAt.get([e.position[0], base, e.position[2]]), ...(e.kind === 'ramp' ? cellAt.get([e.position[0], base - RAMP_HIGH_RISE, e.position[2]]) : [])];
       if (under.length) { out.set(e.id, [{ factor: SUPPORT.stairs, candidates: under }]); continue; }
       if (e.position[1] - RAMP_DROP[e.kind]! <= 0.01) { out.set(e.id, null); continue; }
       const high = edgeMid(e, 0);
-      out.set(e.id, [{ factor: SUPPORT.stairs, candidates: [...(cellEdge.get(key(high)) ?? []), ...(rampLow.get(key(high)) ?? [])].filter(id => id !== e.id) }]);
+      out.set(e.id, [{ factor: SUPPORT.stairs, candidates: [...cellEdge.get(high), ...rampLow.get(high)].filter(id => id !== e.id) }]);
       continue;
     }
-    const not = (ids: string[] | undefined) => (ids ?? []).filter(id => id !== e.id);
+    const not = (ids: string[]) => ids.filter(id => id !== e.id);
     const s: Support[] = [];
     if (info.category === 'wallType') {
-      const p = key(e.position);
+      const p = e.position;
       s.push({ factor: isLowWall(e.kind) ? SUPPORT.lowWallBottom : SUPPORT.wallBottom, candidates: [...not(cellEdge.get(p)), ...not(wallTop.get(p)), ...not(roofHigh.get(p))] });
       const h = wallHeight(e.kind);
       for (const end of wallEnds(e)) {
@@ -106,7 +128,7 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
     } else if (info.category === 'cell') {
       const factor = info.shape === 'square' ? SUPPORT.floorEdgeSquare : SUPPORT.floorEdgeTriangle;
       for (let k = 0; k < edgeCount(info.shape!); k++) {
-        const p = key(edgeMid(e, k));
+        const p = edgeMid(e, k);
         // соседний пол того же уровня (не фундамент: фундамент полу не опора), верх стены, конёк крыши
         const floors = not(cellEdge.get(p)).filter(id => !KINDS[els.find(x => x.id === id)!.kind].isFoundation);
         s.push({ factor, candidates: [...not(wallTop.get(p)), ...not(wallMid.get(p)), ...floors, ...not(roofHigh.get(p))] });
@@ -120,12 +142,12 @@ export function buildSupports(resolved: Resolved): Map<string, Support[] | null>
         s.push({ factor: SUPPORT.roofLowEdge, candidates: near.map(o => o.id) });
       }
     } else if (info.category === 'roof') {
-      const p = key(edgeMid(e, 0));
+      const p = edgeMid(e, 0);
       s.push({ factor: SUPPORT.roofLowEdge, candidates: [...not(wallTop.get(p)), ...not(cellEdge.get(p)), ...not(roofHigh.get(p))] });
     } else if (info.category === 'stairs') {
       const below = els.filter(o => o.id !== e.id && isSpiral(o.kind) && o.kind === e.kind
-        && key([o.position[0], o.position[1] + SPIRAL_H, o.position[2]]) === key(e.position)).map(o => o.id);
-      s.push({ factor: SUPPORT.stairs, candidates: [...not(cellAt.get(key(e.position))), ...below] });
+        && Math.hypot(o.position[0] - e.position[0], o.position[1] + SPIRAL_H - e.position[1], o.position[2] - e.position[2]) < NEAR).map(o => o.id);
+      s.push({ factor: SUPPORT.stairs, candidates: [...not(cellAt.get(e.position)), ...below] });
     }
     out.set(e.id, s);
   }

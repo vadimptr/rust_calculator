@@ -112,3 +112,14 @@ test('shelf at half height: a full wall holds it, a doorway does not (its mid so
   assert.ok(near(onWall, SUPPORT.floorEdgeSquare * wall), `${onWall} ${wall}`);
   assert.equal(held('doorway')[0], 0);
 });
+
+test('wall stands on a cell edge whose midpoint lies on a rounding boundary', () => {
+  const bp = newBlueprint('Граница', 'triangle-foundation', [0.008, 0, 0]);
+  const r = resolveBlueprint(bp).resolved;
+  const p = placementsNear(bp, r, 'window-frame', 'f1', [-0.425, 1, 0.75]).find(c => Math.abs(c.transform.position[0] + 0.425) < 0.002);
+  assert.ok(p);
+  const next = addElement(bp, 'window-frame', p.attach);
+  const id = next.elements.at(-1)!.id;
+  const st = computeStability(resolveBlueprint(next).resolved);
+  assert.ok(Math.abs(st.get(id)! - SUPPORT.wallBottom) < 1e-6, String(st.get(id)));
+});
